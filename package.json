@@ -1,0 +1,60 @@
+{
+  "name": "sree-ugcl",
+  "description": "Blank project with routing included",
+  "engines": {
+    "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
+  },
+  "engines-annotation": "Mostly required by sharp which needs a Node-API v9 compatible runtime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "qwik build",
+    "build.client": "vite build",
+    "build.preview": "vite build --ssr src/entry.preview.tsx",
+    "build.server": "vite build -c adapters/cloud-run/vite.config.ts",
+    "build.types": "tsc --incremental --noEmit",
+    "deploy": "gcloud run deploy ugcl-web --source . --project=ugcl-461407",
+    "dev": "vite --mode ssr",
+    "dev.debug": "node --inspect-brk ./node_modules/vite/bin/vite.js --mode ssr --force",
+    "fmt": "prettier --write .",
+    "fmt.check": "prettier --check .",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "preview": "qwik build preview && vite preview --open",
+    "serve": "wrangler pages dev ./dist --compatibility-flags=nodejs_als",
+    "ssr": "vite build && vite build --ssr src/entry.ssr.tsx",
+    "start": "node dist/server.js",
+    "qwik": "qwik"
+  },
+  "devDependencies": {
+    "@builder.io/qwik": "^1.14.1",
+    "@builder.io/qwik-city": "^1.14.1",
+    "@eslint/js": "latest",
+    "@modular-forms/qwik": "^0.29.1",
+    "@types/node": "20.14.11",
+    "@unocss/preset-icons": "^66.1.3",
+    "@unocss/preset-tagify": "^66.1.3",
+    "@unocss/preset-uno": "^66.1.3",
+    "eslint": "9.25.1",
+    "eslint-plugin-qwik": "^1.14.1",
+    "globals": "16.0.0",
+    "prettier": "3.3.3",
+    "quill": "^2.0.3",
+    "typescript": "5.4.5",
+    "typescript-eslint": "8.26.1",
+    "undici": "*",
+    "unocss": "^66.1.3",
+    "vite": "5.3.5",
+    "vite-tsconfig-paths": "^4.2.1",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@unocss/core": "^66.5.4",
+    "clsx": "^2.1.1",
+    "echarts": "^5.6.0",
+    "grapesjs": "^0.22.8",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
+    "maplibre-gl": "^4.7.1",
+    "xlsx": "^0.18.5"
+  }
+}
