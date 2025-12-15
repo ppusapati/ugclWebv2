@@ -260,6 +260,7 @@ export default component$(() => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportToExcel = $(async () => {
     try {
       await analyticsService.exportReport(reportId, 'xlsx', state.runtimeFilters);
@@ -268,6 +269,7 @@ export default component$(() => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportToCSV = $(async () => {
     try {
       await analyticsService.exportReport(reportId, 'csv', state.runtimeFilters);
@@ -276,6 +278,7 @@ export default component$(() => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportToPDF = $(async () => {
     try {
       await analyticsService.exportReport(reportId, 'pdf', state.runtimeFilters);

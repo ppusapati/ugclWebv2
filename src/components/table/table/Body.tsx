@@ -1,4 +1,4 @@
-import { type Signal, component$, useComputed$, useStylesScoped$, $, type QRL } from '@builder.io/qwik';
+import { type Signal, component$, useComputed$, useStylesScoped$, type QRL } from '@builder.io/qwik';
 import { extractImageUrls, isImage } from '../utils/imageBool';
 
 function formatDate(val: string, formatStr = 'dd-MM-yyyy') {

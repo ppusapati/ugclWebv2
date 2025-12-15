@@ -1,5 +1,5 @@
 // src/components/form-builder/FormBuilder.tsx
-import { component$, useSignal, useStore, useComputed$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useStore, $, type PropFunction } from '@builder.io/qwik';
 import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
 import type { BusinessVertical, Site } from '~/services/types';
 import FieldEditor from './FieldEditor';
@@ -80,6 +80,7 @@ export default component$<FormBuilderProps>((props) => {
     form.steps[stepIndex].fields[fieldIndex] = updatedField;
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const moveField = $((stepIndex: number, fieldIndex: number, direction: 'up' | 'down') => {
     const fields = form.steps[stepIndex].fields;
     const newIndex = direction === 'up' ? fieldIndex - 1 : fieldIndex + 1;

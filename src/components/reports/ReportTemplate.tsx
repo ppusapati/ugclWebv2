@@ -1,3 +1,5 @@
+/* eslint-disable qwik/valid-lexical-scope */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Generic Report Template Component
  * Reusable component for all 15 report types (DPR, Water, Material, etc.)

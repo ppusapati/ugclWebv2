@@ -11,7 +11,6 @@ import type {
   UpdateSiteRequest,
   UserSiteAccess,
   AssignSiteAccessRequest,
-  User,
   PaginatedResponse,
   PaginationParams,
 } from './types';

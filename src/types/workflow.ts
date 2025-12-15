@@ -162,7 +162,7 @@ export interface WorkflowTransitionDef {
 }
 
 // Import notification types
-import type { NotificationRecipientDef, TransitionNotification } from './notification';
+import type { TransitionNotification } from './notification';
 
 export interface WorkflowDefinition {
   id: string;

@@ -1,6 +1,6 @@
 // src/components/auth/business-access-control.tsx
 import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
-import { authService, type BusinessVertical } from '~/services/auth.service';
+import { authService } from '~/services/auth.service';
 
 interface BusinessAccess {
   business_id: string;
@@ -116,11 +116,12 @@ export const BusinessAccessControl = component$(() => {
       } else {
         state.error = 'Failed to grant user access';
       }
-    } catch (error) {
+    } catch {
       state.error = 'Network error occurred';
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRevokeAccess = $(async (userId: string, businessId: string) => {
     if (!confirm('Are you sure you want to revoke all access for this user?')) return;
 
@@ -154,7 +155,7 @@ export const BusinessAccessControl = component$(() => {
       } else {
         state.error = 'Failed to revoke user access';
       }
-    } catch (error) {
+    } catch {
       state.error = 'Network error occurred';
     }
   });

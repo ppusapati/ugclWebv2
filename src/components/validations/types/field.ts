@@ -1,6 +1,6 @@
 import type { NoSerialize, QRL } from '@builder.io/qwik';
 import type { FieldPath, FieldPathValue } from './path';
-import type { Maybe, MaybePromise, MaybeValue, FieldValue, FieldValues } from './utils';
+import type { Maybe, MaybePromise, MaybeValue, FieldValues } from './utils';
 
 // Re-export FieldValue and FieldValues from utils for backwards compatibility
 export type { FieldValue, FieldValues } from './utils';

@@ -59,6 +59,7 @@ export default component$<WorkflowPanelProps>((props) => {
     await nav('/admin/workflows');
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCancel = $(() => {
     mode.value = selectedWorkflow.value ? 'view' : 'select';
   });

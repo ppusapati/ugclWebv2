@@ -1,4 +1,4 @@
-import { component$, useSignal, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
+import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory } from '~/types/document';
 
@@ -61,6 +61,7 @@ export const CategorySidebar = component$<CategorySidebarProps>((props) => {
     return state.categories.some((cat) => cat.parent_id === categoryId);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getDocumentCount = $(async (categoryId: string): Promise<number> => {
     try {
       const response = await documentService.getDocuments({

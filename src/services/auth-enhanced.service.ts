@@ -80,7 +80,7 @@ class AuthService {
   async verifyToken(): Promise<{ valid: boolean; user?: User }> {
     try {
       return await apiClient.get<{ valid: boolean; user?: User }>('/token');
-    } catch (error) {
+    } catch {
       return { valid: false };
     }
   }

@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/FieldRenderer.tsx
-import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, type PropFunction } from '@builder.io/qwik';
 import type { FormField } from '~/types/workflow';
 import TextField from './fields/TextField';
 import TextAreaField from './fields/TextAreaField';

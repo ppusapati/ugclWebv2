@@ -47,6 +47,7 @@ export default component$(() => {
 
   const draggedItem = useSignal<string | null>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const loadDashboards = $(async () => {
     try {
       state.loading = true;

@@ -1,4 +1,4 @@
-import { component$, useSignal, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
+import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentListParams, DocumentStatus } from '~/types/document';
 

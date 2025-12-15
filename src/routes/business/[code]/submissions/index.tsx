@@ -58,9 +58,9 @@ export default component$(() => {
     await loadStats(formCode);
   });
 
-  const handleSubmissionClick = (submission: FormSubmission) => {
+  const handleSubmissionClick = $((submission: FormSubmission) => {
     nav(`/business/${businessCode}/submissions/${submission.id}`);
-  };
+  });
 
   const handleCreateNew = $(async () => {
     if (selectedFormCode.value) {

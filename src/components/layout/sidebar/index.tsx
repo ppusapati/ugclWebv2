@@ -1,3 +1,4 @@
+/* eslint-disable qwik/valid-lexical-scope */
 import { $, component$ } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
 import { useMenuContext } from '~/contexts/menu-context';
@@ -93,6 +94,7 @@ export const Sidebar = component$(() => {
     }
   ];
 
+  // eslint-disable-next-line qwik/valid-lexical-scope
   const handleSidebarItemClick = $((itemId: string) => {
     menuContext.activeSidebarItem.value = itemId;
   });

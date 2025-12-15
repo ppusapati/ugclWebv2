@@ -8,17 +8,15 @@ import {
   useContextProvider,
   useStore,
   useVisibleTask$,
-  type QRL,
 } from '@builder.io/qwik';
 import { TenantDetectionService } from '~/types/multitenant';
 import type {
   User,
   AuthContextType,
-  LoginCredentials,
   AuthState,
   TenantAuthState
 } from '~/types/auth';
-import type { Tenant, UserTenant } from '~/types/multitenant';
+import type { UserTenant } from '~/types/multitenant';
 
 // Safe localStorage access that works in both browser and server environments
 const safeLocalStorage = {

@@ -12,7 +12,6 @@ import type {
   DashboardListResponse,
   FormTablesResponse,
   TableFieldsResponse,
-  ReportExportRequest,
   ReportSchedule,
   PaginationParams,
   AnalyticsFilterParams,
@@ -114,7 +113,8 @@ class AnalyticsService {
   async exportReport(
     reportId: string,
     format: ExportFormat,
-    filters?: ReportFilter[]
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _filters?: ReportFilter[]
   ): Promise<Blob> {
     const filename = `report-${reportId}-${new Date().toISOString().split('T')[0]}.${format}`;
     return apiClient.download(`/reports/definitions/${reportId}/export?format=${format}`, filename);

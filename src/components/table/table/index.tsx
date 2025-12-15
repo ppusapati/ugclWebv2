@@ -17,10 +17,6 @@ import { TableHead } from './TableHead';
 import { TableBody, type ActionButton, type ActionLink, type ActionItem, type ActionItems } from './Body';
 import { Search } from './Search';
 
-// Types for dynamic imports
-type JsPDFType = typeof import('jspdf').jsPDF;
-type XLSXType = typeof import('xlsx');
-
 // Re-export action types for consumer use
 export type { ActionButton, ActionLink, ActionItem, ActionItems };
 

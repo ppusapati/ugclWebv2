@@ -69,7 +69,7 @@ export default component$(() => {
   const loadPermissions = $(async () => {
     try {
       state.permissions = await roleService.getPermissions();
-    } catch (error) {
+    } catch {
       console.error('Failed to load permissions');
     }
   });

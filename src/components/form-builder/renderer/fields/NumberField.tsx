@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/fields/NumberField.tsx
-import { component$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, type PropFunction } from '@builder.io/qwik';
 import type { FormField } from '~/types/workflow';
 
 interface NumberFieldProps {

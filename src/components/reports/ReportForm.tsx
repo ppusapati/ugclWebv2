@@ -10,7 +10,8 @@ interface ReportFormProps {
   businessCode?: string;
 }
 
-export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, businessCode }) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, businessCode: _businessCode }) => {
   const nav = useNavigate();
   const isEdit = !!reportId;
 

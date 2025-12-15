@@ -1,7 +1,7 @@
 import { component$, useStore, $ } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
-import { apiClient, createSSRApiClient, userService } from "~/services";
+import { apiClient, createSSRApiClient } from "~/services";
 import { P9ETable, type ActionButton } from "~/components/table";
 
 interface Role {

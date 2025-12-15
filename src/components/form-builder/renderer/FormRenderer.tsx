@@ -122,6 +122,7 @@ export default component$<FormRendererProps>((props) => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleFieldChange = $((fieldId: string, value: any) => {
     formData[fieldId] = value;
     // Clear error when field changes

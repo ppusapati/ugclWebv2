@@ -18,7 +18,7 @@ export default component$<WorkflowActionsProps>((props) => {
   const selectedAction = useSignal<WorkflowAction | null>(null);
   const processing = useSignal(false);
 
-  const performTransition = async (action: string, comment: string) => {
+  const performTransition = $(async (action: string, comment: string) => {
     try {
       processing.value = true;
 
@@ -40,20 +40,20 @@ export default component$<WorkflowActionsProps>((props) => {
     } finally {
       processing.value = false;
     }
-  };
+  });
 
-  const handleActionClick = $((action: WorkflowAction) => {
+  const handleActionClick = $(async (action: WorkflowAction) => {
     if (action.requires_comment) {
       selectedAction.value = action;
       showCommentModal.value = true;
     } else {
-      performTransition(action.action, '');
+      await performTransition(action.action, '');
     }
   });
 
-  const handleCommentSubmit = $((comment: string) => {
+  const handleCommentSubmit = $(async (comment: string) => {
     if (selectedAction.value) {
-      performTransition(selectedAction.value.action, comment);
+      await performTransition(selectedAction.value.action, comment);
     }
   });
 

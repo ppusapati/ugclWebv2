@@ -110,7 +110,7 @@ export const UserRoleAssignment = component$(() => {
       } else {
         state.error = 'Failed to assign roles';
       }
-    } catch (error) {
+    } catch {
       state.error = 'Network error occurred';
     }
   });
@@ -148,7 +148,7 @@ export const UserRoleAssignment = component$(() => {
       } else {
         state.error = 'Failed to remove role';
       }
-    } catch (error) {
+    } catch {
       state.error = 'Network error occurred';
     }
   });

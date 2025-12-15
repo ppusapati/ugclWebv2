@@ -1,3 +1,4 @@
+/* eslint-disable qwik/valid-lexical-scope */
 import { createContextId, useContext, useContextProvider, useSignal, component$, Slot, useVisibleTask$, $ } from '@builder.io/qwik';
 import type { Signal } from '@builder.io/qwik';
 import { useLocation } from '@builder.io/qwik-city';
@@ -127,7 +128,8 @@ export const MenuProvider = component$(() => {
   });
 
   // Restore from localStorage and sync with current route on mount
-  useVisibleTask$(() => {
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
     if (typeof localStorage !== 'undefined') {
       const savedMainMenu = localStorage.getItem('activeMainMenu');
       const savedSidebarItem = localStorage.getItem('activeSidebarItem');
@@ -141,13 +143,14 @@ export const MenuProvider = component$(() => {
     }
 
     // Sync with current route
-    setActiveFromRoute(location.url.pathname);
+    await setActiveFromRoute(location.url.pathname);
   });
 
   // Watch for route changes
-  useVisibleTask$(({ track }) => {
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async ({ track }) => {
     track(() => location.url.pathname);
-    setActiveFromRoute(location.url.pathname);
+    await setActiveFromRoute(location.url.pathname);
   });
 
   const contextValue: MenuContextType = {

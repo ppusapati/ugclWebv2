@@ -1,9 +1,8 @@
 // src/components/form-builder/FormBuilderComplete.tsx
 import { component$, useSignal, useStore, $, useComputed$, type PropFunction } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
-import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
+import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition } from '~/types/workflow';
 import FieldEditorComplete from './workflow/FieldEditorComplete';
-import { WorkflowPanel } from './workflow';
 
 interface FormBuilderCompleteProps {
   initialDefinition?: FormDefinition;
@@ -103,9 +102,9 @@ export default component$<FormBuilderCompleteProps>((props) => {
     return props.workflows.find(w => w.id === selectedWorkflowId.value);
   });
 
-  const exportJSON = () => {
+  const exportJSON = $(() => {
     return JSON.stringify(form, null, 2);
-  };
+  });
 
   const handleSave = $(async () => {
     // Add workflow to form definition if selected
@@ -640,8 +639,8 @@ export default component$<FormBuilderCompleteProps>((props) => {
               <div class="flex justify-between items-center mb-4">
                 <h3 class="font-medium">JSON Definition</h3>
                 <button
-                  onClick$={() => {
-                    const json = exportJSON();
+                  onClick$={async () => {
+                    const json = await exportJSON();
                     navigator.clipboard.writeText(json);
                     alert('JSON copied to clipboard!');
                   }}
@@ -651,7 +650,7 @@ export default component$<FormBuilderCompleteProps>((props) => {
                 </button>
               </div>
               <textarea
-                value={exportJSON()}
+                value={JSON.stringify(form, null, 2)}
                 class="w-full h-96 font-mono text-sm p-4 border border-gray-300 rounded-lg bg-gray-50"
                 readOnly
               />

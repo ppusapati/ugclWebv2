@@ -93,7 +93,7 @@ export default component$<FileUploadFieldProps>((props) => {
         />
 
         <label
-          htmlFor={`file-input-${props.field.id}`}
+          for={`file-input-${props.field.id}`}
           class={`flex items-center justify-center w-full px-4 py-8 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 ${
             props.error ? 'border-red-500' : 'border-gray-300'
           } ${uploading.value ? 'opacity-50 cursor-not-allowed' : ''}`}

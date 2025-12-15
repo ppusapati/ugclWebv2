@@ -20,7 +20,6 @@ import type {
   DocumentUpdateRequest,
   CreateShareRequest,
   CreatePermissionRequest,
-  BulkOperationRequest,
   BulkUpdateRequest,
   BulkAddTagsRequest,
   VersionComparisonResponse,
@@ -348,7 +347,8 @@ class DocumentService {
   /**
    * Bulk download documents as zip
    */
-  async bulkDownload(documentIds: string[], filename?: string): Promise<Blob> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async bulkDownload(documentIds: string[], _filename?: string): Promise<Blob> {
     const response = await apiClient.post<Blob>(
       '/documents/bulk/download',
       { document_ids: documentIds }

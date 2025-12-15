@@ -1,7 +1,7 @@
 // src/routes/admin/masters/sites/new/index.tsx
 import { component$, useSignal, $, useVisibleTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
-import { siteService, apiClient } from '~/services';
+import { apiClient } from '~/services';
 import GeofenceMap from '~/components/geofence/GeofenceMap';
 import type { Geofence } from '~/utils/geofence';
 import { stringifyGeofence } from '~/utils/geofence';

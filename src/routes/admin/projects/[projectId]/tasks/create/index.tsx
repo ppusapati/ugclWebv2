@@ -3,13 +3,12 @@
  * Professional form for creating new tasks within a project
  */
 
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../../services/api-client';
-import { projectService } from '../../../../../../services/project.service';
 import { taskService } from '../../../../../../services/task.service';
-import type { Project, Zone, Node, Task, TaskPriority, TaskStatus } from '../../../../../../types/project';
+import type { Project, Zone, Node, Task, TaskPriority } from '../../../../../../types/project';
 
 // Load project data with SSR
 export const useProjectData = routeLoader$(async (requestEvent) => {

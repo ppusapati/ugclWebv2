@@ -6,7 +6,6 @@
 
 import { apiClient } from './api-client';
 import type {
-  BaseReport,
   DprSiteReport,
   WaterTankerReport,
   WrappingReport,
@@ -155,7 +154,8 @@ class ReportService {
    */
   async exportReports(
     reportType: ReportKey,
-    filters?: FilterParams
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _filters?: FilterParams
   ): Promise<Blob> {
     const endpoint = REPORT_ENDPOINTS[reportType];
     const filename = `${reportType}-reports-${new Date().toISOString().split('T')[0]}.csv`;

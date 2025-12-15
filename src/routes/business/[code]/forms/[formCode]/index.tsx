@@ -76,7 +76,7 @@ export default component$(() => {
   const handleSaveDraft = $(async (formData: Record<string, any>) => {
     try {
       // Create draft submission
-      const submission = await workflowService.createSubmission(
+      await workflowService.createSubmission(
         businessCode,
         formCode,
         formData

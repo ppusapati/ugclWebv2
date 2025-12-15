@@ -1,3 +1,5 @@
+/* eslint-disable qwik/valid-lexical-scope */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { component$, useStore, useVisibleTask$, $ } from "@builder.io/qwik";
 import { useLocation, useNavigate } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";

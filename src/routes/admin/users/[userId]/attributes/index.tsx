@@ -1,5 +1,5 @@
-import { component$, useSignal, useStore, $, useVisibleTask$ } from '@builder.io/qwik';
-import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
+import { component$, useSignal, useStore, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate } from '@builder.io/qwik-city';
 import { apiClient, createSSRApiClient, userAttributeService } from '~/services';
 import type { Attribute } from '~/types/abac';
 import type { User } from '~/services/types';
@@ -24,7 +24,6 @@ export const useUserAttributesData = routeLoader$(async (requestEvent) => {
 
 export default component$(() => {
   const initialData = useUserAttributesData();
-  const loc = useLocation();
   const nav = useNavigate();
 
   const userAttributes = useSignal<Record<string, string>>(initialData.value.userAttributes);
@@ -119,11 +118,13 @@ export default component$(() => {
   });
 
   // Get attribute by name
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getAttributeByName = $((name: string) => {
     return allAttributes.value.find(attr => attr.name === name);
   });
 
   // Get available attributes (not yet assigned)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const availableAttributes = $(async () => {
     const assigned = Object.keys(userAttributes.value);
     return allAttributes.value.filter(attr => !assigned.includes(attr.name));

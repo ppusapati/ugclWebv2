@@ -124,7 +124,7 @@ export const PermissionManagement = component$(() => {
       } else {
         state.error = 'Failed to create permission';
       }
-    } catch (error) {
+    } catch {
       state.error = 'Network error occurred';
     }
   });
@@ -163,11 +163,12 @@ export const PermissionManagement = component$(() => {
       } else {
         state.error = 'Failed to delete permission';
       }
-    } catch (error) {
+    } catch {
       state.error = 'Network error occurred';
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const filteredPermissions = state.permissions.filter(permission => {
     const categoryMatch = state.selectedCategory === 'all' || permission.category === state.selectedCategory;
     const businessMatch = state.selectedBusiness === 'all' || 

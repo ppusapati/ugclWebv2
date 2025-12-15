@@ -1,8 +1,5 @@
 import { component$, Slot, useStore, useVisibleTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
-import { Header } from '~/components/layout/header/header';
-import { Sidebar } from '~/components/layout/sidebar';
-import { MenuProvider } from '~/contexts/menu-context';
 import { getUser } from '~/utils/auth';
 
 export default component$(() => {

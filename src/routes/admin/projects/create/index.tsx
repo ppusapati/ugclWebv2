@@ -7,7 +7,6 @@ import { component$, useStore, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import { ProjectCreateForm } from '../../../../components/projects/project-create-form';
 import { createSSRApiClient, apiClient } from '../../../../services/api-client';
-import { projectService } from '../../../../services/project.service';
 import type { CreateProjectRequest } from '../../../../types/project';
 
 interface BusinessVertical {

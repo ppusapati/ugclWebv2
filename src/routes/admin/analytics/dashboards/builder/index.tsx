@@ -4,7 +4,7 @@ import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../services/api-client';
 import { analyticsService } from '../../../../../services/analytics.service';
-import type { Dashboard, DashboardWidget, WidgetType, WidgetSize, ReportDefinition, ReportListResponse } from '../../../../../types/analytics';
+import type { Dashboard, DashboardWidget, WidgetType, ReportListResponse } from '../../../../../types/analytics';
 
 // Load available reports with SSR support
 export const useAvailableReports = routeLoader$(async (requestEvent) => {

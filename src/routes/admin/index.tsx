@@ -1,5 +1,3 @@
-import { useAuthContext } from '~/contexts/auth-context';
-
 import { component$, useSignal } from "@builder.io/qwik";
 import { ContractKpi } from "~/components/kpis/contract";
 import { DairySiteKpi } from "~/components/kpis/dairysite";
@@ -7,7 +5,6 @@ import { DieselKpi } from "~/components/kpis/diesel";
 import { StockKpi } from "~/components/kpis/stock";
 
 export default component$(() => {
-  const auth = useAuthContext();
   
   const activeTab = useSignal('diesel');
 

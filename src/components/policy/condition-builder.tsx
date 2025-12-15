@@ -172,6 +172,7 @@ export const ConditionBuilder = component$<ConditionBuilderProps>((props) => {
   ]);
 
   // Parse existing conditions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const parseConditions = $(() => {
     if (!props.conditions || Object.keys(props.conditions).length === 0) {
       return;
@@ -445,7 +446,7 @@ export const ConditionBuilder = component$<ConditionBuilderProps>((props) => {
               try {
                 const parsed = JSON.parse((e.target as HTMLTextAreaElement).value);
                 props.onChange$(parsed);
-              } catch (err) {
+              } catch {
                 // Invalid JSON - don't update
               }
             }}

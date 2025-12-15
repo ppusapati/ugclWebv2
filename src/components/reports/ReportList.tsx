@@ -1,5 +1,5 @@
 // src/components/reports/ReportList.tsx
-import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { reportService, getReportConfig } from '~/services';
 import type { ReportKey, ReportType } from '~/services';
@@ -9,7 +9,8 @@ interface ReportListProps {
   businessCode?: string;
 }
 
-export const ReportList = component$<ReportListProps>(({ reportType, businessCode }) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const ReportList = component$<ReportListProps>(({ reportType, businessCode: _businessCode }) => {
   const nav = useNavigate();
 
   const reports = useSignal<ReportType[]>([]);

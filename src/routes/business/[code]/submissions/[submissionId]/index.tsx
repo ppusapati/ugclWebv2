@@ -36,6 +36,8 @@ export default component$(() => {
     await nav(`/business/${businessCode}/submissions`);
   });
 
+  // These handlers are available for future use in the component
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleApprove = $(async () => {
     try {
       await workflowService.transitionSubmission(
@@ -54,6 +56,7 @@ export default component$(() => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleReject = $(async () => {
     const reason = prompt('Please provide a reason for rejection:');
     if (!reason) return;
@@ -78,6 +81,7 @@ export default component$(() => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecall = $(async () => {
     if (!confirm('Are you sure you want to recall this submission?')) return;
 

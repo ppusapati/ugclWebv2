@@ -143,7 +143,7 @@ export default component$<StateEditorProps>((props) => {
             onChange$={(e) => handleUpdate('is_final', (e.target as HTMLInputElement).checked)}
             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <label htmlFor={`final-${props.state.code}`} class="ml-3">
+          <label for={`final-${props.state.code}`} class="ml-3">
             <span class="block text-sm font-medium text-gray-900">
               Final State (Terminal)
             </span>

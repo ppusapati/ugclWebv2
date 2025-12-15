@@ -9,7 +9,8 @@ export const TenantSwitcher = component$(() => {
     isOpen.value = !isOpen.value;
   });
 
-  const switchTenant = $(async (tenantId: string, tenantSlug: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const switchTenant = $(async (tenantId: string, _tenantSlug: string) => {
     try {
       isOpen.value = false;
       await auth.selectTenant(tenantId);

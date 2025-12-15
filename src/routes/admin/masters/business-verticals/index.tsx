@@ -59,12 +59,7 @@ export default component$(() => {
   // Create business vertical
   const handleCreate = $(async () => {
     try {
-      let result;
-      try {
-        result = await apiClient.post<any>(`/admin/businesses`, newVertical.value);
-      } catch (e: any) {
-        throw e;
-      }
+      const result = await apiClient.post<any>(`/admin/businesses`, newVertical.value);
 
       // Handle different response structures
       let createdVertical: BusinessVertical;

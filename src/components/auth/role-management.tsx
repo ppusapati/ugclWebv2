@@ -90,7 +90,7 @@ export const RoleManagement = component$(() => {
             } else {
                 state.error = 'Failed to create role';
             }
-        } catch (error) {
+        } catch {
             state.error = 'Network error occurred';
         }
     });
@@ -114,7 +114,7 @@ export const RoleManagement = component$(() => {
             } else {
                 state.error = 'Failed to delete role';
             }
-        } catch (error) {
+        } catch {
             state.error = 'Network error occurred';
         }
     });

@@ -36,8 +36,8 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
       state.analytics = await analyticsResponse.json();
 
       state.loading = false;
-    } catch (error) {
-      console.error('Failed to load business data:', error);
+    } catch (err) {
+      console.error('Failed to load business data:', err);
       state.loading = false;
     }
   });

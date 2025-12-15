@@ -13,7 +13,7 @@ export const SuperAdminDashboard = component$(() => {
     try {
       state.dashboardData = await authService.getSuperAdminDashboard();
       state.loading = false;
-    } catch (error) {
+    } catch {
       state.error = 'Failed to load dashboard data';
       state.loading = false;
     }

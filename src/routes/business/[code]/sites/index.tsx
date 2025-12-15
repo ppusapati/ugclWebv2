@@ -1,7 +1,7 @@
 // src/routes/business/[code]/sites/index.tsx
 import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
-import { siteService, authService } from '~/services';
+import { siteService } from '~/services';
 import type { Site } from '~/services';
 
 export default component$(() => {

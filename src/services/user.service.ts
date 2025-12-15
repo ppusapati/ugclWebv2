@@ -114,7 +114,8 @@ class UserService {
   /**
    * Export users to CSV
    */
-  async exportUsers(filters?: FilterParams): Promise<Blob> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async exportUsers(_filters?: FilterParams): Promise<Blob> {
     return apiClient.download('/admin/users/export', 'users.csv');
   }
 }

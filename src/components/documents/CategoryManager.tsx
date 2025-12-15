@@ -1,4 +1,4 @@
-import { component$, useSignal, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory } from '~/types/document';
 

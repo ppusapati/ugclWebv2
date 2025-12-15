@@ -1,4 +1,4 @@
-import { component$, useSignal, $, useVisibleTask$ } from "@builder.io/qwik";
+import { component$, useSignal, $ } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
 import { createSSRApiClient, apiClient } from "~/services";
@@ -62,12 +62,7 @@ export default component$(() => {
   const handleCreateModule = $(async () => {
     try {
       // Try /modules endpoint first
-      let result;
-      try {
-          result = await apiClient.post<any>(`/admin/masters/modules`, newModule.value);
-        } catch (e: any) {
-          throw e;
-        }
+      const result = await apiClient.post<any>(`/admin/masters/modules`, newModule.value);
       
 
       // Handle different response structures

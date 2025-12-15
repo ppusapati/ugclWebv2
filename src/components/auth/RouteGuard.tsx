@@ -18,7 +18,7 @@
  * });
  */
 
-import { component$, Slot, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, Slot, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { authService } from '~/services/auth-enhanced.service';
 

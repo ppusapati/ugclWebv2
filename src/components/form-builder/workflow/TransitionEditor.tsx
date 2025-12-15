@@ -205,7 +205,7 @@ export default component$<TransitionEditorProps>((props) => {
             onChange$={(e) => handleUpdate('requires_comment', (e.target as HTMLInputElement).checked)}
             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <label htmlFor={`comment-${props.transition.action}`} class="ml-3">
+          <label for={`comment-${props.transition.action}`} class="ml-3">
             <span class="block text-sm font-medium text-gray-900">
               Require Comment
             </span>
