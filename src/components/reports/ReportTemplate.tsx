@@ -15,7 +15,7 @@ import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@bu
 import { useNavigate, useLocation } from '@builder.io/qwik-city';
 import { P9ETable } from '~/components/table';
 import { DynamicForm, type FormField } from '~/components/form_generator';
-import { reportService } from '~/services/report.service';
+import { reportService, type ReportKey } from '~/services/report.service';
 import { siteService } from '~/services/site.service';
 import type { PaginationParams } from '~/services/types';
 
@@ -26,14 +26,15 @@ export interface ReportColumn {
 }
 
 export interface ReportTemplateProps {
-  reportType: string;
+  reportType: ReportKey;
   reportTitle: string;
   listColumns: ReportColumn[];
   formFields?: FormField<any>[];
   showSiteFilter?: boolean;
   showDateFilter?: boolean;
   customFilters?: any[];
-  onBeforeSubmit?: PropFunction<(data: any) => any>;
+  businessCode?: string;
+  onBeforeSubmit$?: PropFunction<(data: any) => any>;
 }
 
 export const ReportTemplate = component$<ReportTemplateProps>((props) => {
@@ -100,7 +101,7 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
       const response = await reportService.getReports(props.reportType, params);
 
       state.data = response.data || [];
-      state.total = response.total || 0;
+      state.total = response.pagination?.total || 0;
       state.page = page;
     } catch (error: any) {
       state.error = error.message || 'Failed to load reports';
@@ -112,8 +113,10 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
   // Fetch sites for dropdown
   const fetchSites = $(async () => {
     try {
-      const response = await siteService.getMySites();
-      state.sites = response.data || [];
+      if (props.businessCode) {
+        const sites = await siteService.getMySites(props.businessCode);
+        state.sites = sites || [];
+      }
     } catch (error) {
       console.error('Failed to load sites');
     }
@@ -174,8 +177,8 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
 
     try {
       // Apply custom transformation if provided
-      const submitData = props.onBeforeSubmit
-        ? await props.onBeforeSubmit(data)
+      const submitData = props.onBeforeSubmit$
+        ? await props.onBeforeSubmit$(data)
         : data;
 
       if (isEditView && loc.params.id) {
@@ -342,9 +345,10 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
             enableSort
             serverPagination={true}
             totalCount={state.total}
-            onPageChange$={$((p, l) => {
+            onPageChange$={$(async (p: number, l: number) => {
               state.limit = l;
-              fetchReports(p);
+              await fetchReports(p);
+              return state.data;
             })}
           />
         </div>
@@ -413,8 +417,7 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
               formFields={enrichedFormFields}
               formLoader={initialValues}
               onClick$={handleSubmit}
-              submitButtonText={state.loading ? 'Submitting...' : isEditView ? 'Update Report' : 'Submit Report'}
-              submitButtonDisabled={state.loading}
+              heading={isEditView ? 'Edit Report' : 'Create Report'}
             />
           ) : (
             <div class="text-center py-8 text-gray-500">

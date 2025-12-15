@@ -159,6 +159,9 @@ export default component$(() => {
                     Module
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    DB Table
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Version
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -185,8 +188,17 @@ export default component$(() => {
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span class="text-sm text-gray-600">
-                        {form.module!.id || '-'}
+                        {form.module?.name || form.module?.code || '-'}
                       </span>
+                    </td>
+                               <td class="px-6 py-4 whitespace-nowrap">
+                      {form.module?.schema_name && form.table_name ? (
+                        <code class="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {form.module.schema_name}.{form.table_name}
+                        </code>
+                      ) : (
+                        <span class="text-sm text-gray-400">-</span>
+                      )}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span class="text-sm text-gray-600">v{form.version}</span>

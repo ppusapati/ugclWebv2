@@ -1,11 +1,11 @@
 // src/components/form-builder/workflow/NotificationConfigEditor.tsx
-import { component$, $ } from '@builder.io/qwik';
+import { component$, $, type PropFunction } from '@builder.io/qwik';
 import type { TransitionNotification, NotificationRecipientDef } from '~/types/notification';
 
 interface NotificationConfigEditorProps {
   notification: TransitionNotification;
-  onUpdate: (notification: TransitionNotification) => void;
-  onDelete: () => void;
+  onUpdate$: PropFunction<(notification: TransitionNotification) => void>;
+  onDelete$: PropFunction<() => void>;
 }
 
 const RECIPIENT_TYPES = [
@@ -33,36 +33,36 @@ const CHANNELS = [
 ] as const;
 
 export default component$<NotificationConfigEditorProps>((props) => {
-  const handleUpdate = $((field: keyof TransitionNotification, value: any) => {
-    props.onUpdate({ ...props.notification, [field]: value });
+  const handleUpdate = $(async (field: keyof TransitionNotification, value: any) => {
+    await props.onUpdate$({ ...props.notification, [field]: value });
   });
 
-  const handleAddRecipient = $(() => {
+  const handleAddRecipient = $(async () => {
     const newRecipient: NotificationRecipientDef = {
       type: 'user',
       value: '',
     };
     const recipients = [...(props.notification.recipients || []), newRecipient];
-    handleUpdate('recipients', recipients);
+    await handleUpdate('recipients', recipients);
   });
 
-  const handleUpdateRecipient = $((index: number, field: keyof NotificationRecipientDef, value: any) => {
+  const handleUpdateRecipient = $(async (index: number, field: keyof NotificationRecipientDef, value: any) => {
     const recipients = [...(props.notification.recipients || [])];
     recipients[index] = { ...recipients[index], [field]: value };
-    handleUpdate('recipients', recipients);
+    await handleUpdate('recipients', recipients);
   });
 
-  const handleDeleteRecipient = $((index: number) => {
+  const handleDeleteRecipient = $(async (index: number) => {
     const recipients = props.notification.recipients?.filter((_, i) => i !== index) || [];
-    handleUpdate('recipients', recipients);
+    await handleUpdate('recipients', recipients);
   });
 
-  const handleToggleChannel = $((channel: (typeof CHANNELS)[number]['value']) => {
+  const handleToggleChannel = $(async (channel: (typeof CHANNELS)[number]['value']) => {
     const channels = props.notification.channels || [];
     if (channels.includes(channel)) {
-      handleUpdate('channels', channels.filter((c) => c !== channel));
+      await handleUpdate('channels', channels.filter((c) => c !== channel));
     } else {
-      handleUpdate('channels', [...channels, channel]);
+      await handleUpdate('channels', [...channels, channel]);
     }
   });
 
@@ -71,7 +71,7 @@ export default component$<NotificationConfigEditorProps>((props) => {
       <div class="flex justify-between items-start mb-4">
         <h4 class="font-medium text-lg">Notification Configuration</h4>
         <button
-          onClick$={props.onDelete}
+          onClick$={props.onDelete$}
           class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
         >
           Delete

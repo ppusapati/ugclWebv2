@@ -22,7 +22,7 @@ export default component$(() => {
       // Filter forms that are active and accessible for this business vertical
       forms.value = allForms.filter(f =>
         f.is_active &&
-        (!f.vertical_access || f.vertical_access.length === 0 || f.vertical_access.includes(businessCode))
+        (!f.accessible_verticals || f.accessible_verticals.length === 0 || f.accessible_verticals.includes(businessCode))
       );
     } catch (err: any) {
       error.value = err.message || 'Failed to load forms';
@@ -171,11 +171,11 @@ export default component$(() => {
                         <div class="flex items-center justify-between text-xs text-gray-500">
                           <span class="font-mono">{form.code}</span>
                           <span class={`px-2 py-1 rounded ${
-                            form.type === 'single_page'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-blue-100 text-blue-700'
+                            form.steps && form.steps.length > 1
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
                           }`}>
-                            {form.type === 'single_page' ? 'Single Page' : 'Multi-Step'}
+                            {form.steps && form.steps.length > 1 ? 'Multi-Step' : 'Single Page'}
                           </span>
                         </div>
                       </button>

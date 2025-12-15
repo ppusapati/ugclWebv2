@@ -1,5 +1,6 @@
 // src/components/form-builder/FormBuilderComplete.tsx
-import { component$, useSignal, useStore, $, useComputed$ } from '@builder.io/qwik';
+import { component$, useSignal, useStore, $, useComputed$, type PropFunction } from '@builder.io/qwik';
+import { Link } from '@builder.io/qwik-city';
 import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
 import FieldEditorComplete from './workflow/FieldEditorComplete';
 import { WorkflowPanel } from './workflow';
@@ -8,8 +9,8 @@ interface FormBuilderCompleteProps {
   initialDefinition?: FormDefinition;
   modules: Module[];
   workflows: WorkflowDefinition[];
-  onSave: (definition: FormDefinition) => void;
-  onCancel?: () => void;
+  onSave$: PropFunction<(definition: FormDefinition) => void>;
+  onCancel$?: PropFunction<() => void>;
 }
 
 export default component$<FormBuilderCompleteProps>((props) => {
@@ -102,11 +103,11 @@ export default component$<FormBuilderCompleteProps>((props) => {
     return props.workflows.find(w => w.id === selectedWorkflowId.value);
   });
 
-  const exportJSON = $(() => {
+  const exportJSON = () => {
     return JSON.stringify(form, null, 2);
-  });
+  };
 
-  const handleSave = $(() => {
+  const handleSave = $(async () => {
     // Add workflow to form definition if selected
     if (selectedWorkflow.value) {
       form.workflow = {
@@ -115,7 +116,12 @@ export default component$<FormBuilderCompleteProps>((props) => {
         transitions: selectedWorkflow.value.transitions,
       };
     }
-    props.onSave(form);
+    // Pass form with workflow_id attached for the save handler
+    const formWithWorkflowId = {
+      ...form,
+      workflow_id: selectedWorkflowId.value,
+    };
+    await props.onSave$(formWithWorkflowId as any);
   });
 
   return (
@@ -129,9 +135,9 @@ export default component$<FormBuilderCompleteProps>((props) => {
               <p class="text-gray-600 mt-1">Create and manage dynamic forms with workflows</p>
             </div>
             <div class="flex gap-3">
-              {props.onCancel && (
+              {props.onCancel$ && (
                 <button
-                  onClick$={props.onCancel}
+                  onClick$={props.onCancel$}
                   class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
@@ -442,8 +448,8 @@ export default component$<FormBuilderCompleteProps>((props) => {
                         {selectedFieldIndex.value === fieldIndex ? (
                           <FieldEditorComplete
                             field={field}
-                            onUpdate={$((updatedField: FormField) => updateField(currentStepIndex.value, fieldIndex, updatedField))}
-                            onDelete={$(() => deleteField(currentStepIndex.value, fieldIndex))}
+                            onUpdate$={$((updatedField: FormField) => updateField(currentStepIndex.value, fieldIndex, updatedField))}
+                            onDelete$={$(() => deleteField(currentStepIndex.value, fieldIndex))}
                           />
                         ) : (
                           <div
@@ -512,7 +518,18 @@ export default component$<FormBuilderCompleteProps>((props) => {
           <div class="space-y-6">
             {/* Workflow Selection */}
             <div class="bg-white rounded-lg shadow-sm p-6">
-              <h3 class="font-semibold text-gray-900 mb-4">Select Workflow</h3>
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-gray-900">Select Workflow</h3>
+                <Link
+                  href="/admin/workflows"
+                  class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Manage Workflows
+                </Link>
+              </div>
               <select
                 value={selectedWorkflowId.value || ''}
                 onChange$={(e) => (selectedWorkflowId.value = (e.target as HTMLSelectElement).value || undefined)}
@@ -521,12 +538,17 @@ export default component$<FormBuilderCompleteProps>((props) => {
                 <option value="">No workflow (form will not have states)</option>
                 {props.workflows.map((workflow) => (
                   <option key={workflow.id} value={workflow.id}>
-                    {workflow.name} ({workflow.code}) - {workflow.states.length} states
+                    {`${workflow.name} (${workflow.code}) - ${workflow.states.length} states`}
                   </option>
                 ))}
               </select>
               <p class="text-sm text-gray-600 mt-2">
                 Select a workflow to manage form lifecycle through states and transitions.
+                {props.workflows.length === 0 && (
+                  <span class="text-orange-600 ml-1">
+                    No workflows available. Click "Create New Workflow" to create one first.
+                  </span>
+                )}
               </p>
             </div>
 
@@ -552,7 +574,7 @@ export default component$<FormBuilderCompleteProps>((props) => {
                             {state.name}
                           </span>
                           <code class="text-xs text-gray-500">{state.code}</code>
-                          {state.code === selectedWorkflow.value.initial_state && (
+                          {state.code === selectedWorkflow.value?.initial_state && (
                             <span class="text-xs text-blue-600">Initial</span>
                           )}
                           {state.is_final && (
@@ -618,8 +640,8 @@ export default component$<FormBuilderCompleteProps>((props) => {
               <div class="flex justify-between items-center mb-4">
                 <h3 class="font-medium">JSON Definition</h3>
                 <button
-                  onClick$={async () => {
-                    const json = await exportJSON();
+                  onClick$={() => {
+                    const json = exportJSON();
                     navigator.clipboard.writeText(json);
                     alert('JSON copied to clipboard!');
                   }}

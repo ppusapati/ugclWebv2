@@ -22,8 +22,8 @@ export default component$(() => {
     try {
       loading.value = true;
       error.value = '';
-      const response = await siteService.getSites(businessCode);
-      sites.value = response.data || [];
+      const sitesList = await siteService.getMySites(businessCode);
+      sites.value = sitesList || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to load sites';
     } finally {

@@ -1,8 +1,33 @@
- 
+import type { NoSerialize } from '@builder.io/qwik';
+
 /**
  * Returns a type with optional keys.
  */
 export type PartialKey<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+/**
+ * Value type of the field value.
+ * NOTE: Moved here from field.ts to break circular dependency with path.ts
+ */
+export type FieldValue = MaybeValue<
+  | string
+  | string[]
+  | number
+  | boolean
+  | NoSerialize<Blob>
+  | NoSerialize<Blob>[]
+  | NoSerialize<File>
+  | NoSerialize<File>[]
+  | Date
+>;
+
+/**
+ * Value type of the form fields.
+ * NOTE: Moved here from field.ts to break circular dependency with path.ts
+ */
+export type FieldValues = {
+  [name: string]: FieldValue | FieldValues | (FieldValue | FieldValues)[];
+};
 
 /**
  * Checks if an array type is a tuple type.

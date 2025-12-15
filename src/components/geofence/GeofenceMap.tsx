@@ -3,6 +3,31 @@ import { component$, useSignal, useVisibleTask$, $, type QRL, noSerialize, type 
 import type { Coordinate, Geofence } from '~/utils/geofence';
 import { validateGeofence, calculatePolygonCenter, autoClosePolygon, calculatePolygonArea, formatArea } from '~/utils/geofence';
 
+// Helper to load MapLibre GL from CDN to avoid bundler issues
+const loadMaplibreGL = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    // Check if already loaded
+    if ((window as any).maplibregl) {
+      resolve((window as any).maplibregl);
+      return;
+    }
+
+    // Load script from CDN
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js';
+    script.async = true;
+    script.onload = () => {
+      if ((window as any).maplibregl) {
+        resolve((window as any).maplibregl);
+      } else {
+        reject(new Error('MapLibre GL failed to load'));
+      }
+    };
+    script.onerror = () => reject(new Error('Failed to load MapLibre GL script'));
+    document.head.appendChild(script);
+  });
+};
+
 interface GeofenceMapProps {
   initialGeofence?: Geofence | null;
   initialCenter?: Coordinate;
@@ -26,14 +51,17 @@ export default component$<GeofenceMapProps>((props) => {
   useVisibleTask$(async () => {
     if (!mapContainer.value) return;
 
-    // Dynamically import maplibre-gl to avoid SSR issues
-    const maplibregl = await import('maplibre-gl');
+    // Load MapLibre GL from CDN to avoid bundler issues
+    const maplibregl = await loadMaplibreGL();
 
     // Load MapLibre CSS
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
-    document.head.appendChild(link);
+    if (!document.getElementById('maplibre-css')) {
+      const link = document.createElement('link');
+      link.id = 'maplibre-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css';
+      document.head.appendChild(link);
+    }
 
     // Default center (Karnataka, India) or use provided center
     const center = props.initialCenter ||

@@ -1,18 +1,19 @@
 // src/components/form-builder/workflow/WorkflowPanel.tsx
-import { component$, useSignal, $, useTask$ } from '@builder.io/qwik';
+import { component$, useSignal, $, useTask$, type PropFunction } from '@builder.io/qwik';
+import { useNavigate } from '@builder.io/qwik-city';
 import type { WorkflowDefinition, WorkflowConfig, AppForm } from '~/types/workflow';
-import WorkflowDesigner from './WorkflowDesigner';
 import WorkflowDiagram from './WorkflowDiagram';
 
 interface WorkflowPanelProps {
   workflows: WorkflowDefinition[];
   workflow?: WorkflowConfig;
   allForms?: AppForm[]; // Optional: list of all forms for usage tracking
-  onUpdate: (workflow: WorkflowConfig | undefined) => void;
-  onWorkflowsChange?: () => void;
+  onUpdate$: PropFunction<(workflow: WorkflowConfig | undefined) => void>;
+  onWorkflowsChange$?: PropFunction<() => void>;
 }
 
 export default component$<WorkflowPanelProps>((props) => {
+  const nav = useNavigate();
   const mode = useSignal<'select' | 'view' | 'create' | 'edit'>('select');
   const selectedWorkflowId = useSignal<string | undefined>(undefined);
   const selectedWorkflow = useSignal<WorkflowDefinition | undefined>(undefined);
@@ -30,13 +31,13 @@ export default component$<WorkflowPanelProps>((props) => {
     }
   });
 
-  const handleSelectWorkflow = $((workflowId: string | undefined) => {
+  const handleSelectWorkflow = $(async (workflowId: string | undefined) => {
     selectedWorkflowId.value = workflowId;
 
     if (!workflowId) {
       selectedWorkflow.value = undefined;
       mode.value = 'select';
-      props.onUpdate(undefined);
+      await props.onUpdate$(undefined);
       return;
     }
 
@@ -50,12 +51,12 @@ export default component$<WorkflowPanelProps>((props) => {
         states: workflow.states.map(s => s.code),
         transitions: workflow.transitions,
       };
-      props.onUpdate(workflowConfig);
+      await props.onUpdate$(workflowConfig);
     }
   });
 
-  const handleCreateNew = $(() => {
-    mode.value = 'create';
+  const handleCreateNew = $(async () => {
+    await nav('/admin/workflows');
   });
 
   const handleCancel = $(() => {
@@ -104,7 +105,7 @@ export default component$<WorkflowPanelProps>((props) => {
             onClick$={handleCreateNew}
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Create New Workflow
+            Manage Workflows
           </button>
         </div>
       )}
@@ -162,12 +163,6 @@ export default component$<WorkflowPanelProps>((props) => {
         </div>
       )}
 
-      {mode.value === 'create' && (
-        <WorkflowDesigner
-          onSave={$(() => { mode.value = 'select'; })}
-          onCancel={handleCancel}
-        />
-      )}
     </div>
   );
 });

@@ -2,7 +2,7 @@
 import { component$, useSignal, useVisibleTask$, $, useStore } from '@builder.io/qwik';
 import { type DocumentHead } from '@builder.io/qwik-city';
 import { notificationService } from '~/services/notification.service';
-import type { NotificationPreference } from '~/types/notification';
+import type { NotificationPreference, NotificationType } from '~/types/notification';
 
 export default component$(() => {
   const loading = useSignal(true);
@@ -22,7 +22,7 @@ export default component$(() => {
     quiet_hours_start: '',
     quiet_hours_end: '',
     digest_enabled: false,
-    digest_frequency: '',
+    digest_frequency: undefined,
     created_at: '',
     updated_at: '',
   });
@@ -70,7 +70,7 @@ export default component$(() => {
     }
   });
 
-  const toggleDisabledType = $((type: string) => {
+  const toggleDisabledType = $((type: NotificationType) => {
     if (preferences.disabled_types.includes(type)) {
       preferences.disabled_types = preferences.disabled_types.filter((t) => t !== type);
     } else {
@@ -207,15 +207,15 @@ export default component$(() => {
             </p>
 
             <div class="space-y-3">
-              {[
-                { value: 'workflow_transition', label: 'Workflow State Changes' },
-                { value: 'approval_required', label: 'Approval Required' },
-                { value: 'approval_approved', label: 'Approval Approved' },
-                { value: 'approval_rejected', label: 'Approval Rejected' },
-                { value: 'task_assigned', label: 'Task Assigned' },
-                { value: 'task_completed', label: 'Task Completed' },
-                { value: 'system_alert', label: 'System Alerts' },
-              ].map((type) => (
+              {([
+                { value: 'workflow_transition' as NotificationType, label: 'Workflow State Changes' },
+                { value: 'approval_required' as NotificationType, label: 'Approval Required' },
+                { value: 'approval_approved' as NotificationType, label: 'Approval Approved' },
+                { value: 'approval_rejected' as NotificationType, label: 'Approval Rejected' },
+                { value: 'task_assigned' as NotificationType, label: 'Task Assigned' },
+                { value: 'task_completed' as NotificationType, label: 'Task Completed' },
+                { value: 'system_alert' as NotificationType, label: 'System Alerts' },
+              ]).map((type) => (
                 <label key={type.value} class="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -311,12 +311,11 @@ export default component$(() => {
                   Frequency
                 </label>
                 <select
-                  value={preferences.digest_frequency}
-                  onChange$={(e) =>
-                    (preferences.digest_frequency = (
-                      e.target as HTMLSelectElement
-                    ).value)
-                  }
+                  value={preferences.digest_frequency || ''}
+                  onChange$={(e) => {
+                    const val = (e.target as HTMLSelectElement).value;
+                    preferences.digest_frequency = val === '' ? undefined : val as 'daily' | 'weekly';
+                  }}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select frequency</option>

@@ -1,5 +1,5 @@
 // src/components/form-builder/submissions/WorkflowActions.tsx
-import { component$, useSignal, $ } from '@builder.io/qwik';
+import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
 import { workflowService } from '~/services';
 import type { WorkflowAction } from '~/types/workflow';
 import CommentModal from './CommentModal';
@@ -10,7 +10,7 @@ interface WorkflowActionsProps {
   submissionId: string;
   currentState: string;
   availableActions: WorkflowAction[];
-  onTransition: () => void;
+  onTransition$: PropFunction<() => void>;
 }
 
 export default component$<WorkflowActionsProps>((props) => {
@@ -18,16 +18,7 @@ export default component$<WorkflowActionsProps>((props) => {
   const selectedAction = useSignal<WorkflowAction | null>(null);
   const processing = useSignal(false);
 
-  const handleActionClick = $((action: WorkflowAction) => {
-    if (action.requires_comment) {
-      selectedAction.value = action;
-      showCommentModal.value = true;
-    } else {
-      performTransition(action.action, '');
-    }
-  });
-
-  const performTransition = $(async (action: string, comment: string) => {
+  const performTransition = async (action: string, comment: string) => {
     try {
       processing.value = true;
 
@@ -43,11 +34,20 @@ export default component$<WorkflowActionsProps>((props) => {
 
       showCommentModal.value = false;
       selectedAction.value = null;
-      props.onTransition();
+      await props.onTransition$();
     } catch (error: any) {
       alert('Transition failed: ' + error.message);
     } finally {
       processing.value = false;
+    }
+  };
+
+  const handleActionClick = $((action: WorkflowAction) => {
+    if (action.requires_comment) {
+      selectedAction.value = action;
+      showCommentModal.value = true;
+    } else {
+      performTransition(action.action, '');
     }
   });
 
@@ -65,7 +65,7 @@ export default component$<WorkflowActionsProps>((props) => {
     );
   }
 
-  const getActionButtonClass = $((action: string) => {
+  const getActionButtonClass = (action: string) => {
     switch (action) {
       case 'approve':
         return 'bg-green-600 hover:bg-green-700 text-white';
@@ -78,7 +78,7 @@ export default component$<WorkflowActionsProps>((props) => {
       default:
         return 'bg-gray-600 hover:bg-gray-700 text-white';
     }
-  });
+  };
 
   return (
     <>
@@ -109,11 +109,11 @@ export default component$<WorkflowActionsProps>((props) => {
         <CommentModal
           title={`${selectedAction.value.label} - Add Comment`}
           required={selectedAction.value.requires_comment}
-          onSubmit={handleCommentSubmit}
-          onCancel={() => {
+          onSubmit$={handleCommentSubmit}
+          onCancel$={$(() => {
             showCommentModal.value = false;
             selectedAction.value = null;
-          }}
+          })}
         />
       )}
     </>

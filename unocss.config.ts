@@ -15,14 +15,17 @@ export default defineConfig({
     pipeline: {
       include: [/\.([jt]sx?|mdx?)($|\?)/, "src/**/*.{js,ts,tsx,jsx}"],
     },
-    filesystem: ["{projectRoot}/**/*.[jt]s?(x)?(.snap)"],
+    // Limit filesystem scanning to src folder only for better build performance
+    filesystem: ["src/**/*.{js,ts,tsx,jsx}"],
   },
   presets: [
     presetP9E() as unknown as PresetOrFactoryAwaitable<object>,
     presetWind3(),
     presetIcons({
       scale: 1.2,
-      cdn: "https://esm.sh/",
+      // Remove CDN to avoid network requests during build - use local icons only
+      // If you need icons, install @iconify-json/[collection] packages locally
+      warn: true,
     }),
   ],
   transformers: [transformerVariantGroup(), transformerDirectives()],

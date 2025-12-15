@@ -83,9 +83,12 @@ export const Sidebar = component$(() => {
         { id: 'policies', label: 'ABAC Policies', href: '/admin/policies', icon: 'i-heroicons-shield-check-solid' },
         { id: 'users', label: 'Users', href: '/admin/users', icon: 'i-heroicons-user-solid' },
         { id: 'forms', label: 'Forms', href: '/admin/forms', icon: 'i-heroicons-document-text-solid' },
+        { id: 'workflow', label: 'Work Flows', href: '/admin/workflows', icon: 'i-heroicons-document-text-solid' },
         { id: 'projects', label: 'Projects', href: '/admin/projects', icon: 'i-heroicons-document-text-solid' },
         { id: 'documents', label: 'Documents', href: '/admin/documents', icon: 'i-heroicons-server-solid' },
-        { id: 'reports', label: 'Reports', href: '/admin/reports', icon: 'i-heroicons-document-chart-bar-solid' }
+        { id: 'reports', label: 'Reports', href: '/admin/analytics/reports', icon: 'i-heroicons-document-chart-bar-solid' },
+        { id: 'dashboards', label: 'Dashboards', href: '/admin/analytics/dashboards', icon: 'i-heroicons-document-chart-bar-solid' },
+         { id: 'notifications', label: 'Notifications', href: '/admin/notifications', icon: 'i-heroicons-document-chart-bar-solid' }
       ]
     }
   ];

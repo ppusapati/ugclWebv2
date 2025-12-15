@@ -42,7 +42,7 @@ export default component$(() => {
     showDesigner.value = true;
   });
 
-  const handleSave = $(async (workflow: WorkflowDefinition) => {
+  const handleSave = $(async (workflow: Partial<WorkflowDefinition>) => {
     try {
       if (isEditing.value && selectedWorkflow.value) {
         // Update existing workflow
@@ -50,7 +50,7 @@ export default component$(() => {
         alert('Workflow updated successfully!');
       } else {
         // Create new workflow
-        await workflowService.createWorkflow(workflow);
+        await workflowService.createWorkflow(workflow as WorkflowDefinition);
         alert('Workflow created successfully!');
       }
 
@@ -114,8 +114,8 @@ export default component$(() => {
           <div class="p-6">
             <WorkflowDesigner
               workflow={selectedWorkflow.value ?? undefined}
-              onSave={handleSave}
-              onCancel={handleCancel}
+              onSave$={handleSave}
+              onCancel$={handleCancel}
             />
           </div>
         </div>

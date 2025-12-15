@@ -138,9 +138,9 @@ export default component$(() => {
             <FormRenderer
               businessCode="preview"
               formCode={formCode}
-              onSubmit={handleSubmit}
-              onSaveDraft={handleSaveDraft}
-              onCancel={handleBack}
+              onSubmit$={handleSubmit}
+              onSaveDraft$={handleSaveDraft}
+              onCancel$={handleBack}
             />
 
             {/* Debug Info (if data submitted) */}

@@ -134,21 +134,36 @@ export class WorkflowService {
    * Get all workflow definitions (admin)
    */
   async getAllWorkflows(): Promise<WorkflowDefinition[]> {
-    const response = await apiClient.get<{ workflows: WorkflowDefinition[]; count: number }>(
-      '/admin/workflows'
-    );
-    return response.workflows;
+    try {
+      console.log('[WorkflowService] Fetching workflows from /admin/workflows');
+      const response = await apiClient.get<{ workflows: WorkflowDefinition[]; count: number }>(
+        '/admin/workflows'
+      );
+      console.log('[WorkflowService] Workflows response:', response);
+      return response.workflows || [];
+    } catch (error: any) {
+      console.error('[WorkflowService] Error fetching workflows:', error);
+      // Return empty array instead of throwing to not break form builder
+      return [];
+    }
   }
 
   /**
    * Create a new workflow definition (admin)
    */
   async createWorkflow(workflow: Partial<WorkflowDefinition>): Promise<WorkflowDefinition> {
-    const response = await apiClient.post<WorkflowResponse>(
-      '/admin/workflows',
-      workflow
-    );
-    return response.workflow;
+    try {
+      console.log('[WorkflowService] Creating workflow:', workflow);
+      const response = await apiClient.post<WorkflowResponse>(
+        '/admin/workflows',
+        workflow
+      );
+      console.log('[WorkflowService] Create workflow response:', response);
+      return response.workflow;
+    } catch (error: any) {
+      console.error('[WorkflowService] Error creating workflow:', error);
+      throw error;
+    }
   }
 
   /**

@@ -1,13 +1,13 @@
 // src/components/form-builder/workflow/WorkflowDiagram.tsx
-import { component$, $ } from '@builder.io/qwik';
+import { component$, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowState, WorkflowTransitionDef } from '~/types/workflow';
 
 interface WorkflowDiagramProps {
   states: WorkflowState[];
   transitions: WorkflowTransitionDef[];
   initialState: string;
-  onStateClick?: (state: WorkflowState) => void;
-  onTransitionClick?: (transition: WorkflowTransitionDef) => void;
+  onStateClick$?: PropFunction<(state: WorkflowState) => void>;
+  onTransitionClick$?: PropFunction<(transition: WorkflowTransitionDef) => void>;
 }
 
 const STATE_COLORS = {
@@ -88,7 +88,7 @@ export default component$<WorkflowDiagramProps>((props) => {
 
                     {/* State Box */}
                     <div
-                      onClick$={() => props.onStateClick?.(state)}
+                      onClick$={() => props.onStateClick$?.(state)}
                       class={`
                         relative flex-shrink-0 w-48 px-4 py-3
                         ${colors.bg} ${colors.text}
@@ -135,7 +135,7 @@ export default component$<WorkflowDiagramProps>((props) => {
                           return (
                             <div
                               key={tIdx}
-                              onClick$={() => props.onTransitionClick?.(transition)}
+                              onClick$={() => props.onTransitionClick$?.(transition)}
                               class="flex items-center gap-2 group cursor-pointer"
                             >
                               {/* Arrow */}

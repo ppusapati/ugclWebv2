@@ -1,11 +1,11 @@
 // src/components/form-builder/workflow/StateEditor.tsx
-import { component$, $ } from '@builder.io/qwik';
+import { component$, $, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowState } from '~/types/workflow';
 
 interface StateEditorProps {
   state: WorkflowState;
-  onUpdate: (state: WorkflowState) => void;
-  onDelete: () => void;
+  onUpdate$: PropFunction<(state: WorkflowState) => void>;
+  onDelete$: PropFunction<() => void>;
   canDelete: boolean;
 }
 
@@ -24,8 +24,8 @@ const STATE_ICONS = [
 ];
 
 export default component$<StateEditorProps>((props) => {
-  const handleUpdate = $((field: keyof WorkflowState, value: any) => {
-    props.onUpdate({ ...props.state, [field]: value });
+  const handleUpdate = $(async (field: keyof WorkflowState, value: any) => {
+    await props.onUpdate$({ ...props.state, [field]: value });
   });
 
   return (
@@ -34,7 +34,7 @@ export default component$<StateEditorProps>((props) => {
         <h3 class="font-medium text-lg">State Configuration</h3>
         {props.canDelete && (
           <button
-            onClick$={props.onDelete}
+            onClick$={props.onDelete$}
             class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
           >
             Delete State

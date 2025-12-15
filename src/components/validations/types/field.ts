@@ -1,21 +1,9 @@
 import type { NoSerialize, QRL } from '@builder.io/qwik';
 import type { FieldPath, FieldPathValue } from './path';
-import type { Maybe, MaybePromise, MaybeValue } from './utils';
+import type { Maybe, MaybePromise, MaybeValue, FieldValue, FieldValues } from './utils';
 
-/**
- * Value type of the field value.
- */
-export type FieldValue = MaybeValue<
-  | string
-  | string[]
-  | number
-  | boolean
-  | NoSerialize<Blob>
-  | NoSerialize<Blob>[]
-  | NoSerialize<File>
-  | NoSerialize<File>[]
-  | Date
->;
+// Re-export FieldValue and FieldValues from utils for backwards compatibility
+export type { FieldValue, FieldValues } from './utils';
 
 /**
  * Value type of the field type.
@@ -48,13 +36,6 @@ export type FieldElement =
  * Value type of the field event.
  */
 export type FieldEvent = Event;
-
-/**
- * Value type of the form fields.
- */
-export type FieldValues = {
-  [name: string]: FieldValue | FieldValues | (FieldValue | FieldValues)[];
-};
 
 /**
  * Function type to validate a field.

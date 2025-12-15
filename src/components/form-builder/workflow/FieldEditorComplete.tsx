@@ -1,11 +1,11 @@
 // src/components/form-builder/workflow/FieldEditorComplete.tsx
-import { component$, useStore, useSignal, $ } from '@builder.io/qwik';
+import { component$, useStore, useSignal, $, type PropFunction } from '@builder.io/qwik';
 import type { FormField, FieldType, FieldOption } from '~/types/workflow';
 
 interface FieldEditorCompleteProps {
   field: FormField;
-  onUpdate: (field: FormField) => void;
-  onDelete: () => void;
+  onUpdate$: PropFunction<(field: FormField) => void>;
+  onDelete$: PropFunction<() => void>;
   canDelete?: boolean;
 }
 
@@ -31,29 +31,29 @@ export default component$<FieldEditorCompleteProps>((props) => {
   const editingField = useStore<FormField>({ ...props.field });
   const showAdvanced = useSignal(false);
 
-  const handleUpdate = $((updates: Partial<FormField>) => {
+  const handleUpdate = $(async (updates: Partial<FormField>) => {
     Object.assign(editingField, updates);
-    props.onUpdate(editingField);
+    await props.onUpdate$(editingField);
   });
 
-  const addOption = $(() => {
+  const addOption = $(async () => {
     if (!editingField.options) {
       editingField.options = [];
     }
     editingField.options.push({ label: 'New Option', value: `option_${editingField.options.length + 1}` });
-    props.onUpdate(editingField);
+    await props.onUpdate$(editingField);
   });
 
-  const updateOption = $((index: number, updates: Partial<FieldOption>) => {
+  const updateOption = $(async (index: number, updates: Partial<FieldOption>) => {
     if (editingField.options?.[index]) {
       Object.assign(editingField.options[index], updates);
-      props.onUpdate(editingField);
+      await props.onUpdate$(editingField);
     }
   });
 
-  const removeOption = $((index: number) => {
+  const removeOption = $(async (index: number) => {
     editingField.options?.splice(index, 1);
-    props.onUpdate(editingField);
+    await props.onUpdate$(editingField);
   });
 
   const needsOptions = ['radio', 'checkbox', 'dropdown', 'select'].includes(editingField.type);
@@ -77,7 +77,7 @@ export default component$<FieldEditorCompleteProps>((props) => {
           </div>
           {props.canDelete !== false && (
             <button
-              onClick$={props.onDelete}
+              onClick$={props.onDelete$}
               class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
             >
               Delete Field
@@ -118,7 +118,7 @@ export default component$<FieldEditorCompleteProps>((props) => {
               >
                 {FIELD_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
-                    {type.icon} {type.label}
+                    {`${type.icon} ${type.label}`}
                   </option>
                 ))}
               </select>

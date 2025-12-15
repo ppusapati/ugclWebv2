@@ -250,7 +250,6 @@ export interface Module {
   route?: string;
   display_order: number;
   is_active: boolean;
-  schema_name?: string; // Database schema for form tables within this module
   created_at: string;
   updated_at: string;
 }

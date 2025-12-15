@@ -197,6 +197,10 @@ export const apiClient = {
     return request<T>(endpoint, { method: 'DELETE' });
   },
 
+  patch<T>(endpoint: string, data?: any) {
+    return request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
   upload<T>(endpoint: string, formData: FormData) {
     // Skip Content-Type header to let browser set multipart/form-data with boundary
     return request<T>(endpoint, {

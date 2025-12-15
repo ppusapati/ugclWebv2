@@ -11,6 +11,7 @@ interface Module {
   icon?: string;
   order?: number;
   is_active: boolean;
+  schema_name?: string; // Database schema for form tables within this module
   created_at?: string;
 }
 
@@ -273,7 +274,12 @@ export default component$(() => {
                 </span>
               </div>
 
-              <p class="text-sm text-gray-600 mb-4">{module.description}</p>
+              <p class="text-sm text-gray-600 mb-2">{module.description}</p>
+              {module.schema_name && (
+                <p class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4 font-mono">
+                  DB Schema: {module.schema_name}
+                </p>
+              )}
 
               <div class="flex gap-2">
                 <button

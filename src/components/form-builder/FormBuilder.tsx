@@ -1,5 +1,5 @@
 // src/components/form-builder/FormBuilder.tsx
-import { component$, useSignal, useStore, useComputed$, $ } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useComputed$, $, type PropFunction } from '@builder.io/qwik';
 import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
 import type { BusinessVertical, Site } from '~/services/types';
 import FieldEditor from './FieldEditor';
@@ -11,8 +11,8 @@ interface FormBuilderProps {
   workflows: WorkflowDefinition[];
   businessVerticals: BusinessVertical[];
   sites: Site[];
-  onSave: (definition: FormDefinition) => void;
-  onCancel?: () => void;
+  onSave$: PropFunction<(definition: FormDefinition) => void>;
+  onCancel$?: PropFunction<() => void>;
 }
 
 export default component$<FormBuilderProps>((props) => {
@@ -121,16 +121,16 @@ export default component$<FormBuilderProps>((props) => {
         {/* Header */}
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div class="flex gap-3">
-              {props.onCancel && (
+              {props.onCancel$ && (
                 <button
-                  onClick$={props.onCancel}
+                  onClick$={props.onCancel$}
                   class="btn btn-secondary"
                 >
                   Cancel
                 </button>
               )}
               <button
-                onClick$={() => props.onSave(form)}
+                onClick$={() => props.onSave$(form)}
                 class="btn btn-primary"
               >
                 Save Form
@@ -483,8 +483,8 @@ export default component$<FormBuilderProps>((props) => {
                           <FieldEditor
                             key={field.id}
                             field={field}
-                            onUpdate={handleFieldUpdate}
-                            onDelete={handleFieldDelete}
+                            onUpdate$={handleFieldUpdate}
+                            onDelete$={handleFieldDelete}
                           />
                         );
                       })}
@@ -503,7 +503,7 @@ export default component$<FormBuilderProps>((props) => {
             <WorkflowPanel
               workflows={props.workflows}
               workflow={form.workflow}
-              onUpdate={$((workflowConfig: WorkflowConfig | undefined) => {
+              onUpdate$={$((workflowConfig: WorkflowConfig | undefined) => {
                 form.workflow = workflowConfig;
               })}
             />

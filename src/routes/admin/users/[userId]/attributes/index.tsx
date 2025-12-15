@@ -1,7 +1,8 @@
 import { component$, useSignal, useStore, $, useVisibleTask$ } from '@builder.io/qwik';
 import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
 import { apiClient, createSSRApiClient, userAttributeService } from '~/services';
-import type { Attribute } from '~/services/types';
+import type { Attribute } from '~/types/abac';
+import type { User } from '~/services/types';
 
 // SSR data loading
 export const useUserAttributesData = routeLoader$(async (requestEvent) => {
@@ -28,7 +29,7 @@ export default component$(() => {
 
   const userAttributes = useSignal<Record<string, string>>(initialData.value.userAttributes);
   const allAttributes = useSignal<Attribute[]>(initialData.value.allAttributes);
-  const user = useSignal(initialData.value.user);
+  const user = useSignal<User | null>(initialData.value.user as User | null);
   const userId = initialData.value.userId;
 
   const showAssignModal = useSignal(false);
@@ -49,7 +50,7 @@ export default component$(() => {
       const [attrs, allAttrs, userData] = await Promise.all([
         userAttributeService.getUserAttributes(userId),
         apiClient.get<Attribute[]>('/attributes?type=user'),
-        apiClient.get(`/users/${userId}`)
+        apiClient.get<User>(`/users/${userId}`)
       ]);
 
       userAttributes.value = attrs;
@@ -295,7 +296,7 @@ export default component$(() => {
                     .filter(attr => !Object.keys(userAttributes.value).includes(attr.name))
                     .map(attr => (
                       <option key={attr.id} value={attr.id}>
-                        {attr.display_name} ({attr.name}) - {attr.data_type}
+                        {`${attr.display_name} (${attr.name}) - ${attr.data_type}`}
                       </option>
                     ))}
                 </select>

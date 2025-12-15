@@ -1,5 +1,5 @@
 // src/components/form-builder/workflow/TransitionEditor.tsx
-import { component$, $ } from '@builder.io/qwik';
+import { component$, $, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowTransitionDef, WorkflowState } from '~/types/workflow';
 import type { TransitionNotification } from '~/types/notification';
 import NotificationConfigEditor from './NotificationConfigEditor';
@@ -7,8 +7,8 @@ import NotificationConfigEditor from './NotificationConfigEditor';
 interface TransitionEditorProps {
   transition: WorkflowTransitionDef;
   states: WorkflowState[];
-  onUpdate: (transition: WorkflowTransitionDef) => void;
-  onDelete: () => void;
+  onUpdate$: PropFunction<(transition: WorkflowTransitionDef) => void>;
+  onDelete$: PropFunction<() => void>;
 }
 
 const COMMON_ACTIONS = [
@@ -31,11 +31,11 @@ const COMMON_PERMISSIONS = [
 ];
 
 export default component$<TransitionEditorProps>((props) => {
-  const handleUpdate = $((field: keyof WorkflowTransitionDef, value: any) => {
-    props.onUpdate({ ...props.transition, [field]: value });
+  const handleUpdate = $(async (field: keyof WorkflowTransitionDef, value: any) => {
+    await props.onUpdate$({ ...props.transition, [field]: value });
   });
 
-  const handleAddNotification = $(() => {
+  const handleAddNotification = $(async () => {
     const newNotification: TransitionNotification = {
       recipients: [],
       title_template: '',
@@ -44,18 +44,18 @@ export default component$<TransitionEditorProps>((props) => {
       channels: ['in_app'],
     };
     const notifications = [...(props.transition.notifications || []), newNotification];
-    handleUpdate('notifications', notifications);
+    await handleUpdate('notifications', notifications);
   });
 
-  const handleUpdateNotification = $((index: number, notification: TransitionNotification) => {
+  const handleUpdateNotification = $(async (index: number, notification: TransitionNotification) => {
     const notifications = [...(props.transition.notifications || [])];
     notifications[index] = notification;
-    handleUpdate('notifications', notifications);
+    await handleUpdate('notifications', notifications);
   });
 
-  const handleDeleteNotification = $((index: number) => {
+  const handleDeleteNotification = $(async (index: number) => {
     const notifications = props.transition.notifications?.filter((_, i) => i !== index) || [];
-    handleUpdate('notifications', notifications);
+    await handleUpdate('notifications', notifications);
   });
 
   return (
@@ -63,7 +63,7 @@ export default component$<TransitionEditorProps>((props) => {
       <div class="flex justify-between items-start mb-4">
         <h3 class="font-medium text-lg">Transition Configuration</h3>
         <button
-          onClick$={props.onDelete}
+          onClick$={props.onDelete$}
           class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
         >
           Delete
@@ -265,19 +265,19 @@ export default component$<TransitionEditorProps>((props) => {
 
           <div class="space-y-3">
             {props.transition.notifications?.map((notification, index) => {
-              const handleNotificationUpdate = $((updated: TransitionNotification) => {
-                handleUpdateNotification(index, updated);
+              const handleNotificationUpdate = $(async (updated: TransitionNotification) => {
+                await handleUpdateNotification(index, updated);
               });
-              const handleNotificationDelete = $(() => {
-                handleDeleteNotification(index);
+              const handleNotificationDelete = $(async () => {
+                await handleDeleteNotification(index);
               });
 
               return (
                 <NotificationConfigEditor
                   key={index}
                   notification={notification}
-                  onUpdate={handleNotificationUpdate}
-                  onDelete={handleNotificationDelete}
+                  onUpdate$={handleNotificationUpdate}
+                  onDelete$={handleNotificationDelete}
                 />
               );
             })}

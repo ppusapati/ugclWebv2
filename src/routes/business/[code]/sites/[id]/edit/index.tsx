@@ -26,8 +26,8 @@ export default component$(() => {
 
   useVisibleTask$(async () => {
     try {
-      const response = await siteService.getSites(businessCode);
-      const foundSite = response.data.find(s => s.id === siteId);
+      const sites = await siteService.getMySites(businessCode);
+      const foundSite = sites.find((s: Site) => s.id === siteId);
 
       if (!foundSite) {
         nav(`/business/${businessCode}/sites`);

@@ -57,7 +57,7 @@ class FileService {
     }
 
     // Otherwise, construct URL
-    const baseUrl = apiClient['baseUrl'] || 'http://localhost:8080/api/v1';
+    const baseUrl = (apiClient as any)['baseUrl'] || 'http://localhost:8080/api/v1';
     return `${baseUrl}/uploads/${filename}`;
   }
 

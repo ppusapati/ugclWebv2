@@ -1,14 +1,14 @@
-import { component$, useSignal, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory } from '~/types/document';
 
 interface CategoryManagerProps {
   businessVerticalId?: string;
-  onCategoryChange?: () => void;
+  onCategoryChange$?: PropFunction<() => void>;
 }
 
 export const CategoryManager = component$<CategoryManagerProps>((props) => {
-  const { businessVerticalId, onCategoryChange } = props;
+  const { businessVerticalId, onCategoryChange$ } = props;
 
   const state = useStore({
     categories: [] as DocumentCategory[],
@@ -105,8 +105,8 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
       state.editingCategory = null;
       await loadCategories();
 
-      if (onCategoryChange) {
-        onCategoryChange();
+      if (onCategoryChange$) {
+        await onCategoryChange$();
       }
     } catch (error: any) {
       alert(error.message || 'Failed to save category');
@@ -122,8 +122,8 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
       await documentService.deleteCategory(category.id);
       await loadCategories();
 
-      if (onCategoryChange) {
-        onCategoryChange();
+      if (onCategoryChange$) {
+        await onCategoryChange$();
       }
     } catch (error: any) {
       alert(error.message || 'Failed to delete category. It may have documents assigned to it.');

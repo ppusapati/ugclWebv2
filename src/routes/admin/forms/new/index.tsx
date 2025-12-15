@@ -141,8 +141,8 @@ export default component$(() => {
             workflows={workflows.value}
             businessVerticals={businessVerticals.value}
             sites={sites.value}
-            onSave={handleSave}
-            onCancel={handleCancel}
+            onSave$={handleSave}
+            onCancel$={handleCancel}
           />
         )}
       </div>

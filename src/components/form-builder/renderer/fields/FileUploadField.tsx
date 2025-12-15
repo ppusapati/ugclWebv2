@@ -7,7 +7,7 @@ interface FileUploadFieldProps {
   field: FormField;
   value: string | string[];
   error?: string;
-  onChange: PropFunction<(value: string | string[]) => void>;
+  onChange$: PropFunction<(value: string | string[]) => void>;
 }
 
 export default component$<FileUploadFieldProps>((props) => {
@@ -39,22 +39,18 @@ export default component$<FileUploadFieldProps>((props) => {
       uploading.value = true;
       uploadProgress.value = 0;
 
-      const formData = new FormData();
-      Array.from(files).forEach(file => {
-        formData.append('files', file);
-      });
-
-      const response = await fileService.uploadFiles(formData);
-      const newUrls = response.urls || [];
+      const fileArray = Array.from(files);
+      const responses = await fileService.uploadFiles(fileArray);
+      const newUrls = responses.map(r => r.file_url);
 
       const allFiles = [...uploadedFiles.value, ...newUrls];
       uploadedFiles.value = allFiles;
 
       // Update form value
       if (props.field.multiple) {
-        props.onChange(allFiles);
+        await props.onChange$(allFiles);
       } else {
-        props.onChange(allFiles[0] || '');
+        await props.onChange$(allFiles[0] || '');
       }
 
       uploadProgress.value = 100;
@@ -66,14 +62,14 @@ export default component$<FileUploadFieldProps>((props) => {
     }
   });
 
-  const removeFile = $((index: number) => {
+  const removeFile = $(async (index: number) => {
     const newFiles = uploadedFiles.value.filter((_, i) => i !== index);
     uploadedFiles.value = newFiles;
 
     if (props.field.multiple) {
-      props.onChange(newFiles);
+      await props.onChange$(newFiles);
     } else {
-      props.onChange(newFiles[0] || '');
+      await props.onChange$(newFiles[0] || '');
     }
   });
 

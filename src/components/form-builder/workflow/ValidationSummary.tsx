@@ -1,10 +1,10 @@
 // src/components/form-builder/workflow/ValidationSummary.tsx
-import { component$ } from '@builder.io/qwik';
+import { component$, type PropFunction } from '@builder.io/qwik';
 import type { ValidationResult } from './validation';
 
 interface ValidationSummaryProps {
   validation: ValidationResult;
-  onClose?: () => void;
+  onClose$?: PropFunction<() => void>;
 }
 
 export default component$<ValidationSummaryProps>((props) => {
@@ -26,9 +26,9 @@ export default component$<ValidationSummaryProps>((props) => {
                 {props.validation.errors.length} Error{props.validation.errors.length !== 1 ? 's' : ''} Found
               </h3>
             </div>
-            {props.onClose && (
+            {props.onClose$ && (
               <button
-                onClick$={props.onClose}
+                onClick$={props.onClose$}
                 class="text-red-600 hover:text-red-800"
               >
                 ✕
@@ -60,9 +60,9 @@ export default component$<ValidationSummaryProps>((props) => {
                 {props.validation.warnings.length} Warning{props.validation.warnings.length !== 1 ? 's' : ''}
               </h3>
             </div>
-            {props.onClose && (
+            {props.onClose$ && (
               <button
-                onClick$={props.onClose}
+                onClick$={props.onClose$}
                 class="text-yellow-600 hover:text-yellow-800"
               >
                 ✕

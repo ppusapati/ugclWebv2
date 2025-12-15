@@ -8,6 +8,7 @@ import { qwikCity } from "@builder.io/qwik-city/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import pkg from "./package.json";
 import UnoCSS from 'unocss/vite';
+import path from "path";
 
 type PkgDep = Record<string, string>;
 const { dependencies = {}, devDependencies = {} } = pkg as any as {
@@ -23,11 +24,32 @@ errorOnDuplicatesPkgDeps(devDependencies, dependencies);
 export default defineConfig(({ command, mode }): UserConfig => {
   return {
     plugins: [qwikCity(), qwikVite(), tsconfigPaths(), UnoCSS()],
+   resolve: {
+    alias: {
+      '~': path.resolve(__dirname, 'src'),
+    },
+  },
     // This tells Vite which dependencies to pre-build in dev mode.
     optimizeDeps: {
       // Put problematic deps that break bundling here, mostly those with binaries.
       // For example ['better-sqlite3'] if you use that in server functions.
-      exclude: [],
+      exclude: ['echarts', 'xlsx', 'maplibre-gl', 'jspdf', 'jspdf-autotable', 'quill'],
+      // disabled: true,
+    },
+    // Mark maplibre-gl as external for SSR to avoid bundling issues
+    ssr: {
+      external: ['maplibre-gl'],
+      noExternal: [],
+    },
+    build: {
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
+      // Improve build performance
+      target: 'esnext',
+      minify: 'esbuild',
+      // Reduce source map overhead
+      sourcemap: false,
     },
 
     /**

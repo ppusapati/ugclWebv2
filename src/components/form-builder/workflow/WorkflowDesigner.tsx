@@ -1,5 +1,5 @@
 // src/components/form-builder/workflow/WorkflowDesigner.tsx
-import { component$, useStore, useSignal, $, useComputed$ } from '@builder.io/qwik';
+import { component$, useStore, useSignal, $, useComputed$, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowDefinition, WorkflowState, WorkflowTransitionDef } from '~/types/workflow';
 import StateEditor from './StateEditor';
 import TransitionEditor from './TransitionEditor';
@@ -9,8 +9,8 @@ import { validateWorkflow } from './validation';
 
 interface WorkflowDesignerProps {
   workflow?: WorkflowDefinition;
-  onSave: (workflow: Partial<WorkflowDefinition>) => void;
-  onCancel?: () => void;
+  onSave$: PropFunction<(workflow: Partial<WorkflowDefinition>) => void>;
+  onCancel$?: PropFunction<() => void>;
 }
 
 export default component$<WorkflowDesignerProps>((props) => {
@@ -110,7 +110,7 @@ export default component$<WorkflowDesignerProps>((props) => {
     return validateWorkflow(workflow);
   });
 
-  const handleSave = $(() => {
+  const handleSave = $(async () => {
     const validationResult = validateWorkflow(workflow);
     if (!validationResult.valid) {
       showValidation.value = true;
@@ -118,7 +118,7 @@ export default component$<WorkflowDesignerProps>((props) => {
       return;
     }
     showValidation.value = false;
-    props.onSave(workflow);
+    await props.onSave$(workflow);
   });
 
   const handleValidate = $(() => {
@@ -155,9 +155,9 @@ export default component$<WorkflowDesignerProps>((props) => {
               >
                 ✓ Validate
               </button>
-              {props.onCancel && (
+              {props.onCancel$ && (
                 <button
-                  onClick$={props.onCancel}
+                  onClick$={props.onCancel$}
                   class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
@@ -234,7 +234,7 @@ export default component$<WorkflowDesignerProps>((props) => {
           <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
             <ValidationSummary
               validation={validation.value}
-              onClose={$(() => (showValidation.value = false))}
+              onClose$={$(() => (showValidation.value = false))}
             />
           </div>
         )}
@@ -371,8 +371,8 @@ export default component$<WorkflowDesignerProps>((props) => {
               {selectedStateIndex.value !== null && workflow.states?.[selectedStateIndex.value] ? (
                 <StateEditor
                   state={workflow.states[selectedStateIndex.value]}
-                  onUpdate={$((state: WorkflowState) => updateState(selectedStateIndex.value!, state))}
-                  onDelete={$(() => deleteState(selectedStateIndex.value!))}
+                  onUpdate$={$((state: WorkflowState) => updateState(selectedStateIndex.value!, state))}
+                  onDelete$={$(() => deleteState(selectedStateIndex.value!))}
                   canDelete={workflow.states!.length > 1}
                 />
               ) : (
@@ -426,8 +426,8 @@ export default component$<WorkflowDesignerProps>((props) => {
                 <TransitionEditor
                   transition={workflow.transitions[selectedTransitionIndex.value]}
                   states={workflow.states || []}
-                  onUpdate={$((transition: WorkflowTransitionDef) => updateTransition(selectedTransitionIndex.value!, transition))}
-                  onDelete={$(() => deleteTransition(selectedTransitionIndex.value!))}
+                  onUpdate$={$((transition: WorkflowTransitionDef) => updateTransition(selectedTransitionIndex.value!, transition))}
+                  onDelete$={$(() => deleteTransition(selectedTransitionIndex.value!))}
                 />
               ) : (
                 <div class="bg-white rounded-lg shadow-sm p-12 text-center text-gray-500">
@@ -444,14 +444,14 @@ export default component$<WorkflowDesignerProps>((props) => {
             states={workflow.states || []}
             transitions={workflow.transitions || []}
             initialState={workflow.initial_state || ''}
-            onStateClick={$((state: WorkflowState) => {
+            onStateClick$={$((state: WorkflowState) => {
               const index = workflow.states?.findIndex(s => s.code === state.code);
               if (index !== undefined && index >= 0) {
                 selectedStateIndex.value = index;
                 activeTab.value = 'states';
               }
             })}
-            onTransitionClick={$((transition: WorkflowTransitionDef) => {
+            onTransitionClick$={$((transition: WorkflowTransitionDef) => {
               const index = workflow.transitions?.findIndex(
                 t => t.from === transition.from && t.to === transition.to && t.action === transition.action
               );

@@ -112,7 +112,36 @@ export default component$(() => {
     selectedVertical: "",
     error: "",
     success: "",
+    passwordStrength: 0,
+    showPassword: false,
   });
+
+  // Password strength calculator
+  const getPasswordStrength = $((password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (password.length >= 12) strength += 25;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 15;
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
+    return Math.min(strength, 100);
+  });
+
+  const updatePasswordStrength = $(async () => {
+    state.passwordStrength = await getPasswordStrength(state.newUser.password);
+  });
+
+  const getStrengthColor = () => {
+    if (state.passwordStrength < 40) return 'red';
+    if (state.passwordStrength < 70) return 'yellow';
+    return 'green';
+  };
+
+  const getStrengthText = () => {
+    if (state.passwordStrength < 40) return 'Weak';
+    if (state.passwordStrength < 70) return 'Medium';
+    return 'Strong';
+  };
 
   // Create user
   const handleCreate = $(async () => {
@@ -398,12 +427,12 @@ export default component$(() => {
               {
                 type: 'button',
                 label: 'View',
-                onClick: $(() => handleViewDetails(user.id)),
+                onClick$: $(() => handleViewDetails(user.id)),
               } as ActionButton,
               {
                 type: 'button',
                 label: user.is_active ? 'Deactivate' : 'Activate',
-                onClick: $(() => handleToggleActive(user.id, user.is_active)),
+                onClick$: $(() => handleToggleActive(user.id, user.is_active)),
                 class: user.is_active
                   ? 'px-3 py-1 text-sm text-danger hover:text-orange-900 border border-orange-300 rounded hover:bg-orange-50'
                   : 'px-3 py-1 text-sm text-success hover:text-green-900 border border-green-300 rounded hover:bg-green-50'
@@ -502,17 +531,60 @@ export default component$(() => {
                       <label class="block text-sm font-medium text-gray-700 mb-1">
                         Password *
                       </label>
-                      <input
-                        type="password"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={state.newUser.password}
-                        onInput$={(e) => {
-                          state.newUser.password = (
-                            e.target as HTMLInputElement
-                          ).value;
-                        }}
-                        placeholder="Minimum 6 characters"
-                      />
+                      <div class="relative">
+                        <input
+                          type={state.showPassword ? 'text' : 'password'}
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={state.newUser.password}
+                          onInput$={async (e) => {
+                            state.newUser.password = (
+                              e.target as HTMLInputElement
+                            ).value;
+                            await updatePasswordStrength();
+                          }}
+                          placeholder="Minimum 8 characters"
+                        />
+                        <button
+                          type="button"
+                          onClick$={() => {
+                            state.showPassword = !state.showPassword;
+                          }}
+                          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {state.showPassword ? (
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      {state.newUser.password && (
+                        <div class="mt-2">
+                          <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-600">Password Strength:</span>
+                            <span class={`font-semibold ${
+                              getStrengthColor() === 'red' ? 'text-red-600' :
+                              getStrengthColor() === 'yellow' ? 'text-yellow-600' : 'text-green-600'
+                            }`}>
+                              {getStrengthText()}
+                            </span>
+                          </div>
+                          <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              class={`h-2 rounded-full transition-all duration-300 ${
+                                getStrengthColor() === 'red' ? 'bg-red-500' :
+                                getStrengthColor() === 'yellow' ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={`width: ${state.passwordStrength}%`}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -617,6 +689,8 @@ export default component$(() => {
                         business_vertical_id: "",
                         is_active: true,
                       };
+                      state.passwordStrength = 0;
+                      state.showPassword = false;
                     }}
                   >
                     Cancel

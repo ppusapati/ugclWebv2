@@ -1,6 +1,4 @@
- 
-import type { FieldValue, FieldValues } from './field';
-import type { IsTuple, TupleKeys, ArrayKey } from './utils';
+import type { IsTuple, TupleKeys, ArrayKey, FieldValue, FieldValues } from './utils';
 
 /**
  * Returns a path of a type that leads to a field value.

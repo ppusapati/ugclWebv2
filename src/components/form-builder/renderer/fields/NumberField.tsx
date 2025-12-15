@@ -6,7 +6,7 @@ interface NumberFieldProps {
   field: FormField;
   value: number | string;
   error?: string;
-  onChange: PropFunction<(value: number | string) => void>;
+  onChange$: PropFunction<(value: number | string) => void>;
 }
 
 export default component$<NumberFieldProps>((props) => {
@@ -27,9 +27,9 @@ export default component$<NumberFieldProps>((props) => {
         <input
           type="number"
           value={props.value || ''}
-          onInput$={(e) => {
+          onInput$={async (e) => {
             const value = (e.target as HTMLInputElement).value;
-            props.onChange(value === '' ? '' : parseFloat(value));
+            await props.onChange$(value === '' ? '' : parseFloat(value));
           }}
           placeholder={props.field.placeholder}
           required={props.field.required}

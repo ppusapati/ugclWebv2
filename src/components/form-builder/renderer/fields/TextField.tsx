@@ -6,7 +6,7 @@ interface TextFieldProps {
   field: FormField;
   value: string;
   error?: string;
-  onChange: PropFunction<(value: string) => void>;
+  onChange$: PropFunction<(value: string) => void>;
 }
 
 export default component$<TextFieldProps>((props) => {
@@ -23,7 +23,7 @@ export default component$<TextFieldProps>((props) => {
       <input
         type={inputType}
         value={props.value || ''}
-        onInput$={(e) => props.onChange((e.target as HTMLInputElement).value)}
+        onInput$={async (e) => await props.onChange$((e.target as HTMLInputElement).value)}
         placeholder={props.field.placeholder}
         required={props.field.required}
         minLength={props.field.validation?.minLength}

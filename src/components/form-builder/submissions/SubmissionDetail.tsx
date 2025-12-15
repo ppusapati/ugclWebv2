@@ -1,5 +1,5 @@
 // src/components/form-builder/submissions/SubmissionDetail.tsx
-import { component$, useSignal, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { workflowService } from '~/services';
 import type { FormSubmission, WorkflowTransition } from '~/types/workflow';
 import WorkflowHistory from './WorkflowHistory';
@@ -9,7 +9,7 @@ interface SubmissionDetailProps {
   businessCode: string;
   formCode: string;
   submissionId: string;
-  onBack?: () => void;
+  onBack$?: PropFunction<() => void>;
 }
 
 export default component$<SubmissionDetailProps>((props) => {
@@ -90,9 +90,9 @@ export default component$<SubmissionDetailProps>((props) => {
           <div class="flex justify-between items-start">
             <div class="flex-1">
               <div class="flex items-center gap-3 mb-2">
-                {props.onBack && (
+                {props.onBack$ && (
                   <button
-                    onClick$={props.onBack}
+                    onClick$={props.onBack$}
                     class="text-gray-600 hover:text-gray-900"
                   >
                     ← Back
@@ -138,7 +138,7 @@ export default component$<SubmissionDetailProps>((props) => {
               submissionId={props.submissionId}
               currentState={submission.current_state || ''}
               availableActions={submission.available_actions || []}
-              onTransition={handleTransition}
+              onTransition$={handleTransition}
             />
           </div>
         </div>

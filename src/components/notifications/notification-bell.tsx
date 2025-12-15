@@ -1,9 +1,9 @@
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { notificationService } from '~/services/notification.service';
 import type { NotificationDTO } from '~/types/notification';
 
 interface NotificationBellProps {
-  onNotificationClick?: (notification: NotificationDTO) => void;
+  onNotificationClick$?: PropFunction<(notification: NotificationDTO) => void>;
 }
 
 /**
@@ -12,7 +12,7 @@ interface NotificationBellProps {
  * Shows dropdown list of recent notifications
  */
 export const NotificationBell = component$<NotificationBellProps>(
-  ({ onNotificationClick }) => {
+  ({ onNotificationClick$ }) => {
     const unreadCount = useSignal(0);
     const notifications = useSignal<NotificationDTO[]>([]);
     const isOpen = useSignal(false);
@@ -83,8 +83,8 @@ export const NotificationBell = component$<NotificationBellProps>(
       isOpen.value = false;
 
       // Trigger callback
-      if (onNotificationClick) {
-        onNotificationClick(notification);
+      if (onNotificationClick$) {
+        await onNotificationClick$(notification);
       }
 
       // Navigate to action URL if provided

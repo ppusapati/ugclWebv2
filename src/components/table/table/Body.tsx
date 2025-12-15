@@ -1,4 +1,4 @@
-import { type Signal, component$, useComputed$, useStylesScoped$, $ } from '@builder.io/qwik';
+import { type Signal, component$, useComputed$, useStylesScoped$, $, type QRL } from '@builder.io/qwik';
 import { extractImageUrls, isImage } from '../utils/imageBool';
 
 function formatDate(val: string, formatStr = 'dd-MM-yyyy') {
@@ -19,7 +19,7 @@ function formatDate(val: string, formatStr = 'dd-MM-yyyy') {
 export interface ActionButton {
   type: 'button';
   label: string;
-  onClick: () => void;
+  onClick$: QRL<() => void>;
   class?: string;
 }
 
@@ -71,7 +71,7 @@ const computedPosts = useComputed$(() => {
         <button
           key={index}
           class={item.class || 'px-3 py-1 text-sm text-blue-600 hover:text-blue-900 border border-blue-300 rounded hover:bg-blue-50'}
-          onClick$={$(() => item.onClick())}
+          onClick$={item.onClick$}
         >
           {item.label}
         </button>

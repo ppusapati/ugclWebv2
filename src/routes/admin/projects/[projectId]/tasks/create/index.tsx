@@ -124,22 +124,16 @@ export default component$(() => {
 
       // Create task
       const response = await taskService.createTask({
-        code: taskForm.code,
-        title: taskForm.title,
+        code: taskForm.code!,
+        title: taskForm.title!,
         description: taskForm.description,
         project_id: projectId,
         zone_id: taskForm.zone_id,
-        start_node_id: taskForm.start_node_id,
-        stop_node_id: taskForm.stop_node_id,
+        start_node_id: taskForm.start_node_id!,
+        stop_node_id: taskForm.stop_node_id!,
         planned_start_date: taskForm.planned_start_date,
         planned_end_date: taskForm.planned_end_date,
         allocated_budget: taskForm.allocated_budget || 0,
-        labor_cost: taskForm.labor_cost || 0,
-        material_cost: taskForm.material_cost || 0,
-        equipment_cost: taskForm.equipment_cost || 0,
-        other_cost: taskForm.other_cost || 0,
-        total_cost: taskForm.total_cost || 0,
-        status: taskForm.status || 'pending',
         priority: taskForm.priority || 'medium',
       });
 
@@ -318,7 +312,7 @@ export default component$(() => {
                       <option value="">All Zones</option>
                       {state.zones.map((zone) => (
                         <option key={zone.id} value={zone.id}>
-                          {zone.zone_name}
+                          {zone.name}
                         </option>
                       ))}
                     </select>
@@ -363,7 +357,7 @@ export default component$(() => {
                         <option value="">Select start node...</option>
                         {state.filteredNodes.map((node) => (
                           <option key={node.id} value={node.id}>
-                            {node.node_name} ({node.node_code})
+                            {`${node.name} (${node.code})`}
                           </option>
                         ))}
                       </select>
@@ -387,7 +381,7 @@ export default component$(() => {
                         <option value="">Select stop node...</option>
                         {state.filteredNodes.map((node) => (
                           <option key={node.id} value={node.id}>
-                            {node.node_name} ({node.node_code})
+                            {`${node.name} (${node.code})`}
                           </option>
                         ))}
                       </select>

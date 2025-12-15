@@ -1,11 +1,11 @@
 // src/components/form-builder/FieldEditor.tsx
-import { component$, useSignal, $ } from '@builder.io/qwik';
+import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
 import type { FormField, FieldType } from '~/types/workflow';
 
 interface FieldEditorProps {
   field: FormField;
-  onUpdate: (field: FormField) => void;
-  onDelete: () => void;
+  onUpdate$: PropFunction<(field: FormField) => void>;
+  onDelete$: PropFunction<() => void>;
 }
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -33,8 +33,8 @@ export default component$<FieldEditorProps>((props) => {
 
   const field = props.field;
 
-  const updateField = $((updates: Partial<FormField>) => {
-    props.onUpdate({ ...field, ...updates });
+  const updateField = $(async (updates: Partial<FormField>) => {
+    await props.onUpdate$({ ...field, ...updates });
   });
 
   const addOption = $(() => {
@@ -78,9 +78,9 @@ export default component$<FieldEditorProps>((props) => {
         </div>
         <div class="flex items-center gap-2">
           <button
-            onClick$={(e) => {
+            onClick$={async (e) => {
               e.stopPropagation();
-              props.onDelete();
+              await props.onDelete$();
             }}
             class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
           >

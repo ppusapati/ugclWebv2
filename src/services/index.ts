@@ -6,7 +6,7 @@
 
 // API Client
 export { apiClient, createSSRApiClient } from './api-client';
-export type { ApiError, ApiClientConfig } from './api-client';
+export type { ApiError } from './api-client';
 
 // Types
 export * from './types';
@@ -26,6 +26,7 @@ export { workflowService, WorkflowService } from './workflow.service';
 export { formBuilderService, FormBuilderService } from './form-builder.service';
 export { userAttributeService } from './user-attribute.service';
 export { resourceAttributeService } from './resource-attribute.service';
+export { chatService, ChatService } from './chat.service';
 
 // Legacy auth service (for backward compatibility)
 export { authService as authServiceLegacy } from './auth.service';

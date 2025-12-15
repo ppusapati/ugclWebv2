@@ -139,7 +139,7 @@ export default component$(() => {
             Mark All as Read
           </button>
           <a
-            href="/notifications/preferences"
+            href="/admin/notifications/preferences"
             class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
           >
             Preferences

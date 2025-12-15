@@ -15,10 +15,11 @@ import { sortData } from '../utils/sortData';
 import { searchData } from '../utils/searchedData';
 import { TableHead } from './TableHead';
 import { TableBody, type ActionButton, type ActionLink, type ActionItem, type ActionItems } from './Body';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { Search } from './Search';
+
+// Types for dynamic imports
+type JsPDFType = typeof import('jspdf').jsPDF;
+type XLSXType = typeof import('xlsx');
 
 // Re-export action types for consumer use
 export type { ActionButton, ActionLink, ActionItem, ActionItems };
@@ -604,14 +605,16 @@ export const P9ETable = component$(
       exportLoading.value = true;
       try {
         const allData = await getAllDataForExport();
-        
+
         if (!allData.length) {
           alert('No data to export');
           return;
         }
 
         const processedData = await processDataForExport(allData, headers);
-        
+
+        // Dynamic import of xlsx
+        const XLSX = await import('xlsx');
         const worksheet = XLSX.utils.json_to_sheet(processedData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -633,7 +636,7 @@ export const P9ETable = component$(
       exportLoading.value = true;
       try {
         const allData = await getAllDataForExport();
-        
+
         if (!allData.length) {
           alert('No data to export');
           return;
@@ -641,13 +644,18 @@ export const P9ETable = component$(
 
         const processedData = await processDataForExport(allData, headers);
 
+        // Dynamic imports for PDF libraries
+        const { jsPDF } = await import('jspdf');
+        const autoTableModule = await import('jspdf-autotable');
+        const autoTable = autoTableModule.default;
+
         const format = pickPdfFormat(headers.length);
-        const doc = new jsPDF({ 
-          orientation: 'landscape', 
-          unit: 'pt', 
-          format: format === undefined ? 'a4' : format, 
-          putOnlyUsedFonts: true, 
-          floatPrecision: 16 
+        const doc = new jsPDF({
+          orientation: 'landscape',
+          unit: 'pt',
+          format: format === undefined ? 'a4' : format,
+          putOnlyUsedFonts: true,
+          floatPrecision: 16
         });
 
         const tableHeaders = headers.map(h => h.label);

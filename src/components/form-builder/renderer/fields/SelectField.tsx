@@ -7,7 +7,7 @@ interface SelectFieldProps {
   field: FormField;
   value: any;
   error?: string;
-  onChange: PropFunction<(value: any) => void>;
+  onChange$: PropFunction<(value: any) => void>;
 }
 
 export default component$<SelectFieldProps>((props) => {
@@ -19,8 +19,8 @@ export default component$<SelectFieldProps>((props) => {
     if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
       try {
         loading.value = true;
-        const data = await apiClient.get(props.field.apiEndpoint);
-        const items = Array.isArray(data) ? data : data.items || [];
+        const data = await apiClient.get(props.field.apiEndpoint) as any;
+        const items = Array.isArray(data) ? data : (data?.items || []);
 
         options.value = items.map((item: any) => ({
           label: item[props.field.displayField || 'name'],
@@ -45,7 +45,7 @@ export default component$<SelectFieldProps>((props) => {
 
         <select
           value={props.value || ''}
-          onChange$={(e) => props.onChange((e.target as HTMLSelectElement).value)}
+          onChange$={async (e) => await props.onChange$((e.target as HTMLSelectElement).value)}
           required={props.field.required}
           disabled={loading.value}
           class={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
@@ -90,7 +90,7 @@ export default component$<SelectFieldProps>((props) => {
                 name={props.field.id}
                 value={option.value}
                 checked={props.value === option.value}
-                onChange$={(e) => props.onChange((e.target as HTMLInputElement).value)}
+                onChange$={async (e) => await props.onChange$((e.target as HTMLInputElement).value)}
                 required={props.field.required}
                 class="mr-2 text-blue-600 focus:ring-blue-500"
               />
@@ -114,14 +114,14 @@ export default component$<SelectFieldProps>((props) => {
   if (props.field.type === 'checkbox') {
     const selectedValues = Array.isArray(props.value) ? props.value : [];
 
-    const handleCheckboxChange = $((optionValue: string | number, checked: boolean) => {
+    const handleCheckboxChange = $(async (optionValue: string | number, checked: boolean) => {
       let newValues = [...selectedValues];
       if (checked) {
         newValues.push(optionValue);
       } else {
         newValues = newValues.filter(v => v !== optionValue);
       }
-      props.onChange(newValues);
+      await props.onChange$(newValues);
     });
 
     return (

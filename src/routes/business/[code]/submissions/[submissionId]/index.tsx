@@ -161,9 +161,6 @@ export default component$(() => {
             businessCode={businessCode}
             formCode={formCode.value}
             submissionId={submissionId}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onRecall={handleRecall}
           />
         )}
       </div>

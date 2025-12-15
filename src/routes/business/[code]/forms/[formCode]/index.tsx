@@ -166,9 +166,9 @@ export default component$(() => {
           <FormRenderer
             businessCode={businessCode}
             formCode={formCode}
-            onSubmit={handleSubmit}
-            onSaveDraft={handleSaveDraft}
-            onCancel={handleCancel}
+            onSubmit$={handleSubmit}
+            onSaveDraft$={handleSaveDraft}
+            onCancel$={handleCancel}
           />
         )}
       </div>

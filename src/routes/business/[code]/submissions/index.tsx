@@ -3,7 +3,7 @@ import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import SubmissionList from '~/components/form-builder/submissions/SubmissionList';
 import { formBuilderService, workflowService } from '~/services';
-import type { AppForm, SubmissionFilters } from '~/types/workflow';
+import type { AppForm, SubmissionFilters, FormSubmission } from '~/types/workflow';
 
 export default component$(() => {
   const nav = useNavigate();
@@ -28,7 +28,7 @@ export default component$(() => {
       const allForms = await formBuilderService.getAllForms();
       forms.value = allForms.filter(f =>
         f.is_active &&
-        (!f.vertical_access || f.vertical_access.length === 0 || f.vertical_access.includes(businessCode))
+        (!f.accessible_verticals || f.accessible_verticals.length === 0 || f.accessible_verticals.includes(businessCode))
       );
 
       // Load stats for the first form if available
@@ -46,7 +46,7 @@ export default component$(() => {
   const loadStats = $(async (formCode: string) => {
     try {
       const data = await workflowService.getWorkflowStats(businessCode, formCode);
-      stats.value = data;
+      stats.value = data.stats || {};
     } catch (err) {
       console.warn('Failed to load stats:', err);
       stats.value = {};
@@ -58,9 +58,9 @@ export default component$(() => {
     await loadStats(formCode);
   });
 
-  const handleSubmissionClick = $(async (submissionId: string) => {
-    await nav(`/business/${businessCode}/submissions/${submissionId}`);
-  });
+  const handleSubmissionClick = (submission: FormSubmission) => {
+    nav(`/business/${businessCode}/submissions/${submission.id}`);
+  };
 
   const handleCreateNew = $(async () => {
     if (selectedFormCode.value) {
@@ -175,7 +175,7 @@ export default component$(() => {
                   businessCode={businessCode}
                   formCode={selectedFormCode.value}
                   filters={filters.value}
-                  onSubmissionClick={handleSubmissionClick}
+                  onSubmissionClick$={handleSubmissionClick}
                 />
               )}
             </>

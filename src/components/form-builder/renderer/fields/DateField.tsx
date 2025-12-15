@@ -6,7 +6,7 @@ interface DateFieldProps {
   field: FormField;
   value: string;
   error?: string;
-  onChange: PropFunction<(value: string) => void>;
+  onChange$: PropFunction<(value: string) => void>;
 }
 
 export default component$<DateFieldProps>((props) => {
@@ -23,7 +23,7 @@ export default component$<DateFieldProps>((props) => {
       <input
         type={inputType}
         value={props.value || ''}
-        onInput$={(e) => props.onChange((e.target as HTMLInputElement).value)}
+        onInput$={async (e) => await props.onChange$((e.target as HTMLInputElement).value)}
         required={props.field.required}
         min={props.field.validation?.minDate}
         max={props.field.validation?.maxDate}

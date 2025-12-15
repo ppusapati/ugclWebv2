@@ -1,14 +1,14 @@
 // src/components/form-builder/renderer/StepNavigation.tsx
-import { component$, $ } from '@builder.io/qwik';
+import { component$, type PropFunction } from '@builder.io/qwik';
 
 interface StepNavigationProps {
   currentStep: number;
   totalSteps: number;
-  onPrevious: () => void;
-  onNext: () => void;
-  onSubmit: () => void;
-  onSaveDraft?: () => void;
-  onCancel?: () => void;
+  onPrevious$: PropFunction<() => void>;
+  onNext$: PropFunction<() => void>;
+  onSubmit$: PropFunction<() => void>;
+  onSaveDraft$?: PropFunction<() => void>;
+  onCancel$?: PropFunction<() => void>;
   isLastStep: boolean;
 }
 
@@ -19,9 +19,9 @@ export default component$<StepNavigationProps>((props) => {
         {/* Left: Cancel / Previous */}
         <div>
           {props.currentStep === 0 ? (
-            props.onCancel && (
+            props.onCancel$ && (
               <button
-                onClick$={props.onCancel}
+                onClick$={props.onCancel$}
                 class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
@@ -29,7 +29,7 @@ export default component$<StepNavigationProps>((props) => {
             )
           ) : (
             <button
-              onClick$={props.onPrevious}
+              onClick$={props.onPrevious$}
               class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               ← Previous
@@ -38,9 +38,9 @@ export default component$<StepNavigationProps>((props) => {
         </div>
 
         {/* Center: Save Draft */}
-        {props.onSaveDraft && (
+        {props.onSaveDraft$ && (
           <button
-            onClick$={props.onSaveDraft}
+            onClick$={props.onSaveDraft$}
             class="px-4 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50"
           >
             💾 Save Draft
@@ -51,14 +51,14 @@ export default component$<StepNavigationProps>((props) => {
         <div>
           {props.isLastStep ? (
             <button
-              onClick$={props.onSubmit}
+              onClick$={props.onSubmit$}
               class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
             >
               Submit Form
             </button>
           ) : (
             <button
-              onClick$={props.onNext}
+              onClick$={props.onNext$}
               class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
             >
               Next →

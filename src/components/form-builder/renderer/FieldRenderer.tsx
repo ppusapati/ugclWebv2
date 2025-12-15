@@ -12,7 +12,7 @@ interface FieldRendererProps {
   field: FormField;
   value: any;
   error?: string;
-  onChange: PropFunction<(value: any) => void>;
+  onChange$: PropFunction<(value: any) => void>;
   allFormData: Record<string, any>;
 }
 
@@ -53,7 +53,7 @@ export default component$<FieldRendererProps>((props) => {
     field: props.field,
     value: props.value,
     error: props.error,
-    onChange: props.onChange,
+    onChange$: props.onChange$,
   };
 
   return (

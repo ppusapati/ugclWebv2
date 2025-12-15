@@ -6,16 +6,16 @@ interface TextAreaFieldProps {
   field: FormField;
   value: string;
   error?: string;
-  onChange: PropFunction<(value: string) => void>;
+  onChange$: PropFunction<(value: string) => void>;
 }
 
 export default component$<TextAreaFieldProps>((props) => {
   const charCount = useSignal(props.value?.length || 0);
 
-  const handleInput = $((e: Event) => {
+  const handleInput = $(async (e: Event) => {
     const value = (e.target as HTMLTextAreaElement).value;
     charCount.value = value.length;
-    props.onChange(value);
+    await props.onChange$(value);
   });
 
   return (

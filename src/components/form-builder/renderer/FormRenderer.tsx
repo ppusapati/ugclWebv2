@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/FormRenderer.tsx
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useStore, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { formBuilderService } from '~/services';
 import type { FormStep } from '~/types/workflow';
 import StepNavigation from './StepNavigation';
@@ -10,9 +10,9 @@ interface FormRendererProps {
   formCode: string;
   initialData?: Record<string, any>;
   submissionId?: string;
-  onSubmit: (data: Record<string, any>) => void;
-  onSaveDraft?: (data: Record<string, any>) => void;
-  onCancel?: () => void;
+  onSubmit$: PropFunction<(data: Record<string, any>) => void>;
+  onSaveDraft$?: PropFunction<(data: Record<string, any>) => void>;
+  onCancel$?: PropFunction<() => void>;
 }
 
 export default component$<FormRendererProps>((props) => {
@@ -113,12 +113,12 @@ export default component$<FormRendererProps>((props) => {
       }
     }
 
-    props.onSubmit(formData);
+    await props.onSubmit$(formData);
   });
 
-  const handleSaveDraft = $(() => {
-    if (props.onSaveDraft) {
-      props.onSaveDraft(formData);
+  const handleSaveDraft = $(async () => {
+    if (props.onSaveDraft$) {
+      await props.onSaveDraft$(formData);
     }
   });
 
@@ -197,7 +197,7 @@ export default component$<FormRendererProps>((props) => {
                   field={field}
                   value={formData[field.id]}
                   error={errors[field.id]}
-                  onChange={onChange}
+                  onChange$={onChange}
                   allFormData={formData}
                 />
               );
@@ -209,11 +209,11 @@ export default component$<FormRendererProps>((props) => {
         <StepNavigation
           currentStep={currentStep.value}
           totalSteps={formDefinition.steps.length}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          onSubmit={handleSubmit}
-          onSaveDraft={formDefinition.ui_config?.allow_save_draft ? handleSaveDraft : undefined}
-          onCancel={props.onCancel}
+          onPrevious$={handlePrevious}
+          onNext$={handleNext}
+          onSubmit$={handleSubmit}
+          onSaveDraft$={formDefinition.ui_config?.allow_save_draft ? handleSaveDraft : undefined}
+          onCancel$={props.onCancel$}
           isLastStep={currentStep.value === formDefinition.steps.length - 1}
         />
       </div>

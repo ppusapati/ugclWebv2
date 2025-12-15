@@ -1,5 +1,5 @@
 // src/components/form-builder/submissions/WorkflowHistory.tsx
-import { component$, $ } from '@builder.io/qwik';
+import { component$ } from '@builder.io/qwik';
 import type { WorkflowTransition } from '~/types/workflow';
 
 interface WorkflowHistoryProps {
@@ -7,16 +7,16 @@ interface WorkflowHistoryProps {
 }
 
 export default component$<WorkflowHistoryProps>((props) => {
-  const formatDate = $((dateString: string) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
-  });
+  };
 
-  const getStateColor = $((state: string) => {
+  const getStateColor = (state: string) => {
     const colors: Record<string, string> = {
       draft: 'bg-gray-400',
       submitted: 'bg-blue-500',
@@ -24,7 +24,7 @@ export default component$<WorkflowHistoryProps>((props) => {
       rejected: 'bg-red-500',
     };
     return colors[state] || 'bg-gray-400';
-  });
+  };
 
   return (
     <div class="bg-white rounded-lg shadow-sm p-6">

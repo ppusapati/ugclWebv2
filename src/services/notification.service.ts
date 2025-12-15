@@ -1,6 +1,5 @@
 import { apiClient } from './api-client';
 import type {
-  Notification,
   NotificationDTO,
   NotificationPreference,
   NotificationRule,
@@ -17,7 +16,7 @@ import type {
  */
 export class NotificationService {
   private baseUrl = '/notifications';
-  private adminUrl = '/admin/notification-rules';
+  private adminUrl = '/admin/notifications/rules';
 
   /**
    * Get user's notifications with optional filters
@@ -41,30 +40,30 @@ export class NotificationService {
     const queryString = params.toString();
     const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
 
-    const response = await apiClient.get(url);
-    return response.data;
+    const response = await apiClient.get<NotificationListResponse>(url);
+    return response;
   }
 
   /**
    * Get a specific notification by ID
    */
   async getNotification(id: string): Promise<NotificationDTO> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`);
-    return response.data.notification;
+    const response = await apiClient.get<{ notification: NotificationDTO }>(`${this.baseUrl}/${id}`);
+    return response.notification;
   }
 
   /**
    * Mark a notification as read
    */
   async markAsRead(id: string): Promise<void> {
-    await apiClient.put(`${this.baseUrl}/${id}/read`);
+    await apiClient.patch(`${this.baseUrl}/${id}/read`);
   }
 
   /**
    * Mark all notifications as read
    */
   async markAllAsRead(): Promise<void> {
-    await apiClient.put(`${this.baseUrl}/read-all`);
+    await apiClient.patch(`${this.baseUrl}/read-all`);
   }
 
   /**
@@ -75,34 +74,27 @@ export class NotificationService {
   }
 
   /**
-   * Archive a notification
-   */
-  async archiveNotification(id: string): Promise<void> {
-    await apiClient.put(`${this.baseUrl}/${id}/archive`);
-  }
-
-  /**
    * Get unread notifications count
    */
   async getUnreadCount(): Promise<number> {
-    const response = await apiClient.get(`${this.baseUrl}/unread-count`);
-    return response.data.count;
+    const response = await apiClient.get<{ count: number }>(`${this.baseUrl}/unread-count`);
+    return response.count;
   }
 
   /**
-   * Get notification statistics
+   * Get notification statistics (admin only)
    */
   async getStats(): Promise<NotificationStats> {
-    const response = await apiClient.get(`${this.baseUrl}/stats`);
-    return response.data.stats;
+    const response = await apiClient.get<{ stats: NotificationStats }>('/admin/notifications/stats');
+    return response.stats;
   }
 
   /**
    * Get user's notification preferences
    */
   async getPreferences(): Promise<NotificationPreference> {
-    const response = await apiClient.get(`${this.baseUrl}/preferences`);
-    return response.data.preferences;
+    const response = await apiClient.get<{ preferences: NotificationPreference }>(`${this.baseUrl}/preferences`);
+    return response.preferences;
   }
 
   /**
@@ -111,11 +103,11 @@ export class NotificationService {
   async updatePreferences(
     preferences: UpdatePreferencesRequest
   ): Promise<NotificationPreference> {
-    const response = await apiClient.put(
+    const response = await apiClient.put<{ preferences: NotificationPreference }>(
       `${this.baseUrl}/preferences`,
       preferences
     );
-    return response.data.preferences;
+    return response.preferences;
   }
 
   /**
@@ -157,16 +149,16 @@ export class NotificationService {
    * Get all notification rules (admin only)
    */
   async getAllRules(): Promise<NotificationRule[]> {
-    const response = await apiClient.get(this.adminUrl);
-    return response.data.rules;
+    const response = await apiClient.get<{ rules: NotificationRule[] }>(this.adminUrl);
+    return response.rules;
   }
 
   /**
    * Get a specific notification rule (admin only)
    */
   async getRule(id: string): Promise<NotificationRule> {
-    const response = await apiClient.get(`${this.adminUrl}/${id}`);
-    return response.data.rule;
+    const response = await apiClient.get<{ rule: NotificationRule }>(`${this.adminUrl}/${id}`);
+    return response.rule;
   }
 
   /**
@@ -175,8 +167,8 @@ export class NotificationService {
   async createRule(
     rule: CreateNotificationRuleRequest
   ): Promise<NotificationRule> {
-    const response = await apiClient.post(this.adminUrl, rule);
-    return response.data.rule;
+    const response = await apiClient.post<{ rule: NotificationRule }>(this.adminUrl, rule);
+    return response.rule;
   }
 
   /**
@@ -186,8 +178,8 @@ export class NotificationService {
     id: string,
     rule: Partial<CreateNotificationRuleRequest>
   ): Promise<NotificationRule> {
-    const response = await apiClient.put(`${this.adminUrl}/${id}`, rule);
-    return response.data.rule;
+    const response = await apiClient.put<{ rule: NotificationRule }>(`${this.adminUrl}/${id}`, rule);
+    return response.rule;
   }
 
   /**
@@ -200,15 +192,8 @@ export class NotificationService {
   /**
    * Toggle notification rule active status (admin only)
    */
-  async toggleRuleStatus(id: string, isActive: boolean): Promise<void> {
-    await apiClient.put(`${this.adminUrl}/${id}/status`, { is_active: isActive });
-  }
-
-  /**
-   * Test a notification rule (admin only)
-   */
-  async testRule(id: string, testData: Record<string, any>): Promise<void> {
-    await apiClient.post(`${this.adminUrl}/${id}/test`, testData);
+  async toggleRuleStatus(id: string): Promise<void> {
+    await apiClient.patch(`${this.adminUrl}/${id}/toggle`);
   }
 }
 

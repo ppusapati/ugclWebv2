@@ -55,16 +55,23 @@ export default component$(() => {
     try {
       saving.value = true;
 
+      // Calculate new version - parse existing version and increment
+      const currentVersion = existingForm.value?.version || '1.0.0';
+      const versionParts = String(currentVersion).split('.');
+      const major = parseInt(versionParts[0] || '1', 10);
+      const minor = parseInt(versionParts[1] || '0', 10);
+      const patch = parseInt(versionParts[2] || '0', 10);
+      const newVersion = `${major}.${minor}.${patch + 1}`;
+
       // Update the form
       await formBuilderService.updateForm(formCode, {
         title: definition.title,
         description: definition.description,
-        type: definition.type,
         steps: definition.steps,
-        version: (existingForm.value?.version || 1) + 1,
-        workflow_id: definition.workflow_id,
-        metadata: definition.metadata,
-      });
+        version: newVersion,
+        workflow_id: (definition as any).workflow_id,
+        initial_state: definition.workflow?.initial_state,
+      } as any);
 
       // Show success message
       alert('Form updated successfully!');
@@ -175,8 +182,8 @@ export default component$(() => {
             workflows={workflows.value}
             businessVerticals={businessVerticals.value}
             sites={sites.value}
-            onSave={handleSave}
-            onCancel={handleCancel}
+            onSave$={handleSave}
+            onCancel$={handleCancel}
           />
         )}
       </div>

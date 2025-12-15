@@ -6,6 +6,31 @@
 import { component$, useSignal, useVisibleTask$, type QRL } from '@builder.io/qwik';
 import type { GeoJSONFeatureCollection, Node, Zone } from '../../types/project';
 
+// Helper to load MapLibre GL from CDN to avoid bundler issues
+const loadMaplibreGL = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    // Check if already loaded
+    if ((window as any).maplibregl) {
+      resolve((window as any).maplibregl);
+      return;
+    }
+
+    // Load script from CDN
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js';
+    script.async = true;
+    script.onload = () => {
+      if ((window as any).maplibregl) {
+        resolve((window as any).maplibregl);
+      } else {
+        reject(new Error('MapLibre GL failed to load'));
+      }
+    };
+    script.onerror = () => reject(new Error('Failed to load MapLibre GL script'));
+    document.head.appendChild(script);
+  });
+};
+
 export interface ProjectMapProps {
   geojsonData?: GeoJSONFeatureCollection;
   zones?: Zone[];
@@ -36,8 +61,8 @@ export const ProjectMap = component$<ProjectMapProps>(({
     if (!mapContainer.value) return;
 
     try {
-      // Dynamically import MapLibre GL JS (client-side only)
-      const maplibregl = await import('maplibre-gl');
+      // Load MapLibre GL JS from CDN to avoid bundler issues
+      const maplibregl = await loadMaplibreGL();
 
       // Import MapLibre CSS
       if (!document.getElementById('maplibre-css')) {
@@ -266,7 +291,7 @@ export const ProjectMap = component$<ProjectMapProps>(({
             hasBounds = true;
           } else if (feature.geometry.type === 'Polygon') {
             feature.geometry.coordinates[0].forEach((coord: number[]) => {
-              bounds.extend(coord);
+              bounds.extend(coord as [number, number]);
               hasBounds = true;
             });
           }
@@ -333,7 +358,7 @@ export const ProjectMap = component$<ProjectMapProps>(({
           zonesGeoJSON.features.forEach((feature: any) => {
             if (feature.geometry.type === 'Polygon') {
               feature.geometry.coordinates[0].forEach((coord: number[]) => {
-                bounds.extend(coord);
+                bounds.extend(coord as [number, number]);
                 hasBounds = true;
               });
             }

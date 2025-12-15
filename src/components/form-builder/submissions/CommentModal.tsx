@@ -1,32 +1,32 @@
 // src/components/form-builder/submissions/CommentModal.tsx
-import { component$, useSignal, $ } from '@builder.io/qwik';
+import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
 
 interface CommentModalProps {
   title: string;
   required: boolean;
-  onSubmit: (comment: string) => void;
-  onCancel: () => void;
+  onSubmit$: PropFunction<(comment: string) => void>;
+  onCancel$: PropFunction<() => void>;
 }
 
 export default component$<CommentModalProps>((props) => {
   const comment = useSignal('');
   const error = useSignal('');
 
-  const handleSubmit = $(() => {
+  const handleSubmit = $(async () => {
     if (props.required && !comment.value.trim()) {
       error.value = 'Comment is required for this action';
       return;
     }
 
-    props.onSubmit(comment.value);
+    await props.onSubmit$(comment.value);
     comment.value = '';
     error.value = '';
   });
 
-  const handleCancel = $(() => {
+  const handleCancel = $(async () => {
     comment.value = '';
     error.value = '';
-    props.onCancel();
+    await props.onCancel$();
   });
 
   return (

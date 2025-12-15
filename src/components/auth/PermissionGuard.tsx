@@ -63,7 +63,7 @@ interface PermissionGuardProps {
   fallback?: any;
 
   // Custom permission check function
-  customCheck?: QRL<() => boolean>;
+  customCheck$?: QRL<() => boolean>;
 
   // Hide instead of not rendering (for layout purposes)
   hideIfDenied?: boolean;
@@ -74,7 +74,7 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
   const isChecking = useSignal(true);
 
   useVisibleTask$(async () => {
-    const user = authService.getUser();
+    let user = authService.getUser();
 
     if (!user) {
       hasAccess.value = false;
@@ -82,17 +82,44 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
       return;
     }
 
+    // If user doesn't have role info, try to fetch it from API
+    if (user.role === undefined && user.is_super_admin === undefined) {
+      try {
+        const baseUrl = 'http://localhost:8080/api/v1';
+        const response = await fetch(`${baseUrl}/profile`, {
+          headers: {
+            'Authorization': `Bearer ${authService.getToken()}`,
+            'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const profile = await response.json();
+          // Update stored user with role info
+          const updatedUser = {
+            ...user,
+            role: profile.global_role,
+            is_super_admin: profile.global_role === 'super_admin',
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          user = updatedUser;
+        }
+      } catch (e) {
+        console.error('Failed to fetch user profile:', e);
+      }
+    }
+
     let allowed = false;
 
     // Super admin check - always allow
     if (props.superAdminOnly) {
-      allowed = user.is_super_admin === true || user.role == "super_admin";
-    } else if (user.is_super_admin === true) {
+      allowed = user.is_super_admin === true || user.role === "super_admin";
+    } else if (user.is_super_admin === true || user.role === "super_admin") {
       allowed = true;
     } else {
       // Custom check
-      if (props.customCheck) {
-        allowed = await props.customCheck();
+      if (props.customCheck$) {
+        allowed = await props.customCheck$();
       }
       // Single permission
       else if (props.permission) {

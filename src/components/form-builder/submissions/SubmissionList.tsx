@@ -1,5 +1,5 @@
 // src/components/form-builder/submissions/SubmissionList.tsx
-import { component$, useSignal, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { workflowService } from '~/services';
 import type { FormSubmission, SubmissionFilters } from '~/types/workflow';
 
@@ -7,7 +7,7 @@ interface SubmissionListProps {
   businessCode: string;
   formCode: string;
   filters?: SubmissionFilters;
-  onSubmissionClick?: (submission: FormSubmission) => void;
+  onSubmissionClick$?: PropFunction<(submission: FormSubmission) => void>;
 }
 
 export default component$<SubmissionListProps>((props) => {
@@ -183,7 +183,7 @@ export default component$<SubmissionListProps>((props) => {
                 <tr
                   key={submission.id}
                   class="hover:bg-gray-50 cursor-pointer"
-                  onClick$={() => props.onSubmissionClick?.(submission)}
+                  onClick$={async () => await props.onSubmissionClick$?.(submission)}
                 >
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
                     {submission.id.substring(0, 8)}...
@@ -208,9 +208,9 @@ export default component$<SubmissionListProps>((props) => {
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <button
-                      onClick$={(e) => {
+                      onClick$={async (e) => {
                         e.stopPropagation();
-                        props.onSubmissionClick?.(submission);
+                        await props.onSubmissionClick$?.(submission);
                       }}
                       class="text-blue-600 hover:text-blue-800 font-medium"
                     >
