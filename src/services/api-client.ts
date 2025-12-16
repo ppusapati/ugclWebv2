@@ -259,7 +259,7 @@ export function createSSRApiClient(requestEvent: any) {
   const serverBaseUrl =
     requestEvent.url.hostname === 'localhost'
       ? 'http://localhost:8080/api/v1'
-      : 'http://localhost:8080/api/v1'; //'https://ugcl-429789556411.asia-south1.run.app/api/v1';
+      : 'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
 
   console.log('[createSSRApiClient] Token extracted:', serverToken ? 'Yes' : 'No');
   console.log('[createSSRApiClient] Base URL:', serverBaseUrl);
