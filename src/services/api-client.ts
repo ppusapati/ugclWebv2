@@ -33,7 +33,7 @@ function getBaseUrl(): string {
     return 'http://localhost:8080/api/v1';
   }
 //  return 'http://localhost:8080/api/v1';
- return 'https://ugclbackend2-429789556411.europe-west1.run.app';
+ return 'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
   // return 'https://ugcl-429789556411.asia-south1.run.app/api/v1';
 }
 
