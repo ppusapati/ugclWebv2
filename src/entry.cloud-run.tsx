@@ -25,7 +25,7 @@ declare global {
 const DEFAULT_HEADERS = {
   "Content-Security-Policy": [
     `default-src 'self'`,
-    `connect-src 'self' https://ugcl-429789556411.asia-south1.run.app`,
+    `connect-src 'self' https://ugcl-429789556411.asia-south1.run.app https://ugclbackend2-429789556411.europe-west1.run.app`,
     `base-uri 'self'`,
     `font-src 'self' https: data:`,
     `form-action 'self'`,
