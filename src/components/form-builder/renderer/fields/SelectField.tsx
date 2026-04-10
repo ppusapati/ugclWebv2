@@ -16,23 +16,27 @@ export default component$<SelectFieldProps>((props) => {
 
   // Load API options if configured
   useVisibleTask$(async () => {
-    if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
-      try {
-        loading.value = true;
-        const data = await apiClient.get(props.field.apiEndpoint) as any;
-        const items = Array.isArray(data) ? data : (data?.items || []);
+  if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
+    try {
+      loading.value = true;
+      const data = await apiClient.get(props.field.apiEndpoint) as any;
 
-        options.value = items.map((item: any) => ({
-          label: item[props.field.displayField || 'name'],
-          value: item[props.field.valueField || 'id'],
-        }));
-      } catch (error) {
-        console.error('Failed to load options:', error);
-      } finally {
-        loading.value = false;
-      }
+      // 🔥 FIX HERE
+      const items = Array.isArray(data)
+        ? data
+        : (data?.data || data?.items || []);
+
+      options.value = items.map((item: any) => ({
+        label: item[props.field.displayField || 'name'],
+        value: item[props.field.valueField || 'id'],
+      }));
+    } catch (error) {
+      console.error('Failed to load options:', error);
+    } finally {
+      loading.value = false;
     }
-  });
+  }
+});
 
   // Dropdown
   if (props.field.type === 'dropdown') {

@@ -71,7 +71,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
 
     server: {
   proxy: {
-    '/api': 'http://localhost:8080/',
+    '/api': 'http://localhost:10012/',
   },
       headers: {
         // Don't cache the server response in dev mode

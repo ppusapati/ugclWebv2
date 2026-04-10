@@ -32,7 +32,7 @@ const DEFAULT_HEADERS = {
     `frame-ancestors 'self'`,
     `img-src 'self' data:`,
     `object-src 'none'`,
-    `script-src 'self' 'unsafe-inline'`,
+    `script-src 'self' 'unsafe-inline' https://unpkg.com`,
     `script-src-attr 'none'`,
     `style-src 'self' https: 'unsafe-inline'`,
     `upgrade-insecure-requests`,

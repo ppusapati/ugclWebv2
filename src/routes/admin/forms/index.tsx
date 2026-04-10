@@ -49,17 +49,38 @@ export default component$(() => {
     }
   });
 
+  const getModuleId = (form: AppForm): string => {
+    if (typeof form.module === 'string') {
+      return form.module;
+    }
+    return form.module?.id || form.module_id || '';
+  };
+
+  const getModuleLabel = (form: AppForm): string => {
+    if (typeof form.module === 'string') {
+      return form.module;
+    }
+    return form.module?.name || form.module?.code || form.module_id || '-';
+  };
+
+  const getVerticalsLabel = (form: AppForm): string => {
+    if (!form.accessible_verticals || form.accessible_verticals.length === 0) {
+      return 'All Verticals';
+    }
+    return form.accessible_verticals.join(', ');
+  };
+
   const filteredForms = (forms.value || []).filter(form => {
     const matchesSearch = !searchQuery.value ||
       form.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       form.code.toLowerCase().includes(searchQuery.value.toLowerCase());
 
-    const matchesModule = !selectedModule.value || form.module!.id === selectedModule.value;
+    const matchesModule = !selectedModule.value || getModuleId(form) === selectedModule.value;
 
     return matchesSearch && matchesModule;
   });
 
-  const uniqueModules = Array.from(new Set((forms.value || []).map(f => f.module!.id).filter(Boolean)));
+  const uniqueModules = Array.from(new Set((forms.value || []).map(f => getModuleId(f)).filter(Boolean)));
 
   return (
     <div class="container mx-auto px-4 py-6">
@@ -159,6 +180,9 @@ export default component$(() => {
                     Module
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Business Verticals
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     DB Table
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -188,10 +212,15 @@ export default component$(() => {
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span class="text-sm text-gray-600">
-                        {form.module?.name || form.module?.code || '-'}
+                        {getModuleLabel(form)}
                       </span>
                     </td>
-                               <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4">
+                      <span class="text-sm text-gray-600 break-words">
+                        {getVerticalsLabel(form)}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
                       {form.module?.schema_name && form.table_name ? (
                         <code class="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
                           {form.module.schema_name}.{form.table_name}

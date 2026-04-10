@@ -30,7 +30,7 @@ function getBaseUrl(): string {
   }
 
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8080/api/v1';
+    return 'http://localhost:10012/api/v1';
   }
 //  return 'http://localhost:8080/api/v1';
  return 'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
@@ -258,7 +258,7 @@ export function createSSRApiClient(requestEvent: any) {
   const serverToken = extractTokenFromCookies(cookieHeader);
   const serverBaseUrl =
     requestEvent.url.hostname === 'localhost'
-      ? 'http://localhost:8080/api/v1'
+      ? 'http://localhost:10012/api/v1'
       : 'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
 
   console.log('[createSSRApiClient] Token extracted:', serverToken ? 'Yes' : 'No');

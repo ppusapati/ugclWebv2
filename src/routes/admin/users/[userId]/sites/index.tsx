@@ -56,7 +56,7 @@ export default component$(() => {
     success: "",
   });
 
-  const API_BASE_URL = "http://localhost:8080/api/v1";
+  const API_BASE_URL = "http://localhost:10012/api/v1";
   const API_KEY = "87339ea3-1add-4689-ae57-3128ebd03c4f";
 
   const getHeaders = () => {
