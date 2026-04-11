@@ -1,4 +1,4 @@
-import { component$, useStore, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, $, useTask$ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { roleService } from '~/services/role.service';
 import { businessService } from '~/services/business.service';
@@ -74,7 +74,11 @@ export default component$(() => {
     }
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await Promise.all([loadBusiness(), loadRoles(), loadPermissions()]);
   });
 

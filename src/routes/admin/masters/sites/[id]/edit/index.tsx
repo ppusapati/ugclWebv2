@@ -1,5 +1,5 @@
 // src/routes/business/[code]/sites/[id]/edit/index.tsx
-import { component$, useSignal, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, $, useTask$ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { siteService } from '~/services';
 import type { Site } from '~/services';
@@ -24,7 +24,11 @@ export default component$(() => {
   const loading = useSignal(false);
   const initialLoading = useSignal(true);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       console.log('Loading site with ID:', siteId);
       const foundSite = await siteService.getSitebyID(siteId);

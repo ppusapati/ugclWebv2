@@ -1,5 +1,5 @@
 // src/routes/business/[code]/submissions/[submissionId]/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import SubmissionDetail from '~/components/form-builder/submissions/SubmissionDetail';
 import { workflowService } from '~/services';
@@ -14,7 +14,11 @@ export default component$(() => {
   const error = useSignal<string | null>(null);
   const formCode = useSignal<string>('');
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       loading.value = true;
 

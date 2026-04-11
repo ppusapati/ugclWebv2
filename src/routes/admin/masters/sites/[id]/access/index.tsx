@@ -1,5 +1,5 @@
 // src/routes/business/[code]/sites/[id]/access/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { siteService, userService } from '~/services';
 import type { UserSiteAccess, User } from '~/services';
@@ -25,7 +25,11 @@ export default component$(() => {
   });
   const assigning = useSignal(false);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadSiteAccess();
     await loadUsers();
   });
