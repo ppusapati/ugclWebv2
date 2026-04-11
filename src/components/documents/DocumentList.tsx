@@ -1,4 +1,4 @@
-import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $, type QRL } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentListParams, DocumentStatus } from '~/types/document';
 
@@ -66,7 +66,11 @@ export const DocumentList = component$<DocumentListProps>((props) => {
   });
 
   // Load documents on mount
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadDocuments();
   });
 

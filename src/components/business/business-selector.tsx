@@ -1,5 +1,5 @@
 // src/components/business/business-selector.tsx
-import { component$, useStore, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
 import { authService, type BusinessVertical } from '~/services/auth.service';
 
 export const BusinessSelector = component$(() => {
@@ -9,7 +9,11 @@ export const BusinessSelector = component$(() => {
     loading: true,
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       state.businesses = await authService.getUserBusinesses();
       state.loading = false;

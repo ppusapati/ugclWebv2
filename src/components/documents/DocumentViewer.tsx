@@ -1,4 +1,4 @@
-import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $, type QRL } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentVersion, DocumentAuditLog } from '~/types/document';
 
@@ -49,7 +49,11 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
     }
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadDocument();
     await loadVersions();
     await loadAuditLogs();

@@ -1,5 +1,5 @@
 // src/routes/admin/masters/sites/new/index.tsx
-import { component$, useSignal, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, $, useTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { apiClient } from '~/services';
 import GeofenceMap from '~/components/geofence/GeofenceMap';
@@ -33,7 +33,11 @@ export default component$(() => {
   const showGeofenceSection = useSignal(false);
 
   // Load business verticals on mount
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       const response = await apiClient.get<{ data: BusinessVertical[] }>('/admin/businesses');
       businessVerticals.value = response.data || [];

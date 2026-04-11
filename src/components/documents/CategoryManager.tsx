@@ -1,4 +1,4 @@
-import { component$, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $, type PropFunction } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory } from '~/types/document';
 
@@ -42,7 +42,11 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
   });
 
   // Load categories on mount
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadCategories();
   });
 

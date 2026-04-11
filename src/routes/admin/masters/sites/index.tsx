@@ -1,5 +1,5 @@
 // src/routes/admin/masters/sites/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { siteService } from '~/services';
 import type { Site } from '~/services';
@@ -55,7 +55,11 @@ export default component$(() => {
       deleting.value = false;
     }
   });
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadSites();
   });
 

@@ -10,7 +10,7 @@
  * }
  */
 
-import { useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import { isServer, useSignal, useTask$ } from '@builder.io/qwik';
 import { authService } from '~/services/auth-enhanced.service';
 import type { User } from '~/services/types';
 
@@ -29,7 +29,11 @@ export interface PermissionCheck {
 export function usePermissions(): PermissionCheck {
   const user = useSignal<User | null>(null);
 
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) {
+      return;
+    }
+
     user.value = authService.getUser();
   });
 

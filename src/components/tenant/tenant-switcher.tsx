@@ -45,6 +45,8 @@ export const TenantSwitcher = component$(() => {
               <img
                 src={auth.currentTenant.branding.logo}
                 alt={auth.currentTenant.name}
+                width="24"
+                height="24"
                 class="w-6 h-6 rounded"
               />
             ) : (
@@ -113,6 +115,8 @@ export const TenantSwitcher = component$(() => {
                         <img
                           src={tenant.branding.logo}
                           alt={tenant.name}
+                          width="24"
+                          height="24"
                           class="w-6 h-6 rounded"
                         />
                       ) : (

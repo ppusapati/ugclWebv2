@@ -18,7 +18,7 @@
  * });
  */
 
-import { component$, Slot, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, Slot, useSignal, useTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { authService } from '~/services/auth-enhanced.service';
 
@@ -49,7 +49,11 @@ export const RouteGuard = component$<RouteGuardProps>((props) => {
   const hasAccess = useSignal<boolean | null>(null);
   const isChecking = useSignal(true);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     const user = authService.getUser();
 
     // Not logged in

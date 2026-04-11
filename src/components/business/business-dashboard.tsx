@@ -1,5 +1,5 @@
 // src/components/business/business-dashboard.tsx
-import { component$, useStore, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
 
 interface BusinessDashboardProps {
   businessCode: string;
@@ -12,7 +12,11 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
     loading: true,
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('auth_token');
       const apiKey = 'YOUR_API_KEY';

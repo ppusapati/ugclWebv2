@@ -1,5 +1,5 @@
 // src/components/auth/business-access-control.tsx
-import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { authService } from '~/services/auth.service';
 
 interface BusinessAccess {
@@ -34,7 +34,11 @@ export const BusinessAccessControl = component$(() => {
     searchTerm: '',
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       const token = authService.getToken();
       const apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f';

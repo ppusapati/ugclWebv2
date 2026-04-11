@@ -1,4 +1,4 @@
-import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $, type QRL } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory } from '~/types/document';
 
@@ -34,7 +34,11 @@ export const CategorySidebar = component$<CategorySidebarProps>((props) => {
   });
 
   // Load categories on mount and when refreshKey changes
-  useVisibleTask$(async ({ track }) => {
+  useTask$(async ({ track }) => {
+    if (isServer) {
+      return;
+    }
+
     track(() => refreshKey);
     await loadCategories();
   });

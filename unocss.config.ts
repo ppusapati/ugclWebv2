@@ -497,15 +497,6 @@ export default defineConfig({
       "table-cell": "p-3 align-middle",
       "table-striped-row": "even:bg-light-50 odd:bg-white",
     },
-    [
-      /^animate-([a-z-]+)(?:-(\d+))?(?:-(linear|ease-in|ease-out|ease-in-out))?(?:-delay-(\d+))?$/,
-      ([, name, duration, easing, delay]) => {
-        const dur = duration ? `duration-${duration}` : "duration-500";
-        const eas = easing ? `ease-${easing}` : "ease-in-out";
-        const del = delay ? `delay-${delay}` : "";
-        return `animate-${name} ${dur} ${eas} ${del}`.trim();
-      },
-    ],
     {
       "fade-in": "animate-fade-in duration-500 ease-in",
       "fade-out": "animate-fade-out duration-500 ease-out",

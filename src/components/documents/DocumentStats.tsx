@@ -1,4 +1,4 @@
-import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { DocumentStatistics } from '~/types/document';
 
@@ -29,7 +29,11 @@ export const DocumentStats = component$<DocumentStatsProps>((props) => {
     }
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadStats();
   });
 

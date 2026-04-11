@@ -1,5 +1,5 @@
 // src/components/auth/user-role-assignment.tsx
-import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { authService, type User, type BusinessVertical } from '~/services/auth.service';
 
 interface UserWithRoles extends User {
@@ -26,7 +26,11 @@ export const UserRoleAssignment = component$(() => {
     searchTerm: '',
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       const token = authService.getToken();
       const apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f';

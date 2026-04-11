@@ -35,7 +35,7 @@
  * </PermissionGuard>
  */
 
-import { component$, Slot, useSignal, useVisibleTask$, type QRL } from '@builder.io/qwik';
+import { component$, isServer, Slot, useSignal, useTask$, type QRL } from '@builder.io/qwik';
 import { authService } from '~/services/auth-enhanced.service';
 
 interface PermissionGuardProps {
@@ -73,7 +73,11 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
   const hasAccess = useSignal(false);
   const isChecking = useSignal(true);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     let user = authService.getUser();
 
     if (!user) {

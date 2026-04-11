@@ -141,7 +141,7 @@ export default component$<FileUploadFieldProps>((props) => {
             <div key={index} class="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
               {/* File preview/icon */}
               {url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                <img src={url} alt="Preview" class="h-12 w-12 object-cover rounded" />
+                <img src={url} alt="Preview" width="48" height="48" class="h-12 w-12 object-cover rounded" />
               ) : (
                 <div class="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
                   <span class="text-xs text-gray-600">FILE</span>
