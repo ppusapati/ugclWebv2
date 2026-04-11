@@ -82,8 +82,7 @@ export class FormBuilderService {
    * Toggle active/inactive status of a form (admin)
    */
   async toggleFormStatus(formCode: string, isActive: boolean): Promise<void> {
-    // Use PUT on the existing update endpoint for better compatibility across deployments.
-    await apiClient.put(`/admin/app-forms/${formCode}`, { is_active: isActive });
+    await apiClient.patch(`/admin/app-forms/${formCode}/status`, { is_active: isActive });
   }
 
   /**

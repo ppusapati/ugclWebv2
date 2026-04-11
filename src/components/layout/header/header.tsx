@@ -217,25 +217,34 @@ export const Header = component$(() => {
               )}
             </div>
 
-             {/* Dark mode toggle button */}
-        <span title={state.darkMode ? 'Light Mode' : 'Dark Mode'}  onClick$={() => (state.darkMode = !state.darkMode)} class={[state.darkMode ? 'i-tabler-sun text-yellow-400' : 'i-tabler-moon text-gray-600',
-          "transition h-6 w-6 "
-        ]} />
+            {/* Dark mode toggle */}
+            <button
+              class="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 bg-transparent border-0 transition-all duration-200"
+              title={state.darkMode ? 'Light Mode' : 'Dark Mode'}
+              onClick$={() => (state.darkMode = !state.darkMode)}
+            >
+              <div class={state.darkMode ? 'i-tabler-sun w-5 h-5 text-yellow-400' : 'i-tabler-moon w-5 h-5'} />
+            </button>
 
-      {/* Notifications */}
-      <NotificationBell />
+            {/* Notifications */}
+            <NotificationBell />
 
-      {/* Logout and user */}
-      <span class="i-tabler-logout w-6 h-6 relative hover:bg-dark-500 dark:hover:bg-dark-700 rounded-full transition"
-        onClick$={handleLogout}>
-        Logout
-      </span>
-       <span class="i-heroicons-user-solid w-6 h-6 relative hover:bg-dark-500 dark:hover:bg-dark-700 rounded-full transition"
-        >
-        Profile
-      </span>
+            {/* Logout */}
+            <button
+              class="p-2 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50 bg-transparent border-0 transition-all duration-200"
+              onClick$={handleLogout}
+              title="Logout"
+            >
+              <div class="i-tabler-logout w-5 h-5" />
+            </button>
 
-            
+            {/* Profile */}
+            <button
+              class="p-2 rounded-lg text-gray-600 hover:text-primary-600 hover:bg-gray-100 bg-transparent border-0 transition-all duration-200"
+              title="Profile"
+            >
+              <div class="i-heroicons-user-solid w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
