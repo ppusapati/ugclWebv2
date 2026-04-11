@@ -208,9 +208,6 @@ export default component$(() => {
                     Business Verticals
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    DB Table
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Version
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -246,16 +243,7 @@ export default component$(() => {
                       </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      {form.module?.schema_name && form.table_name ? (
-                        <code class="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                          {form.module.schema_name}.{form.table_name}
-                        </code>
-                      ) : (
-                        <span class="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="text-sm text-gray-600">v{form.version}</span>
+                      <span class="text-sm text-gray-600">{form.version ? `v${form.version}` : '-'}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span class={`px-2 py-1 text-xs rounded ${
@@ -267,34 +255,34 @@ export default component$(() => {
                       </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div class="flex justify-end gap-2">
+                      <div class="flex justify-end gap-1">
                         <button
                           onClick$={() => handleToggleStatus(form.code, form.is_active ?? false)}
-                          class={`p-1 ${form.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                          class={`px-2 py-1 rounded text-xs font-medium ${form.is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
                           title={form.is_active ? 'Deactivate' : 'Activate'}
                         >
-                          <i class={`${form.is_active ? 'i-heroicons-pause-circle-solid' : 'i-heroicons-play-circle-solid'} w-5 h-5 inline-block`}></i>
+                          {form.is_active ? '⏸' : '▶'}
                         </button>
                         <button
                           onClick$={() => handlePreview(form.code)}
-                          class="text-blue-600 hover:text-blue-900 p-1"
+                          class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
                           title="Preview"
                         >
-                          <i class="i-heroicons-eye-solid w-5 h-5 inline-block"></i>
+                          👁
                         </button>
                         <button
                           onClick$={() => handleEdit(form.code)}
-                          class="text-green-600 hover:text-green-900 p-1"
+                          class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200"
                           title="Edit"
                         >
-                          <i class="i-heroicons-pencil-square-solid w-5 h-5 inline-block"></i>
+                          ✏️
                         </button>
                         <button
                           onClick$={() => handleDelete(form.code, form.title)}
-                          class="text-red-600 hover:text-red-900 p-1"
+                          class="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200"
                           title="Delete"
                         >
-                          <i class="i-heroicons-trash-solid w-5 h-5 inline-block"></i>
+                          🗑️
                         </button>
                       </div>
                     </td>
