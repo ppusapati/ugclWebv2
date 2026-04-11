@@ -8,32 +8,32 @@ export const Breadcrumb = component$(() => {
   const breadcrumbs = breadcrumbService.getBreadcrumbs(location.url.pathname);
 
   return (
-    <nav class="flex items-center text-sm text-gray-600 mb-4 px-6 pt-4" aria-label="Breadcrumb">
-      <ol class="flex items-center">
+    <nav class="px-6 pt-4 pb-1" aria-label="Breadcrumb">
+      <ol class="flex items-center flex-wrap gap-y-1 text-sm text-gray-600">
         {breadcrumbs.map((crumb, index) => (
-          <span key={`breadcrumb-${index}`}>
+          <li key={`breadcrumb-${index}`} class="flex items-center min-h-[1.5rem]">
             {index > 0 && (
-              <li class="flex items-center mx-2 text-gray-400">
-                <i class="i-heroicons-chevron-right-solid w-3.5 h-3.5" />
-              </li>
+              <span class="mx-2 text-gray-400 select-none" aria-hidden="true">
+                &gt;
+              </span>
             )}
-            <li class="flex items-center">
+            <span class="flex items-center gap-1.5">
               {crumb.href ? (
                 <Link
                   href={crumb.href}
-                  class="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors no-underline"
+                  class="inline-flex items-center gap-1.5 leading-none text-gray-600 hover:text-primary-600 transition-colors no-underline"
                 >
                   {crumb.icon && <i class={`${crumb.icon} w-4 h-4 inline-block`} />}
-                  <span class="inline-block align-middle">{crumb.label}</span>
+                  <span class="leading-none">{crumb.label}</span>
                 </Link>
               ) : (
-                <span class="flex items-center gap-1.5 text-gray-900 font-medium">
+                <span class="inline-flex items-center gap-1.5 leading-none text-gray-900 font-medium">
                   {crumb.icon && <i class={`${crumb.icon} w-4 h-4 inline-block`} />}
-                  <span class="inline-block align-middle">{crumb.label}</span>
+                  <span class="leading-none">{crumb.label}</span>
                 </span>
               )}
-            </li>
-          </span>
+            </span>
+          </li>
         ))}
       </ol>
     </nav>
