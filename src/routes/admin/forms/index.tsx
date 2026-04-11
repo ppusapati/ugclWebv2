@@ -1,12 +1,14 @@
 // src/routes/admin/forms/index.tsx
 import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useNavigate, type DocumentHead } from '@builder.io/qwik-city';
-import { formBuilderService } from '~/services';
+import { formBuilderService, businessService } from '~/services';
 import type { AppForm } from '~/types/workflow';
+import type { BusinessVertical } from '~/services/types';
 
 export default component$(() => {
   const nav = useNavigate();
   const forms = useSignal<AppForm[]>([]);
+  const businessVerticals = useSignal<BusinessVertical[]>([]);
   const loading = useSignal(true);
   const error = useSignal<string | null>(null);
   const searchQuery = useSignal('');
@@ -15,8 +17,12 @@ export default component$(() => {
   useVisibleTask$(async () => {
     try {
       loading.value = true;
-      const data = await formBuilderService.getAllForms();
+      const [data, bvData] = await Promise.all([
+        formBuilderService.getAllForms(),
+        businessService.getAllBusinesses(),
+      ]);
       forms.value = data;
+      businessVerticals.value = bvData.data || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to load forms';
     } finally {
@@ -49,6 +55,18 @@ export default component$(() => {
     }
   });
 
+  const handleToggleStatus = $(async (formCode: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    try {
+      await formBuilderService.toggleFormStatus(formCode, newStatus);
+      forms.value = (forms.value || []).map(f =>
+        f.code === formCode ? { ...f, is_active: newStatus } : f
+      );
+    } catch (err: any) {
+      alert('Failed to update form status: ' + err.message);
+    }
+  });
+
   const getModuleId = (form: AppForm): string => {
     if (typeof form.module === 'string') {
       return form.module;
@@ -63,11 +81,18 @@ export default component$(() => {
     return form.module?.name || form.module?.code || form.module_id || '-';
   };
 
+  const getVerticalName = (codeOrId: string): string => {
+    const bv = businessVerticals.value.find(
+      v => v.code === codeOrId || v.id === codeOrId
+    );
+    return bv ? bv.name : codeOrId;
+  };
+
   const getVerticalsLabel = (form: AppForm): string => {
     if (!form.accessible_verticals || form.accessible_verticals.length === 0) {
       return 'All Verticals';
     }
-    return form.accessible_verticals.join(', ');
+    return form.accessible_verticals.map(getVerticalName).join(', ');
   };
 
   const filteredForms = (forms.value || []).filter(form => {
@@ -243,6 +268,13 @@ export default component$(() => {
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div class="flex justify-end gap-2">
+                        <button
+                          onClick$={() => handleToggleStatus(form.code, form.is_active ?? false)}
+                          class={`p-1 ${form.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                          title={form.is_active ? 'Deactivate' : 'Activate'}
+                        >
+                          <i class={`${form.is_active ? 'i-heroicons-pause-circle-solid' : 'i-heroicons-play-circle-solid'} w-5 h-5 inline-block`}></i>
+                        </button>
                         <button
                           onClick$={() => handlePreview(form.code)}
                           class="text-blue-600 hover:text-blue-900 p-1"

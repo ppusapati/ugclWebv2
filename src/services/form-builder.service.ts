@@ -79,6 +79,13 @@ export class FormBuilderService {
   }
 
   /**
+   * Toggle active/inactive status of a form (admin)
+   */
+  async toggleFormStatus(formCode: string, isActive: boolean): Promise<void> {
+    await apiClient.patch(`/admin/app-forms/${formCode}/status`, { is_active: isActive });
+  }
+
+  /**
    * Delete an app form (admin)
    */
   async deleteForm(formCode: string): Promise<void> {

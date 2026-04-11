@@ -289,7 +289,7 @@ export default component$<FormBuilderProps>((props) => {
                   ) : (
                     <div class="space-y-2">
                       {props.businessVerticals.map((bv) => {
-                        const isChecked = form.accessible_verticals?.includes(bv.id) || false;
+                        const isChecked = form.accessible_verticals?.includes(bv.code) || false;
                         return (
                           <label key={bv.id} class="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded">
                             <input
@@ -302,12 +302,12 @@ export default component$<FormBuilderProps>((props) => {
                                 }
                                 if (checked) {
                                   // Add to array if not already present
-                                  if (!form.accessible_verticals.includes(bv.id)) {
-                                    form.accessible_verticals.push(bv.id);
+                                  if (!form.accessible_verticals.includes(bv.code)) {
+                                    form.accessible_verticals.push(bv.code);
                                   }
                                 } else {
                                   // Remove from array
-                                  const index = form.accessible_verticals.indexOf(bv.id);
+                                  const index = form.accessible_verticals.indexOf(bv.code);
                                   if (index > -1) {
                                     form.accessible_verticals.splice(index, 1);
                                   }
