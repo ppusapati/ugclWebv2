@@ -184,7 +184,7 @@ export default component$(() => {
         </div>
       }
     >
-      <div class="space-y-6 p-6">
+      <div class="space-y-6 py-4">
         {/* Loading indicator */}
         {loading.value && (
           <div class="flex items-center justify-center p-8">

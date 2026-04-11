@@ -34,11 +34,11 @@ export default component$(() => {
      <div class="min-h-screen bg-gray-50">
       <MenuProvider>
         <Header />
-        <div class="flex">
+        <div class="flex min-h-[calc(100vh-73px)]">
           <Sidebar />
-          <main class="flex-1">
+          <main class="flex-1 min-w-0">
             <Breadcrumb />
-            <div class="px-6 pb-6">
+            <div class="px-6 pt-2 pb-6">
               <Slot />
             </div>
           </main>

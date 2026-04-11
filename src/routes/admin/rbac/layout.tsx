@@ -28,18 +28,18 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container mx-auto max-w-7xl">
+    <div class="py-4">
+      <div class="max-w-7xl mx-auto">
         {/* Header */}
         <div class="mb-6">
-          <h1 class="text-3xl font-bold text-dark-800 mb-2">Role-Based Access Control</h1>
+          <h1 class="text-2xl font-bold text-dark-800 mb-2">Role-Based Access Control</h1>
           <p class="text-dark-600">Manage roles and permissions across the system</p>
         </div>
 
         {/* Tabs */}
         <div class="bg-white rounded-lg shadow-sm border border-light-200 mb-6">
           <div class="border-b border-light-200">
-            <nav class="flex -mb-px" aria-label="Tabs">
+            <nav class="flex -mb-px overflow-x-auto" aria-label="Tabs">
               {tabs.map((tab) => {
                 const isActive = isActiveTab(tab.path);
                 return (
@@ -48,7 +48,7 @@ export default component$(() => {
                     href={tab.path}
                     class={`
                       group inline-flex items-center px-6 py-4 border-b-2 font-medium text-sm
-                      transition-all duration-200 min-w-[200px] justify-center
+                      transition-all duration-200 justify-center
                       ${
                         isActive
                           ? 'border-primary-500 text-primary-600 bg-primary-50'
@@ -81,7 +81,7 @@ export default component$(() => {
           </div>
 
           {/* Tab Content */}
-          <div class="p-6">
+          <div class="pt-4">
             <Slot />
           </div>
         </div>

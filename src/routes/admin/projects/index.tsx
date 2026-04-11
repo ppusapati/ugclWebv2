@@ -128,22 +128,8 @@ export default component$(() => {
   });
 
   return (
-    <div class="container mx-auto px-4 py-6">
+    <div class="py-4">
       {/* Debug Info */}
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-        <h3 class="font-semibold text-sm mb-2">Debug Info:</h3>
-        <p class="text-xs">Business Verticals Count: {state.businessVerticals.length}</p>
-        <p class="text-xs">Projects Count: {state.projects.length}</p>
-        {state.businessVerticals.length > 0 && (
-          <details class="text-xs mt-2">
-            <summary class="cursor-pointer font-medium">View Business Verticals</summary>
-            <pre class="mt-2 bg-white p-2 rounded overflow-auto max-h-40">
-              {JSON.stringify(state.businessVerticals, null, 2)}
-            </pre>
-          </details>
-        )}
-      </div>
-
       {/* Header */}
       <div class="flex items-center justify-between mb-6">
         <div>

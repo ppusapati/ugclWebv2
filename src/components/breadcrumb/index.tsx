@@ -8,7 +8,7 @@ export const Breadcrumb = component$(() => {
   const breadcrumbs = breadcrumbService.getBreadcrumbs(location.url.pathname);
 
   return (
-    <nav class="px-6 pt-4 pb-1" aria-label="Breadcrumb">
+    <nav class="px-6 py-3" aria-label="Breadcrumb">
       <ol class="flex items-center flex-wrap gap-y-1 text-sm text-gray-600">
         {breadcrumbs.map((crumb, index) => (
           <li key={`breadcrumb-${index}`} class="flex items-center min-h-[1.5rem]">

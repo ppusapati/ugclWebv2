@@ -103,7 +103,7 @@ export const Sidebar = component$(() => {
 
   return (
     <aside
-      class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-73px)]"
+      class="w-64 bg-white border-r border-gray-200 self-stretch"
       style="box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);"
     >
       <div class="px-4 py-4">
@@ -118,14 +118,14 @@ export const Sidebar = component$(() => {
             <Link
               key={subItem.id}
               href={subItem.href}
-              class={`flex items-center gap-3 px-3 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 ${
+              class={`flex items-center gap-3 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 border-l-4 ${
                 menuContext.activeSidebarItem.value === subItem.id
-                  ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-500'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-primary-50 text-primary-700 border-primary-500 pl-2 pr-3'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent pl-3 pr-3'
               }`}
               onClick$={() => handleSidebarItemClick(subItem.id)}
             >
-              <span class={`${subItem.icon}`}></span>
+              <span class={`${subItem.icon} w-5 h-5 flex-shrink-0`}></span>
               <span>{subItem.label}</span>
             </Link>
           ))}

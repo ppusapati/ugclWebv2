@@ -197,7 +197,7 @@ export default component$(() => {
         </div>
       }
     >
-      <div class="space-y-6 p-6">
+      <div class="space-y-6 py-4">
         {/* Loading indicator */}
         {loading.value && (
           <div class="flex items-center justify-center p-8">
@@ -238,7 +238,7 @@ export default component$(() => {
           {modules.value.map((module: Module) => (
             <div
               key={module.id}
-              class="bg-white border rounded-lg p-6 shadow-sm border-none hover:shadow-md transition-shadow"
+              class="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
             >
               <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">

@@ -171,49 +171,44 @@ export const Header = component$(() => {
               </button>
 
               {/* Popup Menu */}
+              {/* Overlay first (lower z-index) so popup renders on top */}
               {isMenuOpen.value && (
-                <div class="absolute border-0 top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <div
+                  class="fixed inset-0 z-40"
+                  onClick$={() => isMenuOpen.value = false}
+                ></div>
+              )}
+
+              {/* Popup Menu */}
+              {isMenuOpen.value && (
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   <div class="p-4">
                     <div class="grid grid-cols-3 gap-3 place-items-center">
                       {/* Main modules */}
                       {menuItems.map((item) => (
                         <button
                           key={item.id}
-                          class="flex flex-col hover:bg-gray-100 bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors"
+                          class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors"
                           onClick$={() => handleMainMenuClick(item.id)}
                         >
-                          <div class="w-8 h-8 flex items-center justify-center">
-                            <span class={`text-gray-600 text-lg`}>
-                              <div class={`${item.icon} w-6 h-6`}></div>
-                            </span>
-                          </div>
+                          <div class={`${item.icon} w-6 h-6 text-gray-600`}></div>
                           <span class="text-xs font-medium text-gray-700 text-center leading-none">{item.label}</span>
                         </button>
                       ))}
 
                       {/* Additional items */}
-                      <button class="flex flex-col items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div class="i-heroicons-user-circle text-gray-600 w-6 h-6"></div>
+                      <button class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="i-heroicons-user-circle w-6 h-6 text-gray-600"></div>
                         <span class="text-xs font-medium text-gray-700 text-center leading-none">Profile</span>
                       </button>
 
-                    
-
-                      <button class="flex flex-col items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div class="i-heroicons-squares-plus text-gray-600 w-6 h-6"></div>
+                      <button class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="i-heroicons-squares-plus w-6 h-6 text-gray-600"></div>
                         <span class="text-xs font-medium text-gray-700 text-center leading-none">Products</span>
                       </button>
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* Overlay to close menu when clicking outside */}
-              {isMenuOpen.value && (
-                <div
-                  class="fixed inset-0 z-40"
-                  onClick$={() => isMenuOpen.value = false}
-                ></div>
               )}
             </div>
 

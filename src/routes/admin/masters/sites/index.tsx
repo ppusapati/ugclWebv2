@@ -71,7 +71,7 @@ export default component$(() => {
   }
 
   return (
-    <div class="min-h-screen py-8 px-4">
+    <div class="py-4">
       <div class="container mx-auto">
         <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
           <div>
