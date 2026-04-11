@@ -1,13 +1,32 @@
 // src/routes/notifications/preferences/index.tsx
-import { component$, useSignal, useVisibleTask$, $, useStore } from '@builder.io/qwik';
-import { type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $, useStore } from '@builder.io/qwik';
+import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
+import { createSSRApiClient } from '~/services';
 import { notificationService } from '~/services/notification.service';
 import type { NotificationPreference, NotificationType } from '~/types/notification';
 
+export const useNotificationPreferencesData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const response = await ssrApiClient.get<{ preferences: NotificationPreference }>('/notifications/preferences');
+    return {
+      preferences: response.preferences,
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      preferences: null as NotificationPreference | null,
+      error: err.message || 'Failed to load preferences',
+    };
+  }
+});
+
 export default component$(() => {
-  const loading = useSignal(true);
+  const initialData = useNotificationPreferencesData();
+  const loading = useSignal(false);
   const saving = useSignal(false);
-  const error = useSignal<string | null>(null);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const success = useSignal<string | null>(null);
 
   const preferences = useStore<NotificationPreference>({
@@ -27,18 +46,9 @@ export default component$(() => {
     updated_at: '',
   });
 
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-      const prefs = await notificationService.getPreferences();
-      Object.assign(preferences, prefs);
-      error.value = null;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load preferences';
-    } finally {
-      loading.value = false;
-    }
-  });
+  if (initialData.value.preferences) {
+    Object.assign(preferences, initialData.value.preferences);
+  }
 
   const handleSave = $(async () => {
     try {

@@ -1,53 +1,50 @@
 // src/routes/admin/forms/new/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate, type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate, type DocumentHead } from '@builder.io/qwik-city';
 import FormBuilderComplete from '~/components/form-builder/FormBuilder';
-import { formBuilderService, workflowService, businessService, siteService } from '~/services';
+import { formBuilderService, createSSRApiClient } from '~/services';
 import type { FormDefinition, WorkflowDefinition, Module } from '~/types/workflow';
 import type { BusinessVertical, Site } from '~/services/types';
 
+export const useNewFormData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const [modulesData, workflowsData, businessVerticalsData, sitesData] = await Promise.all([
+      ssrApiClient.get<{ modules: Module[] }>('/modules'),
+      ssrApiClient.get<{ workflows: WorkflowDefinition[] }>('/admin/workflows'),
+      ssrApiClient.get<any>('/admin/businesses'),
+      ssrApiClient.get<{ data: Site[] }>('/admin/sites', { include: 'business_vertical' }),
+    ]);
+
+    return {
+      modules: modulesData.modules || [],
+      workflows: workflowsData.workflows || [],
+      businessVerticals: businessVerticalsData.data || businessVerticalsData.businesses || [],
+      sites: sitesData.data || [],
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      modules: [] as Module[],
+      workflows: [] as WorkflowDefinition[],
+      businessVerticals: [] as BusinessVertical[],
+      sites: [] as Site[],
+      error: err.message || 'Failed to load required data',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = useNewFormData();
   const nav = useNavigate();
-  const modules = useSignal<Module[]>([]);
-  const workflows = useSignal<WorkflowDefinition[]>([]);
-  const businessVerticals = useSignal<BusinessVertical[]>([]);
-  const sites = useSignal<Site[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const modules = useSignal<Module[]>(initialData.value.modules || []);
+  const workflows = useSignal<WorkflowDefinition[]>(initialData.value.workflows || []);
+  const businessVerticals = useSignal<BusinessVertical[]>(initialData.value.businessVerticals || []);
+  const sites = useSignal<Site[]>(initialData.value.sites || []);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const saving = useSignal(false);
-
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-
-      // Load all required data in parallel
-      const [modulesData, workflowsData, businessVerticalsData, sitesData] = await Promise.all([
-        formBuilderService.getModules(),
-        workflowService.getAllWorkflows(),
-        businessService.getAllBusinesses(),
-        siteService.getAllSites(),
-      ]);
-
-      modules.value = modulesData;
-      workflows.value = workflowsData;
-      businessVerticals.value = businessVerticalsData.data || [];
-      sites.value = sitesData.data || [];
-
-      // Debug logging
-      console.log('📊 Form Builder Data Loaded:');
-      console.log('  - Modules:', modulesData.length);
-      console.log('  - Workflows:', workflowsData.length);
-      console.log('  - Business Verticals:', businessVerticals.value.length, businessVerticals.value);
-      console.log('  - Sites:', sites.value.length, sites.value);
-      console.log('  - Sample Site (first):', sites.value[0]);
-      console.log('  - Sample Business Vertical (first):', businessVerticals.value[0]);
-    } catch (err: any) {
-      console.error('❌ Failed to load form builder data:', err);
-      error.value = err.message || 'Failed to load required data';
-    } finally {
-      loading.value = false;
-    }
-  });
 
   const handleSave = $(async (definition: FormDefinition) => {
     try {

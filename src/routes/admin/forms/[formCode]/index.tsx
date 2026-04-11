@@ -1,55 +1,64 @@
 // src/routes/admin/forms/[formCode]/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import FormBuilderComplete from '~/components/form-builder/FormBuilder';
-import { formBuilderService, workflowService, businessService, siteService } from '~/services';
+import { formBuilderService, createSSRApiClient } from '~/services';
 import type { FormDefinition, WorkflowDefinition, Module, AppForm } from '~/types/workflow';
 import type { BusinessVertical, Site } from '~/services/types';
 
+export const useEditFormData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const formCode = requestEvent.params.formCode;
+
+  try {
+    const form = await ssrApiClient.get<AppForm>(`/admin/forms/${formCode}`);
+
+    const [modulesData, workflowsData, businessVerticalsData, sitesData] = await Promise.all([
+      ssrApiClient.get<{ modules: Module[] }>('/modules'),
+      ssrApiClient.get<{ workflows: WorkflowDefinition[] }>('/admin/workflows'),
+      ssrApiClient.get<any>('/admin/businesses'),
+      ssrApiClient.get<{ data: Site[] }>('/admin/sites', { include: 'business_vertical' }),
+    ]);
+
+    return {
+      existingForm: form,
+      modules: modulesData.modules || [],
+      workflows: workflowsData.workflows || [],
+      businessVerticals: businessVerticalsData.data || businessVerticalsData.businesses || [],
+      sites: sitesData.data || [],
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      existingForm: null as AppForm | null,
+      modules: [] as Module[],
+      workflows: [] as WorkflowDefinition[],
+      businessVerticals: [] as BusinessVertical[],
+      sites: [] as Site[],
+      error: err.message || 'Failed to load form',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = useEditFormData();
   const nav = useNavigate();
   const loc = useLocation();
   const formCode = loc.params.formCode;
 
-  const modules = useSignal<Module[]>([]);
-  const workflows = useSignal<WorkflowDefinition[]>([]);
-  const businessVerticals = useSignal<BusinessVertical[]>([]);
-  const sites = useSignal<Site[]>([]);
-  const existingForm = useSignal<AppForm | null>(null);
-  const initialDefinition = useSignal<FormDefinition | null>(null);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const modules = useSignal<Module[]>(initialData.value.modules || []);
+  const workflows = useSignal<WorkflowDefinition[]>(initialData.value.workflows || []);
+  const businessVerticals = useSignal<BusinessVertical[]>(initialData.value.businessVerticals || []);
+  const sites = useSignal<Site[]>(initialData.value.sites || []);
+  const existingForm = useSignal<AppForm | null>(initialData.value.existingForm || null);
+  const initialDefinition = useSignal<FormDefinition | null>(
+    initialData.value.existingForm
+      ? formBuilderService.exportFormDefinition(initialData.value.existingForm)
+      : null
+  );
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const saving = useSignal(false);
-
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-
-      // Load the existing form
-      const form = await formBuilderService.getFormByCode(formCode);
-      existingForm.value = form;
-
-      // Convert AppForm to FormDefinition for editing
-      initialDefinition.value = formBuilderService.exportFormDefinition(form);
-
-      // Load all required data in parallel
-      const [modulesData, workflowsData, businessVerticalsData, sitesData] = await Promise.all([
-        formBuilderService.getModules(),
-        workflowService.getAllWorkflows(),
-        businessService.getAllBusinesses(),
-        siteService.getAllSites(),
-      ]);
-
-      modules.value = modulesData;
-      workflows.value = workflowsData;
-      businessVerticals.value = businessVerticalsData.data || [];
-      sites.value = sitesData.data || [];
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load form';
-    } finally {
-      loading.value = false;
-    }
-  });
 
   const handleSave = $(async (definition: FormDefinition) => {
     try {

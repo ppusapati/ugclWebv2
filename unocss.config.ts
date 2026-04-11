@@ -25,7 +25,7 @@ export default defineConfig({
       scale: 1.2,
       // Remove CDN to avoid network requests during build - use local icons only
       // If you need icons, install @iconify-json/[collection] packages locally
-      warn: true,
+      warn: false,
     }),
   ],
   transformers: [transformerVariantGroup(), transformerDirectives()],
@@ -134,7 +134,7 @@ export default defineConfig({
     ],
     {
       "form-input-error":
-        "border-danger-500 text-danger-700 placeholder-danger-300",
+        "border-danger-500 text-danger-700 placeholder-red-300",
       "form-group": "mb-5",
       "form-check": "flex items-center space-x-2",
       "input-group": "flex w-full",

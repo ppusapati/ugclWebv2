@@ -1,41 +1,67 @@
-import { component$, useStore, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, useStore, useResource$, Resource, $ } from '@builder.io/qwik';
 import type { DocumentHead } from '@builder.io/qwik-city';
-import { Link } from '@builder.io/qwik-city';
-import { DocumentList } from '~/components/documents/DocumentList';
-import { DocumentUpload } from '~/components/documents/DocumentUpload';
-import { DocumentViewer } from '~/components/documents/DocumentViewer';
-import { CategorySidebar } from '~/components/documents/CategorySidebar';
+import { Link, routeLoader$ } from '@builder.io/qwik-city';
+import { createSSRApiClient } from '~/services';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentCategory, DocumentTag } from '~/types/document';
 
+export const useDocumentsMetaData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const [categories, tags] = await Promise.all([
+      ssrApiClient.get<DocumentCategory[]>('/documents/categories'),
+      ssrApiClient.get<DocumentTag[]>('/documents/tags'),
+    ]);
+
+    return {
+      categories,
+      tags,
+    };
+  } catch {
+    return {
+      categories: [] as DocumentCategory[],
+      tags: [] as DocumentTag[],
+    };
+  }
+});
+
 export default component$(() => {
+  const initialMeta = useDocumentsMetaData();
   const state = useStore({
     showUpload: false,
     selectedDocument: null as Document | null,
     selectedDocumentIds: [] as string[],
     selectedCategoryId: undefined as string | undefined,
     refreshKey: 0,
-    categories: [] as DocumentCategory[],
-    tags: [] as DocumentTag[],
-    loadingCategories: true,
-    loadingTags: true,
+    categories: initialMeta.value.categories,
+    tags: initialMeta.value.tags,
+    loadingCategories: false,
+    loadingTags: false,
   });
 
-  // Load categories and tags on mount
-  useVisibleTask$(async () => {
-    try {
-      const [categories, tags] = await Promise.all([
-        documentService.getCategories(),
-        documentService.getTags(),
-      ]);
-      state.categories = categories;
-      state.tags = tags;
-    } catch (error) {
-      console.error('Failed to load categories/tags:', error);
-    } finally {
-      state.loadingCategories = false;
-      state.loadingTags = false;
-    }
+  const categorySidebarComponent = useResource$(async () => {
+    const mod = await import('~/components/documents/CategorySidebar');
+    return mod.CategorySidebar;
+  });
+
+  const documentListComponent = useResource$(async () => {
+    const mod = await import('~/components/documents/DocumentList');
+    return mod.DocumentList;
+  });
+
+  const documentUploadComponent = useResource$(async ({ track }) => {
+    track(() => state.showUpload);
+    if (!state.showUpload) return null;
+    const mod = await import('~/components/documents/DocumentUpload');
+    return mod.DocumentUpload;
+  });
+
+  const documentViewerComponent = useResource$(async ({ track }) => {
+    track(() => state.selectedDocument?.id);
+    if (!state.selectedDocument) return null;
+    const mod = await import('~/components/documents/DocumentViewer');
+    return mod.DocumentViewer;
   });
 
   const handleUploadComplete = $(() => {
@@ -86,10 +112,16 @@ export default component$(() => {
       <div class="flex gap-6">
         {/* Category Sidebar */}
         <div class="w-64 flex-shrink-0">
-          <CategorySidebar
-            selectedCategoryId={state.selectedCategoryId}
-            onCategorySelect={handleCategorySelect}
-            refreshKey={state.refreshKey}
+          <Resource
+            value={categorySidebarComponent}
+            onPending={() => <div class="h-64 rounded-lg bg-gray-100 animate-pulse" />}
+            onResolved={(CategorySidebarComponent) => (
+              <CategorySidebarComponent
+                selectedCategoryId={state.selectedCategoryId}
+                onCategorySelect={handleCategorySelect}
+                refreshKey={state.refreshKey}
+              />
+            )}
           />
         </div>
 
@@ -146,22 +178,36 @@ export default component$(() => {
           {/* Upload Section */}
           {state.showUpload && (
             <div class="mb-6">
-              <DocumentUpload
-                onUploadComplete={handleUploadComplete}
-                categories={state.categories}
-                tags={state.tags}
+              <Resource
+                value={documentUploadComponent}
+                onPending={() => <div class="h-48 rounded-lg bg-gray-100 animate-pulse" />}
+                onResolved={(DocumentUploadComponent) =>
+                  DocumentUploadComponent ? (
+                    <DocumentUploadComponent
+                      onUploadComplete={handleUploadComplete}
+                      categories={state.categories}
+                      tags={state.tags}
+                    />
+                  ) : null
+                }
               />
             </div>
           )}
 
           {/* Document List */}
           {!state.selectedDocument && (
-            <DocumentList
-              key={state.refreshKey}
-              categoryId={state.selectedCategoryId}
-              onDocumentClick={handleDocumentClick}
-              onDocumentSelect={handleDocumentSelect}
-              allowSelection={true}
+            <Resource
+              value={documentListComponent}
+              onPending={() => <div class="h-96 rounded-lg bg-gray-100 animate-pulse" />}
+              onResolved={(DocumentListComponent) => (
+                <DocumentListComponent
+                  key={state.refreshKey}
+                  categoryId={state.selectedCategoryId}
+                  onDocumentClick={handleDocumentClick}
+                  onDocumentSelect={handleDocumentSelect}
+                  allowSelection={true}
+                />
+              )}
             />
           )}
         </div>
@@ -171,9 +217,17 @@ export default component$(() => {
       {state.selectedDocument && (
         <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div class="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <DocumentViewer
-              documentId={state.selectedDocument.id}
-              onClose={handleCloseViewer}
+            <Resource
+              value={documentViewerComponent}
+              onPending={() => <div class="h-[70vh] rounded-lg bg-white" />}
+              onResolved={(DocumentViewerComponent) =>
+                DocumentViewerComponent ? (
+                  <DocumentViewerComponent
+                    documentId={state.selectedDocument!.id}
+                    onClose={handleCloseViewer}
+                  />
+                ) : null
+              }
             />
           </div>
         </div>

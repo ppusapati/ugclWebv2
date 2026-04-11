@@ -343,6 +343,8 @@ export default component$(() => {
                         <img
                           src={group.avatar_url}
                           alt={group.title}
+                          width="48"
+                          height="48"
                           class="w-12 h-12 rounded-full object-cover"
                         />
                       ) : (
@@ -601,6 +603,8 @@ export default component$(() => {
                       <img
                         src={viewingGroup.value.avatar_url}
                         alt={viewingGroup.value.title}
+                        width="64"
+                        height="64"
                         class="w-16 h-16 rounded-full object-cover"
                       />
                     ) : (

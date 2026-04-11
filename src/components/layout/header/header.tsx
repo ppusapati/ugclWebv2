@@ -1,6 +1,4 @@
-/* eslint-disable qwik/valid-lexical-scope */
-import { $, component$, useSignal, useStore, useVisibleTask$ } from '@builder.io/qwik';
-import { useAuthContext } from '~/contexts/auth-context';
+import { $, component$, useSignal } from '@builder.io/qwik';
 import { useThemeContext } from '~/contexts/theme-context';
 import { useMenuContext } from '~/contexts/menu-context';
 import { TenantSwitcher } from '~/components/tenant/tenant-switcher';
@@ -22,49 +20,27 @@ export interface SubMenuItem {
 }
 
 export const Header = component$(() => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const auth = useAuthContext();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const theme = useThemeContext();
   const menuContext = useMenuContext();
+  const activeMainMenu = menuContext.activeMainMenu;
+  const activeSidebarItem = menuContext.activeSidebarItem;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const showUserMenu = useSignal(false);
   const isMenuOpen = useSignal<boolean>(false);
   const nav = useNavigate();
-  // Store for dark mode, with hydration
-  const state = useStore({
-    darkMode: false,
-  });
 
-    // Sync dark mode with html class
-    useVisibleTask$(({ track }) => {
-      track(() => state.darkMode);
-      if (state.darkMode) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('darkMode', 'true');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('darkMode', 'false');
-      }
-    });
-  
-    // On mount, check localStorage for dark mode
-    useVisibleTask$(() => {
-      state.darkMode = localStorage.getItem('darkMode') === 'true';
-    });
-  
-    const handleLogout = $(() => {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      nav('/login');
-    });
+  const handleLogout = $(() => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    nav('/login');
+  });
   const menuItems: MenuItem[] = [
     {
       id: 'hr',
       label: 'HR',
       icon: 'i-heroicons-users-solid',
       subItems: [
-        { id: 'employees', label: 'Employees', href: '/hr/employees', icon: 'i-heroicons:user-solid' },
+        { id: 'employees', label: 'Employees', href: '/hr/employees', icon: 'i-heroicons-user-solid' },
         { id: 'recruitment', label: 'Recruitment', href: '/hr/recruitment', icon: '📋' },
         { id: 'payroll', label: 'Payroll', href: '/hr/payroll', icon: '💰' },
         { id: 'performance', label: 'Performance', href: '/hr/performance', icon: '📊' },
@@ -128,10 +104,9 @@ export const Header = component$(() => {
     isMenuOpen.value = !isMenuOpen.value;
   });
 
-  // eslint-disable-next-line qwik/valid-lexical-scope
   const handleMainMenuClick = $((menuId: string) => {
-    menuContext.activeMainMenu.value = menuId;
-    menuContext.activeSidebarItem.value = '';
+    activeMainMenu.value = menuId;
+    activeSidebarItem.value = '';
     isMenuOpen.value = false;
   });
 
@@ -215,10 +190,10 @@ export const Header = component$(() => {
             {/* Dark mode toggle */}
             <button
               class="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 bg-transparent border-0 transition-all duration-200"
-              title={state.darkMode ? 'Light Mode' : 'Dark Mode'}
-              onClick$={() => (state.darkMode = !state.darkMode)}
+              title={theme.isDark ? 'Light Mode' : 'Dark Mode'}
+              onClick$={() => theme.toggleTheme()}
             >
-              <div class={state.darkMode ? 'i-tabler-sun w-5 h-5 text-yellow-400' : 'i-tabler-moon w-5 h-5'} />
+              <div class={theme.isDark ? 'i-tabler-sun w-5 h-5 text-yellow-400' : 'i-tabler-moon w-5 h-5'} />
             </button>
 
             {/* Notifications */}

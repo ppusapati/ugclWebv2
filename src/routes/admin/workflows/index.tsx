@@ -1,15 +1,33 @@
 // src/routes/admin/workflows/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import WorkflowDesigner from '~/components/form-builder/workflow/WorkflowDesigner';
-import { workflowService } from '~/services';
+import { createSSRApiClient, workflowService } from '~/services';
 import type { WorkflowDefinition } from '~/types/workflow';
 
+export const useWorkflowsData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const response = await ssrApiClient.get<{ workflows: WorkflowDefinition[] }>('/admin/workflows');
+    return {
+      workflows: response?.workflows || [],
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      workflows: [] as WorkflowDefinition[],
+      error: err.message || 'Failed to load workflows',
+    };
+  }
+});
+
 export default component$(() => {
-  const workflows = useSignal<WorkflowDefinition[]>([]);
+  const initialData = useWorkflowsData();
+  const workflows = useSignal<WorkflowDefinition[]>(initialData.value.workflows || []);
   const selectedWorkflow = useSignal<WorkflowDefinition | null>(null);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const showDesigner = useSignal(false);
   const isEditing = useSignal(false);
 
@@ -24,10 +42,6 @@ export default component$(() => {
     } finally {
       loading.value = false;
     }
-  });
-
-  useVisibleTask$(async () => {
-    await loadWorkflows();
   });
 
   const handleCreateNew = $(() => {

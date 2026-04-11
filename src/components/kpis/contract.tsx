@@ -1,5 +1,22 @@
-import { component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
-import { EChart } from '~/components/echarts';
+import { Resource, component$, useResource$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import type { EChartProps } from '~/components/echarts';
+
+const EChart = component$<EChartProps>((props) => {
+  const chartResource = useResource$(async () => {
+    const chartModule = await import('~/components/echarts');
+    return chartModule.EChart;
+  });
+
+  return (
+    <Resource
+      value={chartResource}
+      onPending={() => <div class="h-64 rounded-lg bg-gray-100 animate-pulse" />}
+      onResolved={(ChartComponent) => (
+        <ChartComponent option={props.option} style={props.style} onClick={props.onClick} />
+      )}
+    />
+  );
+});
 
 // Types
 type ContractorKpiEntry = { key: string; value: number };

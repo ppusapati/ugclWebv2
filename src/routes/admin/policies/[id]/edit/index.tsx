@@ -1,7 +1,7 @@
 // src/routes/admin/policies/[id]/edit/index.tsx
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useLocation, useNavigate } from '@builder.io/qwik-city';
-import { apiClient } from '~/services';
+import { component$, useStore, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
+import { apiClient, createSSRApiClient } from '~/services';
 
 interface BusinessVertical {
   id: string;
@@ -25,15 +25,40 @@ interface Policy {
   context: any;
 }
 
+export const usePolicyEditData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const policyId = requestEvent.params.id;
+
+  try {
+    const [policyData, verticalsData] = await Promise.all([
+      ssrApiClient.get<Policy>(`/policies/${policyId}`),
+      ssrApiClient.get<{ businesses?: BusinessVertical[]; data?: BusinessVertical[] }>('/admin/businesses'),
+    ]);
+
+    return {
+      policy: policyData,
+      verticals: verticalsData.businesses || verticalsData.data || [],
+      error: '',
+    };
+  } catch (err: any) {
+    return {
+      policy: null as Policy | null,
+      verticals: [] as BusinessVertical[],
+      error: err.message || 'Failed to load policy',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = usePolicyEditData();
   const location = useLocation();
   const nav = useNavigate();
   const policyId = location.params.id;
 
-  const verticals = useSignal<BusinessVertical[]>([]);
-  const loading = useSignal(true);
+  const verticals = useSignal<BusinessVertical[]>(initialData.value.verticals || []);
+  const loading = useSignal(false);
   const saving = useSignal(false);
-  const error = useSignal('');
+  const error = useSignal(initialData.value.error || '');
 
   const form = useStore<Policy>({
     id: '',
@@ -55,42 +80,21 @@ export default component$(() => {
   const newResource = useSignal('');
   const newAction = useSignal('');
 
-  // Load business verticals
-  const loadVerticals = $(async () => {
-    try {
-      const data = await apiClient.get<{ businesses?: BusinessVertical[]; data?: BusinessVertical[] }>('/admin/businesses');
-      verticals.value = data.businesses || data.data || [];
-    } catch (err) {
-      console.error('Failed to load verticals:', err);
-    }
-  });
-
-  // Load policy
-  const loadPolicy = $(async () => {
-    try {
-      loading.value = true;
-      const data = await apiClient.get<Policy>(`/policies/${policyId}`);
-
-      // Copy all properties to form
-      form.id = data.id;
-      form.name = data.name;
-      form.display_name = data.display_name;
-      form.description = data.description;
-      form.effect = data.effect;
-      form.priority = data.priority;
-      form.status = data.status;
-      form.business_vertical_id = data.business_vertical_id || '';
-      form.resources = data.resources || [];
-      form.actions = data.actions || [];
-      form.conditions = data.conditions || [];
-      form.subjects = data.subjects || [];
-      form.context = data.context || {};
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load policy';
-    } finally {
-      loading.value = false;
-    }
-  });
+  if (initialData.value.policy) {
+    form.id = initialData.value.policy.id;
+    form.name = initialData.value.policy.name;
+    form.display_name = initialData.value.policy.display_name;
+    form.description = initialData.value.policy.description;
+    form.effect = initialData.value.policy.effect;
+    form.priority = initialData.value.policy.priority;
+    form.status = initialData.value.policy.status;
+    form.business_vertical_id = initialData.value.policy.business_vertical_id || '';
+    form.resources = initialData.value.policy.resources || [];
+    form.actions = initialData.value.policy.actions || [];
+    form.conditions = initialData.value.policy.conditions || [];
+    form.subjects = initialData.value.policy.subjects || [];
+    form.context = initialData.value.policy.context || {};
+  }
 
   // Add resource
   const addResource = $(() => {
@@ -154,11 +158,6 @@ export default component$(() => {
     } finally {
       saving.value = false;
     }
-  });
-
-  // Load data on mount
-  useVisibleTask$(async () => {
-    await Promise.all([loadPolicy(), loadVerticals()]);
   });
 
   if (loading.value) {

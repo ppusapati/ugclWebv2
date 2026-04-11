@@ -1,4 +1,3 @@
-/* eslint-disable qwik/valid-lexical-scope */
 import { $, component$ } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
 import { useMenuContext } from '~/contexts/menu-context';
@@ -19,6 +18,7 @@ interface SubMenuItem {
 
 export const Sidebar = component$(() => {
   const menuContext = useMenuContext();
+  const activeSidebarItem = menuContext.activeSidebarItem;
 
   const menuItems: MenuItem[] = [
     {
@@ -94,9 +94,8 @@ export const Sidebar = component$(() => {
     }
   ];
 
-  // eslint-disable-next-line qwik/valid-lexical-scope
   const handleSidebarItemClick = $((itemId: string) => {
-    menuContext.activeSidebarItem.value = itemId;
+    activeSidebarItem.value = itemId;
   });
 
   const currentSubItems = menuItems.find(item => item.id === menuContext.activeMainMenu.value)?.subItems || [];

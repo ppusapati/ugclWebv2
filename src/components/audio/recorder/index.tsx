@@ -70,7 +70,7 @@ export const Recorder = component$(() => {
         <button onClick$={clearRecording}>Reset</button>
       ) : (
         <button class="border-none rounded-2xl bg-transparent" onClick$={stopRecording} disabled={statusRecording.value === "ready"}>
-          <div class="text-xl text-info-700 i-tabler:player-stop-filled"/>
+          <div class="text-xl text-info-700 i-tabler-player-stop-filled"/>
         </button>
       )}
     </div>

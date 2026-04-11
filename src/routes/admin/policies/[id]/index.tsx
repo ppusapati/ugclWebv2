@@ -1,7 +1,7 @@
 // src/routes/admin/policies/[id]/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useLocation, useNavigate } from '@builder.io/qwik-city';
-import { apiClient } from '~/services';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
+import { apiClient, createSSRApiClient } from '~/services';
 
 interface Policy {
   id: string;
@@ -47,15 +47,40 @@ interface PolicyEvaluation {
   resource: string;
 }
 
+export const usePolicyDetailData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const policyId = requestEvent.params.id;
+
+  try {
+    const [policyData, evaluationsData] = await Promise.all([
+      ssrApiClient.get<Policy>(`/policies/${policyId}`),
+      ssrApiClient.get<PolicyEvaluation[]>(`/policies/${policyId}/evaluations`, { limit: 10 }),
+    ]);
+
+    return {
+      policy: policyData,
+      evaluations: evaluationsData || [],
+      error: '',
+    };
+  } catch (err: any) {
+    return {
+      policy: null as Policy | null,
+      evaluations: [] as PolicyEvaluation[],
+      error: err.message || 'Failed to load policy',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = usePolicyDetailData();
   const location = useLocation();
   const nav = useNavigate();
   const policyId = location.params.id;
 
-  const policy = useSignal<Policy | null>(null);
-  const recentEvaluations = useSignal<PolicyEvaluation[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal('');
+  const policy = useSignal<Policy | null>(initialData.value.policy || null);
+  const recentEvaluations = useSignal<PolicyEvaluation[]>(initialData.value.evaluations || []);
+  const loading = useSignal(false);
+  const error = useSignal(initialData.value.error || '');
   const activeTab = useSignal<'details' | 'conditions' | 'evaluations'>('details');
 
   // Fetch policy details
@@ -111,12 +136,6 @@ export default component$(() => {
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
-  });
-
-  // Load data on mount
-  useVisibleTask$(async () => {
-    await fetchPolicy();
-    await fetchEvaluations();
   });
 
   if (loading.value) {

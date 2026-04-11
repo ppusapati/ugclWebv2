@@ -1,31 +1,38 @@
 // src/routes/admin/forms/[formCode]/preview/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import FormRenderer from '~/components/form-builder/renderer/FormRenderer';
-import { formBuilderService } from '~/services';
+import { createSSRApiClient } from '~/services';
 import type { AppForm } from '~/types/workflow';
 
+export const usePreviewFormData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const formCode = requestEvent.params.formCode;
+
+  try {
+    const form = await ssrApiClient.get<AppForm>(`/admin/forms/${formCode}`);
+    return {
+      form,
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      form: null as AppForm | null,
+      error: err.message || 'Failed to load form',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = usePreviewFormData();
   const nav = useNavigate();
   const loc = useLocation();
   const formCode = loc.params.formCode;
 
-  const form = useSignal<AppForm | null>(null);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const form = useSignal<AppForm | null>(initialData.value.form || null);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const previewData = useSignal<Record<string, any>>({});
-
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-      const formData = await formBuilderService.getFormByCode(formCode);
-      form.value = formData;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load form';
-    } finally {
-      loading.value = false;
-    }
-  });
 
   const handleBack = $(async () => {
     await nav(`/admin/forms/${formCode}`);

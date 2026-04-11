@@ -1,6 +1,7 @@
-import { component$, useSignal, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate } from '@builder.io/qwik-city';
+import { component$, useSignal, useStore, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate } from '@builder.io/qwik-city';
 import { apiClient } from '~/services/api-client';
+import { createSSRApiClient } from '~/services';
 
 interface Policy {
   id: string;
@@ -22,12 +23,41 @@ interface PolicyStats {
   evaluations_last_24h: number;
 }
 
+export const usePoliciesData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const [policiesData, statsData] = await Promise.all([
+      ssrApiClient.get<{ policies: Policy[]; total: number }>('/policies', {
+        limit: 20,
+        offset: 0,
+      }),
+      ssrApiClient.get<PolicyStats>('/policies/statistics'),
+    ]);
+
+    return {
+      policies: policiesData.policies || [],
+      total: policiesData.total || 0,
+      stats: statsData,
+      error: '',
+    };
+  } catch (err: any) {
+    return {
+      policies: [] as Policy[],
+      total: 0,
+      stats: null as PolicyStats | null,
+      error: err.message || 'Failed to fetch policies',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = usePoliciesData();
   const nav = useNavigate();
-  const policies = useSignal<Policy[]>([]);
-  const stats = useSignal<PolicyStats | null>(null);
-  const loading = useSignal(true);
-  const error = useSignal('');
+  const policies = useSignal<Policy[]>(initialData.value.policies || []);
+  const stats = useSignal<PolicyStats | null>(initialData.value.stats || null);
+  const loading = useSignal(false);
+  const error = useSignal(initialData.value.error || '');
 
   const filters = useStore({
     status: '',
@@ -38,7 +68,7 @@ export default component$(() => {
   const pagination = useStore({
     page: 1,
     limit: 20,
-    total: 0
+    total: initialData.value.total || 0
   });
 
   // Fetch policies
@@ -105,12 +135,6 @@ export default component$(() => {
     } catch (err: any) {
       alert(`Error: ${err.message || 'Failed to delete policy'}`);
     }
-  });
-
-  // Load data on mount
-  useVisibleTask$(async () => {
-    await fetchPolicies();
-    await fetchStats();
   });
 
   // Filter policies

@@ -1,11 +1,19 @@
-import { component$ } from '@builder.io/qwik';
+import { component$, useResource$, Resource } from '@builder.io/qwik';
 import type { DocumentHead } from '@builder.io/qwik-city';
-import { CategoryManager } from '~/components/documents/CategoryManager';
 
 export default component$(() => {
+  const categoryManagerComponent = useResource$(async () => {
+    const mod = await import('~/components/documents/CategoryManager');
+    return mod.CategoryManager;
+  });
+
   return (
     <div class="container mx-auto px-4 py-8">
-      <CategoryManager />
+      <Resource
+        value={categoryManagerComponent}
+        onPending={() => <div class="h-96 rounded-lg bg-gray-100 animate-pulse" />}
+        onResolved={(CategoryManagerComponent) => <CategoryManagerComponent />}
+      />
     </div>
   );
 });

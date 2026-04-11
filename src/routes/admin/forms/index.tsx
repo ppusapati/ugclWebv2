@@ -1,35 +1,43 @@
 // src/routes/admin/forms/index.tsx
 // src/routes/admin/forms/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate, type DocumentHead } from '@builder.io/qwik-city';
-import { formBuilderService, businessService } from '~/services';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate, type DocumentHead } from '@builder.io/qwik-city';
+import { formBuilderService, createSSRApiClient } from '~/services';
 import type { AppForm } from '~/types/workflow';
 import type { BusinessVertical } from '~/services/types';
 
+export const useFormsData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const [formsResponse, verticalsResponse] = await Promise.all([
+      ssrApiClient.get<{ forms: AppForm[] }>('/admin/app-forms'),
+      ssrApiClient.get<any>('/admin/businesses'),
+    ]);
+
+    return {
+      forms: formsResponse?.forms || [],
+      businessVerticals: verticalsResponse?.data || verticalsResponse?.businesses || [],
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      forms: [] as AppForm[],
+      businessVerticals: [] as BusinessVertical[],
+      error: err.message || 'Failed to load forms',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = useFormsData();
   const nav = useNavigate();
-  const forms = useSignal<AppForm[]>([]);
-  const businessVerticals = useSignal<BusinessVertical[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const forms = useSignal<AppForm[]>(initialData.value.forms || []);
+  const businessVerticals = useSignal<BusinessVertical[]>(initialData.value.businessVerticals || []);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const searchQuery = useSignal('');
   const selectedModule = useSignal('');
-
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-      const [data, bvData] = await Promise.all([
-        formBuilderService.getAllForms(),
-        businessService.getAllBusinesses(),
-      ]);
-      forms.value = data;
-      businessVerticals.value = bvData.data || [];
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load forms';
-    } finally {
-      loading.value = false;
-    }
-  });
 
   const handleCreateNew = $(async () => { await nav('/admin/forms/new'); });
   const handleEdit = $(async (formCode: string) => { await nav(`/admin/forms/${formCode}`); });

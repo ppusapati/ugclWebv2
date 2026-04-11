@@ -1,11 +1,10 @@
 // Report Viewer Screen
-import { component$, useStore, $ } from '@builder.io/qwik';
+import { component$, useStore, useResource$, Resource, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../../services/api-client';
 import { analyticsService } from '../../../../../../services/analytics.service';
 import type { ReportDefinition, ReportResult, ReportFilter, ChartType } from '../../../../../../types/analytics';
-import { EChart } from '../../../../../../components/echarts';
 import { P9ETable } from '../../../../../../components/table/table';
 
 // Helper function to transform report data into ECharts option format
@@ -17,7 +16,6 @@ const transformToChartOption = (
   if (!reportData.data || reportData.data.length === 0) {
     return null;
   }
-
   // Get the first field as x-axis (category) and second as y-axis (value)
   const xField = reportData.headers[0];
   const yField = reportData.headers[1];
@@ -243,6 +241,11 @@ export default component$(() => {
     loading: false,
     error: (initialData.value as any).error || '',
     runtimeFilters: [] as ReportFilter[],
+  });
+
+  const chartComponent = useResource$(async () => {
+    const mod = await import('../../../../../../components/echarts');
+    return mod.EChart;
   });
 
   const executeReport = $(async () => {
@@ -516,13 +519,19 @@ export default component$(() => {
               <div class="p-8">
                 {state.report.chart_type && state.reportData ? (
                   <div class="h-[600px] bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl p-6">
-                    <EChart
-                      option={transformToChartOption(
-                        state.reportData,
-                        state.report.chart_type,
-                        state.report.name
+                    <Resource
+                      value={chartComponent}
+                      onPending={() => <div class="h-full rounded-lg bg-gray-100 animate-pulse" />}
+                      onResolved={(EChartComponent) => (
+                        <EChartComponent
+                          option={transformToChartOption(
+                            state.reportData!,
+                            state.report!.chart_type || 'bar',
+                            state.report!.name
+                          )}
+                          style="width: 100%; height: 100%;"
+                        />
                       )}
-                      style="width: 100%; height: 100%;"
                     />
                   </div>
                 ) : (

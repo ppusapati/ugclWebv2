@@ -3,7 +3,6 @@ import { useNavigate } from '@builder.io/qwik-city';
 import { Header } from '~/components/layout/header/header';
 import { Sidebar } from '~/components/layout/sidebar';
 import { Breadcrumb } from '~/components/breadcrumb';
-import { MenuProvider } from '~/contexts/menu-context';
 import { getUser } from '~/utils/auth';
 
 export default component$(() => {
@@ -32,7 +31,6 @@ export default component$(() => {
   return (
     <>
      <div class="min-h-screen bg-gray-50">
-      <MenuProvider>
         <Header />
         <div class="flex min-h-[calc(100vh-73px)]">
           <Sidebar />
@@ -43,7 +41,6 @@ export default component$(() => {
             </div>
           </main>
         </div>
-      </MenuProvider>
     </div>
 
     </>

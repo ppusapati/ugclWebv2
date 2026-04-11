@@ -1,13 +1,36 @@
 // src/routes/notifications/index.tsx
-import { component$, useSignal, useVisibleTask$, $, useStore } from '@builder.io/qwik';
-import { type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $, useStore } from '@builder.io/qwik';
+import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
+import { createSSRApiClient } from '~/services';
 import { notificationService } from '~/services/notification.service';
-import type { NotificationDTO } from '~/types/notification';
+import type { NotificationDTO, NotificationListResponse } from '~/types/notification';
+
+export const useNotificationsData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const response = await ssrApiClient.get<NotificationListResponse>('/notifications', {
+      limit: 50,
+      offset: 0,
+    });
+
+    return {
+      notifications: response.notifications || [],
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      notifications: [] as NotificationDTO[],
+      error: err.message || 'Failed to load notifications',
+    };
+  }
+});
 
 export default component$(() => {
-  const notifications = useSignal<NotificationDTO[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const initialData = useNotificationsData();
+  const notifications = useSignal<NotificationDTO[]>(initialData.value.notifications || []);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
 
   const filters = useStore({
     type: '',
@@ -34,10 +57,6 @@ export default component$(() => {
     } finally {
       loading.value = false;
     }
-  });
-
-  useVisibleTask$(async () => {
-    await loadNotifications();
   });
 
   const handleMarkAsRead = $(async (id: string) => {

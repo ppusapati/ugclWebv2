@@ -1,40 +1,48 @@
 // src/routes/business/[code]/forms/[formCode]/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import FormRenderer from '~/components/form-builder/renderer/FormRenderer';
-import { formBuilderService, workflowService } from '~/services';
+import { createSSRApiClient, workflowService } from '~/services';
 import type { AppForm } from '~/types/workflow';
 
+export const useBusinessFormData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const businessCode = requestEvent.params.code;
+  const formCode = requestEvent.params.formCode;
+
+  try {
+    const formData = await ssrApiClient.get<AppForm>(`/admin/forms/${formCode}`);
+
+    // Preserve existing access control behavior.
+    if ((formData as any).vertical_access && (formData as any).vertical_access.length > 0) {
+      if (!(formData as any).vertical_access.includes(businessCode)) {
+        throw new Error('This form is not available for this business vertical');
+      }
+    }
+
+    return {
+      form: formData,
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      form: null as AppForm | null,
+      error: err.message || 'Failed to load form',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = useBusinessFormData();
   const nav = useNavigate();
   const loc = useLocation();
   const businessCode = loc.params.code;
   const formCode = loc.params.formCode;
 
-  const form = useSignal<AppForm | null>(null);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const form = useSignal<AppForm | null>(initialData.value.form || null);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const submitting = useSignal(false);
-
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-      const formData = await formBuilderService.getFormByCode(formCode);
-
-      // Check if form is accessible for this business vertical
-      if (formData.vertical_access && formData.vertical_access.length > 0) {
-        if (!formData.vertical_access.includes(businessCode)) {
-          throw new Error('This form is not available for this business vertical');
-        }
-      }
-
-      form.value = formData;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load form';
-    } finally {
-      loading.value = false;
-    }
-  });
 
   const handleSubmit = $(async (formData: Record<string, any>) => {
     try {

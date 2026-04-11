@@ -3,32 +3,72 @@
  * Displays project information with map visualization and tabs
  */
 
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useLocation, useNavigate } from '@builder.io/qwik-city';
-import { ProjectMap } from '../../../../components/maps/project-map';
-import { ProjectStatsCard } from '../../../../components/projects/project-stats-card';
-import { TaskCard } from '../../../../components/tasks/task-card';
+import { component$, useStore, useSignal, useResource$, Resource, $ } from '@builder.io/qwik';
+import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
+import { createSSRApiClient } from '../../../../services/api-client';
 import { projectService } from '../../../../services/project.service';
 import { taskService } from '../../../../services/task.service';
 import type { Project, Zone, Node, GeoJSONFeatureCollection, Task } from '../../../../types/project';
+
+export const useProjectDetailData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const projectId = requestEvent.params.projectId;
+
+  try {
+    const project = await ssrApiClient.get<Project>(`/projects/${projectId}`);
+    const [stats, zonesResponse, nodesResponse] = await Promise.all([
+      ssrApiClient.get<any>(`/projects/${projectId}/stats`),
+      ssrApiClient.get<{ zones: Zone[]; count: number }>(`/projects/${projectId}/zones`),
+      ssrApiClient.get<{ nodes: Node[]; count: number }>(`/projects/${projectId}/nodes`),
+    ]);
+
+    let geojsonData: GeoJSONFeatureCollection | null = null;
+    if (project.kmz_file_name) {
+      try {
+        geojsonData = await ssrApiClient.get<GeoJSONFeatureCollection>(`/projects/${projectId}/geojson`);
+      } catch {
+        geojsonData = null;
+      }
+    }
+
+    return {
+      project,
+      stats,
+      zones: zonesResponse.zones || [],
+      nodes: nodesResponse.nodes || [],
+      geojsonData,
+      error: '',
+    };
+  } catch (error: any) {
+    return {
+      project: null as Project | null,
+      stats: null,
+      zones: [] as Zone[],
+      nodes: [] as Node[],
+      geojsonData: null as GeoJSONFeatureCollection | null,
+      error: error.message || 'Failed to load project',
+    };
+  }
+});
 
 export default component$(() => {
   const loc = useLocation();
   const nav = useNavigate();
   const projectId = loc.params.projectId;
+  const initialData = useProjectDetailData();
 
   const activeTab = useSignal<'overview' | 'map' | 'tasks' | 'budget'>('overview');
 
   const state = useStore({
-    project: null as Project | null,
-    stats: null as any,
-    zones: [] as Zone[],
-    nodes: [] as Node[],
+    project: initialData.value.project,
+    stats: initialData.value.stats as any,
+    zones: initialData.value.zones,
+    nodes: initialData.value.nodes,
     tasks: [] as Task[],
-    geojsonData: null as GeoJSONFeatureCollection | null,
-    loading: true,
+    geojsonData: initialData.value.geojsonData,
+    loading: false,
     loadingTasks: false,
-    error: '',
+    error: initialData.value.error,
   });
 
   // KMZ upload local state
@@ -39,40 +79,23 @@ export default component$(() => {
     success: '',
   });
 
-  // Load project data
-  useVisibleTask$(async () => {
-    try {
-      // Load project details
-      const project = await projectService.getProject(projectId);
-      state.project = project;
+  const statsCardComponent = useResource$(async () => {
+    const mod = await import('../../../../components/projects/project-stats-card');
+    return mod.ProjectStatsCard;
+  });
 
-      // Load project stats
-      const stats = await projectService.getProjectStats(projectId);
-      state.stats = stats;
+  const projectMapComponent = useResource$(async ({ track }) => {
+    track(() => activeTab.value);
+    if (activeTab.value !== 'map') return null;
+    const mod = await import('../../../../components/maps/project-map');
+    return mod.ProjectMap;
+  });
 
-      // Load zones
-      const zonesResponse = await projectService.getProjectZones(projectId);
-      state.zones = zonesResponse.zones || [];
-
-      // Load nodes
-      const nodesResponse = await projectService.getProjectNodes(projectId);
-      state.nodes = nodesResponse.nodes || [];
-
-      // Load GeoJSON for map
-      if (project.kmz_file_name) {
-        try {
-          const geojson = await projectService.getProjectGeoJSON(projectId);
-          state.geojsonData = geojson;
-        } catch (err) {
-          console.warn('Failed to load GeoJSON:', err);
-        }
-      }
-
-    } catch (error: any) {
-      state.error = error.message || 'Failed to load project';
-    } finally {
-      state.loading = false;
-    }
+  const taskCardComponent = useResource$(async ({ track }) => {
+    track(() => activeTab.value);
+    if (activeTab.value !== 'tasks') return null;
+    const mod = await import('../../../../components/tasks/task-card');
+    return mod.TaskCard;
   });
 
   // Load tasks when tasks tab is active
@@ -240,7 +263,11 @@ export default component$(() => {
       {/* Stats Cards */}
       {state.stats && (
         <div class="mb-6">
-          <ProjectStatsCard stats={state.stats} />
+          <Resource
+            value={statsCardComponent}
+            onPending={() => <div class="h-40 rounded-lg bg-gray-100 animate-pulse" />}
+            onResolved={(ProjectStatsCardComponent) => <ProjectStatsCardComponent stats={state.stats} />}
+          />
         </div>
       )}
 
@@ -428,13 +455,21 @@ export default component$(() => {
           {activeTab.value === 'map' && (
             <div>
               {state.geojsonData || state.zones.length > 0 || state.nodes.length > 0 ? (
-                <ProjectMap
-                  geojsonData={state.geojsonData || undefined}
-                  zones={state.zones}
-                  nodes={state.nodes}
-                  height="600px"
-                  onNodeClick$={handleNodeClick}
-                  onZoneClick$={handleZoneClick}
+                <Resource
+                  value={projectMapComponent}
+                  onPending={() => <div class="h-[600px] rounded-lg bg-gray-100 animate-pulse" />}
+                  onResolved={(ProjectMapComponent) =>
+                    ProjectMapComponent ? (
+                      <ProjectMapComponent
+                        geojsonData={state.geojsonData || undefined}
+                        zones={state.zones}
+                        nodes={state.nodes}
+                        height="600px"
+                        onNodeClick$={handleNodeClick}
+                        onZoneClick$={handleZoneClick}
+                      />
+                    ) : null
+                  }
                 />
               ) : (
                 <div class="text-center py-12 bg-gray-50 rounded-lg">
@@ -479,13 +514,21 @@ export default component$(() => {
                 </div>
               ) : state.tasks.length > 0 ? (
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {state.tasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onView$={handleViewTask}
-                    />
-                  ))}
+                  <Resource
+                    value={taskCardComponent}
+                    onPending={() => <div class="col-span-full h-64 rounded-lg bg-gray-100 animate-pulse" />}
+                    onResolved={(TaskCardComponent) =>
+                      TaskCardComponent
+                        ? state.tasks.map(task => (
+                            <TaskCardComponent
+                              key={task.id}
+                              task={task}
+                              onView$={handleViewTask}
+                            />
+                          ))
+                        : null
+                    }
+                  />
                 </div>
               ) : (
                 <div class="text-center py-12 bg-gray-50 rounded-lg">

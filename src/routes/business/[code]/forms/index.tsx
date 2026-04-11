@@ -1,35 +1,44 @@
 // src/routes/business/[code]/forms/index.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
-import { formBuilderService } from '~/services';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
+import { createSSRApiClient } from '~/services';
 import type { AppForm } from '~/types/workflow';
 
+export const useBusinessFormsData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+  const businessCode = requestEvent.params.code;
+
+  try {
+    const allFormsResponse = await ssrApiClient.get<{ forms: AppForm[] }>('/admin/app-forms');
+    const allForms = allFormsResponse.forms || [];
+
+    const forms = allForms.filter((f) =>
+      f.is_active &&
+      (!f.accessible_verticals || f.accessible_verticals.length === 0 || f.accessible_verticals.includes(businessCode))
+    );
+
+    return {
+      forms,
+      error: null as string | null,
+    };
+  } catch (err: any) {
+    return {
+      forms: [] as AppForm[],
+      error: err.message || 'Failed to load forms',
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = useBusinessFormsData();
   const nav = useNavigate();
   const loc = useLocation();
   const businessCode = loc.params.code;
 
-  const forms = useSignal<AppForm[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal<string | null>(null);
+  const forms = useSignal<AppForm[]>(initialData.value.forms || []);
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(initialData.value.error || null);
   const searchQuery = useSignal('');
-
-  useVisibleTask$(async () => {
-    try {
-      loading.value = true;
-      // Get all forms and filter by business vertical access
-      const allForms = await formBuilderService.getAllForms();
-      // Filter forms that are active and accessible for this business vertical
-      forms.value = allForms.filter(f =>
-        f.is_active &&
-        (!f.accessible_verticals || f.accessible_verticals.length === 0 || f.accessible_verticals.includes(businessCode))
-      );
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load forms';
-    } finally {
-      loading.value = false;
-    }
-  });
 
   const handleFormClick = $(async (formCode: string) => {
     await nav(`/business/${businessCode}/forms/${formCode}`);

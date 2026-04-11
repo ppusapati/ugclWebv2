@@ -1,4 +1,3 @@
-/* eslint-disable qwik/valid-lexical-scope */
 import { createContextId, useContext, useContextProvider, useSignal, component$, Slot, useVisibleTask$, $ } from '@builder.io/qwik';
 import type { Signal } from '@builder.io/qwik';
 import { useLocation } from '@builder.io/qwik-city';

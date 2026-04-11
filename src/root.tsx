@@ -9,13 +9,25 @@ import 'virtual:uno.css';
 import "./global.css";
 
 export default component$(() => {
-  // Request browser notification permissions on mount
+  // Defer non-critical browser work until idle so first paint is not blocked.
   useVisibleTask$(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then((permission) => {
-        console.log('Notification permission:', permission);
-      });
+    const requestPermission = () => {
+      if ("Notification" in window && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+    };
+    const browserWindow = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    if (browserWindow.requestIdleCallback) {
+      const idleId = browserWindow.requestIdleCallback(requestPermission, { timeout: 3000 });
+      return () => browserWindow.cancelIdleCallback?.(idleId);
     }
+
+    const timeoutId = globalThis.setTimeout(requestPermission, 1500);
+    return () => globalThis.clearTimeout(timeoutId);
   });
   /**
    * The root of a QwikCity site always start with the <QwikCityProvider> component,

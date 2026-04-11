@@ -1,7 +1,7 @@
 // src/routes/admin/policies/create/index.tsx
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { useNavigate } from '@builder.io/qwik-city';
-import { apiClient } from '~/services';
+import { component$, useStore, useSignal, $ } from '@builder.io/qwik';
+import { routeLoader$, useNavigate } from '@builder.io/qwik-city';
+import { apiClient, createSSRApiClient } from '~/services';
 import { ConditionBuilder } from '~/components/policy/condition-builder';
 
 interface BusinessVertical {
@@ -25,11 +25,26 @@ interface PolicyForm {
   context: any;
 }
 
+export const usePolicyCreateData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const data = await ssrApiClient.get<{ businesses?: BusinessVertical[]; data?: BusinessVertical[] }>('/admin/businesses');
+    return {
+      verticals: data.businesses || data.data || [],
+    };
+  } catch {
+    return {
+      verticals: [] as BusinessVertical[],
+    };
+  }
+});
+
 export default component$(() => {
+  const initialData = usePolicyCreateData();
   const nav = useNavigate();
 
-  const verticals = useSignal<BusinessVertical[]>([]);
-  const loading = useSignal(true);
+  const verticals = useSignal<BusinessVertical[]>(initialData.value.verticals || []);
   const saving = useSignal(false);
   const error = useSignal('');
 
@@ -51,19 +66,6 @@ export default component$(() => {
   // Temporary inputs for adding resources/actions
   const newResource = useSignal('');
   const newAction = useSignal('');
-
-  // Load business verticals
-  const loadVerticals = $(async () => {
-    try {
-      loading.value = true;
-      const data = await apiClient.get<{ businesses?: BusinessVertical[]; data?: BusinessVertical[] }>('/admin/businesses');
-      verticals.value = data.businesses || data.data || [];
-    } catch (err) {
-      console.error('Failed to load verticals:', err);
-    } finally {
-      loading.value = false;
-    }
-  });
 
   // Add resource
   const addResource = $(() => {
@@ -127,11 +129,6 @@ export default component$(() => {
     } finally {
       saving.value = false;
     }
-  });
-
-  // Load verticals on mount
-  useVisibleTask$(async () => {
-    await loadVerticals();
   });
 
   return (

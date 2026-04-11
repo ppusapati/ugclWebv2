@@ -25,6 +25,12 @@ export const ThemeProvider = component$(() => {
 
   const toggleTheme = $(() => {
     themeState.isDark = !themeState.isDark;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme', themeState.isDark ? 'dark' : 'light');
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', themeState.isDark);
+    }
   });
 
   // Create context value with reactive state
@@ -35,25 +41,13 @@ export const ThemeProvider = component$(() => {
     toggleTheme,
   };
 
-  // Watch for theme changes and update localStorage + DOM
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(({ track }) => {
-    // Track theme changes
-    const isDark = track(() => themeState.isDark);
-
-    // Update localStorage and DOM when theme changes
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', isDark);
-  });
-
   // Initialize theme from localStorage on mount
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(() => {
-    // Initialize theme from localStorage (client-side only) - runs once on mount
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      themeState.isDark = true;
-    }
+    const isDark = savedTheme === 'dark';
+    themeState.isDark = isDark;
+    document.documentElement.classList.toggle('dark', isDark);
   });
 
   useContextProvider(ThemeContext, contextValue);
