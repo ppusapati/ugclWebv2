@@ -1,6 +1,6 @@
 /* eslint-disable qwik/valid-lexical-scope */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { component$, useStore, useVisibleTask$, $ } from "@builder.io/qwik";
+import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
 import { useLocation, useNavigate } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
 
@@ -69,7 +69,8 @@ export default component$(() => {
   };
 
   // Load initial data
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     try {
       const [userRes, verticalsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/admin/users/${userId}`, {
@@ -102,7 +103,8 @@ export default component$(() => {
   });
 
   // Load sites when vertical is selected
-  useVisibleTask$(({ track }) => {
+  useTask$(({ track }) => {
+    if (isServer) return;
     track(() => state.selectedVertical);
 
     const loadSites = async () => {

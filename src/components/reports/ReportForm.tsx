@@ -1,5 +1,5 @@
 // src/components/reports/ReportForm.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { reportService, getReportConfig, fileService } from '~/services';
 import type { ReportKey } from '~/services';
@@ -23,7 +23,11 @@ export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, b
 
   const config = getReportConfig(reportType);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     // Initialize form with empty values
     const initial: Record<string, any> = {};
     config.fields.forEach((field: any) => {

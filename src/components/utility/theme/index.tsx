@@ -1,4 +1,4 @@
-import { $, component$, useSignal, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, isServer, useSignal, useTask$ } from "@builder.io/qwik";
 import clsx from "clsx";
 
 export const P9EThemeToggle = component$(() => {
@@ -14,7 +14,11 @@ export const P9EThemeToggle = component$(() => {
     }
   });
 
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) {
+      return;
+    }
+
     let storedTheme;
     try {
       storedTheme = localStorage.getItem("theme");

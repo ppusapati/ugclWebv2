@@ -1,5 +1,5 @@
 // Reports List Screen - Enhanced Professional Design
-import { component$, useStore, $, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, $, useSignal, useTask$ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../services/api-client';
@@ -65,7 +65,11 @@ export default component$(() => {
   });
 
   // Add animation on mount
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) {
+      return;
+    }
+
     const cards = document.querySelectorAll('.report-card');
     cards.forEach((card, index) => {
       setTimeout(() => {

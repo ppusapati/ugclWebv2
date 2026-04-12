@@ -1,4 +1,4 @@
-import { $, component$, useSignal, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, useSignal, useTask$, isServer } from "@builder.io/qwik";
 import { Link, useLocation } from "@builder.io/qwik-city";
 import clsx from "clsx";
 import { type P9ETabsProps } from "../types";
@@ -37,7 +37,8 @@ export const P9ETabs = component$((props: P9ETabsProps) => {
   });
 
   // Update indicator style when active element changes
-  useVisibleTask$(({ track }) => {
+  useTask$(({ track }) => {
+    if (isServer) return;
     track(() => location.url.pathname);
     updateIndicatorStyle();
   });

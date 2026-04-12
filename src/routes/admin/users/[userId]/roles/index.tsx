@@ -1,4 +1,4 @@
-import { component$, useStore, useVisibleTask$, $ } from "@builder.io/qwik";
+import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
 import { useLocation, useNavigate, routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
 import { apiClient, createSSRApiClient } from "~/services";
@@ -91,7 +91,8 @@ export default component$(() => {
   });
 
   // Load business roles when vertical is selected
-  useVisibleTask$(({ track }) => {
+  useTask$(({ track }) => {
+    if (isServer) return;
     track(() => state.selectedVertical);
 
     const loadBusinessRoles = async () => {

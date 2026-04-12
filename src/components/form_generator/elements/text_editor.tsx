@@ -1,4 +1,4 @@
-import { component$, useStore, useSignal, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
+import { component$, useStore, useSignal, useTask$, type PropFunction, isServer } from '@builder.io/qwik';
 import { P9EInputLabel } from './input_label';
 import type { P9EBaseProps, P9EFormProps, P9EInputFunctions, P9EValidations } from '../types';
 import { P9EInputError } from './input_error';
@@ -14,7 +14,8 @@ export const P9ETextEditor = component$(
     const editorRef = useSignal<HTMLDivElement | undefined>();
     const store = useStore({ content: '' });
 
-    useVisibleTask$(async () => {
+    useTask$(async () => {
+      if (isServer) return;
       if (editorRef.value) {
         // Dynamic import of Quill to avoid SSR issues
         const QuillModule = await import('quill');

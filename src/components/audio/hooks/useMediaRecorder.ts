@@ -1,4 +1,4 @@
-import {useVisibleTask$, $, type QRL, type NoSerialize, noSerialize, useSignal, type Signal, useComputed$} from "@builder.io/qwik";
+import {useTask$, $, type QRL, type NoSerialize, noSerialize, useSignal, type Signal, useComputed$, isServer} from "@builder.io/qwik";
 
 declare global {
   interface Window {
@@ -236,7 +236,8 @@ export const useMediaRecorder = (options?: Options): HookReturn => {
     store.value.audioContext =  null;
   });
 
-  useVisibleTask$(({track, cleanup}) => {
+  useTask$(({track, cleanup}) => {
+    if (isServer) return;
     track(() => statusRecording.value)
 
     let timerId: number | undefined;
@@ -254,7 +255,8 @@ export const useMediaRecorder = (options?: Options): HookReturn => {
 
   })
 
-  useVisibleTask$(({track}) => {
+  useTask$(({track}) => {
+    if (isServer) return;
     track(() => statusRecording.value)
     track(() => duration.value)
  
@@ -265,7 +267,8 @@ export const useMediaRecorder = (options?: Options): HookReturn => {
     }
   })
 
-  useVisibleTask$(({cleanup}) => {
+  useTask$(({cleanup}) => {
+    if (isServer) return;
     cleanup(() => clearRecording())
   })
 

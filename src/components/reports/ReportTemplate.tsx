@@ -13,7 +13,7 @@
  * />
  */
 
-import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
+import { component$, isServer, useStore, $, useTask$, type PropFunction } from '@builder.io/qwik';
 import { useNavigate, useLocation } from '@builder.io/qwik-city';
 import { P9ETable } from '~/components/table';
 import { DynamicForm, type FormField } from '~/components/form_generator';
@@ -137,7 +137,11 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
   });
 
   // Initialize
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     if (isListView) {
       await fetchReports();
     }

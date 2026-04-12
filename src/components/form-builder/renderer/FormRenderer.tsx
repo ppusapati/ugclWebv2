@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/FormRenderer.tsx
-import { component$, useStore, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useStore, useSignal, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
 import { formBuilderService } from '~/services';
 import type { FormStep } from '~/types/workflow';
 import StepNavigation from './StepNavigation';
@@ -34,7 +34,8 @@ export default component$<FormRendererProps>((props) => {
   const errors = useStore<Record<string, string>>({});
 
   // Load form definition
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     try {
       loading.value = true;
       const form = await formBuilderService.getFormByCode(props.formCode);

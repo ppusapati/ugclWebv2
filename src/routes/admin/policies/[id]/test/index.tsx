@@ -1,5 +1,5 @@
 // src/routes/admin/policies/[id]/test/index.tsx
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useStore, useSignal, useTask$, $, isServer } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { apiClient } from '~/services';
 
@@ -188,7 +188,8 @@ export default component$(() => {
   });
 
   // Load policy on mount
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     await loadPolicy();
   });
 

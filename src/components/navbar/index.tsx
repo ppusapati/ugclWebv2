@@ -1,4 +1,4 @@
-import { $, component$, PropFunction, useStore, useVisibleTask$ } from '@builder.io/qwik';
+import { $, component$, isServer, PropFunction, useStore, useTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 
 export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() => void>, name: string, collapsed: boolean }) => {
@@ -10,7 +10,11 @@ export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() =
   });
 
   // Sync dark mode with html class
-  useVisibleTask$(({ track }) => {
+  useTask$(({ track }) => {
+    if (isServer) {
+      return;
+    }
+
     track(() => state.darkMode);
     if (state.darkMode) {
       document.documentElement.classList.add('dark');
@@ -22,7 +26,11 @@ export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() =
   });
 
   // On mount, check localStorage for dark mode
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) {
+      return;
+    }
+
     state.darkMode = localStorage.getItem('darkMode') === 'true';
   });
 

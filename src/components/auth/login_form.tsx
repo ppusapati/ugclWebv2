@@ -1,6 +1,7 @@
 import { $, component$, useStore } from "@builder.io/qwik";
 import { isValidPhone } from "~/utils/validations";
 import { useNavigate } from '@builder.io/qwik-city';
+import ImgLogo from '~/media/logo.png?jsx';
 
 export const LoginForm = component$(() => {
   const nav = useNavigate();
@@ -92,7 +93,7 @@ export const LoginForm = component$(() => {
     <div class="min-h-screen bg-gradient-to-tr from-primary-400 via-light-650 to-white flex items-center justify-center">
   <div class="flex flex-col items-center w-full max-w-md">
     <div class="flex items-center justify-center mb-4 ">
-      <img src="/logo.png" alt="Logo" class="w-36" />
+      <ImgLogo class="w-36" />
     </div>
     <div class="w-full shadow-xl rounded-2xl animate-fade-in overflow-hidden border border-light-200">
       <div class="bg-primary-600 p-6 text-center rounded-t-2xl">

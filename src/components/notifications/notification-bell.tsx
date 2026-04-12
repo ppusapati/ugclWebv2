@@ -1,4 +1,4 @@
-import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
 import { notificationService } from '~/services/notification.service';
 import type { NotificationDTO } from '~/types/notification';
 
@@ -19,7 +19,8 @@ export const NotificationBell = component$<NotificationBellProps>(
     const isLoading = useSignal(false);
 
     // Load initial data
-    useVisibleTask$(async () => {
+    useTask$(async () => {
+      if (isServer) return;
       try {
         // Get unread count
         const count = await notificationService.getUnreadCount();

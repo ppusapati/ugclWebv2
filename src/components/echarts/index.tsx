@@ -1,5 +1,5 @@
 // src/components/EChart.tsx
-import { component$, useVisibleTask$, useSignal, type PropFunction } from '@builder.io/qwik';
+import { component$, useTask$, useSignal, type PropFunction, isServer } from '@builder.io/qwik';
 
 export interface EChartProps {
   option: any;
@@ -10,7 +10,8 @@ export interface EChartProps {
 export const EChart = component$((props: EChartProps) => {
   const chartRef = useSignal<Element>();
 
-  useVisibleTask$(async ({ track }) => {
+  useTask$(async ({ track }) => {
+    if (isServer) return;
     track(() => props.option);
     if (chartRef.value) {
       // Dynamically import echarts to avoid SSR issues and build problems

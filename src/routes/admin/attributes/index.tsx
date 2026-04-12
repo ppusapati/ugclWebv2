@@ -1,5 +1,5 @@
 // src/routes/admin/attributes/index.tsx
-import { component$, useStore, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { apiClient } from '~/services';
 
 interface Attribute {
@@ -122,7 +122,11 @@ export default component$(() => {
   });
 
   // Load on mount
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadAttributes();
   });
 

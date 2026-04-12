@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/fields/SelectField.tsx
-import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
 import { apiClient } from '~/services';
 import type { FormField, FieldOption } from '~/types/workflow';
 
@@ -15,28 +15,28 @@ export default component$<SelectFieldProps>((props) => {
   const loading = useSignal(false);
 
   // Load API options if configured
-  useVisibleTask$(async () => {
-  if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
-    try {
-      loading.value = true;
-      const data = await apiClient.get(props.field.apiEndpoint) as any;
+  useTask$(async () => {
+    if (isServer) return;
+    if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
+      try {
+        loading.value = true;
+        const data = await apiClient.get(props.field.apiEndpoint) as any;
 
-      // 🔥 FIX HERE
-      const items = Array.isArray(data)
-        ? data
-        : (data?.data || data?.items || []);
+        const items = Array.isArray(data)
+          ? data
+          : (data?.data || data?.items || []);
 
-      options.value = items.map((item: any) => ({
-        label: item[props.field.displayField || 'name'],
-        value: item[props.field.valueField || 'id'],
-      }));
-    } catch (error) {
-      console.error('Failed to load options:', error);
-    } finally {
-      loading.value = false;
+        options.value = items.map((item: any) => ({
+          label: item[props.field.displayField || 'name'],
+          value: item[props.field.valueField || 'id'],
+        }));
+      } catch (error) {
+        console.error('Failed to load options:', error);
+      } finally {
+        loading.value = false;
+      }
     }
-  }
-});
+  });
 
   // Dropdown
   if (props.field.type === 'dropdown') {

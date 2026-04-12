@@ -1,4 +1,4 @@
-import {noSerialize, useSignal, useVisibleTask$, $, type NoSerialize} from "@builder.io/qwik";
+import {noSerialize, useSignal, useTask$, $, type NoSerialize, isServer} from "@builder.io/qwik";
 
 export const useSound = (url?: string) => {
   const audioRef = useSignal<NoSerialize<HTMLAudioElement>>();
@@ -6,7 +6,8 @@ export const useSound = (url?: string) => {
   const time = useSignal(0);
   const duration = useSignal(0);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     const audio = new Audio(url);
     audio.addEventListener("play", () => isPlaying.value = true);
     audio.addEventListener("ended", () => isPlaying.value = false);

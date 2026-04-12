@@ -8,7 +8,7 @@ import {
   useTask$,
   useStyles$,
   QRL,
-  useVisibleTask$
+  isServer
 } from '@builder.io/qwik';
 import { Pagination } from './Pagination';
 import { sortData } from '../utils/sortData';
@@ -418,7 +418,10 @@ export const P9ETable = component$(
       })
     );
 
-    useVisibleTask$(() => { pageNo.value = 0; });
+    useTask$(() => {
+      if (isServer) return;
+      pageNo.value = 0;
+    });
 
     const serverDataResource = useResource$(async ({ track }) => {
       if (!serverPagination || !onPageChangeQrl) return null;

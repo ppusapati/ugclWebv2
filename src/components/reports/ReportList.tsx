@@ -1,5 +1,5 @@
 // src/components/reports/ReportList.tsx
-import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { reportService, getReportConfig } from '~/services';
 import type { ReportKey, ReportType } from '~/services';
@@ -22,7 +22,11 @@ export const ReportList = component$<ReportListProps>(({ reportType, businessCod
 
   const config = getReportConfig(reportType);
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     await loadReports();
   });
 

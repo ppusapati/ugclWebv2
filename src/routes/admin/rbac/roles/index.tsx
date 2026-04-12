@@ -3,7 +3,7 @@
  * Unified Roles Management Page
  * Manages both Global Roles and Business Roles in a single interface
  */
-import { component$, useStore, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, useStore, $, useTask$, isServer } from '@builder.io/qwik';
 import { routeLoader$ } from '@builder.io/qwik-city';
 import { apiClient, createSSRApiClient } from '~/services';
 
@@ -108,7 +108,8 @@ export default component$(() => {
   });
 
   // Load roles on mount
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     await loadAllRoles();
   });
 

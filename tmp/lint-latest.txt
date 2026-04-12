@@ -1,0 +1,139 @@
+
+> sree-ugcl@ lint E:\Maheshwari\UGCL\web\ugclWebv2
+> eslint "src/**/*.ts*"
+
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\admin\super-admin-dashboard.tsx
+  12:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\audio\hooks\useMediaRecorder.ts
+  239:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+  257:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+  268:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\audio\hooks\useSound.ts
+  9:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\auth\login_form.tsx
+  95:12  warning  Local images can be optimized by importing using ESM, like this:
+
+  import ImgLogo from '~/media/logo.png?jsx';
+  <ImgLogo />
+
+See https://qwik.dev/docs/integrations/image-optimization/#responsive-images  qwik/jsx-img
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\echarts\index.tsx
+  13:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form-builder\renderer\FormRenderer.tsx
+  37:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form-builder\renderer\fields\SelectField.tsx
+  18:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form-builder\submissions\SubmissionDetail.tsx
+  41:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form-builder\submissions\SubmissionList.tsx
+  43:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form_generator\elements\text_editor.tsx
+  17:5  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form_generator\utility\expandable.tsx
+  32:5  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\form_generator\utility\tabs.tsx
+  40:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\geofence\GeofenceMap.tsx
+  51:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\kpis\contract.tsx
+  42:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\kpis\dairysite.tsx
+  40:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\kpis\diesel.tsx
+  43:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\kpis\stock.tsx
+  42:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\layout\header\header.tsx
+  121:17  warning  Local images can be optimized by importing using ESM, like this:
+
+  import ImgLogo from '~/media/logo.png?jsx';
+  <ImgLogo />
+
+See https://qwik.dev/docs/integrations/image-optimization/#responsive-images  qwik/jsx-img
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\maps\project-map.tsx
+  55:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\notifications\notification-bell.tsx
+  22:5  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\sidebar\index.tsx
+  165:3   warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+  196:13  warning  Local images can be optimized by importing using ESM, like this:
+
+  import ImgLogo from '~/media/logo.png?jsx';
+  <ImgLogo />
+
+See https://qwik.dev/docs/integrations/image-optimization/#responsive-images                                                                                                                                  qwik/jsx-img
+  214:13  warning  Local images can be optimized by importing using ESM, like this:
+
+  import ImgLogo from '~/media/logo.png?jsx';
+  <ImgLogo />
+
+See https://qwik.dev/docs/integrations/image-optimization/#responsive-images                                                                                                                                  qwik/jsx-img
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\table\table\index.tsx
+  421:5  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\utility\loaders\index.ts
+  25:32  warning  'routeLoader$() are typically declared in route boundary files such as layout.tsx, index.tsx and plugin.tsx inside the src/routes directory
+(docs: https://qwik.dev/docs/route-loader/).
+
+This routeLoader$() is declared outside of the route boundaries. This may be useful when you want to create reusable logic or a library. In such a case, it is essential that this function is re-exported from within the router boundary otherwise it will not run.
+(docs: https://qwik.dev/docs/re-exporting-loaders/).
+
+If you understand this, you can disable this warning with:
+// eslint-disable-next-line qwik/loader-location
+  qwik/loader-location
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\components\utility\remoteMfe\index.tsx
+  51:2  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\analytics\reports\index.tsx
+  68:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\attributes\index.tsx
+  125:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\layout.tsx
+  13:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\masters\layout.tsx
+  10:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\policies\[id]\test\index.tsx
+  191:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\projects\[projectId]\tasks\create\index.tsx
+  96:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\rbac\roles\index.tsx
+  111:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\users\[userId]\roles\index.tsx
+  94:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+E:\Maheshwari\UGCL\web\ugclWebv2\src\routes\admin\users\[userId]\sites\index.tsx
+   72:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+  105:3  warning  useVisibleTask$() runs eagerly and blocks the main thread, preventing user interaction until the task is finished. Consider using useTask$(), useOn(), useOnDocument(), or useOnWindow() instead. If you have to use a useVisibleTask$(), you can disable the warning with a '// eslint-disable-next-line qwik/no-use-visible-task' comment  qwik/no-use-visible-task
+
+Γ£û 38 problems (0 errors, 38 warnings)
+

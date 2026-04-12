@@ -1,5 +1,5 @@
 // src/components/form-builder/submissions/SubmissionList.tsx
-import { component$, useSignal, useStore, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
 import { workflowService } from '~/services';
 import type { FormSubmission, SubmissionFilters } from '~/types/workflow';
 
@@ -40,7 +40,8 @@ export default component$<SubmissionListProps>((props) => {
     }
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     await loadSubmissions();
   });
 

@@ -1,5 +1,5 @@
 // src/components/geofence/GeofenceMap.tsx
-import { component$, useSignal, useVisibleTask$, $, type QRL, noSerialize, type NoSerialize } from '@builder.io/qwik';
+import { component$, useSignal, useTask$, $, type QRL, noSerialize, type NoSerialize, isServer } from '@builder.io/qwik';
 import type { Coordinate, Geofence } from '~/utils/geofence';
 import { validateGeofence, calculatePolygonCenter, autoClosePolygon, calculatePolygonArea, formatArea } from '~/utils/geofence';
 
@@ -48,7 +48,8 @@ export default component$<GeofenceMapProps>((props) => {
   const geofenceDescription = useSignal(props.initialGeofence?.description || '');
 
   // Initialize MapLibre map
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) return;
     if (!mapContainer.value) return;
 
     // Load MapLibre GL from CDN to avoid bundler issues

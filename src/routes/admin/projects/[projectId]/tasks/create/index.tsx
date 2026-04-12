@@ -3,7 +3,7 @@
  * Professional form for creating new tasks within a project
  */
 
-import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
+import { component$, useStore, useTask$, $, isServer } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../../services/api-client';
@@ -93,7 +93,8 @@ export default component$(() => {
   });
 
   // Initialize filtered nodes
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) return;
     state.filteredNodes = state.nodes;
   });
 

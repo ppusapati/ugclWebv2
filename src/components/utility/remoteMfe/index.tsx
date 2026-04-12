@@ -3,8 +3,9 @@ import {
 	SSRStreamBlock,
 	StreamWriter,
 	component$,
+	isServer,
 	useSignal,
-	useVisibleTask$,
+	useTask$,
 } from '@builder.io/qwik';
 import { server$ } from '@builder.io/qwik-city';
 import { RemoteData } from './config';
@@ -48,7 +49,8 @@ export const RemoteMfe = component$(({ remote, fetchOnScroll }: Props) => {
 export const useFetchOnScroll = (enabled: boolean, url: string) => {
 	const scrollElementRef = useSignal<Element>();
 
-	useVisibleTask$(({ track }) => {
+	useTask$(({ track }) => {
+		if (isServer) return;
 		track(() => scrollElementRef.value);
 
 		if (scrollElementRef.value && enabled) {

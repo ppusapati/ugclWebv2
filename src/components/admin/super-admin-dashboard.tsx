@@ -1,5 +1,5 @@
 // src/components/admin/super-admin-dashboard.tsx
-import { component$, useStore, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
 import { authService } from '~/services/auth.service';
 
 export const SuperAdminDashboard = component$(() => {
@@ -9,7 +9,11 @@ export const SuperAdminDashboard = component$(() => {
     error: null as string | null,
   });
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       state.dashboardData = await authService.getSuperAdminDashboard();
       state.loading = false;

@@ -4,7 +4,8 @@ import {
   Slot,
   useSignal,
   useOnWindow,
-  useVisibleTask$,
+  useTask$,
+  isServer,
 } from "@builder.io/qwik";
 import clsx from "clsx";
 import { type P9EExpandableProps } from "../types";
@@ -29,7 +30,8 @@ export const P9EExpandable = component$(
     });
 
     // Expand or collapse content when expanded prop change
-    useVisibleTask$(({ track }) => {
+    useTask$(({ track }) => {
+      if (isServer) return;
       track(() => expanded);
       updateElementHeight();
     });

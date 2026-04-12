@@ -3,7 +3,7 @@
  * Displays zones, nodes, and tasks on an interactive map using MapLibre GL JS
  */
 
-import { component$, useSignal, useVisibleTask$, type QRL } from '@builder.io/qwik';
+import { component$, useSignal, useTask$, type QRL, isServer } from '@builder.io/qwik';
 import type { GeoJSONFeatureCollection, Node, Zone } from '../../types/project';
 
 // Helper to load MapLibre GL from CDN to avoid bundler issues
@@ -52,7 +52,8 @@ export const ProjectMap = component$<ProjectMapProps>(({
   const mapInstance = useSignal<any>(null);
   const errorMsg = useSignal<string>('');
 
-  useVisibleTask$(async ({ track, cleanup }) => {
+  useTask$(async ({ track, cleanup }) => {
+    if (isServer) return;
     // Track changes to data
     track(() => geojsonData);
     track(() => zones);

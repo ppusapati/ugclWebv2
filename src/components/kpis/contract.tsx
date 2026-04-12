@@ -1,4 +1,4 @@
-import { Resource, component$, useResource$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import { Resource, component$, isServer, useResource$, useSignal, useTask$ } from '@builder.io/qwik';
 import type { EChartProps } from '~/components/echarts';
 
 const EChart = component$<EChartProps>((props) => {
@@ -39,7 +39,11 @@ export const ContractKpi = component$(() => {
   const error = useSignal<string | null>(null);
   const selectedTab = useSignal('overview');
 
-  useVisibleTask$(async () => {
+  useTask$(async () => {
+    if (isServer) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');

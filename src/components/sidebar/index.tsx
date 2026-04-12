@@ -1,4 +1,5 @@
-import { component$, useStore, useVisibleTask$, PropFunction, useSignal, $ } from '@builder.io/qwik';
+import { component$, useStore, useTask$, PropFunction, useSignal, $, isServer } from '@builder.io/qwik';
+import ImgLogo from '~/media/logo.png?jsx';
 
 
 const menuData = [
@@ -162,7 +163,8 @@ export default component$((props: {
     userRole: '', // e.g., 'super_admin', 'project_coordinator'
   });
 
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) return;
     try {
       const userStr = localStorage.getItem('user');
       if (userStr) {
@@ -192,9 +194,7 @@ export default component$((props: {
       <div class="flex items-center justify-center pt-4 pb-4">
         <a href="/" class="flex flex-col items-center w-full  no-underline">
           {/* Large logo for expanded sidebar */}
-          <img
-            src="/logo.png"
-            alt="Logo"
+          <ImgLogo
             class={[
               props.collapsed ? 'hidden' : 'block',
               'h-20 w-auto mb-2 transition-all dark:bg-white duration-200',
@@ -210,9 +210,7 @@ export default component$((props: {
             Sree UGCL Projects Limited
           </span>
           {/* Small logo for collapsed sidebar */}
-          <img
-            src="/logo.png"
-            alt="Logo Icon"
+          <ImgLogo
             class={[
               props.collapsed ? 'block' : 'hidden',
               'w-10',

@@ -22,6 +22,7 @@ export type FileUpload = {
   ];
   
   // Example of how to use a loader or state initializer
+  // eslint-disable-next-line qwik/loader-location
   export const useFormLoader = routeLoader$<InitialValues<FileUpload>>(() => ({
   file: undefined,
   }));

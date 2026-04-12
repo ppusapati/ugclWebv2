@@ -4,6 +4,7 @@ import { useMenuContext } from '~/contexts/menu-context';
 import { TenantSwitcher } from '~/components/tenant/tenant-switcher';
 import { NotificationBell } from '~/components/notifications/notification-bell';
 import { useNavigate } from '@builder.io/qwik-city';
+import ImgLogo from '~/media/logo.png?jsx';
 
 export interface MenuItem {
   id: string
@@ -117,11 +118,7 @@ export const Header = component$(() => {
           {/* Logo */}
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center">
-              <img
-                src="/logo.png"
-                alt="Logo"
-                class="h-12 w-auto"
-              />
+              <ImgLogo class="h-12 w-auto" />
             </div>
             <h1 class="text-xl font-bold text-gray-900">UGCL Portal</h1>
           </div>

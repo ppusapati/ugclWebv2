@@ -1,4 +1,4 @@
-import { component$, Slot, useStore, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, Slot, useStore, useTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { getUser } from '~/utils/auth';
 
@@ -7,7 +7,11 @@ export default component$(() => {
   const nav = useNavigate();
 
   // Hydrate on client
-  useVisibleTask$(() => {
+  useTask$(() => {
+    if (isServer) {
+      return;
+    }
+
     const u = getUser();
     state.user = u;
     state.checked = true;
