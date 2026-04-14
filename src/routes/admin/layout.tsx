@@ -18,7 +18,9 @@ export default component$(() => {
     const u = getUser();
     state.user = u;
     state.checked = true;
-    if (!u) nav('/login');
+    if (!u) {
+      void nav('/login');
+    }
   });
 
   if (!state.checked) {
@@ -30,7 +32,14 @@ export default component$(() => {
     </div>;
   }
 
-  if (!state.user) return null;
+  if (!state.user) {
+    return <div class="flex items-center justify-center min-h-screen bg-gray-50">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+        <p class="mt-4 text-gray-600">Redirecting to login...</p>
+      </div>
+    </div>;
+  }
 
   return (
     <>

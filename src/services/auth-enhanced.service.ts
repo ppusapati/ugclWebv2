@@ -121,7 +121,15 @@ class AuthService {
   getUser(): User | null {
     if (typeof window === 'undefined') return null;
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr) return null;
+
+    try {
+      return JSON.parse(userStr) as User;
+    } catch (error) {
+      console.error('Failed to parse stored user data:', error);
+      localStorage.removeItem('user');
+      return null;
+    }
   }
 
   /**

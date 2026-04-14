@@ -1,7 +1,16 @@
 export function getUser() {
   if (typeof window === "undefined") return null;
+
   const userStr = localStorage.getItem("user");
-  return userStr ? JSON.parse(userStr) : null;
+  if (!userStr) return null;
+
+  try {
+    return JSON.parse(userStr);
+  } catch (error) {
+    console.error("Failed to parse stored user data:", error);
+    localStorage.removeItem("user");
+    return null;
+  }
 }
 
 export function getToken() {
