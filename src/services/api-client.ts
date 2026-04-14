@@ -42,7 +42,21 @@ function getBaseUrl(): string {
  */
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  return localStorage.getItem('token') || localStorage.getItem('auth_token');
+}
+
+function getClientId(): string | null {
+  if (typeof window === 'undefined') return null;
+
+  let clientId = localStorage.getItem('ugcl_client_id');
+  if (!clientId) {
+    clientId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `web-${Date.now()}`;
+    localStorage.setItem('ugcl_client_id', clientId);
+  }
+
+  return clientId;
 }
 
 /**
@@ -71,6 +85,9 @@ function buildHeaders(customHeaders?: HeadersInit, serverToken?: string, skipCon
 
   const token = serverToken || getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const clientId = getClientId();
+  if (clientId) headers['X-Client-ID'] = clientId;
 
   return headers;
 }

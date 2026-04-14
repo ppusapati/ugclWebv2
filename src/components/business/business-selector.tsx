@@ -90,7 +90,8 @@ export const BusinessSelector = component$(() => {
           <div class="flex gap-2">
             <button
               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick$={() => {
+              onClick$={async () => {
+                await authService.setActiveBusinessContext(state.selectedBusiness!);
                 // Navigate to business dashboard
                 window.location.href = `/business/${state.selectedBusiness!.code}/dashboard`;
               }}
@@ -99,7 +100,8 @@ export const BusinessSelector = component$(() => {
             </button>
             <button
               class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              onClick$={() => {
+              onClick$={async () => {
+                await authService.setActiveBusinessContext(state.selectedBusiness!);
                 // Navigate to business management
                 window.location.href = `/business/${state.selectedBusiness!.code}/manage`;
               }}

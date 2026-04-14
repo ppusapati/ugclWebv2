@@ -32,6 +32,25 @@ class AuthService {
   private baseUrl = 'http://localhost:8080/api/v1';
   private apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f'; // From your .env
 
+  private getClientId(): string {
+  let clientId = localStorage.getItem('ugcl_client_id');
+  if (!clientId) {
+    clientId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `web-${Date.now()}`;
+    localStorage.setItem('ugcl_client_id', clientId);
+  }
+  return clientId;
+  }
+
+  private getAuthHeaders(token?: string): Record<string, string> {
+  return {
+    'Authorization': `Bearer ${token || this.getToken()}`,
+    'x-api-key': this.apiKey,
+    'X-Client-ID': this.getClientId(),
+  };
+  }
+
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await fetch(`${this.baseUrl}/login`, {
       method: 'POST',
@@ -52,10 +71,7 @@ class AuthService {
   async getUserBusinesses(): Promise<BusinessVertical[]> {
     const token = this.getToken();
     const response = await fetch(`${this.baseUrl}/my-businesses`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'x-api-key': this.apiKey,
-      },
+      headers: this.getAuthHeaders(token || undefined),
     });
 
     if (!response.ok) {
@@ -69,10 +85,7 @@ class AuthService {
   async getSuperAdminDashboard() {
     const token = this.getToken();
     const response = await fetch(`${this.baseUrl}/admin/dashboard`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'x-api-key': this.apiKey,
-      },
+      headers: this.getAuthHeaders(token || undefined),
     });
 
     if (!response.ok) {
@@ -83,15 +96,38 @@ class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem('auth_token') || localStorage.getItem('token');
   }
 
   setToken(token: string): void {
     localStorage.setItem('auth_token', token);
+    localStorage.setItem('token', token);
   }
 
   removeToken(): void {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('ugcl_current_business_vertical');
+  }
+
+  async setActiveBusinessContext(business: Pick<BusinessVertical, 'id' | 'code'>): Promise<void> {
+	const response = await fetch(`${this.baseUrl}/context/business`, {
+	  method: 'PUT',
+	  headers: {
+		...this.getAuthHeaders(),
+		'Content-Type': 'application/json',
+	  },
+	  body: JSON.stringify({
+		business_id: business.id,
+		business_code: business.code,
+	  }),
+	});
+
+	if (!response.ok) {
+	  throw new Error('Failed to set active business context');
+	}
+
+	localStorage.setItem('ugcl_current_business_vertical', business.id);
   }
 }
 

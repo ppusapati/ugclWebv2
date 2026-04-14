@@ -25,6 +25,7 @@ class AuthService {
     // Store token and user in localStorage
     if (typeof window !== 'undefined' && response.token) {
       localStorage.setItem('token', response.token);
+      localStorage.setItem('auth_token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     }
 
@@ -40,6 +41,7 @@ class AuthService {
     // Auto-login after successful registration
     if (typeof window !== 'undefined' && response.token) {
       localStorage.setItem('token', response.token);
+      localStorage.setItem('auth_token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     }
 
@@ -95,14 +97,27 @@ class AuthService {
     return response.accessible_businesses;
   }
 
+  async setActiveBusinessContextById(businessId: string): Promise<void> {
+    await apiClient.put('/context/business', { business_id: businessId });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ugcl_current_business_vertical', businessId);
+    }
+  }
+
+  async setActiveBusinessContextByCode(businessCode: string): Promise<void> {
+    await apiClient.put('/context/business', { business_code: businessCode });
+  }
+
   /**
    * Logout user
    */
   logout(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       localStorage.removeItem('selectedBusiness');
+      localStorage.removeItem('ugcl_current_business_vertical');
       window.location.href = '/login';
     }
   }
@@ -112,7 +127,7 @@ class AuthService {
    */
   getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || localStorage.getItem('auth_token');
   }
 
   /**

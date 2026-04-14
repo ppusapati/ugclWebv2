@@ -75,6 +75,7 @@ export const LoginForm = component$(() => {
                 // Store in localStorage for client-side
                 localStorage.setItem('user', JSON.stringify(data.user));
                 localStorage.setItem('token', data.token);
+                localStorage.setItem('auth_token', data.token);
 
                 // Also store in cookies for SSR (routeLoader$ access)
                 document.cookie = `token=${data.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;

@@ -10,6 +10,7 @@ import {
   useVisibleTask$,
 } from '@builder.io/qwik';
 import { TenantDetectionService } from '~/types/multitenant';
+import { authService } from '~/services';
 import type {
   User,
   AuthContextType,
@@ -235,6 +236,8 @@ export const AuthProvider = component$(() => {
 
     // Store the selected business vertical in localStorage
     safeLocalStorage.setItem('ugcl_current_business_vertical', businessVerticalId);
+
+	    await authService.setActiveBusinessContextById(businessVerticalId);
 
     // Optionally reload the page or trigger re-render
     // window.location.reload(); // Uncomment if you want to reload
