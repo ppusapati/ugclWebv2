@@ -1,4 +1,4 @@
-import { component$, isDev, isServer, useTask$ } from "@builder.io/qwik";
+import { component$, isDev, useVisibleTask$ } from "@builder.io/qwik";
 import { QwikCityProvider, RouterOutlet } from "@builder.io/qwik-city";
 import { RouterHead } from "./components/router-head/router-head";
 import { AuthProvider } from "./contexts/auth-context";
@@ -10,11 +10,8 @@ import "./global.css";
 
 export default component$(() => {
   // Defer non-critical browser work until idle so first paint is not blocked.
-  useTask$(() => {
-    if (isServer) {
-      return;
-    }
-
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(() => {
     const requestPermission = () => {
       if ("Notification" in window && Notification.permission === "default") {
         void Notification.requestPermission();

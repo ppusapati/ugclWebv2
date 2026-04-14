@@ -129,16 +129,20 @@ export const MenuProvider = component$(() => {
   // Restore from localStorage and sync with current route on mount
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
-    if (typeof localStorage !== 'undefined') {
-      const savedMainMenu = localStorage.getItem('activeMainMenu');
-      const savedSidebarItem = localStorage.getItem('activeSidebarItem');
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const savedMainMenu = localStorage.getItem('activeMainMenu');
+        const savedSidebarItem = localStorage.getItem('activeSidebarItem');
 
-      if (savedMainMenu) {
-        activeMainMenu.value = savedMainMenu;
+        if (savedMainMenu) {
+          activeMainMenu.value = savedMainMenu;
+        }
+        if (savedSidebarItem) {
+          activeSidebarItem.value = savedSidebarItem;
+        }
       }
-      if (savedSidebarItem) {
-        activeSidebarItem.value = savedSidebarItem;
-      }
+    } catch (error) {
+      console.warn('Menu state restore failed:', error);
     }
 
     // Sync with current route

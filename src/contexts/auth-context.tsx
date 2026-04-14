@@ -370,7 +370,7 @@ export const AuthProvider = component$(() => {
         }
       } catch (error) {
         console.error('Auth verification failed:', error);
-        localStorage.removeItem('auth_token');
+        safeLocalStorage.removeItem('auth_token');
         
         // For development, still set a mock user
         const mockUser: User = {

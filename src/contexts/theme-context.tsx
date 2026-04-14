@@ -44,10 +44,14 @@ export const ThemeProvider = component$(() => {
   // Initialize theme from localStorage on mount
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const isDark = savedTheme === 'dark';
-    themeState.isDark = isDark;
-    document.documentElement.classList.toggle('dark', isDark);
+    try {
+      const savedTheme = localStorage.getItem('theme');
+      const isDark = savedTheme === 'dark';
+      themeState.isDark = isDark;
+      document.documentElement.classList.toggle('dark', isDark);
+    } catch (error) {
+      console.warn('Theme initialization failed:', error);
+    }
   });
 
   useContextProvider(ThemeContext, contextValue);
