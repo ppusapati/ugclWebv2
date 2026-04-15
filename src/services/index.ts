@@ -27,6 +27,7 @@ export { formBuilderService, FormBuilderService } from './form-builder.service';
 export { userAttributeService } from './user-attribute.service';
 export { resourceAttributeService } from './resource-attribute.service';
 export { chatService, ChatService } from './chat.service';
+export { attendanceService, AttendanceService } from './attendance.service';
 
 // Legacy auth service (for backward compatibility)
 export { authService as authServiceLegacy } from './auth.service';

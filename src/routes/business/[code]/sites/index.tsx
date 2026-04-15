@@ -77,12 +77,20 @@ export default component$(() => {
             <h1 class="text-3xl font-bold text-dark-800">Sites</h1>
             <p class="text-dark-600 mt-2">Manage sites for {businessCode}</p>
           </div>
-          <button
-            onClick$={() => nav(`/business/${businessCode}/sites/new`)}
-            class="btn-primary px-6 py-3 rounded-lg font-semibold"
-          >
-            + Add Site
-          </button>
+          <div class="flex gap-3">
+            <button
+              onClick$={() => nav(`/business/${businessCode}/attendance`)}
+              class="btn-light-300 px-4 py-3 rounded-lg font-semibold"
+            >
+              Attendance Monitor
+            </button>
+            <button
+              onClick$={() => nav(`/business/${businessCode}/sites/new`)}
+              class="btn-primary px-6 py-3 rounded-lg font-semibold"
+            >
+              + Add Site
+            </button>
+          </div>
         </div>
 
         {error.value && (

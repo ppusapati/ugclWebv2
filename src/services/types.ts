@@ -452,6 +452,143 @@ export interface VehicleLog extends BaseReport {
 }
 
 // ============================================================================
+// ATTENDANCE TYPES
+// ============================================================================
+
+export interface AttendanceValidationPolicy {
+  allowedRadiusMeters?: number;
+  maxAccuracyMeters?: number;
+  maxPingIntervalSec?: number;
+  maxSpeedKmh?: number;
+  maxClockSkewSeconds?: number;
+  strictEnforcement?: boolean;
+}
+
+export interface AttendanceValidationResult {
+  InsideBoundary: boolean;
+  DistanceFromSiteM?: number;
+  ValidationStatus: string;
+  ValidationReason: string;
+  ValidationMethod: string;
+  AnomalyFlags: string[];
+  ComputedSpeedKmh?: number;
+  SecondsSinceLastPing?: number;
+}
+
+export interface AttendanceEvent {
+  id: string;
+  sessionId: string;
+  userId: string;
+  siteId: string;
+  businessVerticalId: string;
+  eventType: string;
+  eventTime: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  deviceId: string;
+  validationMethod: string;
+  validationStatus: string;
+  validationReason?: string;
+  anomalyFlags?: string;
+  isMockLocation: boolean;
+  isGpsEnabled: boolean;
+  appState?: string;
+  networkStatus?: string;
+  batteryLevel?: number;
+  payload?: string;
+  serverReceivedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrackingPing {
+  id: string;
+  sessionId: string;
+  userId: string;
+  siteId: string;
+  businessVerticalId: string;
+  pingTime: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  deviceId: string;
+  insideGeofence: boolean;
+  distanceFromSiteM?: number;
+  isMockLocation: boolean;
+  isGpsEnabled: boolean;
+  clockSkewSeconds?: number;
+  syncStatus: string;
+  anomalyFlags?: string;
+  payload?: string;
+  serverReceivedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceSession {
+  id: string;
+  userId: string;
+  user?: User;
+  siteId: string;
+  site?: Site;
+  businessVerticalId: string;
+  status: 'active' | 'completed' | 'flagged' | string;
+  checkInAt: string;
+  checkOutAt?: string;
+  lastSeenAt: string;
+  checkInLatitude: number;
+  checkInLongitude: number;
+  checkInAccuracy: number;
+  checkOutLatitude?: number;
+  checkOutLongitude?: number;
+  checkOutAccuracy?: number;
+  lastLatitude: number;
+  lastLongitude: number;
+  lastAccuracy: number;
+  deviceId: string;
+  validationMethod: string;
+  validationStatus: string;
+  validationReason?: string;
+  anomalyFlags?: string;
+  metadata?: string;
+  createdAt: string;
+  updatedAt: string;
+  events?: AttendanceEvent[];
+  pings?: TrackingPing[];
+}
+
+export interface AttendanceCommandResponse {
+  session: AttendanceSession;
+  validation?: AttendanceValidationResult;
+  event?: AttendanceEvent;
+  ping?: TrackingPing;
+}
+
+export interface AttendanceListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  data: AttendanceSession[];
+}
+
+export interface AttendanceHeadcountSite {
+  siteId: string;
+  siteName: string;
+  activeCount: number;
+  lastSeenAt: string;
+}
+
+export interface AttendanceHeadcountResponse {
+  totalActive: number;
+  sites: AttendanceHeadcountSite[];
+}
+
+export interface AttendanceTimelineResponse {
+  data: AttendanceSession[];
+}
+
+// ============================================================================
 // KPI TYPES
 // ============================================================================
 
