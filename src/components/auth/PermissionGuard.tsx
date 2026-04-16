@@ -37,6 +37,7 @@
 
 import { component$, isServer, Slot, useSignal, useTask$, type QRL } from '@builder.io/qwik';
 import { authService } from '~/services/auth-enhanced.service';
+import { buildApiUrl } from '~/config/api';
 
 interface PermissionGuardProps {
   // Single permission check
@@ -89,8 +90,7 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
     // If user doesn't have role info, try to fetch it from API
     if (user.role === undefined && user.is_super_admin === undefined) {
       try {
-        const baseUrl = 'http://localhost:8080/api/v1';
-        const response = await fetch(`${baseUrl}/profile`, {
+        const response = await fetch(buildApiUrl('/profile'), {
           headers: {
             'Authorization': `Bearer ${authService.getToken()}`,
             'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',

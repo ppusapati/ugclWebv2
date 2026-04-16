@@ -6,6 +6,7 @@
 
 import { apiClient } from './api-client';
 import type { FileUploadResponse } from './types';
+import { resolveApiBaseUrl } from '~/config/api';
 
 class FileService {
   /**
@@ -57,7 +58,7 @@ class FileService {
     }
 
     // Otherwise, construct URL
-    const baseUrl = (apiClient as any)['baseUrl'] || 'http://localhost:10012/api/v1';
+    const baseUrl = (apiClient as any)['baseUrl'] || resolveApiBaseUrl();
     return `${baseUrl}/uploads/${filename}`;
   }
 

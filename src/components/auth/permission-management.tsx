@@ -1,6 +1,7 @@
 // src/components/auth/permission-management.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { authService } from '~/services/auth.service';
+import { buildApiUrl } from '~/config/api';
 
 interface Permission {
   id: string;
@@ -47,7 +48,7 @@ export const PermissionManagement = component$(() => {
       const apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f';
 
       // Fetch permissions
-      const permissionsResponse = await fetch('http://localhost:8080/api/v1/admin/permissions', {
+      const permissionsResponse = await fetch(buildApiUrl('/admin/permissions'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -57,7 +58,7 @@ export const PermissionManagement = component$(() => {
       state.permissions = permissionsData.permissions || [];
 
       // Fetch businesses
-      const businessesResponse = await fetch('http://localhost:8080/api/v1/admin/businesses', {
+      const businessesResponse = await fetch(buildApiUrl('/admin/businesses'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -91,7 +92,7 @@ export const PermissionManagement = component$(() => {
   const handleCreatePermission = $(async () => {
     try {
       const token = authService.getToken();
-      const response = await fetch('http://localhost:8080/api/v1/admin/permissions', {
+      const response = await fetch(buildApiUrl('/admin/permissions'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ export const PermissionManagement = component$(() => {
 
     try {
       const token = authService.getToken();
-      const response = await fetch(`http://localhost:8080/api/v1/admin/permissions/${permissionId}`, {
+      const response = await fetch(buildApiUrl(`/admin/permissions/${permissionId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

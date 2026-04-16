@@ -2,6 +2,7 @@ import { $, component$, useStore } from "@builder.io/qwik";
 import { isValidPhone } from "~/utils/validations";
 import { useNavigate } from '@builder.io/qwik-city';
 import ImgLogo from '~/media/logo.png?jsx';
+import { buildApiRootUrl } from '~/config/api';
 
 export const LoginForm = component$(() => {
   const nav = useNavigate();
@@ -43,9 +44,6 @@ export const LoginForm = component$(() => {
             state.passwordError = '';
         }
     });
-    const API_URL = 'https://ugclbackend2-429789556411.europe-west1.run.app';
-// const API_URL = 'https://ugcl-429789556411.asia-south1.run.app/api/v1';
-// const API_URL = 'http://localhost:8080/api/v1'; // Use local API for development
     const handleSubmit = $(async (e: Event) => {
         e.preventDefault();
         state.touched = true;
@@ -55,7 +53,7 @@ export const LoginForm = component$(() => {
         }
         // Proceed with form submission (API call, etc.)
         try {
-            const resp = await fetch(`${API_URL}/login`, {
+            const resp = await fetch(buildApiRootUrl('/login'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

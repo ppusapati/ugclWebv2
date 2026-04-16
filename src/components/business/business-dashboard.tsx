@@ -1,5 +1,6 @@
 // src/components/business/business-dashboard.tsx
 import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
+import { buildApiUrl } from '~/config/api';
 
 interface BusinessDashboardProps {
   businessCode: string;
@@ -22,7 +23,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
       const apiKey = 'YOUR_API_KEY';
 
       // Get business context
-      const contextResponse = await fetch(`http://localhost:8080/api/v1/business/${businessCode}/context`, {
+      const contextResponse = await fetch(buildApiUrl(`/business/${businessCode}/context`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -31,7 +32,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
       state.businessContext = await contextResponse.json();
 
       // Get business analytics
-      const analyticsResponse = await fetch(`http://localhost:8080/api/v1/business/${businessCode}/analytics`, {
+      const analyticsResponse = await fetch(buildApiUrl(`/business/${businessCode}/analytics`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,

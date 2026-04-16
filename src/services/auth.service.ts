@@ -1,4 +1,6 @@
 // src/services/auth.service.ts
+import { resolveApiBaseUrl } from '~/config/api';
+
 export interface User {
   id: string;
   name: string;
@@ -29,7 +31,9 @@ export interface LoginResponse {
 }
 
 class AuthService {
-  private baseUrl = 'http://localhost:8080/api/v1';
+  private get baseUrl(): string {
+    return resolveApiBaseUrl();
+  }
   private apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f'; // From your .env
 
   private getClientId(): string {

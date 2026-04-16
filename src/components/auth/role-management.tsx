@@ -1,6 +1,7 @@
 // src/components/auth/role-management.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { authService } from '~/services/auth.service';
+import { buildApiUrl } from '~/config/api';
 
 interface Role {
     id: string;
@@ -45,7 +46,7 @@ export const RoleManagement = component$(() => {
             const apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f';
 
             // Fetch roles
-            const rolesResponse = await fetch('http://localhost:8080/api/v1/admin/roles', {
+            const rolesResponse = await fetch(buildApiUrl('/admin/roles'), {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'x-api-key': apiKey,
@@ -55,7 +56,7 @@ export const RoleManagement = component$(() => {
             state.roles = rolesData.roles || [];
 
             // Fetch permissions
-            const permissionsResponse = await fetch('http://localhost:8080/api/v1/admin/permissions', {
+            const permissionsResponse = await fetch(buildApiUrl('/admin/permissions'), {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'x-api-key': apiKey,
@@ -75,7 +76,7 @@ export const RoleManagement = component$(() => {
     const handleCreateRole = $(async () => {
         try {
             const token = authService.getToken();
-            const response = await fetch('http://localhost:8080/api/v1/admin/roles', {
+            const response = await fetch(buildApiUrl('/admin/roles'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export const RoleManagement = component$(() => {
 
         try {
             const token = authService.getToken();
-            const response = await fetch(`http://localhost:8080/api/v1/admin/roles/${roleId}`, {
+            const response = await fetch(buildApiUrl(`/admin/roles/${roleId}`), {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,

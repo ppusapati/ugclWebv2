@@ -1,5 +1,6 @@
 import { Resource, component$, isServer, useResource$, useSignal, useTask$ } from '@builder.io/qwik';
 import type { EChartProps } from '~/components/echarts';
+import { buildApiUrl } from '~/config/api';
 
 const EChart = component$<EChartProps>((props) => {
   const chartResource = useResource$(async () => {
@@ -45,8 +46,7 @@ export const DairySiteKpi = component$(() => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://ugcl-429789556411.asia-south1.run.app/api/v1';
-      const res = await fetch(`${baseUrl}/kpi/dairysite`, {
+      const res = await fetch(buildApiUrl('/kpi/dairysite'), {
         headers: {
           Authorization: `Bearer ${token}`,
           'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',

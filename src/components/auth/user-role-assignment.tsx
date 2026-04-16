@@ -1,6 +1,7 @@
 // src/components/auth/user-role-assignment.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { authService, type User, type BusinessVertical } from '~/services/auth.service';
+import { buildApiUrl } from '~/config/api';
 
 interface UserWithRoles extends User {
   business_roles: Array<{
@@ -36,7 +37,7 @@ export const UserRoleAssignment = component$(() => {
       const apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f';
 
       // Fetch users with their roles
-      const usersResponse = await fetch('http://localhost:8080/api/v1/admin/users-with-roles', {
+      const usersResponse = await fetch(buildApiUrl('/admin/users-with-roles'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -46,7 +47,7 @@ export const UserRoleAssignment = component$(() => {
       state.users = usersData.users || [];
 
       // Fetch businesses
-      const businessesResponse = await fetch('http://localhost:8080/api/v1/admin/businesses', {
+      const businessesResponse = await fetch(buildApiUrl('/admin/businesses'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -56,7 +57,7 @@ export const UserRoleAssignment = component$(() => {
       state.businesses = businessesData.businesses || [];
 
       // Fetch roles
-      const rolesResponse = await fetch('http://localhost:8080/api/v1/admin/roles', {
+      const rolesResponse = await fetch(buildApiUrl('/admin/roles'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -81,7 +82,7 @@ export const UserRoleAssignment = component$(() => {
 
     try {
       const token = authService.getToken();
-      const response = await fetch('http://localhost:8080/api/v1/admin/assign-user-roles', {
+      const response = await fetch(buildApiUrl('/admin/assign-user-roles'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +98,7 @@ export const UserRoleAssignment = component$(() => {
 
       if (response.ok) {
         // Refresh users data
-        const usersResponse = await fetch('http://localhost:8080/api/v1/admin/users-with-roles', {
+        const usersResponse = await fetch(buildApiUrl('/admin/users-with-roles'), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',
@@ -124,7 +125,7 @@ export const UserRoleAssignment = component$(() => {
 
     try {
       const token = authService.getToken();
-      const response = await fetch('http://localhost:8080/api/v1/admin/remove-user-role', {
+      const response = await fetch(buildApiUrl('/admin/remove-user-role'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +141,7 @@ export const UserRoleAssignment = component$(() => {
 
       if (response.ok) {
         // Refresh users data
-        const usersResponse = await fetch('http://localhost:8080/api/v1/admin/users-with-roles', {
+        const usersResponse = await fetch(buildApiUrl('/admin/users-with-roles'), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',

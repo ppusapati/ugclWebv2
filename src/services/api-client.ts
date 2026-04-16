@@ -5,6 +5,8 @@
  * - Handles authentication, timeout, and JSON parsing
  */
 
+import { resolveApiBaseUrl } from '~/config/api';
+
 export interface ApiError {
   message: string;
   status: number;
@@ -25,16 +27,7 @@ const DEFAULT_TIMEOUT = 30000;
  * Resolve base URL depending on environment (SSR or client)
  */
 function getBaseUrl(): string {
-  if (import.meta.env.PUBLIC_API_BASE_URL) {
-    return import.meta.env.PUBLIC_API_BASE_URL;
-  }
-
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:10012/api/v1';
-  }
-//  return 'http://localhost:8080/api/v1';
- return 'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
-  // return 'https://ugcl-429789556411.asia-south1.run.app/api/v1';
+  return resolveApiBaseUrl();
 }
 
 /**
@@ -273,10 +266,7 @@ function extractTokenFromCookies(cookieHeader: string): string | undefined {
 export function createSSRApiClient(requestEvent: any) {
   const cookieHeader = requestEvent.request.headers.get('cookie') || '';
   const serverToken = extractTokenFromCookies(cookieHeader);
-  const serverBaseUrl =
-    requestEvent.url.hostname === 'localhost'
-      ? 'http://localhost:10012/api/v1'
-      : 'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
+  const serverBaseUrl = resolveApiBaseUrl(requestEvent.url.hostname);
 
   console.log('[createSSRApiClient] Token extracted:', serverToken ? 'Yes' : 'No');
   console.log('[createSSRApiClient] Base URL:', serverBaseUrl);

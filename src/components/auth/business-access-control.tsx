@@ -1,6 +1,7 @@
 // src/components/auth/business-access-control.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
 import { authService } from '~/services/auth.service';
+import { buildApiUrl } from '~/config/api';
 
 interface BusinessAccess {
   business_id: string;
@@ -44,7 +45,7 @@ export const BusinessAccessControl = component$(() => {
       const apiKey = '87339ea3-1add-4689-ae57-3128ebd03c4f';
 
       // Fetch business access data
-      const businessesResponse = await fetch('http://localhost:8080/api/v1/admin/business-access', {
+      const businessesResponse = await fetch(buildApiUrl('/admin/business-access'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -54,7 +55,7 @@ export const BusinessAccessControl = component$(() => {
       state.businesses = businessesData.businesses || [];
 
       // Fetch all users for assignment
-      const usersResponse = await fetch('http://localhost:8080/api/v1/admin/users', {
+      const usersResponse = await fetch(buildApiUrl('/admin/users'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -64,7 +65,7 @@ export const BusinessAccessControl = component$(() => {
       state.users = usersData.users || [];
 
       // Fetch all roles
-      const rolesResponse = await fetch('http://localhost:8080/api/v1/admin/roles', {
+      const rolesResponse = await fetch(buildApiUrl('/admin/roles'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-api-key': apiKey,
@@ -89,7 +90,7 @@ export const BusinessAccessControl = component$(() => {
 
     try {
       const token = authService.getToken();
-      const response = await fetch('http://localhost:8080/api/v1/admin/grant-business-access', {
+      const response = await fetch(buildApiUrl('/admin/grant-business-access'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export const BusinessAccessControl = component$(() => {
 
       if (response.ok) {
         // Refresh business access data
-        const businessesResponse = await fetch('http://localhost:8080/api/v1/admin/business-access', {
+        const businessesResponse = await fetch(buildApiUrl('/admin/business-access'), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',
@@ -131,7 +132,7 @@ export const BusinessAccessControl = component$(() => {
 
     try {
       const token = authService.getToken();
-      const response = await fetch('http://localhost:8080/api/v1/admin/revoke-business-access', {
+      const response = await fetch(buildApiUrl('/admin/revoke-business-access'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +147,7 @@ export const BusinessAccessControl = component$(() => {
 
       if (response.ok) {
         // Refresh business access data
-        const businessesResponse = await fetch('http://localhost:8080/api/v1/admin/business-access', {
+        const businessesResponse = await fetch(buildApiUrl('/admin/business-access'), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',

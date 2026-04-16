@@ -3,6 +3,7 @@
 import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
 import { useLocation, useNavigate } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
+import { resolveApiBaseUrl } from '~/config/api';
 
 interface BusinessVertical {
   id: string;
@@ -56,7 +57,7 @@ export default component$(() => {
     success: "",
   });
 
-  const API_BASE_URL = "http://localhost:10012/api/v1";
+  const API_BASE_URL = resolveApiBaseUrl();
   const API_KEY = "87339ea3-1add-4689-ae57-3128ebd03c4f";
 
   const getHeaders = () => {

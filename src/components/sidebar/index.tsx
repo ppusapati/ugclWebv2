@@ -1,36 +1,38 @@
 import { component$, useStore, useTask$, PropFunction, useSignal, $, isServer } from '@builder.io/qwik';
 import ImgLogo from '~/media/logo.png?jsx';
 
-
-const menuData = [
+const baseMenuData = [
   {
     key: 'dashboard',
     label: 'Dashboard',
     icon: 'i-heroicons-home',
     href: '/dashboard',
-    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'], // Everyone
+    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'],
   },
   {
     key: 'profile',
     label: 'My Profile',
     icon: 'i-heroicons-user-circle',
     href: '/dashboard/profile',
-    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'], // Everyone
+    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'],
   },
   {
     key: 'my-businesses',
     label: 'My Businesses',
     icon: 'i-heroicons-building-office',
     href: '/dashboard/my-businesses',
-    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'], // Everyone
+    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'],
   },
   {
     key: 'my-sites',
     label: 'My Sites',
     icon: 'i-heroicons-map-pin',
     href: '/dashboard/my-sites',
-    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'], // Everyone
+    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'],
   },
+];
+
+const trailingMenuData = [
   {
     key: 'reports',
     label: 'Reports',
@@ -89,6 +91,18 @@ const menuData = [
     href: '/dashboard/form',
     roles: ['super_admin', 'project_coordinator'], // Only these roles
   },
+];
+
+const createMenuData = (attendanceHref: string) => [
+  ...baseMenuData,
+  {
+    key: 'attendance',
+    label: 'Attendance',
+    icon: 'i-heroicons-clipboard-document-list',
+    href: attendanceHref,
+    roles: ['super_admin', 'project_coordinator', 'engineer', 'other'],
+  },
+  ...trailingMenuData,
 ];
 
 const MenuItem = component$<{ item: any; collapsed: boolean }>((props) => {
@@ -161,6 +175,7 @@ export default component$((props: {
 }) => {
   const state = useStore({
     userRole: '', // e.g., 'super_admin', 'project_coordinator'
+    attendanceHref: '/dashboard/my-sites',
   });
 
   useTask$(() => {
@@ -170,12 +185,26 @@ export default component$((props: {
       if (userStr) {
         const user = JSON.parse(userStr);
         state.userRole = user.role; // adapt if your user object is nested
+
+        const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
+        const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
+        const currentBusiness =
+          businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
+          businessRoles[0];
+        const businessCode = currentBusiness?.business_vertical?.code;
+
+        if (businessCode) {
+          state.attendanceHref = `/business/${businessCode}/attendance`;
+        }
       }
     } catch (e) {
       console.error('Error reading user role from localStorage:', e);
       state.userRole = '';
+      state.attendanceHref = '/dashboard/my-sites';
     }
   });
+
+  const menuData = createMenuData(state.attendanceHref);
 
   return (
     <aside class={[
