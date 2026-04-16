@@ -1,6 +1,6 @@
 // Analytics Report Builder - Professional UI
 import { component$, useSignal, useStore, $ } from '@builder.io/qwik';
-import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
+import { useNavigate, routeLoader$, server$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../services/api-client';
 import { analyticsService } from '../../../../../services/analytics.service';
@@ -27,6 +27,11 @@ export const useFormTablesData = routeLoader$(async (requestEvent) => {
       error: error.message || 'Failed to load form tables',
     };
   }
+});
+
+const getTableFieldsServer = server$(async function (tableName: string) {
+  const ssrApiClient = createSSRApiClient(this as any);
+  return ssrApiClient.get(`/reports/forms/tables/${encodeURIComponent(tableName)}/fields`);
 });
 
 export default component$(() => {
@@ -58,7 +63,7 @@ export default component$(() => {
   // Load fields when table is selected
   const loadTableFields = $(async (tableName: string) => {
     try {
-      const response = await analyticsService.getTableFields(tableName);
+      const response: any = await getTableFieldsServer(tableName);
       tableFields.value = response.fields || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to load fields';

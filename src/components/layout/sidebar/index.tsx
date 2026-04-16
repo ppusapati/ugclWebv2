@@ -1,4 +1,4 @@
-import { $, component$ } from '@builder.io/qwik';
+import { $, component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
 import { useMenuContext } from '~/contexts/menu-context';
 
@@ -19,6 +19,32 @@ interface SubMenuItem {
 export const Sidebar = component$(() => {
   const menuContext = useMenuContext();
   const activeSidebarItem = menuContext.activeSidebarItem;
+  const state = useStore({
+    attendanceHref: '/dashboard/my-sites',
+  });
+
+  useTask$(() => {
+    if (isServer) return;
+
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+
+      const user = JSON.parse(userStr);
+      const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
+      const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
+      const currentBusiness =
+        businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
+        businessRoles[0];
+      const businessCode = currentBusiness?.business_vertical?.code;
+
+      if (businessCode) {
+        state.attendanceHref = `/business/${businessCode}/attendance`;
+      }
+    } catch {
+      state.attendanceHref = '/dashboard/my-sites';
+    }
+  });
 
   const menuItems: MenuItem[] = [
     {
@@ -87,6 +113,7 @@ export const Sidebar = component$(() => {
         { id: 'workflow', label: 'Work Flows', href: '/admin/workflows', icon: 'i-heroicons-document-text-solid' },
         { id: 'projects', label: 'Projects', href: '/admin/projects', icon: 'i-heroicons-document-text-solid' },
         { id: 'documents', label: 'Documents', href: '/admin/documents', icon: 'i-heroicons-server-solid' },
+        { id: 'attendance', label: 'Attendance', href: state.attendanceHref, icon: 'i-heroicons-clipboard-document-list-solid' },
         { id: 'reports', label: 'Reports', href: '/admin/analytics/reports', icon: 'i-heroicons-document-chart-bar-solid' },
         { id: 'dashboards', label: 'Dashboards', href: '/admin/analytics/dashboards', icon: 'i-heroicons-document-chart-bar-solid' },
          { id: 'notifications', label: 'Notifications', href: '/admin/notifications', icon: 'i-heroicons-document-chart-bar-solid' }

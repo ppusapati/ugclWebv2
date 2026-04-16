@@ -181,7 +181,7 @@ class AnalyticsService {
    * Get fields for a specific form table
    */
   async getTableFields(tableName: string): Promise<TableFieldsResponse> {
-    return apiClient.get<TableFieldsResponse>(`/reports/forms/tables/${tableName}/fields`);
+    return apiClient.get<TableFieldsResponse>(`/reports/forms/tables/${encodeURIComponent(tableName)}/fields`);
   }
 
   // ============================================================================
