@@ -15,7 +15,7 @@ export default component$<SelectFieldProps>((props) => {
   const options = useSignal<FieldOption[]>(props.field.options || []);
   const loading = useSignal(false);
 
-  const normalizeEndpoint = (endpoint: string): string => {
+  const normalizeEndpoint = $((endpoint: string): string => {
     const trimmed = endpoint.trim();
     if (!trimmed) {
       return trimmed;
@@ -31,7 +31,7 @@ export default component$<SelectFieldProps>((props) => {
       : trimmed;
 
     return resolved.startsWith('/') ? resolved : `/${resolved}`;
-  };
+  });
 
   // Load API options if configured
   useTask$(async () => {
@@ -39,7 +39,7 @@ export default component$<SelectFieldProps>((props) => {
     if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
       try {
         loading.value = true;
-        const data = await apiClient.get(normalizeEndpoint(props.field.apiEndpoint)) as any;
+        const data = await apiClient.get(await normalizeEndpoint(props.field.apiEndpoint)) as any;
 
         const items = Array.isArray(data)
           ? data
