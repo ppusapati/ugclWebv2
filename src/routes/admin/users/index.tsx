@@ -163,6 +163,15 @@ export default component$(() => {
 
   const handleViewDetails = $(async (userId: string) => {
     try {
+      // First, try to find user in already-loaded state
+      const existingUser = state.users.find((u) => u.id === userId);
+      if (existingUser) {
+        state.viewingUser = existingUser;
+        state.showDetailsModal = true;
+        return;
+      }
+
+      // Fallback: fetch from API if not found in state
       const userData = await apiClient.get<any>(`/admin/users/${userId}`);
       const user: User = {
         id: userData.ID || userData.id || userId,
@@ -180,6 +189,7 @@ export default component$(() => {
       state.viewingUser = user;
       state.showDetailsModal = true;
     } catch (error: any) {
+      console.error('[View User Error]', error);
       state.error = error.message || "Failed to load user details";
     }
   });

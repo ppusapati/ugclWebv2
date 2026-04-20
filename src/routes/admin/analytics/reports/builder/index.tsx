@@ -64,7 +64,11 @@ export default component$(() => {
   const loadTableFields = $(async (tableName: string) => {
     try {
       const response: any = await getTableFieldsServer(tableName);
-      tableFields.value = response.fields || [];
+      // Use form_fields (human-readable form definitions) as primary source
+      // Fall back to db_fields (database columns) or fields (legacy) if form_fields not available
+      const fields = response.form_fields || response.db_fields || response.fields || [];
+      console.log('[REPORT BUILDER] Loaded', fields.length, 'fields for table:', tableName, 'response:', response);
+      tableFields.value = fields;
     } catch (err: any) {
       error.value = err.message || 'Failed to load fields';
     }
@@ -83,13 +87,18 @@ export default component$(() => {
   });
 
   const addField = $((field: any) => {
-    const exists = reportConfig.fields?.some(f => f.field_name === field.name);
+    // Support both form_fields (with id, label) and db_fields (with column_name, data_type)
+    const fieldName = field.id || field.column_name || field.name;
+    const fieldLabel = field.label || field.name || field.column_name;
+    const fieldType = field.dataType || field.data_type || field.type || 'text';
+
+    const exists = reportConfig.fields?.some(f => f.field_name === fieldName);
     if (!exists) {
       reportConfig.fields = [...(reportConfig.fields || []), {
-        field_name: field.name,
-        alias: field.name.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        field_name: fieldName,
+        alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         data_source: 'data',
-        data_type: field.type,
+        data_type: fieldType,
         is_visible: true,
         order: (reportConfig.fields?.length || 0) + 1
       }];
@@ -369,28 +378,36 @@ export default component$(() => {
                       No fields found for the selected table. The table may be missing in the database or has no readable columns.
                     </div>
                   ) : (
-                    tableFields.value.map((field: any) => (
+                    tableFields.value.map((field: any) => {
+                      // Support both form_fields (id, label, type) and db_fields (column_name, data_type)
+                      const fieldKey = field.id || field.column_name || field.name;
+                      const fieldLabel = field.label || field.name || field.column_name;
+                      const fieldType = field.dataType || field.data_type || field.type;
+                      const fieldSource = field.source || 'database';
+                      return (
                       <button
-                        key={field.name}
+                        key={fieldKey}
                         onClick$={() => addField(field)}
-                        class="w-full text-left p-3 transition-all"
+                        class="w-full text-left p-3 transition-all hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg"
                       >
                         <div class="flex items-center gap-3">
-                          <span class="">{fieldTypeIcon(field.type)}</span>
+                          <span class="">{fieldTypeIcon(fieldType)}</span>
                           <div class="flex-1 min-w-0">
-                            <div class="text-gray-900 dark:text-white truncate transition-colors">
-                              {field.name}
+                            <div class="text-gray-900 dark:text-white truncate transition-colors font-medium">
+                              {fieldLabel}
                             </div>
-                            <div class="text-xs dark:text-gray-400 mt-0.5">
-                              {field.type}
+                            <div class="text-xs dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                              <span>{fieldType}</span>
+                              {fieldSource === 'form' && <span class="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs">Form Field</span>}
                             </div>
                           </div>
-                          <svg class="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg class="w-5 h-5 text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                           </svg>
                         </div>
                       </button>
-                    ))
+                    );
+                    })
                   )}
                 </div>
               </div>
