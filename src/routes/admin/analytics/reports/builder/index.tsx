@@ -60,6 +60,26 @@ export default component$(() => {
   const currentStep = useSignal(1);
   const draggedFieldIndex = useSignal<number | null>(null);
 
+  const getActiveBusinessId = $(() => {
+    const keys = ['business_vertical_id', 'business_id', 'active_business_id'];
+    for (const key of keys) {
+      const value = localStorage.getItem(key);
+      if (value && value !== 'null' && value !== 'undefined') {
+        return value;
+      }
+    }
+    return undefined;
+  });
+
+  const buildUniqueReportCode = $((name: string) => {
+    const base = (name || 'report')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'report';
+    return `${base}_${Date.now()}`;
+  });
+
   // Load fields when table is selected
   const loadTableFields = $(async (tableName: string) => {
     try {
@@ -166,14 +186,20 @@ export default component$(() => {
       return;
     }
 
+    const businessVerticalId = await getActiveBusinessId();
+    if (!businessVerticalId) {
+      error.value = 'Active business context missing. Please re-select your business and try again.';
+      return;
+    }
+
     loading.value = true;
     error.value = '';
 
     try {
       const finalReport = {
         ...reportConfig,
-        code: reportConfig.name.toLowerCase().replace(/\s+/g, '_'),
-        business_vertical_id: localStorage.getItem('business_vertical_id') || undefined
+        code: await buildUniqueReportCode(reportConfig.name || 'report'),
+        business_vertical_id: businessVerticalId
       };
 
       const response = await analyticsService.createReport(finalReport);
@@ -728,6 +754,12 @@ export default component$(() => {
             </div>
 
             <div class="space-y-4">
+              {error.value && (
+                <div class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {error.value}
+                </div>
+              )}
+
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Report Name *</label>
                 <input
