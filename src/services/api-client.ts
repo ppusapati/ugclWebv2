@@ -52,6 +52,24 @@ function getClientId(): string | null {
   return clientId;
 }
 
+function getBusinessContext(): { businessId?: string; businessCode?: string } {
+  if (typeof window === 'undefined') return {};
+
+  const businessId =
+    localStorage.getItem('business_vertical_id') ||
+    localStorage.getItem('business_id') ||
+    localStorage.getItem('active_business_id') ||
+    undefined;
+
+  const businessCode =
+    localStorage.getItem('business_code') ||
+    localStorage.getItem('businessCode') ||
+    localStorage.getItem('active_business_code') ||
+    undefined;
+
+  return { businessId, businessCode };
+}
+
 /**
  * Build headers for every request
  */
@@ -81,6 +99,10 @@ function buildHeaders(customHeaders?: HeadersInit, serverToken?: string, skipCon
 
   const clientId = getClientId();
   if (clientId) headers['X-Client-ID'] = clientId;
+
+  const { businessId, businessCode } = getBusinessContext();
+  if (businessId) headers['X-Business-ID'] = businessId;
+  if (businessCode) headers['X-Business-Code'] = businessCode;
 
   return headers;
 }
