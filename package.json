@@ -29,6 +29,7 @@
     "@builder.io/qwik": "^1.14.1",
     "@builder.io/qwik-city": "^1.14.1",
     "@eslint/js": "latest",
+    "@iconify-json/heroicons": "^1.2.3",
     "@modular-forms/qwik": "^0.29.1",
     "@types/node": "^20.14.11",
     "@unocss/preset-icons": "^66.1.3",
