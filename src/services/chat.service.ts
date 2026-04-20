@@ -28,6 +28,18 @@ import type {
 export class ChatService {
   private baseUrl = '/chat';
 
+  private unwrapPayload<T>(response: any, key?: string): T {
+    if (!response || typeof response !== 'object') {
+      return response as T;
+    }
+
+    if (response.data && typeof response.data === 'object') {
+      return key ? (response.data[key] as T) : (response.data as T);
+    }
+
+    return key ? (response[key] as T) : (response as T);
+  }
+
   // ============================================================================
   // Conversation endpoints
   // ============================================================================
@@ -37,7 +49,7 @@ export class ChatService {
    */
   async createConversation(req: CreateConversationRequest): Promise<ConversationDTO> {
     const response = await apiClient.post(`${this.baseUrl}/conversations`, req) as any;
-    return response.data.conversation;
+    return this.unwrapPayload<ConversationDTO>(response, 'conversation');
   }
 
   /**
@@ -45,7 +57,8 @@ export class ChatService {
    */
   async createGroup(req: CreateGroupRequest): Promise<ConversationDTO> {
     const response = await apiClient.post(`${this.baseUrl}/groups`, req) as any;
-    return response.data.conversation;
+    // Backend returns `group` for this endpoint.
+    return this.unwrapPayload<ConversationDTO>(response, 'group');
   }
 
   /**
@@ -63,7 +76,7 @@ export class ChatService {
     const url = queryString ? `${this.baseUrl}/conversations?${queryString}` : `${this.baseUrl}/conversations`;
 
     const response = await apiClient.get(url) as any;
-    return response.data;
+    return this.unwrapPayload<ConversationListResponse>(response);
   }
 
   /**
@@ -71,7 +84,7 @@ export class ChatService {
    */
   async getConversation(id: string): Promise<ConversationDTO> {
     const response = await apiClient.get(`${this.baseUrl}/conversations/${id}`) as any;
-    return response.data.conversation;
+    return this.unwrapPayload<ConversationDTO>(response, 'conversation');
   }
 
   /**
@@ -79,7 +92,7 @@ export class ChatService {
    */
   async updateConversation(id: string, req: UpdateConversationRequest): Promise<ConversationDTO> {
     const response = await apiClient.put(`${this.baseUrl}/conversations/${id}`, req) as any;
-    return response.data.conversation;
+    return this.unwrapPayload<ConversationDTO>(response, 'conversation');
   }
 
   /**
@@ -105,7 +118,7 @@ export class ChatService {
    */
   async sendMessage(conversationId: string, req: SendMessageRequest): Promise<MessageDTO> {
     const response = await apiClient.post(`${this.baseUrl}/conversations/${conversationId}/messages`, req) as any;
-    return response.data.message;
+    return this.unwrapPayload<MessageDTO>(response, 'message');
   }
 
   /**
@@ -125,7 +138,7 @@ export class ChatService {
       : `${this.baseUrl}/conversations/${conversationId}/messages`;
 
     const response = await apiClient.get(url) as any;
-    return response.data;
+    return this.unwrapPayload<MessageListResponse>(response);
   }
 
   /**
@@ -138,7 +151,7 @@ export class ChatService {
     if (pageSize) params.append('page_size', String(pageSize));
 
     const response = await apiClient.get(`${this.baseUrl}/conversations/${conversationId}/messages/search?${params.toString()}`) as any;
-    return response.data;
+    return this.unwrapPayload<MessageListResponse>(response);
   }
 
   /**
@@ -146,7 +159,7 @@ export class ChatService {
    */
   async getMessage(id: string): Promise<MessageDTO> {
     const response = await apiClient.get(`${this.baseUrl}/messages/${id}`) as any;
-    return response.data.message;
+    return this.unwrapPayload<MessageDTO>(response, 'message');
   }
 
   /**
@@ -154,7 +167,7 @@ export class ChatService {
    */
   async updateMessage(id: string, req: UpdateMessageRequest): Promise<MessageDTO> {
     const response = await apiClient.put(`${this.baseUrl}/messages/${id}`, req) as any;
-    return response.data.message;
+    return this.unwrapPayload<MessageDTO>(response, 'message');
   }
 
   /**
@@ -173,7 +186,7 @@ export class ChatService {
    */
   async addParticipant(conversationId: string, req: AddParticipantRequest): Promise<ParticipantDTO> {
     const response = await apiClient.post(`${this.baseUrl}/conversations/${conversationId}/participants`, req) as any;
-    return response.data.participant;
+    return this.unwrapPayload<ParticipantDTO>(response, 'participant');
   }
 
   /**
@@ -181,7 +194,7 @@ export class ChatService {
    */
   async listParticipants(conversationId: string): Promise<ParticipantListResponse> {
     const response = await apiClient.get(`${this.baseUrl}/conversations/${conversationId}/participants`) as any;
-    return response.data;
+    return this.unwrapPayload<ParticipantListResponse>(response);
   }
 
   /**
@@ -221,7 +234,7 @@ export class ChatService {
    */
   async getTypingUsers(conversationId: string): Promise<string[]> {
     const response = await apiClient.get(`${this.baseUrl}/conversations/${conversationId}/typing`) as any;
-    return response.data.users || [];
+    return this.unwrapPayload<string[]>(response, 'users') || [];
   }
 
   // ============================================================================
@@ -240,7 +253,7 @@ export class ChatService {
    */
   async listReactions(messageId: string): Promise<ReactionSummaryDTO[]> {
     const response = await apiClient.get(`${this.baseUrl}/messages/${messageId}/reactions`) as any;
-    return response.data.reactions || [];
+    return this.unwrapPayload<ReactionSummaryDTO[]>(response, 'reactions') || [];
   }
 
   /**
@@ -258,11 +271,11 @@ export class ChatService {
    * Send an attachment
    */
   async sendAttachment(conversationId: string, messageId: string, formData: FormData): Promise<AttachmentDTO> {
-    const response = await apiClient.post(
+    const response = await apiClient.upload(
       `${this.baseUrl}/conversations/${conversationId}/messages/${messageId}/attachments`,
       formData
     ) as any;
-    return response.data.attachment;
+    return this.unwrapPayload<AttachmentDTO>(response, 'attachment');
   }
 
   /**
@@ -270,7 +283,7 @@ export class ChatService {
    */
   async listAttachments(conversationId: string): Promise<AttachmentDTO[]> {
     const response = await apiClient.get(`${this.baseUrl}/conversations/${conversationId}/attachments`) as any;
-    return response.data.attachments || [];
+    return this.unwrapPayload<AttachmentDTO[]>(response, 'attachments') || [];
   }
 
   // ============================================================================
@@ -281,16 +294,19 @@ export class ChatService {
    * Search users for adding to groups
    */
   async searchUsers(query: string): Promise<UserOption[]> {
-    const response = await apiClient.get(`/users/search?q=${encodeURIComponent(query)}`) as any;
-    return response.data.users || [];
+    const response = await apiClient.get(
+      `${this.baseUrl}/users`,
+      { search: query, page_size: 100 }
+    ) as any;
+    return this.unwrapPayload<UserOption[]>(response, 'users') || [];
   }
 
   /**
    * Get all users (for member selection)
    */
   async getAllUsers(): Promise<UserOption[]> {
-    const response = await apiClient.get('/users') as any;
-    return response.data.users || [];
+    const response = await apiClient.get(`${this.baseUrl}/users`, { page_size: 200 }) as any;
+    return this.unwrapPayload<UserOption[]>(response, 'users') || [];
   }
 }
 

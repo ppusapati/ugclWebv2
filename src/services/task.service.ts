@@ -88,9 +88,13 @@ class TaskService {
    * Get task audit log
    */
   async getTaskAuditLog(taskId: string): Promise<{ logs: TaskAuditLog[]; count: number }> {
-    return apiClient.get<{ logs: TaskAuditLog[]; count: number }>(
-      `${this.basePath}/${taskId}/audit-log`
+    const response = await apiClient.get<{ logs?: TaskAuditLog[]; audit_logs?: TaskAuditLog[]; count: number }>(
+      `${this.basePath}/${taskId}/audit`
     );
+    return {
+      logs: response.logs || response.audit_logs || [],
+      count: response.count,
+    };
   }
 
   /**

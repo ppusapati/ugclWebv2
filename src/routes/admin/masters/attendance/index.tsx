@@ -1,5 +1,5 @@
 import { $, component$, isServer, useSignal, useTask$ } from '@builder.io/qwik';
-import { useLocation, useNavigate } from '@builder.io/qwik-city';
+import { useNavigate } from '@builder.io/qwik-city';
 import { attendanceService } from '~/services';
 import type {
   AttendanceHeadcountSite,
@@ -32,11 +32,27 @@ function parseAnomalyFlags(raw?: string): string[] {
   }
 }
 
-export default component$(() => {
-  const loc = useLocation();
-  const nav = useNavigate();
-  const businessCode = loc.params.code;
+function resolveCurrentBusinessCode(): string {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return '';
 
+    const user = JSON.parse(userStr);
+    const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
+    const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
+    const currentBusiness =
+      businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
+      businessRoles[0];
+
+    return currentBusiness?.business_vertical?.code || '';
+  } catch {
+    return '';
+  }
+}
+
+export default component$(() => {
+  const nav = useNavigate();
+  const businessCode = useSignal('');
   const loading = useSignal(true);
   const refreshing = useSignal(false);
   const error = useSignal('');
@@ -53,12 +69,18 @@ export default component$(() => {
   const timelineError = useSignal('');
 
   const loadDashboard = $(async () => {
+    if (!businessCode.value) {
+      loading.value = false;
+      error.value = 'No active business selected. Please select a business vertical first.';
+      return;
+    }
+
     try {
       error.value = '';
       const [activeRes, logRes, headcountRes] = await Promise.all([
-        attendanceService.getActiveSessions(businessCode, { page: 1, limit: 100 }),
-        attendanceService.getLogs(businessCode, { page: 1, limit: 100 }),
-        attendanceService.getHeadcount(businessCode),
+        attendanceService.getActiveSessions(businessCode.value, { page: 1, limit: 100 }),
+        attendanceService.getLogs(businessCode.value, { page: 1, limit: 100 }),
+        attendanceService.getHeadcount(businessCode.value),
       ]);
 
       activeSessions.value = activeRes.data || [];
@@ -79,13 +101,15 @@ export default component$(() => {
   });
 
   const loadTimeline = $(async (userId: string, userName: string) => {
+    if (!businessCode.value) return;
+
     selectedUserId.value = userId;
     selectedUserName.value = userName;
     timelineError.value = '';
     timelineLoading.value = true;
 
     try {
-      const response = await attendanceService.getEmployeeTimeline(businessCode, userId, {
+      const response = await attendanceService.getEmployeeTimeline(businessCode.value, userId, {
         to: new Date().toISOString(),
       });
       timelineSessions.value = response.data || [];
@@ -101,6 +125,8 @@ export default component$(() => {
     if (isServer) {
       return;
     }
+
+    businessCode.value = resolveCurrentBusinessCode();
     await loadDashboard();
   });
 
@@ -126,13 +152,13 @@ export default component$(() => {
           <div>
             <h1 class="text-3xl font-bold text-dark-800">Attendance Monitoring</h1>
             <p class="text-dark-600 mt-2">
-              Live tracking and attendance audit for <span class="font-semibold">{businessCode}</span>
+              Live tracking and attendance audit for <span class="font-semibold">{businessCode.value || 'current business'}</span>
             </p>
           </div>
 
           <div class="flex gap-3">
             <button
-              onClick$={() => nav(`/business/${businessCode}/sites`)}
+              onClick$={() => nav('/admin/masters/sites')}
               class="btn-light-300 px-4 py-2 rounded-lg font-semibold"
             >
               Sites
@@ -318,69 +344,43 @@ export default component$(() => {
                   selectedUserId.value = '';
                   selectedUserName.value = '';
                   timelineSessions.value = [];
-                  timelineError.value = '';
                 }}
-                class="text-dark-500 hover:text-dark-700 text-sm font-semibold"
+                class="text-danger-600 hover:text-danger-700 font-semibold"
               >
                 Close
               </button>
             </div>
 
-            {timelineLoading.value && (
-              <div class="text-sm text-dark-600">Loading employee timeline...</div>
-            )}
-
-            {timelineError.value && (
-              <div class="alert-danger rounded-lg p-4 bg-danger-50 border-l-4 border-danger-500">
-                <p class="text-danger-800">{timelineError.value}</p>
-              </div>
-            )}
-
-            {!timelineLoading.value && !timelineError.value && timelineSessions.value.length === 0 && (
-              <div class="text-sm text-dark-600">No timeline sessions found for this employee.</div>
-            )}
-
-            {!timelineLoading.value && !timelineError.value && timelineSessions.value.length > 0 && (
-              <div class="space-y-4">
-                {timelineSessions.value.map((session) => (
-                  <div key={session.id} class="rounded-lg border border-light-200 p-4 space-y-2">
-                    <div class="flex flex-wrap gap-2 items-center">
-                      <span class="badge-light-300">{session.status}</span>
-                      <span class="text-xs text-dark-500">Site: {session.site?.name || session.siteId}</span>
-                      <span
-                        class={session.validationStatus === 'flagged' ? 'badge-warning' : 'badge-success'}
-                      >
-                        {session.validationStatus}
-                      </span>
-                    </div>
-                    <div class="text-sm text-dark-700">
-                      Check-in: {formatDateTime(session.checkInAt)}
-                    </div>
-                    <div class="text-sm text-dark-700">
-                      Check-out: {formatDateTime(session.checkOutAt)}
-                    </div>
-                    <div class="text-sm text-dark-700">
-                      Last seen: {formatDateTime(session.lastSeenAt)}
-                    </div>
-                    {session.events && session.events.length > 0 && (
-                      <div class="pt-2 border-t border-light-200">
-                        <div class="text-xs font-semibold text-dark-600 uppercase mb-2">Events</div>
-                        <div class="space-y-2">
-                          {session.events.map((event) => (
-                            <div key={event.id} class="text-xs text-dark-700 rounded bg-light-100 px-3 py-2">
-                              <span class="font-semibold">{event.eventType}</span>
-                              {' at '}
-                              {formatDateTime(event.eventTime)}
-                              {' ('}
-                              {event.validationStatus}
-                              {')'}
-                            </div>
-                          ))}
+            {timelineLoading.value ? (
+              <div class="text-dark-500 text-sm">Loading timeline...</div>
+            ) : timelineError.value ? (
+              <div class="text-danger-700 text-sm">{timelineError.value}</div>
+            ) : timelineSessions.value.length === 0 ? (
+              <div class="text-dark-500 text-sm">No timeline entries found.</div>
+            ) : (
+              <div class="space-y-3">
+                {timelineSessions.value.map((session) => {
+                  const anomalyFlags = parseAnomalyFlags(session.anomalyFlags);
+                  return (
+                    <div key={session.id} class="rounded-lg border border-light-200 p-4">
+                      <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                          <div class="font-semibold text-dark-800">{session.site?.name || session.siteId}</div>
+                          <div class="text-xs text-dark-500">
+                            Check-in: {formatDateTime(session.checkInAt)} | Check-out: {formatDateTime(session.checkOutAt)}
+                          </div>
                         </div>
+                        <span class={session.validationStatus === 'flagged' ? 'badge-warning' : 'badge-success'}>
+                          {session.validationStatus}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {anomalyFlags.length > 0 && (
+                        <div class="text-xs text-warning-700 mt-2">Flags: {anomalyFlags.join(', ')}</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

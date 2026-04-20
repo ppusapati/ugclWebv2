@@ -93,7 +93,7 @@ export const BusinessSelector = component$(() => {
               onClick$={async () => {
                 await authService.setActiveBusinessContext(state.selectedBusiness!);
                 // Navigate to business dashboard
-                window.location.href = `/business/${state.selectedBusiness!.code}/dashboard`;
+                window.location.href = `/admin/masters/business/${state.selectedBusiness!.code}/dashboard`;
               }}
             >
               Enter Dashboard
@@ -103,7 +103,7 @@ export const BusinessSelector = component$(() => {
               onClick$={async () => {
                 await authService.setActiveBusinessContext(state.selectedBusiness!);
                 // Navigate to business management
-                window.location.href = `/business/${state.selectedBusiness!.code}/manage`;
+                window.location.href = `/admin/masters/business/${state.selectedBusiness!.code}/manage`;
               }}
             >
               Manage Business

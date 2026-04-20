@@ -19,6 +19,8 @@ import type {
   ExportFormat,
 } from '../types/analytics';
 
+type BackendExportFormat = 'excel' | 'csv' | 'pdf';
+
 class AnalyticsService {
   // ============================================================================
   // REPORT DEFINITIONS
@@ -100,7 +102,11 @@ class AnalyticsService {
    * Preview report with temporary configuration
    */
   async previewReport(reportConfig: Partial<ReportDefinition>): Promise<{ result: ReportResult; message: string }> {
-    return apiClient.post<{ result: ReportResult; message: string }>('/reports/preview', reportConfig);
+    if (!reportConfig.id) {
+      throw new Error('preview requires an existing report id');
+    }
+    const response = await this.executeReport(String(reportConfig.id), reportConfig.filters as ReportFilter[]);
+    return { result: response.result, message: response.message || 'preview executed successfully' };
   }
 
   // ============================================================================
@@ -116,18 +122,21 @@ class AnalyticsService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _filters?: ReportFilter[]
   ): Promise<Blob> {
-    const filename = `report-${reportId}-${new Date().toISOString().split('T')[0]}.${format}`;
-    return apiClient.download(`/reports/definitions/${reportId}/export?format=${format}`, filename);
+    const backendFormat: BackendExportFormat = format === 'xlsx' ? 'excel' : (format as BackendExportFormat);
+    const extension = format === 'xlsx' ? 'xlsx' : format;
+    const filename = `report-${reportId}-${new Date().toISOString().split('T')[0]}.${extension}`;
+    return apiClient.download(`/reports/definitions/${reportId}/export/${backendFormat}`, filename);
   }
 
   /**
    * Email report to recipients
    */
   async emailReport(reportId: string, recipients: string[], format: ExportFormat): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/reports/definitions/${reportId}/email`, {
-      recipients,
-      format,
-    });
+    await this.executeReport(reportId);
+    await this.exportReport(reportId, format);
+    return {
+      message: `report exported successfully; delivery via backend email endpoint is not available (requested recipients: ${recipients.join(', ')})`,
+    };
   }
 
   // ============================================================================
@@ -138,15 +147,32 @@ class AnalyticsService {
    * Get report schedules
    */
   async getReportSchedules(reportId?: string): Promise<{ schedules: ReportSchedule[] }> {
-    const endpoint = reportId ? `/reports/schedules?report_id=${reportId}` : '/reports/schedules';
-    return apiClient.get<{ schedules: ReportSchedule[] }>(endpoint);
+    const response = await apiClient.get<{ reports: ReportSchedule[]; count: number }>('/scheduled-reports');
+    const schedules = reportId
+      ? (response.reports || []).filter((r: any) => String(r.report_id) === String(reportId) || String(r.id) === String(reportId))
+      : (response.reports || []);
+    return { schedules };
   }
 
   /**
    * Create report schedule
    */
   async createReportSchedule(data: Partial<ReportSchedule>): Promise<{ schedule: ReportSchedule; message: string }> {
-    return apiClient.post<{ schedule: ReportSchedule; message: string }>('/reports/schedules', data);
+    const reportId = (data as any).report_id || (data as any).id;
+    if (!reportId) {
+      throw new Error('report_id is required to create a schedule');
+    }
+    const payload = {
+      frequency: (data as any).frequency,
+      time: (data as any).time,
+      day_of_week: (data as any).day_of_week ?? 0,
+      day_of_month: (data as any).day_of_month ?? 1,
+      timezone: (data as any).timezone || 'UTC',
+      recipients: (data as any).recipients || [],
+      export_formats: (data as any).export_formats || ['pdf'],
+    };
+    const response = await apiClient.post<{ message: string }>(`/scheduled-reports/${reportId}/schedule`, payload);
+    return { schedule: data as ReportSchedule, message: response.message || 'Report scheduled successfully' };
   }
 
   /**
@@ -156,14 +182,24 @@ class AnalyticsService {
     scheduleId: string,
     data: Partial<ReportSchedule>
   ): Promise<{ schedule: ReportSchedule; message: string }> {
-    return apiClient.put<{ schedule: ReportSchedule; message: string }>(`/reports/schedules/${scheduleId}`, data);
+    const payload = {
+      frequency: (data as any).frequency,
+      time: (data as any).time,
+      day_of_week: (data as any).day_of_week ?? 0,
+      day_of_month: (data as any).day_of_month ?? 1,
+      timezone: (data as any).timezone || 'UTC',
+      recipients: (data as any).recipients || [],
+      export_formats: (data as any).export_formats || ['pdf'],
+    };
+    const response = await apiClient.post<{ message: string }>(`/scheduled-reports/${scheduleId}/schedule`, payload);
+    return { schedule: { ...(data as any), id: scheduleId } as ReportSchedule, message: response.message || 'Report schedule updated successfully' };
   }
 
   /**
    * Delete report schedule
    */
   async deleteReportSchedule(scheduleId: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/reports/schedules/${scheduleId}`);
+    return apiClient.post<{ message: string }>(`/scheduled-reports/${scheduleId}/unschedule`, {});
   }
 
   // ============================================================================

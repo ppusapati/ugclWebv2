@@ -1,4 +1,4 @@
-const LOCAL_API_BASE_URL = 'http://localhost:10012/api/v1';
+const LOCAL_API_BASE_URL = 'http://localhost:8080/api/v1';
 const CLOUD_API_BASE_URL =
   'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
 
@@ -11,7 +11,9 @@ function normalizeEndpoint(endpoint: string): string {
 }
 
 export function resolveApiBaseUrl(hostname?: string): string {
-  const configured = import.meta.env.PUBLIC_API_BASE_URL?.trim();
+  const configured =
+    import.meta.env.PUBLIC_API_BASE_URL?.trim() ||
+    import.meta.env.VITE_API_BASE_URL?.trim();
   if (configured) {
     return normalizeBaseUrl(configured);
   }

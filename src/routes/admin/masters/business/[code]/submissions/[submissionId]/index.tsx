@@ -37,7 +37,7 @@ export default component$(() => {
   });
 
   const handleBack = $(async () => {
-    await nav(`/business/${businessCode}/submissions`);
+    await nav(`/admin/masters/business/${businessCode}/submissions`);
   });
 
   // These handlers are available for future use in the component

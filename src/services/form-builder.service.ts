@@ -28,10 +28,11 @@ export class FormBuilderService {
   /**
    * Get a specific form by code
    */
-  async getFormByCode(formCode: string): Promise<any> {
-    return await apiClient.get(
-      `/admin/forms/${formCode}`
-    );
+  async getFormByCode(formCode: string, businessCode?: string): Promise<any> {
+    if (businessCode) {
+      return await apiClient.get(`/business/${businessCode}/forms/${formCode}`);
+    }
+    return await apiClient.get(`/admin/forms/${formCode}`);
   }
 
   /**

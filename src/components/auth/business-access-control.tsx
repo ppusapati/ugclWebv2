@@ -267,7 +267,7 @@ export const BusinessAccessControl = component$(() => {
                 onClick$={() => {
                   state.selectedBusiness = business;
                   // Navigate to detailed business management
-                  window.location.href = `/admin/business/${business.business_id}/manage`;
+                  window.location.href = `/admin/masters/business/${business.business_id}/manage`;
                 }}
               >
                 Manage

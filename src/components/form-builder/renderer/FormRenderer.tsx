@@ -38,7 +38,7 @@ export default component$<FormRendererProps>((props) => {
     if (isServer) return;
     try {
       loading.value = true;
-      const form = await formBuilderService.getFormByCode(props.formCode);
+      const form = await formBuilderService.getFormByCode(props.formCode, props.businessCode);
 
       formDefinition.title = form.title;
       formDefinition.description = form.description;
@@ -201,6 +201,7 @@ export default component$<FormRendererProps>((props) => {
                   error={errors[field.id]}
                   onChange$={onChange}
                   allFormData={formData}
+                  businessCode={props.businessCode}
                 />
               );
             })}

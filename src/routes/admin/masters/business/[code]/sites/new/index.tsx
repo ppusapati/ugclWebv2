@@ -67,7 +67,7 @@ export default component$(() => {
         is_active: formData.value.is_active,
       });
 
-      nav(`/business/${businessCode}/sites`);
+      nav(`/admin/masters/business/${businessCode}/sites`);
     } catch (error: any) {
       errors.value = { submit: error.message || 'Failed to create site' };
     } finally {
@@ -80,7 +80,7 @@ export default component$(() => {
       <div class="container-md mx-auto">
         <div class="mb-6">
           <button
-            onClick$={() => nav(`/business/${businessCode}/sites`)}
+            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
             class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
           >
             <span>←</span> Back to Sites
@@ -189,7 +189,7 @@ export default component$(() => {
               <button type="submit" disabled={loading.value} class="btn-primary flex-1 py-3 text-lg font-semibold rounded-lg disabled:opacity-50">
                 {loading.value ? 'Creating...' : 'Create Site'}
               </button>
-              <button type="button" onClick$={() => nav(`/business/${businessCode}/sites`)} class="btn-light-300 flex-1 py-3 text-lg font-semibold rounded-lg">
+              <button type="button" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)} class="btn-light-300 flex-1 py-3 text-lg font-semibold rounded-lg">
                 Cancel
               </button>
             </div>

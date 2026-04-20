@@ -171,7 +171,7 @@ export default component$(() => {
         {/* Header */}
         <div class="mb-6">
           <button
-            onClick$={() => nav(`/business/${businessCode}/sites`)}
+            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
             class="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4"
           >
             <span>←</span> Back to {state.business?.name || 'Business'}

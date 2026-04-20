@@ -22,7 +22,17 @@ class SiteService {
   async getAllSites(params?: PaginationParams): Promise<PaginatedResponse<Site>> {
     // Include business_vertical in the response
     const queryParams = { ...params, include: 'business_vertical' };
-    return apiClient.get<PaginatedResponse<Site>>('/admin/sites', queryParams);
+    const response = await apiClient.get<any>('/admin/sites', queryParams);
+
+    // Backward compatibility: some deployments return `sites` instead of `data`
+    if (Array.isArray(response?.sites) && !Array.isArray(response?.data)) {
+      return {
+        ...response,
+        data: response.sites,
+      } as PaginatedResponse<Site>;
+    }
+
+    return response as PaginatedResponse<Site>;
   }
 
   /**
@@ -36,10 +46,32 @@ class SiteService {
    * Get user's accessible sites
    */
   async getMySites(businessCode: string): Promise<Site[]> {
-    const response = await apiClient.get<{ sites: Site[] }>(
+    const response = await apiClient.get<{ data?: Site[]; sites?: Site[] }>(
       `/business/${businessCode}/sites/my-access`
     );
-    return response.sites;
+    return response.data || response.sites || [];
+  }
+
+  /**
+   * Get all sites for a specific business vertical (requires site:view permission)
+   */
+  async getBusinessSites(
+    businessCode: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Site>> {
+    const response = await apiClient.get<any>(
+      `/business/${businessCode}/sites`,
+      params
+    );
+
+    if (Array.isArray(response?.sites) && !Array.isArray(response?.data)) {
+      return {
+        ...response,
+        data: response.sites,
+      } as PaginatedResponse<Site>;
+    }
+
+    return response as PaginatedResponse<Site>;
   }
 
   /**

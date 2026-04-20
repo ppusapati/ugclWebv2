@@ -87,7 +87,24 @@ class UserService {
     inactive: number;
     by_role: Record<string, number>;
   }> {
-    return apiClient.get('/admin/users/stats');
+    const response = await this.getUsers({ page: 1, limit: 1000 } as any);
+    const users = response.data || [];
+
+    const byRole = users.reduce<Record<string, number>>((acc, user) => {
+      const role = (user as any).global_role || 'unknown';
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {});
+
+    const active = users.filter((u) => u.is_active !== false).length;
+    const inactive = users.length - active;
+
+    return {
+      total: users.length,
+      active,
+      inactive,
+      by_role: byRole,
+    };
   }
 
   /**
@@ -106,9 +123,10 @@ class UserService {
    * Bulk delete users
    */
   async bulkDeleteUsers(userIds: string[]): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>('/admin/users/bulk-delete', {
-      user_ids: userIds,
-    });
+    await Promise.all(userIds.map((id) => this.deleteUser(id)));
+    return {
+      message: `${userIds.length} users deleted successfully`,
+    };
   }
 
   /**
@@ -116,7 +134,24 @@ class UserService {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async exportUsers(_filters?: FilterParams): Promise<Blob> {
-    return apiClient.download('/admin/users/export', 'users.csv');
+    const response = await this.getUsers({ page: 1, limit: 1000 } as any);
+    const users = response.data || [];
+
+    const headers = ['id', 'name', 'email', 'phone', 'global_role', 'is_active'];
+    const rows = users.map((u: any) => [
+      u.id,
+      u.name,
+      u.email,
+      u.phone,
+      u.global_role,
+      u.is_active,
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   }
 }
 

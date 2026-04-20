@@ -22,8 +22,9 @@ export default component$(() => {
     try {
       loading.value = true;
       error.value = '';
-      const sitesList = await siteService.getMySites(businessCode);
-      sites.value = sitesList || [];
+      const params = { page: 1, limit: 100 } as any;
+      const response = await siteService.getBusinessSites(businessCode, params);
+      sites.value = response.data || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to load sites';
     } finally {
@@ -79,13 +80,13 @@ export default component$(() => {
           </div>
           <div class="flex gap-3">
             <button
-              onClick$={() => nav(`/business/${businessCode}/attendance`)}
+              onClick$={() => nav(`/admin/masters/business/${businessCode}/attendance`)}
               class="btn-light-300 px-4 py-3 rounded-lg font-semibold"
             >
               Attendance Monitor
             </button>
             <button
-              onClick$={() => nav(`/business/${businessCode}/sites/new`)}
+              onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/new`)}
               class="btn-primary px-6 py-3 rounded-lg font-semibold"
             >
               + Add Site
@@ -131,7 +132,7 @@ export default component$(() => {
               <h3 class="text-xl font-semibold text-dark-800 mb-2">No Sites Yet</h3>
               <p class="text-dark-600 mb-6">Create your first site to get started</p>
               <button
-                onClick$={() => nav(`/business/${businessCode}/sites/new`)}
+                onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/new`)}
                 class="btn-primary px-6 py-3 rounded-lg"
               >
                 Add Site
@@ -198,14 +199,14 @@ export default component$(() => {
                       <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
                           <button
-                            onClick$={() => nav(`/business/${businessCode}/sites/${site.id}/access`)}
+                            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/${site.id}/access`)}
                             class="text-info-600 hover:text-info-700 px-3 py-1 text-sm"
                             title="Manage Access"
                           >
                             🔐
                           </button>
                           <button
-                            onClick$={() => nav(`/business/${businessCode}/sites/${site.id}/edit`)}
+                            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/${site.id}/edit`)}
                             class="text-primary-600 hover:text-primary-700 px-3 py-1 text-sm"
                             title="Edit"
                           >

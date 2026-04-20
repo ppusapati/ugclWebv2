@@ -8,11 +8,30 @@ interface SelectFieldProps {
   value: any;
   error?: string;
   onChange$: PropFunction<(value: any) => void>;
+  businessCode?: string;
 }
 
 export default component$<SelectFieldProps>((props) => {
   const options = useSignal<FieldOption[]>(props.field.options || []);
   const loading = useSignal(false);
+
+  const normalizeEndpoint = (endpoint: string): string => {
+    const trimmed = endpoint.trim();
+    if (!trimmed) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    const businessCode = props.businessCode || '';
+    const resolved = businessCode
+      ? trimmed.replaceAll('{vertical}', businessCode)
+      : trimmed;
+
+    return resolved.startsWith('/') ? resolved : `/${resolved}`;
+  };
 
   // Load API options if configured
   useTask$(async () => {
@@ -20,11 +39,11 @@ export default component$<SelectFieldProps>((props) => {
     if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
       try {
         loading.value = true;
-        const data = await apiClient.get(props.field.apiEndpoint) as any;
+        const data = await apiClient.get(normalizeEndpoint(props.field.apiEndpoint)) as any;
 
         const items = Array.isArray(data)
           ? data
-          : (data?.data || data?.items || []);
+          : (data?.options || data?.data || data?.items || data?.sites || data?.records || []);
 
         options.value = items.map((item: any) => ({
           label: item[props.field.displayField || 'name'],

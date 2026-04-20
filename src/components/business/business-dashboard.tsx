@@ -94,7 +94,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           <button
             class="p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 text-left"
             onClick$={() => {
-              window.location.href = `/business/${businessCode}/reports`;
+              window.location.href = `/admin/masters/business/${businessCode}/reports`;
             }}
           >
             <h3 class="font-medium text-blue-900">View Reports</h3>
@@ -106,7 +106,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           <button
             class="p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 text-left"
             onClick$={() => {
-              window.location.href = `/business/${businessCode}/users`;
+              window.location.href = `/admin/masters/business/${businessCode}/users`;
             }}
           >
             <h3 class="font-medium text-green-900">Manage Users</h3>
@@ -118,7 +118,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           <button
             class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 text-left"
             onClick$={() => {
-              window.location.href = `/business/${businessCode}/solar/generation`;
+              window.location.href = `/admin/masters/business/${businessCode}/solar/generation`;
             }}
           >
             <h3 class="font-medium text-yellow-900">Solar Generation</h3>
@@ -130,7 +130,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           <button
             class="p-4 bg-cyan-50 border border-cyan-200 rounded-lg hover:bg-cyan-100 text-left"
             onClick$={() => {
-              window.location.href = `/business/${businessCode}/water/consumption`;
+              window.location.href = `/admin/masters/business/${businessCode}/water/consumption`;
             }}
           >
             <h3 class="font-medium text-cyan-900">Water Consumption</h3>

@@ -175,7 +175,7 @@ export default component$((props: {
 }) => {
   const state = useStore({
     userRole: '', // e.g., 'super_admin', 'project_coordinator'
-    attendanceHref: '/dashboard/my-sites',
+    attendanceHref: '/admin/masters/attendance',
   });
 
   useTask$(() => {
@@ -185,22 +185,11 @@ export default component$((props: {
       if (userStr) {
         const user = JSON.parse(userStr);
         state.userRole = user.role; // adapt if your user object is nested
-
-        const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
-        const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
-        const currentBusiness =
-          businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
-          businessRoles[0];
-        const businessCode = currentBusiness?.business_vertical?.code;
-
-        if (businessCode) {
-          state.attendanceHref = `/business/${businessCode}/attendance`;
-        }
       }
     } catch (e) {
       console.error('Error reading user role from localStorage:', e);
       state.userRole = '';
-      state.attendanceHref = '/dashboard/my-sites';
+      state.attendanceHref = '/admin/masters/attendance';
     }
   });
 

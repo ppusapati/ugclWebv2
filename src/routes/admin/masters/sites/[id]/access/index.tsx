@@ -108,7 +108,7 @@ export default component$(() => {
       <div class="container-lg mx-auto">
         <div class="mb-6">
           <button
-            onClick$={() => nav(`/business/${businessCode}/sites`)}
+            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
             class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
           >
             <span>←</span> Back to Sites

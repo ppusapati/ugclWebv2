@@ -14,6 +14,7 @@ interface FieldRendererProps {
   error?: string;
   onChange$: PropFunction<(value: any) => void>;
   allFormData: Record<string, any>;
+  businessCode?: string;
 }
 
 export default component$<FieldRendererProps>((props) => {
@@ -56,6 +57,11 @@ export default component$<FieldRendererProps>((props) => {
     onChange$: props.onChange$,
   };
 
+  const selectProps = {
+    ...commonProps,
+    businessCode: props.businessCode,
+  };
+
   return (
     <div class="field-container">
       {/* Render appropriate field type */}
@@ -67,9 +73,9 @@ export default component$<FieldRendererProps>((props) => {
       {props.field.type === 'date' && <DateField {...commonProps} />}
       {props.field.type === 'datetime' && <DateField {...commonProps} />}
       {props.field.type === 'time' && <DateField {...commonProps} />}
-      {props.field.type === 'radio' && <SelectField {...commonProps} />}
-      {props.field.type === 'checkbox' && <SelectField {...commonProps} />}
-      {props.field.type === 'dropdown' && <SelectField {...commonProps} />}
+      {props.field.type === 'radio' && <SelectField {...selectProps} />}
+      {props.field.type === 'checkbox' && <SelectField {...selectProps} />}
+      {props.field.type === 'dropdown' && <SelectField {...selectProps} />}
       {props.field.type === 'file_upload' && <FileUploadField {...commonProps} />}
 
       {/* Fallback for unsupported types */}

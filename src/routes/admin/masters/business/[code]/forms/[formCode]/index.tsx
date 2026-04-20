@@ -74,7 +74,7 @@ export default component$(() => {
       alert('Form submitted successfully!');
 
       // Navigate to submission detail
-      await nav(`/business/${businessCode}/submissions/${submission.id}`);
+      await nav(`/admin/masters/business/${businessCode}/submissions/${submission.id}`);
     } catch (err: any) {
       alert('Failed to submit form: ' + err.message);
       submitting.value = false;
@@ -93,7 +93,7 @@ export default component$(() => {
       alert('Draft saved successfully!');
 
       // Navigate to submissions list
-      await nav(`/business/${businessCode}/submissions`);
+      await nav(`/admin/masters/business/${businessCode}/submissions`);
     } catch (err: any) {
       alert('Failed to save draft: ' + err.message);
     }
@@ -101,7 +101,7 @@ export default component$(() => {
 
   const handleCancel = $(async () => {
     if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-      await nav(`/business/${businessCode}/forms`);
+      await nav(`/admin/masters/business/${businessCode}/forms`);
     }
   });
 

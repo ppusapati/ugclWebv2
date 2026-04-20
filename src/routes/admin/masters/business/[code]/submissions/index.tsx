@@ -63,14 +63,14 @@ export default component$(() => {
   });
 
   const handleSubmissionClick = $((submission: FormSubmission) => {
-    nav(`/business/${businessCode}/submissions/${submission.id}`);
+    nav(`/admin/masters/business/${businessCode}/submissions/${submission.id}`);
   });
 
   const handleCreateNew = $(async () => {
     if (selectedFormCode.value) {
-      await nav(`/business/${businessCode}/forms/${selectedFormCode.value}`);
+      await nav(`/admin/masters/business/${businessCode}/forms/${selectedFormCode.value}`);
     } else {
-      await nav(`/business/${businessCode}/forms`);
+      await nav(`/admin/masters/business/${businessCode}/forms`);
     }
   });
 

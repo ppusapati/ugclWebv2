@@ -41,11 +41,11 @@ export default component$(() => {
   const searchQuery = useSignal('');
 
   const handleFormClick = $(async (formCode: string) => {
-    await nav(`/business/${businessCode}/forms/${formCode}`);
+    await nav(`/admin/masters/business/${businessCode}/forms/${formCode}`);
   });
 
   const handleViewSubmissions = $(async () => {
-    await nav(`/business/${businessCode}/submissions`);
+    await nav(`/admin/masters/business/${businessCode}/submissions`);
   });
 
   const filteredForms = forms.value.filter(form => {

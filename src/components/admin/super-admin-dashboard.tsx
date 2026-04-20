@@ -131,7 +131,7 @@ export const SuperAdminDashboard = component$(() => {
                     <button
                       class="text-blue-600 hover:text-blue-900"
                       onClick$={() => {
-                        window.location.href = `/business/${business.code}/manage`;
+                        window.location.href = `/admin/masters/business/${business.code}/manage`;
                       }}
                     >
                       Manage
@@ -139,7 +139,7 @@ export const SuperAdminDashboard = component$(() => {
                     <button
                       class="text-green-600 hover:text-green-900"
                       onClick$={() => {
-                        window.location.href = `/business/${business.code}/dashboard`;
+                        window.location.href = `/admin/masters/business/${business.code}/dashboard`;
                       }}
                     >
                       View

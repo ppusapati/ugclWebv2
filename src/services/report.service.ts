@@ -66,6 +66,21 @@ export const REPORT_ENDPOINTS = {
 export type ReportKey = keyof typeof REPORT_ENDPOINTS;
 
 class ReportService {
+  private getBusinessReportEndpoint(businessCode: string, reportType: ReportKey): string {
+    const businessEndpoints: Partial<Record<ReportKey, string>> = {
+      dprsite: `/business/${businessCode}/reports/dprsite`,
+      material: `/business/${businessCode}/reports/materials`,
+      water: `/business/${businessCode}/water/reports/tanker`,
+    };
+
+    const endpoint = businessEndpoints[reportType];
+    if (!endpoint) {
+      throw new Error(`Business report endpoint is not implemented for report type: ${reportType}`);
+    }
+
+    return endpoint;
+  }
+
   /**
    * Get all reports of a specific type
    */
@@ -170,10 +185,7 @@ class ReportService {
     reportType: ReportKey,
     params?: PaginationParams & FilterParams
   ): Promise<PaginatedResponse<T>> {
-    return apiClient.get<PaginatedResponse<T>>(
-      `/business/${businessCode}/reports/${reportType}`,
-      params
-    );
+    return apiClient.get<PaginatedResponse<T>>(this.getBusinessReportEndpoint(businessCode, reportType), params);
   }
 
   /**
@@ -184,7 +196,7 @@ class ReportService {
     reportType: ReportKey,
     data: Partial<T>
   ): Promise<T> {
-    return apiClient.post<T>(`/business/${businessCode}/reports/${reportType}`, data);
+    return apiClient.post<T>(this.getBusinessReportEndpoint(businessCode, reportType), data);
   }
 
   // ============================================================================

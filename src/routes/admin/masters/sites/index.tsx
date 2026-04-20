@@ -1,38 +1,67 @@
 // src/routes/admin/masters/sites/index.tsx
-import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
-import { useNavigate } from '@builder.io/qwik-city';
-import { siteService } from '~/services';
+import { component$, useSignal, $ } from '@builder.io/qwik';
+import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { Site } from '~/services';
+import { resolveApiBaseUrl } from '~/config/api';
+import { createSSRApiClient } from '~/services';
+
+export const useAdminSitesData = routeLoader$(async (requestEvent) => {
+  const ssrApiClient = createSSRApiClient(requestEvent);
+
+  try {
+    const response = await ssrApiClient.get<any>('/admin/sites', {
+      page: 1,
+      limit: 100,
+      include: 'business_vertical',
+    });
+
+    return { response };
+  } catch (error: any) {
+    return {
+      error: error?.message || 'Failed to fetch',
+      status: error?.status,
+    };
+  }
+});
 
 export default component$(() => {
   const nav = useNavigate();
+  const initialData = useAdminSitesData();
 
-  const sites = useSignal<Site[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal('');
+  const initialResponse = (initialData.value as any)?.response;
+  const initialSites = initialResponse?.data || initialResponse?.sites || [];
+  const initialTotal =
+    initialResponse?.total ??
+    initialResponse?.pagination?.total ??
+    initialResponse?.meta?.total ??
+    initialSites.length ??
+    0;
+
+  const sites = useSignal<Site[]>(initialSites);
+  const loading = useSignal(false);
+  const error = useSignal((initialData.value as any)?.error || '');
   const showDeleteModal = useSignal(false);
   const siteToDelete = useSignal<Site | null>(null);
   const deleting = useSignal(false);
-  const page = useSignal(1);
-  const limit = useSignal(100);
-  const total = useSignal(0);
-
-  const loadSites = $(async () => {
-    try {
-      loading.value = true;
-      error.value = '';
-      // 'limit' is not a known property on PaginationParams; cast params to any to avoid the type error
-      const params = { page: page.value, limit: limit.value } as any;
-      const response = await siteService.getAllSites(params);
-      sites.value = response.data || [];
-      // 'PaginatedResponse' may not expose 'total' directly; support common response shapes
-      total.value = (response as any).total ?? (response as any).meta?.total ?? sites.value.length ?? 0;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load sites';
-    } finally {
-      loading.value = false;
-    }
-  });
+  const total = useSignal(initialTotal);
+  const apiDebug = useSignal(
+    (initialData.value as any)?.response
+      ? [
+          `base: ${resolveApiBaseUrl()}`,
+          `SSR GET /admin/sites?page=1&limit=100&include=business_vertical`,
+          `keys: ${Object.keys((initialData.value as any).response).join(', ') || 'none'}`,
+          `data.length: ${Array.isArray((initialData.value as any).response?.data) ? (initialData.value as any).response.data.length : -1}`,
+          `sites.length: ${Array.isArray((initialData.value as any).response?.sites) ? (initialData.value as any).response.sites.length : -1}`,
+          `resolved sites.length: ${initialSites.length}`,
+          `resolved total: ${initialTotal}`,
+        ].join(' | ')
+      : [
+          `base: ${resolveApiBaseUrl()}`,
+          `SSR GET /admin/sites?page=1&limit=100&include=business_vertical`,
+          `error: ${(initialData.value as any)?.error || 'Failed to fetch'}`,
+          `status: ${(initialData.value as any)?.status ?? 'n/a'}`,
+        ].join(' | ')
+  );
 
   const confirmDelete = $((site: Site) => {
     siteToDelete.value = site;
@@ -55,14 +84,6 @@ export default component$(() => {
       deleting.value = false;
     }
   });
-  useTask$(async () => {
-    if (isServer) {
-      return;
-    }
-
-    await loadSites();
-  });
-
   if (loading.value) {
     return (
       <div class="min-h-screen bg-light-50 flex items-center justify-center">
@@ -93,6 +114,12 @@ export default component$(() => {
         {error.value && (
           <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
             <p class="text-danger-800">{error.value}</p>
+          </div>
+        )}
+
+        {apiDebug.value && (
+          <div class="rounded-lg p-3 mb-6 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-900 break-words">
+            <strong>API Debug:</strong> {apiDebug.value}
           </div>
         )}
 

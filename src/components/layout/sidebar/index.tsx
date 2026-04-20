@@ -1,4 +1,4 @@
-import { $, component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
+import { $, component$ } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
 import { useMenuContext } from '~/contexts/menu-context';
 
@@ -19,32 +19,6 @@ interface SubMenuItem {
 export const Sidebar = component$(() => {
   const menuContext = useMenuContext();
   const activeSidebarItem = menuContext.activeSidebarItem;
-  const state = useStore({
-    attendanceHref: '/dashboard/my-sites',
-  });
-
-  useTask$(() => {
-    if (isServer) return;
-
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-
-      const user = JSON.parse(userStr);
-      const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
-      const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
-      const currentBusiness =
-        businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
-        businessRoles[0];
-      const businessCode = currentBusiness?.business_vertical?.code;
-
-      if (businessCode) {
-        state.attendanceHref = `/business/${businessCode}/attendance`;
-      }
-    } catch {
-      state.attendanceHref = '/dashboard/my-sites';
-    }
-  });
 
   const menuItems: MenuItem[] = [
     {
@@ -103,7 +77,7 @@ export const Sidebar = component$(() => {
       icon: 'i-heroicons-lock-closed-solid',
       subItems: [
         { id: 'modules', label: 'Modules', href: '/admin/masters/module', icon: 'i-streamline-module-three-solid' },
-        { id: 'business-vertical', label: 'Business - Vertical', href: '/admin/masters/business-verticals', icon: 'i-heroicons-building-office-solid' },
+        { id: 'business-vertical', label: 'Business - Vertical', href: '/admin/masters/business', icon: 'i-heroicons-building-office-solid' },
         { id: 'sites', label: 'Sites', href: '/admin/masters/sites', icon: 'i-heroicons-map-pin-solid' },
         { id: 'roles', label: 'Roles & Permissions', href: '/admin/rbac/roles', icon: 'i-icon-park-permissions' },
         { id: 'attributes', label: 'Attributes', href: '/admin/attributes', icon: 'i-heroicons-tag-solid' },
@@ -113,7 +87,7 @@ export const Sidebar = component$(() => {
         { id: 'workflow', label: 'Work Flows', href: '/admin/workflows', icon: 'i-heroicons-document-text-solid' },
         { id: 'projects', label: 'Projects', href: '/admin/projects', icon: 'i-heroicons-document-text-solid' },
         { id: 'documents', label: 'Documents', href: '/admin/documents', icon: 'i-heroicons-server-solid' },
-        { id: 'attendance', label: 'Attendance', href: state.attendanceHref, icon: 'i-heroicons-clipboard-document-list-solid' },
+        { id: 'attendance', label: 'Attendance', href: '/admin/masters/attendance', icon: 'i-heroicons-clipboard-document-list-solid' },
         { id: 'reports', label: 'Reports', href: '/admin/analytics/reports', icon: 'i-heroicons-document-chart-bar-solid' },
         { id: 'dashboards', label: 'Dashboards', href: '/admin/analytics/dashboards', icon: 'i-heroicons-document-chart-bar-solid' },
          { id: 'notifications', label: 'Notifications', href: '/admin/notifications', icon: 'i-heroicons-document-chart-bar-solid' }

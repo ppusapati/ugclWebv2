@@ -364,28 +364,34 @@ export default component$(() => {
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Click to add fields to your report</p>
                 </div>
                 <div class="p-4 space-y-2 overflow-y-auto">
-                  {tableFields.value.map((field: any) => (
-                    <button
-                      key={field.name}
-                      onClick$={() => addField(field)}
-                      class="w-full text-left p-3 transition-all"
-                    >
-                      <div class="flex items-center gap-3">
-                        <span class="">{fieldTypeIcon(field.type)}</span>
-                        <div class="flex-1 min-w-0">
-                          <div class="text-gray-900 dark:text-white truncate transition-colors">
-                            {field.name}
+                  {tableFields.value.length === 0 ? (
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      No fields found for the selected table. The table may be missing in the database or has no readable columns.
+                    </div>
+                  ) : (
+                    tableFields.value.map((field: any) => (
+                      <button
+                        key={field.name}
+                        onClick$={() => addField(field)}
+                        class="w-full text-left p-3 transition-all"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="">{fieldTypeIcon(field.type)}</span>
+                          <div class="flex-1 min-w-0">
+                            <div class="text-gray-900 dark:text-white truncate transition-colors">
+                              {field.name}
+                            </div>
+                            <div class="text-xs dark:text-gray-400 mt-0.5">
+                              {field.type}
+                            </div>
                           </div>
-                          <div class="text-xs dark:text-gray-400 mt-0.5">
-                            {field.type}
-                          </div>
+                          <svg class="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                          </svg>
                         </div>
-                        <svg class="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             )}
