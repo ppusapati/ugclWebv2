@@ -7,6 +7,7 @@ import NotificationConfigEditor from './NotificationConfigEditor';
 interface TransitionEditorProps {
   transition: WorkflowTransitionDef;
   states: WorkflowState[];
+  availablePermissions: string[];
   onUpdate$: PropFunction<(transition: WorkflowTransitionDef) => void>;
   onDelete$: PropFunction<() => void>;
 }
@@ -19,15 +20,6 @@ const COMMON_ACTIONS = [
   { value: 'revise', label: 'Revise' },
   { value: 'cancel', label: 'Cancel' },
   { value: 'archive', label: 'Archive' },
-];
-
-const COMMON_PERMISSIONS = [
-  'project:create',
-  'project:read',
-  'project:update',
-  'project:delete',
-  'project:approve',
-  'admin_all',
 ];
 
 export default component$<TransitionEditorProps>((props) => {
@@ -174,7 +166,7 @@ export default component$<TransitionEditorProps>((props) => {
               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">No permission required</option>
-              {COMMON_PERMISSIONS.map((perm) => (
+              {props.availablePermissions.map((perm) => (
                 <option key={perm} value={perm}>
                   {perm}
                 </option>

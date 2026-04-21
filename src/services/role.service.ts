@@ -56,10 +56,11 @@ class RoleService {
    * Get roles for a business vertical
    */
   async getBusinessRoles(businessCode: string): Promise<Role[]> {
-    const response = await apiClient.get<{ roles: Role[] }>(
+    const response = await apiClient.get<any>(
       `/business/${businessCode}/roles`
     );
-    return response.roles;
+    // Handle different response structures from API
+    return response.roles || response.data || response || [];
   }
 
   /**
@@ -93,10 +94,11 @@ class RoleService {
    * Get roles for a specific business vertical (alternate endpoint)
    */
   async getVerticalRoles(verticalId: string): Promise<Role[]> {
-    const response = await apiClient.get<{ roles: Role[] }>(
+    const response = await apiClient.get<any>(
       `/business-verticals/${verticalId}/roles`
     );
-    return response.roles;
+    // Handle different response structures from API
+    return response.roles || response.data || response || [];
   }
 
   // ============================================================================
@@ -107,8 +109,9 @@ class RoleService {
    * Get all permissions
    */
   async getPermissions(): Promise<Permission[]> {
-    const response = await apiClient.get<{ permissions: Permission[] }>('/admin/permissions');
-    return response.permissions;
+    const response = await apiClient.get<any>('/admin/permissions');
+    // Handle different response structures from API
+    return response.permissions || response.data || response || [];
   }
 
   /**

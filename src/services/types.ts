@@ -12,11 +12,15 @@ export interface User {
   name: string;
   email: string;
   phone: string;
-  role: string;
+  role?: string;
+  role_id?: string;  // Global role ID
+  global_role?: string;  // Global role name
   is_super_admin?: boolean;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
+  business_vertical_id?: string;
+  business_vertical_name?: string;
   business_roles?: BusinessRole[];
   permissions?: string[];
   tenants?: any[]; // For multi-tenant support

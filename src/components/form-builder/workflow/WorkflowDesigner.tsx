@@ -1,11 +1,12 @@
 // src/components/form-builder/workflow/WorkflowDesigner.tsx
-import { component$, useStore, useSignal, $, useComputed$, type PropFunction } from '@builder.io/qwik';
+import { component$, useStore, useSignal, $, useComputed$, useTask$, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowDefinition, WorkflowState, WorkflowTransitionDef } from '~/types/workflow';
 import StateEditor from './StateEditor';
 import TransitionEditor from './TransitionEditor';
 import WorkflowDiagram from './WorkflowDiagram';
 import ValidationSummary from './ValidationSummary';
 import { validateWorkflow } from './validation';
+import { roleService } from '~/services/role.service';
 
 interface WorkflowDesignerProps {
   workflow?: WorkflowDefinition;
@@ -18,6 +19,20 @@ export default component$<WorkflowDesignerProps>((props) => {
   const selectedStateIndex = useSignal<number | null>(null);
   const selectedTransitionIndex = useSignal<number | null>(null);
   const showValidation = useSignal(false);
+  const availablePermissions = useSignal<string[]>([]);
+
+  useTask$(async () => {
+    try {
+      const perms = await roleService.getPermissions();
+      availablePermissions.value = perms
+        .map((p: any) => `${p.resource}:${p.action}`)
+        .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
+        .sort();
+    } catch (err) {
+      console.error('Failed to fetch permissions:', err);
+      availablePermissions.value = ['admin_all', '*:*:*'];
+    }
+  });
 
   const workflow = useStore<Partial<WorkflowDefinition>>({
     code: props.workflow?.code || '',
@@ -426,6 +441,7 @@ export default component$<WorkflowDesignerProps>((props) => {
                 <TransitionEditor
                   transition={workflow.transitions[selectedTransitionIndex.value]}
                   states={workflow.states || []}
+                  availablePermissions={availablePermissions.value}
                   onUpdate$={$((transition: WorkflowTransitionDef) => updateTransition(selectedTransitionIndex.value!, transition))}
                   onDelete$={$(() => deleteTransition(selectedTransitionIndex.value!))}
                 />

@@ -212,6 +212,12 @@ export default component$(() => {
               {state.user.email})
             </p>
           </div>
+          <button
+            class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+            onClick$={() => nav(`/admin/users/${userId}/sites`)}
+          >
+            Manage Sites
+          </button>
         </div>
 
         {/* Success/Error Messages */}
@@ -244,7 +250,7 @@ export default component$(() => {
               <option value="">No Global Role</option>
               {state.globalRoles.map((role) => (
                 <option key={role.id} value={role.id}>
-                  {`${role.name} (Level ${role.level})`}
+                  {`${role.name}${role.level ? ` (Level ${role.level})` : ''}`}
                 </option>
               ))}
             </select>

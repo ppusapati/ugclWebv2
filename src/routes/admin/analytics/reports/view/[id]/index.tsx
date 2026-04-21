@@ -13,7 +13,7 @@ const transformToChartOption = (
   chartType: ChartType,
   reportName: string
 ): any => {
-  if (!reportData.data || reportData.data.length === 0) {
+  if (!reportData.data || reportData.data.length === 0 || !reportData.headers || reportData.headers.length < 2) {
     return null;
   }
   // Get the first field as x-axis (category) and second as y-axis (value)
@@ -298,22 +298,22 @@ export default component$(() => {
   }[state.report.report_type] || { icon: '📊', gradient: 'from-blue-500 to-blue-600' } : { icon: '📊', gradient: 'from-blue-500 to-blue-600' };
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div class="space-y-6">
       {/* Modern Header with Gradient */}
-      <div class={`bg-gradient-to-r ${reportConfig.gradient} shadow-xl relative overflow-hidden`}>
+      <div class={`bg-gradient-to-r ${reportConfig.gradient} shadow-lg relative overflow-hidden`}>
         {/* Background decoration */}
-        <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0 opacity-5">
           <div class="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -mr-48 -mt-48"></div>
           <div class="absolute bottom-0 left-0 w-80 h-80 bg-black rounded-full -ml-40 -mb-40"></div>
         </div>
 
-        <div class="max-w-screen-2xl mx-auto px-6 py-6 relative">
-          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="max-w-7xl mx-auto px-6 py-6 relative">
+          <div class="flex items-center justify-between gap-4 mb-4">
             {/* Left Section */}
             <div class="flex items-center gap-4">
               <button
                 onClick$={() => nav('/admin/analytics/reports')}
-                class="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all hover:scale-105 text-white"
+                class="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all text-white"
                 title="Back to Reports"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -414,16 +414,16 @@ export default component$(() => {
 
       {/* Report Content */}
       {!state.loading && state.reportData && (
-        <div class="max-w-screen-2xl mx-auto px-6 py-8 space-y-6">
+        <div class="max-w-7xl mx-auto px-6 py-8 space-y-6">
           {/* Statistics Cards */}
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-md">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-blue-100 text-sm font-medium mb-1">Total Rows</p>
-                  <p class="text-4xl font-bold">{state.reportData.metadata.total_rows.toLocaleString()}</p>
+                  <p class="text-3xl font-bold">{state.reportData.metadata.total_rows.toLocaleString()}</p>
                 </div>
-                <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <div class="bg-white/20 rounded-lg p-3">
                   <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
@@ -431,13 +431,13 @@ export default component$(() => {
               </div>
             </div>
 
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-md">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-purple-100 text-sm font-medium mb-1">Execution Time</p>
-                  <p class="text-4xl font-bold">{state.reportData.metadata.execution_time_ms}<span class="text-2xl">ms</span></p>
+                  <p class="text-3xl font-bold">{state.reportData.metadata.execution_time_ms}<span class="text-xl">ms</span></p>
                 </div>
-                <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <div class="bg-white/20 rounded-lg p-3">
                   <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
@@ -445,7 +445,7 @@ export default component$(() => {
               </div>
             </div>
 
-            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-md">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-green-100 text-sm font-medium mb-1">Generated At</p>
@@ -459,7 +459,7 @@ export default component$(() => {
                     })}
                   </p>
                 </div>
-                <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <div class="bg-white/20 rounded-lg p-3">
                   <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                   </svg>
@@ -492,11 +492,11 @@ export default component$(() => {
 
           {/* Chart View */}
           {state.report?.report_type === 'chart' && (
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div class="p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center justify-between">
-                  <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-2 rounded-xl">
+            <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden\">
+              <div class="p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200\">
+                <div class="flex items-center justify-between\">
+                  <h2 class="text-xl font-bold text-gray-900 flex items-center gap-3\">
+                    <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-2 rounded-lg\">
                       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                       </svg>
@@ -505,10 +505,10 @@ export default component$(() => {
                   </h2>
                   {state.report.chart_type && (
                     <div class="flex items-center gap-2">
-                      <span class="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl text-sm font-semibold capitalize">
+                      <span class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-semibold capitalize\">
                         {state.report.chart_type} Chart
                       </span>
-                      <span class="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl text-sm font-semibold">
+                      <span class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold\">
                         {state.reportData?.data.length || 0} Data Points
                       </span>
                     </div>
@@ -516,9 +516,9 @@ export default component$(() => {
                 </div>
               </div>
 
-              <div class="p-8">
+              <div class="p-8 bg-white">
                 {state.report.chart_type && state.reportData ? (
-                  <div class="h-[600px] bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl p-6">
+                  <div class="h-[600px] bg-gray-50 rounded-xl p-6">
                     <Resource
                       value={chartComponent}
                       onPending={() => <div class="h-full rounded-lg bg-gray-100 animate-pulse" />}
@@ -536,17 +536,17 @@ export default component$(() => {
                   </div>
                 ) : (
                   <div class="text-center py-16">
-                    <div class="bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg class="w-16 h-16 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="bg-purple-100 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg class="w-16 h-16 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                       </svg>
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">
                       {!state.report.chart_type
                         ? 'No chart type configured'
                         : 'No data available'}
                     </h3>
-                    <p class="text-gray-500">
+                    <p class="text-gray-600">
                       {!state.report.chart_type
                         ? 'This report needs a chart type to be configured'
                         : 'There is no data available to display in the chart'}

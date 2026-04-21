@@ -33,10 +33,10 @@ export const useReportsData = routeLoader$(async (requestEvent) => {
 
 // Report type icons and colors
 const reportTypeConfig = {
-  table: { icon: '📊', color: 'bg-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-900/20', borderColor: 'border-blue-200 dark:border-blue-800', textColor: 'text-blue-700' },
-  chart: { icon: '📈', color: 'bg-purple-600', bgColor: 'bg-purple-50 dark:bg-purple-900/20', borderColor: 'border-purple-200 dark:border-purple-800', textColor: 'text-purple-700' },
-  kpi: { icon: '🎯', color: 'bg-green-600', bgColor: 'bg-green-50 dark:bg-green-900/20', borderColor: 'border-green-200 dark:border-green-800', textColor: 'text-green-700' },
-  pivot: { icon: '🔲', color: 'bg-orange-600', bgColor: 'bg-orange-50 dark:bg-orange-900/20', borderColor: 'border-orange-200 dark:border-orange-800', textColor: 'text-orange-700' },
+  table: { icon: '📊', color: 'bg-gradient-to-br from-blue-600 to-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', textColor: 'text-blue-700' },
+  chart: { icon: '📈', color: 'bg-gradient-to-br from-violet-600 to-fuchsia-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', textColor: 'text-purple-700' },
+  kpi: { icon: '🎯', color: 'bg-gradient-to-br from-emerald-600 to-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-700' },
+  pivot: { icon: '🔲', color: 'bg-gradient-to-br from-amber-500 to-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', textColor: 'text-orange-700' },
 };
 
 const categoryColors: Record<string, string> = {
@@ -175,99 +175,94 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Professional Header */}
-      <div class="bg-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 shadow-sm">
-        <div class="max-w-screen-2xl mx-auto px-6 py-6">
+    <div class="space-y-6">
+      {/* Standard Admin Header */}
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+          {/* Header Content */}
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div class="bg-blue-600 rounded-lg p-3">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
                 </svg>
               </div>
               <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                  Analytics Reports
-                </h1>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Manage and analyze custom reports</p>
+                <h1 class="text-2xl font-bold text-gray-900">Analytics Reports</h1>
+                <p class="text-sm text-gray-600">Manage and analyze custom reports</p>
               </div>
             </div>
             <div class="flex gap-3">
               <button
                 onClick$={() => nav('/admin/analytics/dashboards')}
-                class="px-4 py-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
+                class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center gap-2"
               >
-                <span class="flex items-center gap-2">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                  </svg>
-                  Dashboards
-                </span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Dashboards
               </button>
               <button
                 onClick$={() => nav('/admin/analytics/reports/builder')}
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
               >
-                <span class="flex items-center gap-2">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                  </svg>
-                  Create Report
-                </span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Create Report
               </button>
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats Cards Grid */}
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-blue-700 dark:text-blue-300 text-sm font-medium">Total Reports</p>
-                  <p class="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">{reportStats.total}</p>
+                  <p class="text-blue-700 text-sm font-medium">Total Reports</p>
+                  <p class="text-2xl font-bold text-blue-900 mt-1">{reportStats.total}</p>
                 </div>
-                <div class="bg-blue-100 dark:bg-blue-800 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-blue-100 rounded-lg p-2">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
                 </div>
               </div>
             </div>
-            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-yellow-700 dark:text-yellow-300 text-sm font-medium">Favorites</p>
-                  <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100 mt-1">{reportStats.favorites}</p>
+                  <p class="text-yellow-700 text-sm font-medium">Favorites</p>
+                  <p class="text-2xl font-bold text-yellow-900 mt-1">{reportStats.favorites}</p>
                 </div>
-                <div class="bg-yellow-100 dark:bg-yellow-800 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                <div class="bg-yellow-100 rounded-lg p-2">
+                  <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                   </svg>
                 </div>
               </div>
             </div>
-            <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-purple-700 dark:text-purple-300 text-sm font-medium">Charts</p>
-                  <p class="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">{reportStats.byType.chart || 0}</p>
+                  <p class="text-purple-700 text-sm font-medium">Charts</p>
+                  <p class="text-2xl font-bold text-purple-900 mt-1">{reportStats.byType.chart || 0}</p>
                 </div>
-                <div class="bg-purple-100 dark:bg-purple-800 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-purple-100 rounded-lg p-2">
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
                   </svg>
                 </div>
               </div>
             </div>
-            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-green-700 dark:text-green-300 text-sm font-medium">Tables</p>
-                  <p class="text-2xl font-bold text-green-900 dark:text-green-100 mt-1">{reportStats.byType.table || 0}</p>
+                  <p class="text-green-700 text-sm font-medium">Tables</p>
+                  <p class="text-2xl font-bold text-green-900 mt-1">{reportStats.byType.table || 0}</p>
                 </div>
-                <div class="bg-green-100 dark:bg-green-800 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-green-100 rounded-lg p-2">
+                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                   </svg>
                 </div>
@@ -277,15 +272,15 @@ export default component$(() => {
         </div>
       </div>
 
-      {/* Advanced Filters Section */}
-      <div class="bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700">
-        <div class="max-w-screen-2xl mx-auto px-6 py-5">
+      {/* Filters & Controls Section */}
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-5">
           <div class="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
             <div class="flex-1 relative">
               <input
                 type="text"
-                class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800 transition-all"
+                class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                 placeholder="Search reports by name or description..."
                 value={state.searchQuery}
                 onInput$={(e: any) => state.searchQuery = e.target.value}
@@ -306,26 +301,26 @@ export default component$(() => {
             </div>
 
             {/* Category Pills */}
-            <div class="flex gap-2 overflow-x-auto pb-2 lg:pb-0">
+            <div class="flex gap-2 overflow-x-auto pb-2 lg:pb-0 flex-shrink-0">
               {categories.map((cat) => (
                 <button
                   key={cat || 'all'}
                   onClick$={() => state.selectedCategory = cat || 'all'}
-                  class={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap border-2 ${
+                  class={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap border ${
                     state.selectedCategory === cat
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                   }`}
                 >
-                  {cat === 'all' ? 'All Categories' : cat || 'Unknown'}
+                  {cat === 'all' ? 'All' : cat || 'Unknown'}
                 </button>
               ))}
             </div>
 
             {/* View Controls */}
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-shrink-0">
               <select
-                class="px-4 py-2.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 focus:border-purple-500 transition-all"
+                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                 value={state.sortBy}
                 onChange$={(e: any) => state.sortBy = e.target.value}
               >
@@ -334,10 +329,10 @@ export default component$(() => {
                 <option value="type">Type</option>
               </select>
 
-              <div class="flex border-2 border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+              <div class="flex border border-gray-200 rounded-lg overflow-hidden">
                 <button
                   onClick$={() => state.viewMode = 'grid'}
-                  class={`px-4 py-2.5 transition-colors ${state.viewMode === 'grid' ? 'bg-purple-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+                  class={`px-3 py-2.5 transition-colors ${state.viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
@@ -345,7 +340,7 @@ export default component$(() => {
                 </button>
                 <button
                   onClick$={() => state.viewMode = 'list'}
-                  class={`px-4 py-2.5 transition-colors border-l-2 border-gray-200 dark:border-gray-600 ${state.viewMode === 'list' ? 'bg-purple-500 text-white' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+                  class={`px-3 py-2.5 transition-colors border-l border-gray-200 ${state.viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -359,14 +354,14 @@ export default component$(() => {
 
       {/* Error Alert */}
       {state.error && (
-        <div class="max-w-screen-2xl mx-auto px-6 py-4">
-          <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3 animate-fade-in">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+              <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3 shadow-sm">
             <svg class="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <div>
-              <h4 class="font-semibold text-red-800 dark:text-red-300">Error</h4>
-              <p class="text-red-700 dark:text-red-400 text-sm mt-1">{state.error}</p>
+                  <h4 class="font-semibold text-red-800">Error</h4>
+                  <p class="text-red-700 text-sm mt-1">{state.error}</p>
             </div>
             <button onClick$={() => state.error = ''} class="ml-auto text-red-500 hover:text-red-700">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,27 +376,27 @@ export default component$(() => {
       {state.loading && (
         <div class="flex flex-col items-center justify-center py-20">
           <div class="relative">
-            <div class="w-16 h-16 border-4 border-purple-200 dark:border-purple-800 rounded-full"></div>
-            <div class="w-16 h-16 border-4 border-purple-600 rounded-full animate-spin border-t-transparent absolute top-0 left-0"></div>
+            <div class="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
+            <div class="w-16 h-16 border-4 border-blue-600 rounded-full animate-spin border-t-transparent absolute top-0 left-0"></div>
           </div>
-          <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">Loading reports...</p>
+          <p class="mt-4 text-gray-600 font-medium">Loading reports...</p>
         </div>
       )}
 
       {/* Reports Display */}
       {!state.loading && (
-        <div class="max-w-screen-2xl mx-auto px-6 py-8">
+        <div class="max-w-7xl mx-auto px-6 py-8">
           {filteredReports.length === 0 ? (
-            <div class="text-center py-12">
-              <div class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div class="text-center py-16">
+              <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
               </div>
-              <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">
                 {state.searchQuery ? 'No reports found' : 'No reports yet'}
               </h3>
-              <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              <p class="text-gray-500 mb-6 max-w-md mx-auto">
                 {state.searchQuery
                   ? 'Try adjusting your search or filters to find what you\'re looking for'
                   : 'Get started by creating your first analytics report'}
@@ -430,11 +425,11 @@ export default component$(() => {
                     onDragStart$={() => handleDragStart(report.id)}
                     onDragOver$={(e: DragEvent) => handleDragOver(e, report.id)}
                     onDragEnd$={handleDragEnd}
-                    class={`report-card group bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 cursor-move border-2 ${
+                    class={`report-card group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-move border-2 ${
                       isDragging ? 'opacity-50 scale-95' : ''
                     } ${
                       isDragOver ? `${config.borderColor} scale-105` : 'border-transparent'
-                    } hover:border-gray-300 dark:hover:border-gray-600 hover:-translate-y-1 opacity-0`}
+                  } hover:border-gray-300 hover:-translate-y-1`}
                     onClick$={() => nav(`/admin/analytics/reports/view/${report.id}`)}
                   >
                     {/* Card Header */}
@@ -445,14 +440,14 @@ export default component$(() => {
                         </div>
                         <button
                           onClick$={(e) => toggleFavorite(report.id, e)}
-                          class="p-2 hover:bg-white/20 dark:hover:bg-black/20 rounded-lg transition-colors"
+                          class="p-2 hover:bg-white/20 rounded-lg transition-colors"
                         >
                           {report.is_favorite ? (
                             <svg class="w-6 h-6 text-yellow-500 fill-current" viewBox="0 0 24 24">
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
                             </svg>
                           ) : (
-                            <svg class="w-6 h-6 text-white dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                             </svg>
                           )}
@@ -468,24 +463,24 @@ export default component$(() => {
                     </div>
 
                     {/* Card Body */}
-                    <div class="p-6">
+                    <div class="p-6 bg-white rounded-b-2xl">
                       <div class="flex flex-wrap gap-2 mb-4">
                         {report.category && (
-                          <span class={`badge ${categoryColors[report.category] || categoryColors.default} badge-sm`}>
+                          <span class={`badge ${categoryColors[report.category] || categoryColors.default} badge-sm font-medium`}>
                             {report.category}
                           </span>
                         )}
-                        <span class="badge badge-outline badge-sm capitalize">
+                        <span class="badge badge-outline badge-sm capitalize border-gray-300 text-gray-700">
                           {report.report_type}
                         </span>
                         {report.chart_type && (
-                          <span class="badge badge-ghost badge-sm capitalize">
+                          <span class="badge badge-ghost badge-sm capitalize bg-gray-100 text-gray-700">
                             {report.chart_type}
                           </span>
                         )}
                       </div>
 
-                      <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                      <div class="flex items-center gap-2 text-xs text-gray-500 mb-4">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
@@ -508,7 +503,7 @@ export default component$(() => {
                             e.stopPropagation();
                             nav(`/admin/analytics/reports/builder?clone=${report.id}`);
                           }}
-                          class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors font-medium text-sm"
+                          class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm"
                           title="Clone"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -520,7 +515,7 @@ export default component$(() => {
                             e.stopPropagation();
                             deleteReport(report.id, report.name);
                           }}
-                          class="px-4 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition-colors font-medium text-sm"
+                          class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium text-sm"
                           title="Delete"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -555,11 +550,11 @@ export default component$(() => {
                     onDragStart$={() => handleDragStart(report.id)}
                     onDragOver$={(e: DragEvent) => handleDragOver(e, report.id)}
                     onDragEnd$={handleDragEnd}
-                    class={`report-card group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-move border-2 ${
+                    class={`report-card group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-move border-2 ${
                       isDragging ? 'opacity-50 scale-98' : ''
                     } ${
                       isDragOver ? `${config.borderColor}` : 'border-transparent'
-                    } hover:border-gray-300 dark:hover:border-gray-600 opacity-0`}
+                  } hover:border-gray-300`}
                     onClick$={() => nav(`/admin/analytics/reports/view/${report.id}`)}
                   >
                     <div class="flex items-center gap-6 p-6">
@@ -572,10 +567,10 @@ export default component$(() => {
                       <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-4">
                           <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-1 truncate">
                               {report.name}
                             </h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-3">
+                            <p class="text-sm text-gray-600 line-clamp-1 mb-3">
                               {report.description || 'No description'}
                             </p>
                             <div class="flex flex-wrap items-center gap-2">
@@ -592,7 +587,7 @@ export default component$(() => {
                                   {report.chart_type}
                                 </span>
                               )}
-                              <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                              <span class="text-xs text-gray-500 flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
@@ -605,7 +600,7 @@ export default component$(() => {
                           <div class="flex items-center gap-2">
                             <button
                               onClick$={(e) => toggleFavorite(report.id, e)}
-                              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                              class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                               {report.is_favorite ? (
                                 <svg class="w-5 h-5 text-yellow-500 fill-current" viewBox="0 0 24 24">
@@ -631,7 +626,7 @@ export default component$(() => {
                                 e.stopPropagation();
                                 nav(`/admin/analytics/reports/builder?clone=${report.id}`);
                               }}
-                              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-600 dark:text-gray-400"
+                              class="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
                               title="Clone"
                             >
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -643,7 +638,7 @@ export default component$(() => {
                                 e.stopPropagation();
                                 deleteReport(report.id, report.name);
                               }}
-                              class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                              class="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600"
                               title="Delete"
                             >
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

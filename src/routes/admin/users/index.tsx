@@ -1,5 +1,5 @@
 import { component$, useStore, $ } from "@builder.io/qwik";
-import { routeLoader$ } from "@builder.io/qwik-city";
+import { routeLoader$, useNavigate } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
 import { apiClient, createSSRApiClient } from "~/services";
 import { P9ETable, type ActionButton } from "~/components/table";
@@ -7,12 +7,19 @@ import { P9ETable, type ActionButton } from "~/components/table";
 interface Role {
   id: string;
   name: string;
-  level: number;
+  display_name?: string;
+  level?: number;
+  is_global?: boolean;
+  business_vertical_id?: string;
+  business_vertical_name?: string;
 }
 
 interface BusinessRole {
   id: string;
+  business_role_id?: string;
+  role_id?: string;
   name: string;
+  business_vertical_id?: string;
   business_vertical_name?: string;
 }
 
@@ -36,24 +43,124 @@ interface User {
   business_roles?: BusinessRole[];
 }
 
+const normalizeRole = (role: any): Role => {
+  const rawLevel = role?.level ?? role?.Level ?? role?.role_level ?? role?.RoleLevel;
+  const parsedLevel = typeof rawLevel === "string" ? Number(rawLevel) : rawLevel;
+
+  return {
+    id: role?.id || role?.ID || role?.role_id || "",
+    name: role?.name || role?.Name || role?.display_name || role?.DisplayName || "Unnamed Role",
+    display_name: role?.display_name || role?.DisplayName,
+    level: Number.isFinite(parsedLevel) ? parsedLevel : undefined,
+    is_global: role?.is_global ?? role?.IsGlobal,
+    business_vertical_id: role?.business_vertical_id || role?.BusinessVerticalID,
+    business_vertical_name: role?.business_vertical?.name || role?.BusinessVertical?.Name,
+  };
+};
+
+const normalizeBusinessVertical = (vertical: any): BusinessVertical => ({
+  id: vertical?.id || vertical?.ID || "",
+  name: vertical?.name || vertical?.Name || "",
+  code: vertical?.code || vertical?.Code || "",
+});
+
+const normalizeBusinessRole = (role: any): BusinessRole => {
+  const nestedBusinessRole = role?.business_role || role?.BusinessRole || {};
+  const nestedVertical = nestedBusinessRole?.business_vertical || nestedBusinessRole?.BusinessVertical || {};
+
+  return {
+    id: role?.id || role?.ID || nestedBusinessRole?.id || nestedBusinessRole?.ID || "",
+    business_role_id:
+      role?.business_role_id ||
+      role?.BusinessRoleID ||
+      nestedBusinessRole?.id ||
+      nestedBusinessRole?.ID,
+    role_id: role?.role_id || role?.RoleID,
+    name:
+      role?.name ||
+      role?.Name ||
+      role?.display_name ||
+      role?.DisplayName ||
+      nestedBusinessRole?.display_name ||
+      nestedBusinessRole?.DisplayName ||
+      nestedBusinessRole?.name ||
+      nestedBusinessRole?.Name ||
+      "",
+    business_vertical_id:
+      role?.business_vertical_id ||
+      role?.BusinessVerticalID ||
+      nestedBusinessRole?.business_vertical_id ||
+      nestedBusinessRole?.BusinessVerticalID,
+    business_vertical_name:
+      role?.business_vertical_name ||
+      role?.BusinessVerticalName ||
+      role?.business_name ||
+      role?.BusinessName ||
+      nestedVertical?.name ||
+      nestedVertical?.Name,
+  };
+};
+
+const normalizeUser = (user: any): User => ({
+  id: user?.id || user?.ID || "",
+  name: user?.name || user?.Name || "",
+  email: user?.email || user?.Email || "",
+  phone: user?.phone || user?.Phone || "",
+  role_id: user?.role_id || user?.RoleID,
+  global_role: user?.global_role || user?.GlobalRole,
+  business_vertical_id: user?.business_vertical_id || user?.BusinessVerticalID,
+  business_vertical_name: user?.business_vertical_name || user?.BusinessVerticalName,
+  is_active: user?.is_active ?? user?.IsActive ?? true,
+  created_at: user?.created_at || user?.CreatedAt,
+  business_roles: Array.isArray(user?.business_roles || user?.BusinessRoles)
+    ? (user?.business_roles || user?.BusinessRoles).map(normalizeBusinessRole)
+    : [],
+});
+
+const buildUserUpdatePayload = (user: User) => {
+  const payload: Record<string, string | boolean> = {
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    is_active: user.is_active,
+  };
+
+  if (typeof user.role_id !== "undefined") {
+    payload.role_id = user.role_id || "";
+  }
+
+  if (typeof user.business_vertical_id !== "undefined") {
+    payload.business_vertical_id = user.business_vertical_id || "";
+  }
+
+  return payload;
+};
+
+const getRoleOptionLabel = (role: Role) => {
+  const roleName = role.display_name || role.name;
+  const roleLevel = typeof role.level === "number" ? `Level ${role.level}` : "Level not set";
+  const scope = role.is_global ? "Global" : (role.business_vertical_name || "Business");
+  return `${roleName} (${roleLevel} • ${scope})`;
+};
+
 export const useUsersData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
 
   try {
     const [usersResponse, rolesData, verticalsData] = await Promise.all([
       ssrApiClient.get<any>("/admin/users", { page: 1, limit: 1000 }),
-      ssrApiClient.get<any>("/admin/roles"),
+      ssrApiClient.get<any>("/admin/roles/unified?include_business=true"),
       ssrApiClient.get<any>("/admin/businesses"),
     ]);
 
     const users = usersResponse?.data || usersResponse?.users || usersResponse || [];
-    const roles = rolesData?.data || rolesData?.roles || rolesData || [];
+    const roles = rolesData?.roles || rolesData?.data || rolesData || [];
     const verticals = verticalsData?.businesses || verticalsData?.data || verticalsData || [];
 
     return {
-      users: Array.isArray(users) ? users : [],
-      roles: Array.isArray(roles) ? roles : [],
-      verticals: Array.isArray(verticals) ? verticals : [],
+      users: Array.isArray(users) ? users.map(normalizeUser).filter((user) => user.id) : [],
+      roles: Array.isArray(roles) ? roles.map(normalizeRole).filter((role) => role.id) : [],
+      verticals: Array.isArray(verticals) ? verticals.map(normalizeBusinessVertical).filter((vertical) => vertical.id) : [],
       error: "",
     };
   } catch (error: any) {
@@ -68,6 +175,7 @@ export const useUsersData = routeLoader$(async (requestEvent) => {
 
 export default component$(() => {
   const initialData = useUsersData();
+  const nav = useNavigate();
 
   const state = useStore({
     users: initialData.value.users as User[],
@@ -94,6 +202,46 @@ export default component$(() => {
     success: "",
   });
 
+  const getRoleNameById = (roleId?: string, businessRoles?: BusinessRole[], globalRole?: string) => {
+    const resolvedRoles: string[] = [];
+
+    // Resolve global role by role_id when present.
+    if (roleId) {
+      const role = state.roles.find((r) => r.id === roleId);
+      if (role) {
+        resolvedRoles.push(role.display_name || role.name);
+      }
+    }
+
+    // Resolve business roles from assignment payload + role master list.
+    for (const assignment of businessRoles || []) {
+      const fromAssignment = assignment.name?.trim();
+      if (fromAssignment) {
+        resolvedRoles.push(fromAssignment);
+        continue;
+      }
+
+      const candidateRoleId = assignment.business_role_id || assignment.role_id;
+      if (candidateRoleId) {
+        const matchedRole = state.roles.find((r) => r.id === candidateRoleId);
+        if (matchedRole) {
+          resolvedRoles.push(matchedRole.display_name || matchedRole.name);
+        }
+      }
+    }
+
+    const uniqueResolved = resolvedRoles.filter((value, index, array) => value && array.indexOf(value) === index);
+    if (uniqueResolved.length > 0) {
+      return uniqueResolved.join(", ");
+    }
+
+    if (globalRole) {
+      return globalRole;
+    }
+
+    return "No Role";
+  };
+
   const resetForm = $(() => {
     state.showCreateModal = false;
     state.editingUser = null;
@@ -111,7 +259,7 @@ export default component$(() => {
   const handleCreate = $(async () => {
     try {
       const created = await apiClient.post<any>("/register", state.newUser);
-      state.users.push(created.user || created);
+      state.users.push(normalizeUser(created.user || created));
       state.success = "User created successfully";
       await resetForm();
     } catch (error: any) {
@@ -123,17 +271,55 @@ export default component$(() => {
     if (!state.editingUser) return;
 
     try {
-      const updated = await apiClient.put<any>(`/admin/users/${state.editingUser.id}`, {
-        name: state.editingUser.name,
-        email: state.editingUser.email,
-        phone: state.editingUser.phone,
-        role_id: state.editingUser.role_id,
-        business_vertical_id: state.editingUser.business_vertical_id,
-        is_active: state.editingUser.is_active,
-      });
+      const selectedRole = state.roles.find((role) => role.id === (state.editingUser?.role_id || ""));
+      const isBusinessRoleSelection = !!selectedRole && selectedRole.is_global === false;
+
+      const updatePayload = buildUserUpdatePayload(state.editingUser);
+      if (isBusinessRoleSelection) {
+        delete (updatePayload as any).role_id;
+      }
+
+      const updated = await apiClient.put<any>(
+        `/admin/users/${state.editingUser.id}`,
+        updatePayload
+      );
+
+      if (isBusinessRoleSelection && selectedRole) {
+        const selectedVerticalId =
+          state.editingUser.business_vertical_id || selectedRole.business_vertical_id || "";
+
+        if (selectedVerticalId) {
+          const existingAssignment = (state.editingUser.business_roles || []).find(
+            (assignment) => assignment.business_vertical_id === selectedVerticalId
+          );
+
+          if (existingAssignment && existingAssignment.business_role_id !== selectedRole.id) {
+            await apiClient.delete<any>(`/users/${state.editingUser.id}/roles/${existingAssignment.id}`);
+          }
+        }
+
+        const alreadyAssigned = (state.editingUser.business_roles || []).some(
+          (assignment) => assignment.business_role_id === selectedRole.id
+        );
+
+        if (!alreadyAssigned) {
+          await apiClient.post<any>(`/users/${state.editingUser.id}/roles/assign`, {
+            business_role_id: selectedRole.id,
+          });
+        }
+      }
+
+      const reloadedUserData = await apiClient.get<any>(`/admin/users/${state.editingUser.id}`);
+      const normalizedUpdatedUser = normalizeUser(reloadedUserData.user || reloadedUserData || updated.user || updated);
 
       const index = state.users.findIndex((u) => u.id === state.editingUser!.id);
-      if (index !== -1) state.users[index] = updated.user || updated;
+      if (index !== -1) {
+        state.users[index] = {
+          ...state.users[index],
+          ...normalizedUpdatedUser,
+          id: normalizedUpdatedUser.id || state.users[index].id,
+        };
+      }
 
       state.success = "User updated successfully";
       await resetForm();
@@ -148,12 +334,20 @@ export default component$(() => {
       if (!user) return;
 
       const updated = await apiClient.put<any>(`/admin/users/${userId}`, {
-        ...user,
+        ...buildUserUpdatePayload(user),
         is_active: !currentStatus,
       });
+      const normalizedUpdatedUser = normalizeUser(updated.user || updated);
 
       const index = state.users.findIndex((u) => u.id === userId);
-      if (index !== -1) state.users[index] = updated.user || updated;
+      if (index !== -1) {
+        state.users[index] = {
+          ...state.users[index],
+          ...normalizedUpdatedUser,
+          id: normalizedUpdatedUser.id || state.users[index].id,
+          is_active: normalizedUpdatedUser.is_active,
+        };
+      }
 
       state.success = `User ${!currentStatus ? "activated" : "deactivated"} successfully`;
     } catch (error: any) {
@@ -173,19 +367,7 @@ export default component$(() => {
 
       // Fallback: fetch from API if not found in state
       const userData = await apiClient.get<any>(`/admin/users/${userId}`);
-      const user: User = {
-        id: userData.ID || userData.id || userId,
-        name: userData.Name || userData.name || "",
-        email: userData.Email || userData.email || "",
-        phone: userData.Phone || userData.phone || "",
-        role_id: userData.RoleID || userData.role_id,
-        global_role: userData.GlobalRole || userData.global_role,
-        business_vertical_id: userData.BusinessVerticalID || userData.business_vertical_id,
-        business_vertical_name: userData.BusinessVerticalName || userData.business_vertical_name,
-        is_active: userData.IsActive ?? userData.is_active ?? true,
-        created_at: userData.CreatedAt || userData.created_at,
-        business_roles: userData.BusinessRoles || userData.business_roles || [],
-      };
+      const user = normalizeUser(userData.user || userData);
       state.viewingUser = user;
       state.showDetailsModal = true;
     } catch (error: any) {
@@ -201,11 +383,25 @@ export default component$(() => {
       u.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
       u.phone?.includes(state.searchTerm);
 
-    const matchesRole = !state.selectedRole || u.role_id === state.selectedRole;
+    const hasBusinessRole = (u.business_roles || []).some((br) => br.business_role_id === state.selectedRole);
+    const matchesRole = !state.selectedRole || u.role_id === state.selectedRole || hasBusinessRole;
     const matchesVertical = !state.selectedVertical || u.business_vertical_id === state.selectedVertical;
 
     return matchesSearch && matchesRole && matchesVertical;
   });
+
+  const getRolesForVertical = (businessVerticalId?: string) => {
+    const globalRoles = state.roles.filter((role) => role.is_global !== false);
+    if (!businessVerticalId) {
+      return globalRoles;
+    }
+
+    const businessRoles = state.roles.filter(
+      (role) => role.is_global === false && role.business_vertical_id === businessVerticalId
+    );
+
+    return [...globalRoles, ...businessRoles];
+  };
 
   return (
     <PermissionGuard
@@ -256,7 +452,7 @@ export default component$(() => {
             >
               <option value="">All Roles</option>
               {state.roles.map((role) => (
-                <option key={role.id} value={role.id}>{role.name}</option>
+                <option key={role.id} value={role.id}>{getRoleOptionLabel(role)}</option>
               ))}
             </select>
             <select
@@ -287,11 +483,16 @@ export default component$(() => {
             name: user.name,
             email: user.email,
             phone: user.phone || "",
-            global_role: user.global_role || "No Role",
+            global_role: getRoleNameById(user.role_id, user.business_roles, user.global_role),
             business_vertical_name: user.business_vertical_name || "-",
             status_text: user.is_active ? "Active" : "Inactive",
             actions: [
               { type: "button", label: "View", onClick$: $(() => handleViewDetails(user.id)) } as ActionButton,
+              {
+                type: "button",
+                label: "Manage Sites",
+                onClick$: $(() => nav(`/admin/users/${user.id}/sites`)),
+              } as ActionButton,
               {
                 type: "button",
                 label: user.is_active ? "Deactivate" : "Activate",
@@ -361,8 +562,8 @@ export default component$(() => {
                   }}
                 >
                   <option value="">Select a role</option>
-                  {state.roles.map((role) => (
-                    <option key={role.id} value={role.id}>{`${role.name} (Level ${role.level})`}</option>
+                  {getRolesForVertical(state.editingUser ? state.editingUser.business_vertical_id : state.newUser.business_vertical_id).map((role) => (
+                    <option key={role.id} value={role.id}>{getRoleOptionLabel(role)}</option>
                   ))}
                 </select>
                 <select

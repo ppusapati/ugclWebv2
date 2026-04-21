@@ -22,11 +22,14 @@ interface Site {
 
 interface UserSiteAccess {
   id: string;
-  user_id: string;
-  site_id: string;
-  business_vertical_id: string;
-  assigned_at: string;
-  assigned_by?: string;
+  userId?: string;
+  siteId: string;
+  canRead?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+  assignedAt?: string;
+  assignedBy?: string;
   site?: Site;
 }
 
@@ -35,6 +38,17 @@ interface User {
   name: string;
   email: string;
 }
+
+const API_KEY = "87339ea3-1add-4689-ae57-3128ebd03c4f";
+
+const buildHeaders = () => {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("auth_token") : "";
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token ?? ""}`,
+    "x-api-key": API_KEY,
+  };
+};
 
 export default component$(() => {
   const location = useLocation();
@@ -58,16 +72,53 @@ export default component$(() => {
   });
 
   const API_BASE_URL = resolveApiBaseUrl();
-  const API_KEY = "87339ea3-1add-4689-ae57-3128ebd03c4f";
 
-  const getHeaders = () => {
-    const token = localStorage.getItem("auth_token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      "x-api-key": API_KEY,
-    };
-  };
+  const loadSitesForVertical = $(async (verticalCode: string) => {
+    if (!verticalCode) {
+      state.allSites = [];
+      state.assignedSites = [];
+      state.availableSites = [];
+      return;
+    }
+
+    const [allSitesRes, assignedSitesRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/business/${verticalCode}/sites`, {
+        headers: buildHeaders(),
+      }),
+      fetch(`${API_BASE_URL}/business/${verticalCode}/sites/user/${userId}/access`, {
+        headers: buildHeaders(),
+      }),
+    ]);
+
+    if (!allSitesRes.ok) {
+      throw new Error("failed to fetch sites");
+    }
+
+    const allSitesPayload = await allSitesRes.json();
+    state.allSites = allSitesPayload.sites || allSitesPayload.data || [];
+
+    if (!assignedSitesRes.ok) {
+      throw new Error("failed to fetch assigned sites");
+    }
+
+    const assignedPayload = await assignedSitesRes.json();
+    const assignedRecords = assignedPayload.access || assignedPayload.data || [];
+    state.assignedSites = assignedRecords.map((item: any) => ({
+      id: item.id,
+      userId: item.userId || item.user_id,
+      siteId: item.siteId || item.site_id,
+      canRead: item.canRead ?? item.can_read,
+      canCreate: item.canCreate ?? item.can_create,
+      canUpdate: item.canUpdate ?? item.can_update,
+      canDelete: item.canDelete ?? item.can_delete,
+      assignedAt: item.assignedAt || item.assigned_at,
+      assignedBy: item.assignedBy || item.assigned_by,
+      site: item.site,
+    }));
+
+    const assignedSiteIds = new Set(state.assignedSites.map((a) => a.siteId));
+    state.availableSites = state.allSites.filter((site) => !assignedSiteIds.has(site.id));
+  });
 
   // Load initial data
   useTask$(async () => {
@@ -75,9 +126,9 @@ export default component$(() => {
     try {
       const [userRes, verticalsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/admin/users/${userId}`, {
-          headers: getHeaders(),
+          headers: buildHeaders(),
         }),
-        fetch(`${API_BASE_URL}/admin/businesses`, { headers: getHeaders() }),
+        fetch(`${API_BASE_URL}/admin/businesses`, { headers: buildHeaders() }),
       ]);
 
       if (userRes.ok) {
@@ -108,54 +159,16 @@ export default component$(() => {
     if (isServer) return;
     track(() => state.selectedVertical);
 
-    const loadSites = async () => {
-      if (!state.selectedVertical) {
-        state.allSites = [];
-        state.assignedSites = [];
-        state.availableSites = [];
-        return;
-      }
-
+    const syncSites = async () => {
       try {
-        const [allSitesRes, assignedSitesRes] = await Promise.all([
-          fetch(
-            `${API_BASE_URL}/business/${state.selectedVertical}/sites`,
-            {
-              headers: getHeaders(),
-            }
-          ),
-          fetch(
-            `${API_BASE_URL}/business/${state.selectedVertical}/sites/user/${userId}/access`,
-            {
-              headers: getHeaders(),
-            }
-          ),
-        ]);
-
-        if (allSitesRes.ok) {
-          const sitesData = await allSitesRes.json();
-          state.allSites = sitesData.sites || sitesData.data || [];
-        }
-
-        if (assignedSitesRes.ok) {
-          const assignedData = await assignedSitesRes.json();
-          state.assignedSites = assignedData.access || assignedData.data || [];
-        }
-
-        // Calculate available sites (sites not yet assigned)
-        const assignedSiteIds = state.assignedSites.map((a) => a.site_id);
-        state.availableSites = state.allSites.filter(
-          (site) => !assignedSiteIds.includes(site.id)
-        );
+        await loadSitesForVertical(state.selectedVertical);
       } catch (error) {
         console.error("Failed to load sites:", error);
         state.error = "Failed to load sites for this vertical";
       }
     };
 
-    if (state.selectedVertical) {
-      loadSites();
-    }
+    syncSites();
   });
 
   // Assign sites (move from available to assigned)
@@ -166,63 +179,34 @@ export default component$(() => {
     }
 
     try {
-      const vertical = state.businessVerticals.find(
-        (v) => v.code === state.selectedVertical
+      const responses = await Promise.all(
+        state.selectedAvailable.map((siteId) =>
+          fetch(`${API_BASE_URL}/business/${state.selectedVertical}/sites/access`, {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({
+              userId,
+              siteId,
+              canRead: true,
+              canCreate: true,
+              canUpdate: true,
+              canDelete: false,
+            }),
+          })
+        )
       );
-      if (!vertical) return;
 
-      const response = await fetch(
-        `${API_BASE_URL}/business/${state.selectedVertical}/sites/access`,
-        {
-          method: "POST",
-          headers: getHeaders(),
-          body: JSON.stringify({
-            user_id: userId,
-            site_ids: state.selectedAvailable,
-            business_vertical_id: vertical.id,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        state.success = `${state.selectedAvailable.length} site(s) assigned successfully`;
-        state.selectedAvailable = [];
-        setTimeout(() => (state.success = ""), 3000);
-
-        // Reload sites
-        const [allSitesRes, assignedSitesRes] = await Promise.all([
-          fetch(
-            `${API_BASE_URL}/business/${state.selectedVertical}/sites`,
-            {
-              headers: getHeaders(),
-            }
-          ),
-          fetch(
-            `${API_BASE_URL}/business/${state.selectedVertical}/sites/user/${userId}/access`,
-            {
-              headers: getHeaders(),
-            }
-          ),
-        ]);
-
-        if (allSitesRes.ok) {
-          const sitesData = await allSitesRes.json();
-          state.allSites = sitesData.sites || sitesData.data || [];
-        }
-
-        if (assignedSitesRes.ok) {
-          const assignedData = await assignedSitesRes.json();
-          state.assignedSites = assignedData.access || assignedData.data || [];
-        }
-
-        const assignedSiteIds = state.assignedSites.map((a) => a.site_id);
-        state.availableSites = state.allSites.filter(
-          (site) => !assignedSiteIds.includes(site.id)
-        );
-      } else {
-        const errorData = await response.json();
-        state.error = errorData.error || "Failed to assign sites";
+      const failed = responses.filter((response) => !response.ok);
+      if (failed.length > 0) {
+        const firstError = await failed[0].text();
+        state.error = firstError || "Failed to assign some selected sites";
+        return;
       }
+
+      state.success = `${state.selectedAvailable.length} site(s) assigned successfully`;
+      state.selectedAvailable = [];
+      setTimeout(() => (state.success = ""), 3000);
+      await loadSitesForVertical(state.selectedVertical);
     } catch (error) {
       state.error = "Network error occurred";
     }
@@ -248,7 +232,7 @@ export default component$(() => {
           `${API_BASE_URL}/business/${state.selectedVertical}/sites/access/${accessId}`,
           {
             method: "DELETE",
-            headers: getHeaders(),
+            headers: buildHeaders(),
           }
         )
       );
@@ -260,37 +244,7 @@ export default component$(() => {
         state.success = `${state.selectedAssigned.length} site(s) revoked successfully`;
         state.selectedAssigned = [];
         setTimeout(() => (state.success = ""), 3000);
-
-        // Reload sites
-        const [allSitesRes, assignedSitesRes] = await Promise.all([
-          fetch(
-            `${API_BASE_URL}/business/${state.selectedVertical}/sites`,
-            {
-              headers: getHeaders(),
-            }
-          ),
-          fetch(
-            `${API_BASE_URL}/business/${state.selectedVertical}/sites/user/${userId}/access`,
-            {
-              headers: getHeaders(),
-            }
-          ),
-        ]);
-
-        if (allSitesRes.ok) {
-          const sitesData = await allSitesRes.json();
-          state.allSites = sitesData.sites || sitesData.data || [];
-        }
-
-        if (assignedSitesRes.ok) {
-          const assignedData = await assignedSitesRes.json();
-          state.assignedSites = assignedData.access || assignedData.data || [];
-        }
-
-        const assignedSiteIds = state.assignedSites.map((a) => a.site_id);
-        state.availableSites = state.allSites.filter(
-          (site) => !assignedSiteIds.includes(site.id)
-        );
+        await loadSitesForVertical(state.selectedVertical);
       } else {
         state.error = "Failed to revoke some sites";
       }
@@ -332,7 +286,7 @@ export default component$(() => {
 
   const selectAllAssigned = $(() => {
     const filtered = state.assignedSites.filter((access) => {
-      const site = state.allSites.find((s) => s.id === access.site_id);
+      const site = state.allSites.find((s) => s.id === access.siteId);
       return (
         site &&
         site.name.toLowerCase().includes(state.searchAssigned.toLowerCase())
@@ -372,7 +326,7 @@ export default component$(() => {
   );
 
   const filteredAssigned = state.assignedSites.filter((access) => {
-    const site = state.allSites.find((s) => s.id === access.site_id);
+    const site = state.allSites.find((s) => s.id === access.siteId);
     return (
       site &&
       site.name.toLowerCase().includes(state.searchAssigned.toLowerCase())
@@ -548,7 +502,7 @@ export default component$(() => {
                     {filteredAssigned.length > 0 ? (
                       filteredAssigned.map((access) => {
                         const site = state.allSites.find(
-                          (s) => s.id === access.site_id
+                          (s) => s.id === access.siteId
                         );
                         if (!site) return null;
 
@@ -575,7 +529,7 @@ export default component$(() => {
                               </div>
                               <div class="text-xs text-gray-400 mt-1">
                                 Assigned:{" "}
-                                {new Date(access.assigned_at).toLocaleDateString()}
+                                {access.assignedAt ? new Date(access.assignedAt).toLocaleDateString() : "N/A"}
                               </div>
                             </div>
                           </label>
