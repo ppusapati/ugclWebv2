@@ -1,5 +1,4 @@
 // src/components/EChart.tsx
-// eslint-disable-next-line qwik/no-use-visible-task
 import { component$, useVisibleTask$, useSignal, type PropFunction } from '@builder.io/qwik';
 
 export interface EChartProps {

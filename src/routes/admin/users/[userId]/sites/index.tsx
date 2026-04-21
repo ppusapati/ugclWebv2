@@ -1,4 +1,3 @@
-/* eslint-disable qwik/valid-lexical-scope */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
 import { useLocation, useNavigate } from "@builder.io/qwik-city";

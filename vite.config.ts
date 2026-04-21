@@ -50,6 +50,21 @@ export default defineConfig(({ command, mode }): UserConfig => {
       minify: 'esbuild',
       // Reduce source map overhead
       sourcemap: false,
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+
+            if (id.includes('echarts')) return 'vendor-echarts';
+            if (id.includes('xlsx') || id.includes('jspdf') || id.includes('jspdf-autotable')) return 'vendor-export';
+            if (id.includes('quill')) return 'vendor-editor';
+            if (id.includes('maplibre-gl')) return 'vendor-map';
+            if (id.includes('@builder.io/qwik')) return 'vendor-qwik';
+            return 'vendor';
+          },
+        },
+      },
     },
 
     /**

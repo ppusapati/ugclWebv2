@@ -34,7 +34,7 @@ const getTableFieldsServer = server$(async function (tableName: string) {
   return ssrApiClient.get(`/reports/forms/tables/${encodeURIComponent(tableName)}/fields`);
 });
 
-const getBusinessVerticalsServer = server$(async function (businessId?: string) {
+const getBusinessVerticalsServer = server$(async function () {
   const ssrApiClient = createSSRApiClient(this as any);
   try {
     const response: any = await ssrApiClient.get('/admin/businesses');
@@ -132,8 +132,7 @@ export default component$(() => {
   const loadModalData = $(async () => {
     loadingModalData.value = true;
     try {
-      const businessId = await getActiveBusinessId();
-      const verticals = await getBusinessVerticalsServer(businessId);
+      const verticals = await getBusinessVerticalsServer();
       availableVerticals.value = verticals;
       
       // If there's only one vertical, select it automatically

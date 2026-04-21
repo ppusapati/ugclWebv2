@@ -101,21 +101,25 @@ const normalizeBusinessRole = (role: any): BusinessRole => {
   };
 };
 
-const normalizeUser = (user: any): User => ({
-  id: user?.id || user?.ID || "",
-  name: user?.name || user?.Name || "",
-  email: user?.email || user?.Email || "",
-  phone: user?.phone || user?.Phone || "",
-  role_id: user?.role_id || user?.RoleID,
-  global_role: user?.global_role || user?.GlobalRole,
-  business_vertical_id: user?.business_vertical_id || user?.BusinessVerticalID,
-  business_vertical_name: user?.business_vertical_name || user?.BusinessVerticalName,
-  is_active: user?.is_active ?? user?.IsActive ?? true,
-  created_at: user?.created_at || user?.CreatedAt,
-  business_roles: Array.isArray(user?.business_roles || user?.BusinessRoles)
-    ? (user?.business_roles || user?.BusinessRoles).map(normalizeBusinessRole)
-    : [],
-});
+const normalizeUser = (user: any): User => {
+  const businessRolesRaw = user?.business_roles ?? user?.BusinessRoles;
+
+  return {
+    id: user?.id || user?.ID || "",
+    name: user?.name || user?.Name || "",
+    email: user?.email || user?.Email || "",
+    phone: user?.phone || user?.Phone || "",
+    role_id: user?.role_id || user?.RoleID,
+    global_role: user?.global_role || user?.GlobalRole,
+    business_vertical_id: user?.business_vertical_id || user?.BusinessVerticalID,
+    business_vertical_name: user?.business_vertical_name || user?.BusinessVerticalName,
+    is_active: user?.is_active ?? user?.IsActive ?? true,
+    created_at: user?.created_at || user?.CreatedAt,
+    business_roles: Array.isArray(businessRolesRaw)
+      ? businessRolesRaw.map(normalizeBusinessRole)
+      : [],
+  };
+};
 
 const buildUserUpdatePayload = (user: User) => {
   const payload: Record<string, string | boolean> = {
