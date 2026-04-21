@@ -17,6 +17,11 @@ interface Attribute {
   updated_at: string;
 }
 
+const parseAttributesResponse = (payload: any): Attribute[] => {
+  const list = payload?.attributes || payload?.data || payload || [];
+  return Array.isArray(list) ? list : [];
+};
+
 export default component$(() => {
   const attributes = useSignal<Attribute[]>([]);
   const loading = useSignal(true);
@@ -41,12 +46,57 @@ export default component$(() => {
     default_value: '',
   });
 
+  const getAttributesList = $(async () => {
+    try {
+      return await apiClient.get<any>('/admin/attributes');
+    } catch (err: any) {
+      if (err?.status === 404 || String(err?.message || '').includes('404')) {
+        return await apiClient.get<any>('/attributes');
+      }
+      throw err;
+    }
+  });
+
+  const createAttribute = $(async (payload: any) => {
+    try {
+      return await apiClient.post('/admin/attributes', payload);
+    } catch (err: any) {
+      if (err?.status === 404 || String(err?.message || '').includes('404')) {
+        return await apiClient.post('/attributes', payload);
+      }
+      throw err;
+    }
+  });
+
+  const updateAttribute = $(async (id: string, payload: any) => {
+    try {
+      return await apiClient.put(`/admin/attributes/${id}`, payload);
+    } catch (err: any) {
+      if (err?.status === 404 || String(err?.message || '').includes('404')) {
+        return await apiClient.put(`/attributes/${id}`, payload);
+      }
+      throw err;
+    }
+  });
+
+  const deleteAttribute = $(async (id: string) => {
+    try {
+      return await apiClient.delete(`/admin/attributes/${id}`);
+    } catch (err: any) {
+      if (err?.status === 404 || String(err?.message || '').includes('404')) {
+        return await apiClient.delete(`/attributes/${id}`);
+      }
+      throw err;
+    }
+  });
+
   // Load attributes
   const loadAttributes = $(async () => {
     try {
       loading.value = true;
-      const data = await apiClient.get<Attribute[]>('/admin/attributes');
-      attributes.value = data || [];
+      const data = await getAttributesList();
+      attributes.value = parseAttributesResponse(data);
+      error.value = '';
     } catch (err: any) {
       error.value = err.message || 'Failed to load attributes';
     } finally {
@@ -97,9 +147,9 @@ export default component$(() => {
       error.value = '';
 
       if (editingAttribute.value) {
-        await apiClient.put(`/admin/attributes/${editingAttribute.value.id}`, form);
+        await updateAttribute(editingAttribute.value.id, form);
       } else {
-        await apiClient.post('/admin/attributes', form);
+        await createAttribute(form);
       }
 
       await loadAttributes();
@@ -114,7 +164,7 @@ export default component$(() => {
     if (!confirm(`Are you sure you want to delete attribute "${name}"?`)) return;
 
     try {
-      await apiClient.delete(`/admin/attributes/${id}`);
+      await deleteAttribute(id);
       await loadAttributes();
     } catch (err: any) {
       error.value = err.message || 'Failed to delete attribute';
