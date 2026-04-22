@@ -46,12 +46,65 @@ export default component$(() => {
   const error = useSignal<string | null>(initialData.value.error || null);
   const saving = useSignal(false);
 
+  const normalizeIdentifier = (value: string, fallback: string): string => {
+    const cleaned = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const base = cleaned || fallback;
+    return /^[a-z_]/.test(base) ? base : `f_${base}`;
+  };
+
+  const isUuid = (value: string): boolean =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value
+    );
+
   const handleSave = $(async (definition: FormDefinition) => {
     try {
       saving.value = true;
 
+      const normalizedFormCode = normalizeIdentifier(definition.form_code, 'form');
+      const normalizedModuleId = isUuid(definition.module)
+        ? definition.module
+        : modules.value.find(
+            (module) =>
+              module.id === definition.module || module.code === definition.module
+          )?.id || definition.module;
+
+      const normalizedVerticalIds = (definition.accessible_verticals || [])
+        .map((verticalCodeOrId) => {
+          const matchedVertical = businessVerticals.value.find(
+            (vertical) =>
+              vertical.id === verticalCodeOrId || vertical.code === verticalCodeOrId
+          );
+          return matchedVertical?.id || verticalCodeOrId;
+        })
+        .filter(Boolean);
+
+      const normalizedDefinition: FormDefinition = {
+        ...definition,
+        form_code: normalizedFormCode,
+        module: normalizedModuleId,
+        accessible_verticals: normalizedVerticalIds,
+        steps: (definition.steps || []).map((step, stepIndex) => ({
+          ...step,
+          id: normalizeIdentifier(step.id || `step_${stepIndex + 1}`, `step_${stepIndex + 1}`),
+          fields: (step.fields || []).map((field, fieldIndex) => ({
+            ...field,
+            id: normalizeIdentifier(
+              field.id || `field_${stepIndex + 1}_${fieldIndex + 1}`,
+              `field_${stepIndex + 1}_${fieldIndex + 1}`
+            ),
+          })),
+        })),
+      };
+
       // Import the form definition
-      const appForm = await formBuilderService.importFormDefinition(definition);
+      const appForm = await formBuilderService.importFormDefinition(normalizedDefinition);
 
       // Show success message
       alert('Form created successfully!');

@@ -15,6 +15,18 @@ import type {
 } from '../types/workflow';
 
 export class FormBuilderService {
+  private normalizeIdentifier(value: string, fallback: string): string {
+    const cleaned = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const base = cleaned || fallback;
+    return /^[a-z_]/.test(base) ? base : `f_${base}`;
+  }
+
   /**
    * Get forms available for a business vertical
    */
@@ -109,17 +121,30 @@ export class FormBuilderService {
    * Import form definition from JSON
    */
   async importFormDefinition(formDefinition: FormDefinition): Promise<AppForm> {
+    const normalizedCode = this.normalizeIdentifier(formDefinition.form_code, 'form');
+
     // Convert form definition to AppForm structure for API
     const appForm: any = {
-      code: formDefinition.form_code,
+      code: normalizedCode,
       title: formDefinition.title,
       description: formDefinition.description,
       version: formDefinition.version,
       module_id: formDefinition.module, // Backend expects module_id as UUID string
       accessible_verticals: formDefinition.accessible_verticals || [],
-      route: `/forms/${formDefinition.form_code}`,
-      db_table_name: formDefinition.form_code, // Set table name same as form code
-      steps: formDefinition.steps,
+      route: `/forms/${normalizedCode}`,
+      db_table_name: normalizedCode,
+      table_name: normalizedCode,
+      steps: (formDefinition.steps || []).map((step, stepIndex) => ({
+        ...step,
+        id: this.normalizeIdentifier(step.id || `step_${stepIndex + 1}`, `step_${stepIndex + 1}`),
+        fields: (step.fields || []).map((field, fieldIndex) => ({
+          ...field,
+          id: this.normalizeIdentifier(
+            field.id || `field_${stepIndex + 1}_${fieldIndex + 1}`,
+            `field_${stepIndex + 1}_${fieldIndex + 1}`
+          ),
+        })),
+      })),
       validations: formDefinition.validations,
       initial_state: formDefinition.workflow?.initial_state || 'draft',
       is_active: true,
