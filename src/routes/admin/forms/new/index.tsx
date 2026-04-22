@@ -6,6 +6,23 @@ import { formBuilderService, createSSRApiClient } from '~/services';
 import type { FormDefinition, WorkflowDefinition, Module } from '~/types/workflow';
 import type { BusinessVertical, Site } from '~/services/types';
 
+const normalizeIdentifier = (value: string, fallback: string): string => {
+  const cleaned = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  const base = cleaned || fallback;
+  return /^[a-z_]/.test(base) ? base : `f_${base}`;
+};
+
+const isUuid = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
+
 export const useNewFormData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
 
@@ -45,23 +62,6 @@ export default component$(() => {
   const loading = useSignal(false);
   const error = useSignal<string | null>(initialData.value.error || null);
   const saving = useSignal(false);
-
-  const normalizeIdentifier = (value: string, fallback: string): string => {
-    const cleaned = String(value || '')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9_]+/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_+|_+$/g, '');
-
-    const base = cleaned || fallback;
-    return /^[a-z_]/.test(base) ? base : `f_${base}`;
-  };
-
-  const isUuid = (value: string): boolean =>
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      value
-    );
 
   const handleSave = $(async (definition: FormDefinition) => {
     try {
