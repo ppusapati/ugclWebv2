@@ -9,13 +9,18 @@ export const useBusinessFormsData = routeLoader$(async (requestEvent) => {
   const businessCode = requestEvent.params.code;
 
   try {
-    const allFormsResponse = await ssrApiClient.get<{ forms: AppForm[] }>('/admin/app-forms');
-    const allForms = allFormsResponse.forms || [];
-
-    const forms = allForms.filter((f) =>
-      f.is_active &&
-      (!f.accessible_verticals || f.accessible_verticals.length === 0 || f.accessible_verticals.includes(businessCode))
-    );
+    // Primary source: business-scoped endpoint (applies business + user access rules on backend)
+    let businessFormsResponse: any;
+    try {
+      businessFormsResponse = await ssrApiClient.get<any>(`/business/${businessCode}/forms`);
+    } catch {
+      // Some environments store business code in uppercase on backend routes.
+      businessFormsResponse = await ssrApiClient.get<any>(`/business/${businessCode.toUpperCase()}/forms`);
+    }
+    const formsRaw = businessFormsResponse?.forms || businessFormsResponse?.data || businessFormsResponse || [];
+    const forms = Array.isArray(formsRaw)
+      ? formsRaw.filter((f: AppForm) => f?.is_active !== false)
+      : [];
 
     return {
       forms,
