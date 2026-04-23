@@ -1,4 +1,5 @@
 import { apiClient } from './api-client';
+import { resolveApiBaseUrl } from '~/config/api';
 import type {
   NotificationDTO,
   NotificationPreference,
@@ -16,7 +17,46 @@ import type {
  */
 export class NotificationService {
   private baseUrl = '/notifications';
-  private adminUrl = '/admin/notifications/rules';
+  private adminUrl = '/admin/notification-rules';
+
+  private async getWithFallback<T>(primary: string, fallback: string): Promise<T> {
+    try {
+      return await apiClient.get<T>(primary);
+    } catch (error: any) {
+      if (error?.status === 404 || error?.status === 405) {
+        return apiClient.get<T>(fallback);
+      }
+      throw error;
+    }
+  }
+
+  private async patchWithFallback(primary: string, fallback: string): Promise<void> {
+    try {
+      await apiClient.patch(primary);
+    } catch (error: any) {
+      if (error?.status === 404 || error?.status === 405) {
+        await apiClient.patch(fallback);
+        return;
+      }
+      throw error;
+    }
+  }
+
+  private buildNotificationStreamUrl(): string {
+    const base = resolveApiBaseUrl();
+    const url = new URL(`${base}${this.baseUrl}/stream`);
+
+    // EventSource does not support custom Authorization headers.
+    // If backend accepts token query fallback, include it for token-auth environments.
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+    }
+
+    return url.toString();
+  }
 
   /**
    * Get user's notifications with optional filters
@@ -85,7 +125,10 @@ export class NotificationService {
    * Get notification statistics (admin only)
    */
   async getStats(): Promise<NotificationStats> {
-    const response = await apiClient.get<{ stats: NotificationStats }>('/admin/notifications/stats');
+    const response = await this.getWithFallback<{ stats: NotificationStats }>(
+      '/admin/notification-rules/stats',
+      '/admin/notifications/stats'
+    );
     return response.stats;
   }
 
@@ -118,7 +161,9 @@ export class NotificationService {
     onError?: (error: Error) => void
   ): () => void {
     // Using EventSource for Server-Sent Events
-    const eventSource = new EventSource(`${this.baseUrl}/stream`);
+    const eventSource = new EventSource(this.buildNotificationStreamUrl(), {
+      withCredentials: true,
+    });
 
     eventSource.onmessage = (event) => {
       try {
@@ -193,7 +238,10 @@ export class NotificationService {
    * Toggle notification rule active status (admin only)
    */
   async toggleRuleStatus(id: string): Promise<void> {
-    await apiClient.patch(`${this.adminUrl}/${id}/toggle`);
+    await this.patchWithFallback(
+      `${this.adminUrl}/${id}/status`,
+      `/admin/notifications/rules/${id}/toggle`
+    );
   }
 }
 

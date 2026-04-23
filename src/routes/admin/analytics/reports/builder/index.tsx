@@ -6,6 +6,15 @@ import { createSSRApiClient } from '../../../../../services/api-client';
 import { analyticsService } from '../../../../../services/analytics.service';
 import type { ReportDefinition, FormTablesResponse, FilterOperator, LogicalOperator, ChartType } from '../../../../../types/analytics';
 
+interface RoleOption {
+  id: string;
+  name: string;
+  description?: string;
+  is_global?: boolean;
+  business_vertical_id?: string;
+  business_vertical_name?: string;
+}
+
 // Load available form tables with SSR support
 export const useFormTablesData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -85,6 +94,40 @@ const getModulesServer = server$(async function (verticalId: string) {
   }
 });
 
+const getAvailableRolesServer = server$(async function () {
+  const ssrApiClient = createSSRApiClient(this as any);
+  try {
+    const response: any = await ssrApiClient.get('/admin/roles/unified?include_business=true');
+    const roles = response?.roles || response?.data || response || [];
+    if (Array.isArray(roles) && roles.length > 0) {
+      return roles.map((role: any, index: number) => ({
+        id: role?.id || role?.ID || role?.role_id || `role_${index}`,
+        name: role?.display_name || role?.DisplayName || role?.name || role?.Name || '',
+        description: role?.description || role?.Description,
+        is_global: role?.is_global ?? role?.IsGlobal,
+        business_vertical_id: role?.business_vertical_id || role?.BusinessVerticalID,
+        business_vertical_name:
+          role?.business_vertical_name ||
+          role?.BusinessVerticalName ||
+          role?.business_vertical?.name ||
+          role?.BusinessVertical?.Name,
+      })) as RoleOption[];
+    }
+
+    // Fallback for environments where unified roles endpoint is unavailable.
+    const fallback: any = await ssrApiClient.get('/reports/available-roles');
+    return (fallback?.roles || []).map((role: any) => ({
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      is_global: true,
+    })) as RoleOption[];
+  } catch (error) {
+    console.error('Failed to fetch available roles:', error);
+    return [];
+  }
+});
+
 export default component$(() => {
   const nav = useNavigate();
   const initialData = useFormTablesData();
@@ -118,6 +161,48 @@ export default component$(() => {
   const selectedModule = useSignal('');
   const loadingModalData = useSignal(false);
 
+  // Report access / visibility
+  const isPublic = useSignal(false);
+  const allowedRoles = useSignal<string[]>([]);
+  const roleScope = useSignal<'selected_vertical' | 'all_verticals'>('selected_vertical');
+  const availableRoles = useSignal<RoleOption[]>([]);
+
+  const getScopedRoleOptions = () => {
+    const byName = new Map<string, RoleOption>();
+    const normalizedSelectedVertical = selectedVertical.value || '';
+
+    const filteredRoles = availableRoles.value.filter((role) => {
+      if (!role?.name) return false;
+      if (roleScope.value === 'all_verticals') return true;
+      if (!normalizedSelectedVertical) return !!role.is_global;
+      return !!role.is_global || role.business_vertical_id === normalizedSelectedVertical;
+    });
+
+    for (const role of filteredRoles) {
+      const key = role.name.trim().toLowerCase();
+      if (key && !byName.has(key)) {
+        byName.set(key, role);
+      }
+    }
+
+    return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const trimAllowedRolesToScope = $(() => {
+    const normalizedSelectedVertical = selectedVertical.value || '';
+    const validRoles = new Set(
+      availableRoles.value
+        .filter((role) => {
+          if (!role?.name) return false;
+          if (roleScope.value === 'all_verticals') return true;
+          if (!normalizedSelectedVertical) return !!role.is_global;
+          return !!role.is_global || role.business_vertical_id === normalizedSelectedVertical;
+        })
+        .map((role) => role.name)
+    );
+    allowedRoles.value = allowedRoles.value.filter((roleName) => validRoles.has(roleName));
+  });
+
   const getActiveBusinessId = $(() => {
     const keys = ['business_vertical_id', 'business_id', 'active_business_id'];
     for (const key of keys) {
@@ -132,15 +217,29 @@ export default component$(() => {
   const loadModalData = $(async () => {
     loadingModalData.value = true;
     try {
-      const verticals = await getBusinessVerticalsServer();
+      const [verticals, roles] = await Promise.all([
+        getBusinessVerticalsServer(),
+        getAvailableRolesServer(),
+      ]);
       availableVerticals.value = verticals;
-      
+      availableRoles.value = roles;
+
+      const activeVerticalId = await getActiveBusinessId();
+      if (!selectedVertical.value && activeVerticalId && verticals.some((v: any) => (v.id || v.vertical_id) === activeVerticalId)) {
+        selectedVertical.value = activeVerticalId;
+      }
+
       // If there's only one vertical, select it automatically
       if (verticals.length === 1) {
         selectedVertical.value = verticals[0].id || verticals[0].vertical_id;
+      }
+
+      if (selectedVertical.value) {
         const modules = await getModulesServer(selectedVertical.value);
         availableModules.value = modules;
       }
+
+      await trimAllowedRolesToScope();
     } catch (err: any) {
       console.error('Failed to load modal data:', err);
     } finally {
@@ -283,6 +382,8 @@ export default component$(() => {
         ...reportConfig,
         code: await buildUniqueReportCode(reportConfig.name || 'report'),
         business_vertical_id: businessVerticalId,
+        is_public: isPublic.value,
+        allowed_roles: allowedRoles.value,
         ...(selectedVertical.value && { vertical_id: selectedVertical.value }),
         ...(selectedModule.value && { module_id: selectedModule.value })
       };
@@ -882,6 +983,83 @@ export default component$(() => {
                 />
               </div>
 
+              {/* Visibility */}
+              <div class="rounded-xl border border-gray-200 p-4 space-y-3">
+                <p class="text-sm font-semibold text-gray-800">Visibility &amp; Access</p>
+
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                  <div
+                    class={`relative w-11 h-6 rounded-full transition-colors ${isPublic.value ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    onClick$={() => {
+                      isPublic.value = !isPublic.value;
+                      if (isPublic.value) allowedRoles.value = [];
+                    }}
+                  >
+                    <span
+                      class={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPublic.value ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </div>
+                  <span class="text-sm text-gray-700">
+                    {isPublic.value ? 'Public – visible to all users with report access' : 'Private – only visible to allowed roles and creator'}
+                  </span>
+                </label>
+
+                {!isPublic.value && (
+                  <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Role Scope</label>
+                    <select
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 mb-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      value={roleScope.value}
+                      onChange$={async (e: any) => {
+                        roleScope.value = e.target.value;
+                        await trimAllowedRolesToScope();
+                      }}
+                    >
+                      <option value="selected_vertical">Roles from selected business vertical</option>
+                      <option value="all_verticals">Roles from all business verticals</option>
+                    </select>
+
+                    {roleScope.value === 'selected_vertical' && !selectedVertical.value && (
+                      <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
+                        Select a business vertical below to load that vertical's roles. Global roles are shown meanwhile.
+                      </p>
+                    )}
+
+                    <label class="block text-xs font-medium text-gray-600 mb-2">
+                      Allowed Roles
+                      <span class="ml-1 text-gray-400 font-normal">(leave empty to restrict to creator only)</span>
+                    </label>
+                    {getScopedRoleOptions().length === 0 ? (
+                      <p class="text-xs text-gray-400 italic">Loading roles…</p>
+                    ) : (
+                      <div class="flex flex-wrap gap-2">
+                        {getScopedRoleOptions().map((role) => {
+                          const selected = allowedRoles.value.includes(role.name);
+                          return (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick$={() => {
+                                allowedRoles.value = selected
+                                  ? allowedRoles.value.filter((r) => r !== role.name)
+                                  : [...allowedRoles.value, role.name];
+                              }}
+                              class={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                                selected
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                              }`}
+                            >
+                              {role.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Business Vertical</label>
@@ -891,9 +1069,12 @@ export default component$(() => {
                     onChange$={async (e: any) => {
                       selectedVertical.value = e.target.value;
                       selectedModule.value = '';
+                      await trimAllowedRolesToScope();
                       if (e.target.value) {
                         const modules = await getModulesServer(e.target.value);
                         availableModules.value = modules;
+                      } else {
+                        availableModules.value = [];
                       }
                     }}
                     disabled={loadingModalData.value}

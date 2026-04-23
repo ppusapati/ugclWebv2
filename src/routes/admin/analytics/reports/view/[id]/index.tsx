@@ -1,11 +1,12 @@
 // Report Viewer Screen
-import { component$, useStore, useResource$, Resource, $ } from '@builder.io/qwik';
+import { component$, useStore, useResource$, Resource, $, useVisibleTask$ } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../../services/api-client';
 import { analyticsService } from '../../../../../../services/analytics.service';
 import type { ReportDefinition, ReportResult, ReportFilter, ChartType } from '../../../../../../types/analytics';
 import { P9ETable } from '../../../../../../components/table/table';
+import { useAuthContext } from '../../../../../../contexts/auth-context';
 
 // Helper function to transform report data into ECharts option format
 const transformToChartOption = (
@@ -230,6 +231,7 @@ export const useReportViewData = routeLoader$(async (requestEvent) => {
 });
 
 export default component$(() => {
+  const auth = useAuthContext();
   const loc = useLocation();
   const nav = useNavigate();
   const reportId = loc.params.id;
@@ -241,6 +243,25 @@ export default component$(() => {
     loading: false,
     error: (initialData.value as any).error || '',
     runtimeFilters: [] as ReportFilter[],
+  });
+  const permissionState = useStore({
+    canExport: false,
+  });
+
+  useVisibleTask$(({ track }) => {
+    track(() => auth.user?.id);
+    track(() => auth.user?.business_roles?.length || 0);
+
+    const activeBusinessId = window.localStorage.getItem('ugcl_current_business_vertical');
+    const businessRole = activeBusinessId
+      ? auth.user?.business_roles?.find((role) => role.business_vertical_id === activeBusinessId)
+      : auth.user?.business_roles?.[0];
+
+    const globalPermissions = auth.user?.permissions || [];
+    const businessPermissions = businessRole?.permissions || [];
+    const allPermissions = new Set([...globalPermissions, ...businessPermissions]);
+
+    permissionState.canExport = allPermissions.has('report:export') || !!auth.user?.is_super_admin;
   });
 
   const chartComponent = useResource$(async () => {
@@ -263,7 +284,6 @@ export default component$(() => {
     }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportToExcel = $(async () => {
     try {
       await analyticsService.exportReport(reportId, 'xlsx', state.runtimeFilters);
@@ -272,7 +292,6 @@ export default component$(() => {
     }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportToCSV = $(async () => {
     try {
       await analyticsService.exportReport(reportId, 'csv', state.runtimeFilters);
@@ -281,7 +300,6 @@ export default component$(() => {
     }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportToPDF = $(async () => {
     try {
       await analyticsService.exportReport(reportId, 'pdf', state.runtimeFilters);
@@ -299,6 +317,27 @@ export default component$(() => {
 
   return (
     <div class="space-y-6">
+      {/* Access Denied State */}
+      {state.error && (state.error.toLowerCase().includes('403') || state.error.toLowerCase().includes('access') || state.error.toLowerCase().includes('forbidden') || state.error.toLowerCase().includes('unauthorized')) && !state.report && (
+        <div class="flex flex-col items-center justify-center py-24 px-6 text-center">
+          <div class="bg-red-50 border border-red-200 rounded-2xl p-10 max-w-md w-full">
+            <div class="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 class="text-xl font-bold text-red-900 mb-2">Access Denied</h2>
+            <p class="text-red-700 text-sm mb-6">You do not have permission to view this report. Contact the report creator or an administrator to request access.</p>
+            <button
+              onClick$={() => nav('/admin/analytics/reports')}
+              class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Back to Reports
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modern Header with Gradient */}
       <div class={`bg-gradient-to-r ${reportConfig.gradient} shadow-lg relative overflow-hidden`}>
         {/* Background decoration */}
@@ -359,6 +398,7 @@ export default component$(() => {
                 Refresh
               </button>
 
+              {permissionState.canExport && (
               <div class="dropdown dropdown-end">
                 <label tabIndex={0} class="px-5 py-3 bg-white hover:bg-gray-50 text-purple-600 rounded-xl transition-all hover:scale-105 font-medium shadow-lg flex items-center gap-2 cursor-pointer">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -369,8 +409,19 @@ export default component$(() => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                   </svg>
                 </label>
-               
+                <ul tabIndex={0} class="dropdown-content z-20 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-2 shadow-xl text-sm text-gray-700">
+                  <li>
+                    <button onClick$={exportToExcel} class="w-full rounded-lg px-3 py-2 text-left hover:bg-gray-50 transition-colors">Export Excel</button>
+                  </li>
+                  <li>
+                    <button onClick$={exportToCSV} class="w-full rounded-lg px-3 py-2 text-left hover:bg-gray-50 transition-colors">Export CSV</button>
+                  </li>
+                  <li>
+                    <button onClick$={exportToPDF} class="w-full rounded-lg px-3 py-2 text-left hover:bg-gray-50 transition-colors">Export PDF</button>
+                  </li>
+                </ul>
               </div>
+              )}
             </div>
           </div>
         </div>

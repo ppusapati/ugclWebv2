@@ -99,9 +99,7 @@ export const Sidebar = component$(() => {
     activeSidebarItem.value = itemId;
   });
 
-  const currentSubItems = menuItems.find(item => item.id === menuContext.activeMainMenu.value)?.subItems || [];
-
-  return (
+  const allSubItems = menuItems.find(item => item.id === menuContext.activeMainMenu.value)?.subItems || [];  return (
     <aside
       class="w-64 bg-white border-r border-gray-200 self-stretch"
       style="box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);"
@@ -114,7 +112,7 @@ export const Sidebar = component$(() => {
         </div>
 
         <nav class="space-y-1">
-          {currentSubItems.map((subItem) => (
+          {allSubItems.map((subItem) => (
             <Link
               key={subItem.id}
               href={subItem.href}

@@ -93,7 +93,7 @@ export default component$(() => {
       {/* Header */}
       <div class="mb-6">
         <div class="flex items-center gap-2 mb-2">
-          <a href="/notifications" class="text-blue-600 hover:text-blue-800">
+          <a href="/admin/notifications" class="text-blue-600 hover:text-blue-800">
             ← Back to Notifications
           </a>
         </div>
@@ -339,7 +339,7 @@ export default component$(() => {
           {/* Save Button */}
           <div class="flex justify-end gap-3">
             <a
-              href="/notifications"
+              href="/admin/notifications"
               class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
             >
               Cancel

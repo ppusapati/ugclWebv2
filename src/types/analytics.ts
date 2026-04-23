@@ -72,6 +72,7 @@ export interface ReportDefinition extends BaseEntity {
   category?: string;
   tags?: string[];
   is_public?: boolean;
+  allowed_roles?: string[];
   permissions?: Record<string, any>;
 }
 

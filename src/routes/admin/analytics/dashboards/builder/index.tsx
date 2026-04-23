@@ -5,6 +5,7 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../services/api-client';
 import { analyticsService } from '../../../../../services/analytics.service';
 import type { Dashboard, DashboardWidget, WidgetType, ReportListResponse } from '../../../../../types/analytics';
+import { authService } from '../../../../../services';
 
 // Load available reports with SSR support
 export const useAvailableReports = routeLoader$(async (requestEvent) => {
@@ -80,6 +81,12 @@ const WIDGET_TEMPLATES: Array<{
   },
 ];
 
+const DASHBOARD_GRID_COLS = 12;
+const DASHBOARD_GRID_ROWS = 12;
+const DASHBOARD_GRID_ROW_HEIGHT = 48;
+const DASHBOARD_CANVAS_MIN_WIDTH = 840;
+const DASHBOARD_CANVAS_MIN_HEIGHT = DASHBOARD_GRID_ROWS * DASHBOARD_GRID_ROW_HEIGHT;
+
 export default component$(() => {
   const nav = useNavigate();
   const availableReportsData = useAvailableReports();
@@ -102,13 +109,51 @@ export default component$(() => {
     draggedTemplate: null as string | null,
     showSaveModal: false,
     showWidgetConfig: false,
-    gridCols: 12,
-    gridRows: 12,
+    gridCols: DASHBOARD_GRID_COLS,
+    gridRows: DASHBOARD_GRID_ROWS,
     loading: false,
     error: '',
   });
 
   const widgetIdCounter = useSignal(0);
+
+  const getActiveBusinessId = $(() => {
+    const keys = ['business_vertical_id', 'business_id', 'active_business_id', 'ugcl_current_business_vertical'];
+    for (const key of keys) {
+      const value = localStorage.getItem(key);
+      if (value && value !== 'null' && value !== 'undefined') {
+        return value;
+      }
+    }
+    return undefined;
+  });
+
+  const getUserBusinessId = $(() => {
+    const user: any = authService.getUser();
+    if (user?.business_vertical_id) {
+      return user.business_vertical_id;
+    }
+    if (Array.isArray(user?.business_roles) && user.business_roles.length > 0) {
+      const currentBusinessId = localStorage.getItem('ugcl_current_business_vertical');
+      if (currentBusinessId) {
+        const matchedRole = user.business_roles.find((br: any) => br.business_vertical_id === currentBusinessId);
+        if (matchedRole?.business_vertical_id) {
+          return matchedRole.business_vertical_id;
+        }
+      }
+      return user.business_roles[0]?.business_vertical_id;
+    }
+    return undefined;
+  });
+
+  const buildUniqueDashboardCode = $((name: string) => {
+    const base = (name || 'dashboard')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'dashboard';
+    return `${base}_${Date.now()}`;
+  });
 
   // Generate unique widget ID
   const generateWidgetId = $(() => {
@@ -224,24 +269,47 @@ export default component$(() => {
       console.log('Saving dashboard:', dashboardConfig);
 
       // Validate required fields
-      if (!dashboardConfig.code || !dashboardConfig.name) {
-        alert('Please provide both dashboard code and name');
+      if (!dashboardConfig.name?.trim()) {
+        alert('Please provide dashboard name');
         state.loading = false;
         return;
       }
 
+      const dashboardCode = dashboardConfig.code?.trim() || await buildUniqueDashboardCode(dashboardConfig.name);
+      dashboardConfig.code = dashboardCode;
+
+      const businessVerticalId =
+        dashboardConfig.business_vertical_id ||
+        await getActiveBusinessId() ||
+        await getUserBusinessId();
+
       // Call API to save dashboard
       const response = await analyticsService.createDashboard({
-        code: dashboardConfig.code,
+        code: dashboardCode,
         name: dashboardConfig.name,
         description: dashboardConfig.description,
-        business_vertical_id: dashboardConfig.business_vertical_id || 'default',
-        widgets: dashboardConfig.widgets || [],
+        ...(businessVerticalId && { business_vertical_id: businessVerticalId }),
         layout: dashboardConfig.layout || {},
         is_default: dashboardConfig.is_default || false,
-        is_public: dashboardConfig.is_public || false,
+        is_public: false,
         tags: dashboardConfig.tags || [],
       });
+
+      // Persist widgets using the dedicated widget endpoints.
+      const createdDashboardId = response?.dashboard?.id;
+      if (createdDashboardId && (dashboardConfig.widgets || []).length > 0) {
+        for (const widget of dashboardConfig.widgets || []) {
+          await analyticsService.addWidget(createdDashboardId, {
+            type: widget.type,
+            title: widget.title,
+            description: widget.description,
+            report_id: widget.report_id,
+            position: widget.position,
+            config: widget.config,
+            refresh_interval: widget.refresh_interval,
+          });
+        }
+      }
 
       console.log('Dashboard saved successfully:', response);
       state.showSaveModal = false;
@@ -345,13 +413,13 @@ export default component$(() => {
                 <div class="space-y-4">
                   <div class="form-control">
                     <label class="label">
-                      <span class="label-text font-semibold">Dashboard Code *</span>
+                      <span class="label-text font-semibold">Dashboard Code</span>
                     </label>
                     <input
                       type="text"
                       value={dashboardConfig.code}
                       onInput$={(e) => dashboardConfig.code = (e.target as HTMLInputElement).value}
-                      placeholder="e.g., SALES_OVERVIEW"
+                      placeholder="Optional - auto-generated if empty"
                       class="input input-bordered w-full"
                     />
                   </div>
@@ -407,16 +475,10 @@ export default component$(() => {
                         class="checkbox checkbox-primary"
                       />
                     </label>
+                  </div>
 
-                    <label class="label cursor-pointer flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <span class="label-text">Public Dashboard</span>
-                      <input
-                        type="checkbox"
-                        checked={dashboardConfig.is_public}
-                        onChange$={(e) => dashboardConfig.is_public = (e.target as HTMLInputElement).checked}
-                        class="checkbox checkbox-primary"
-                      />
-                    </label>
+                  <div class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                    Dashboard visibility is private by default and only available to the creator.
                   </div>
                 </div>
               </div>
@@ -462,10 +524,10 @@ export default component$(() => {
 
         {/* Step 2: Layout Builder */}
         {state.currentStep === 2 && (
-          <div class="grid grid-cols-12 gap-6">
+          <div class="grid grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)_22rem] gap-6 items-start">
             {/* Widget Library - Left Sidebar */}
-            <div class="col-span-12 lg:col-span-3 space-y-4">
-              <div class="card bg-white dark:bg-gray-800 shadow-xl sticky top-4">
+            <div class="space-y-4 xl:sticky xl:top-4 self-start">
+              <div class="card bg-white dark:bg-gray-800 shadow-xl">
                 <div class="card-body">
                   <h3 class="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                     🧩 Widget Library
@@ -516,7 +578,7 @@ export default component$(() => {
             </div>
 
             {/* Canvas - Main Area */}
-            <div class="col-span-12 lg:col-span-6">
+            <div class="min-w-0">
               <div class="card bg-white dark:bg-gray-800 shadow-xl">
                 <div class="card-body">
                   <div class="flex items-center justify-between mb-6">
@@ -531,14 +593,19 @@ export default component$(() => {
                   <div
                     onDragOver$={handleDragOver}
                     onDrop$={handleDrop}
-                    class="min-h-[600px] border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative"
+                    class="border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-x-auto"
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: `repeat(${state.gridCols}, 1fr)`,
-                      gridTemplateRows: `repeat(${state.gridRows}, 50px)`,
-                      gap: '1rem',
+                      minHeight: `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
                     }}
                   >
+                    <div
+                      class="grid grid-cols-12 gap-4"
+                      style={{
+                        minWidth: `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
+                        minHeight: `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
+                        gridAutoRows: `${DASHBOARD_GRID_ROW_HEIGHT}px`,
+                      }}
+                    >
                     {dashboardConfig.widgets?.length === 0 ? (
                       <div class="absolute inset-0 flex items-center justify-center">
                         <div class="text-center">
@@ -562,14 +629,14 @@ export default component$(() => {
                               state.selectedWidget = widget;
                               state.showWidgetConfig = true;
                             }}
-                            class={`rounded-lg shadow-lg transition-all cursor-pointer group ${
+                            class={`rounded-lg shadow-lg transition-all cursor-pointer group overflow-hidden ${
                               state.selectedWidget?.id === widget.id
                                 ? 'ring-4 ring-purple-500 scale-105'
                                 : 'hover:shadow-xl hover:scale-102'
                             } bg-gradient-to-br ${template.color}`}
                             style={{
-                              gridColumn: `${widget.position.x + 1} / span ${widget.position.w}`,
-                              gridRow: `${widget.position.y + 1} / span ${widget.position.h}`,
+                              gridColumn: `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
+                              gridRow: `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
                             }}
                           >
                             <div class="h-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg flex flex-col">
@@ -599,15 +666,16 @@ export default component$(() => {
                         );
                       })
                     )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Widget Configuration - Right Sidebar */}
-            <div class="col-span-12 lg:col-span-3">
+            <div class="self-start 2xl:sticky 2xl:top-4 xl:col-span-full">
               {state.showWidgetConfig && state.selectedWidget ? (
-                <div class="card bg-white dark:bg-gray-800 shadow-xl sticky top-4">
+                <div class="card bg-white dark:bg-gray-800 shadow-xl">
                   <div class="card-body">
                     <h3 class="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                       ⚙️ Widget Settings
@@ -622,7 +690,7 @@ export default component$(() => {
                           type="text"
                           value={state.selectedWidget.title}
                           onInput$={(e) => updateWidgetConfig('title', (e.target as HTMLInputElement).value)}
-                          class="input input-bordered input-sm"
+                          class="input input-bordered input-sm w-full"
                         />
                       </div>
 
@@ -633,7 +701,7 @@ export default component$(() => {
                         <textarea
                           value={state.selectedWidget.description}
                           onInput$={(e) => updateWidgetConfig('description', (e.target as HTMLTextAreaElement).value)}
-                          class="textarea textarea-bordered textarea-sm"
+                          class="textarea textarea-bordered textarea-sm w-full"
                           rows={3}
                         />
                       </div>
@@ -646,7 +714,7 @@ export default component$(() => {
                           <select
                             value={state.selectedWidget.report_id || ''}
                             onChange$={(e) => updateWidgetConfig('report_id', (e.target as HTMLSelectElement).value)}
-                            class="select select-bordered select-sm"
+                            class="select select-bordered select-sm w-full"
                           >
                             <option value="">Select a data source...</option>
                             {availableReportsData.value.reports.map((report) => {
@@ -687,7 +755,7 @@ export default component$(() => {
                               const newConfig = { ...state.selectedWidget!.config, content: (e.target as HTMLTextAreaElement).value };
                               updateWidgetConfig('config', newConfig);
                             }}
-                            class="textarea textarea-bordered textarea-sm"
+                            class="textarea textarea-bordered textarea-sm w-full"
                             rows={4}
                             placeholder="Enter text content..."
                           />
@@ -706,7 +774,7 @@ export default component$(() => {
                               const newConfig = { ...state.selectedWidget!.config, url: (e.target as HTMLInputElement).value };
                               updateWidgetConfig('config', newConfig);
                             }}
-                            class="input input-bordered input-sm"
+                            class="input input-bordered input-sm w-full"
                             placeholder="https://example.com"
                           />
                         </div>
@@ -720,7 +788,7 @@ export default component$(() => {
                           type="number"
                           value={state.selectedWidget.refresh_interval || 0}
                           onInput$={(e) => updateWidgetConfig('refresh_interval', parseInt((e.target as HTMLInputElement).value) || 0)}
-                          class="input input-bordered input-sm"
+                          class="input input-bordered input-sm w-full"
                           min="0"
                           step="30"
                         />
@@ -743,7 +811,7 @@ export default component$(() => {
                               const newPos = { ...state.selectedWidget!.position, w: parseInt((e.target as HTMLInputElement).value) || 1 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm"
+                            class="input input-bordered input-sm w-full"
                             min="1"
                             max={state.gridCols}
                           />
@@ -759,7 +827,7 @@ export default component$(() => {
                               const newPos = { ...state.selectedWidget!.position, h: parseInt((e.target as HTMLInputElement).value) || 1 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm"
+                            class="input input-bordered input-sm w-full"
                             min="1"
                             max={state.gridRows}
                           />
@@ -775,7 +843,7 @@ export default component$(() => {
                               const newPos = { ...state.selectedWidget!.position, x: parseInt((e.target as HTMLInputElement).value) || 0 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm"
+                            class="input input-bordered input-sm w-full"
                             min="0"
                             max={state.gridCols - 1}
                           />
@@ -791,7 +859,7 @@ export default component$(() => {
                               const newPos = { ...state.selectedWidget!.position, y: parseInt((e.target as HTMLInputElement).value) || 0 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm"
+                            class="input input-bordered input-sm w-full"
                             min="0"
                             max={state.gridRows - 1}
                           />
@@ -811,7 +879,7 @@ export default component$(() => {
                   </div>
                 </div>
               ) : (
-                <div class="card bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 shadow-xl sticky top-4">
+                <div class="card bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 shadow-xl">
                   <div class="card-body items-center text-center">
                     <div class="text-6xl mb-4">⚙️</div>
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -884,32 +952,28 @@ export default component$(() => {
                   {dashboardConfig.is_default && (
                     <div class="badge badge-success badge-lg">⭐ Default Dashboard</div>
                   )}
-                  {dashboardConfig.is_public && (
-                    <div class="badge badge-info badge-lg">🌐 Public</div>
-                  )}
                 </div>
 
                 <div class="divider">Layout Preview</div>
 
-                <div
-                  class="border-2 border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${state.gridCols}, 1fr)`,
-                    gridTemplateRows: `repeat(${state.gridRows}, 50px)`,
-                    gap: '1rem',
-                    minHeight: '600px',
-                  }}
-                >
+                <div class="border-2 border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-x-auto">
+                  <div
+                    class="grid grid-cols-12 gap-4"
+                    style={{
+                      minWidth: `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
+                      minHeight: `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
+                      gridAutoRows: `${DASHBOARD_GRID_ROW_HEIGHT}px`,
+                    }}
+                  >
                   {dashboardConfig.widgets?.map((widget) => {
                     const template = getWidgetTemplate(widget.type);
                     return (
                       <div
                         key={widget.id}
-                        class={`rounded-lg shadow-lg bg-gradient-to-br ${template.color}`}
+                        class={`rounded-lg shadow-lg bg-gradient-to-br ${template.color} overflow-hidden`}
                         style={{
-                          gridColumn: `${widget.position.x + 1} / span ${widget.position.w}`,
-                          gridRow: `${widget.position.y + 1} / span ${widget.position.h}`,
+                          gridColumn: `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
+                          gridRow: `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
                         }}
                       >
                         <div class="h-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg flex flex-col">
@@ -927,6 +991,7 @@ export default component$(() => {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -936,8 +1001,12 @@ export default component$(() => {
 
       {/* Save Modal */}
       {state.showSaveModal && (
-        <div class="modal modal-open">
-          <div class="modal-box max-w-2xl bg-white dark:bg-gray-800">
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div
+            class="absolute inset-0 bg-black/50"
+            onClick$={() => state.showSaveModal = false}
+          ></div>
+          <div class="relative z-10 w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-800 shadow-2xl p-6">
             <h3 class="font-bold text-2xl mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               💾 Save Dashboard
             </h3>
@@ -956,18 +1025,18 @@ export default component$(() => {
                 </div>
                 <div class="stat">
                   <div class="stat-title">Dashboard Code</div>
-                  <div class="stat-value text-lg">{dashboardConfig.code || 'N/A'}</div>
+                  <div class="stat-value text-lg">{dashboardConfig.code || 'Auto-generated on save'}</div>
                 </div>
               </div>
 
-              {!dashboardConfig.code || !dashboardConfig.name ? (
+              {!dashboardConfig.name ? (
                 <div class="alert alert-warning">
-                  ⚠️ Please provide both dashboard code and name before saving
+                  ⚠️ Please provide dashboard name before saving
                 </div>
               ) : null}
             </div>
 
-            <div class="modal-action">
+            <div class="modal-action flex justify-end gap-3">
               <button
                 onClick$={() => state.showSaveModal = false}
                 class="btn btn-ghost"
@@ -976,7 +1045,7 @@ export default component$(() => {
               </button>
               <button
                 onClick$={saveDashboard}
-                disabled={!dashboardConfig.code || !dashboardConfig.name || state.loading}
+                disabled={!dashboardConfig.name || state.loading}
                 class="btn btn-primary"
               >
                 {state.loading ? (
@@ -990,7 +1059,6 @@ export default component$(() => {
               </button>
             </div>
           </div>
-          <div class="modal-backdrop" onClick$={() => state.showSaveModal = false}></div>
         </div>
       )}
     </div>

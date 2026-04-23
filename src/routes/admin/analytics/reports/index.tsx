@@ -1,10 +1,11 @@
 // Reports List Screen - Enhanced Professional Design
-import { component$, isServer, useStore, $, useSignal, useTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, $, useSignal, useTask$, useVisibleTask$ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../services/api-client';
 import { analyticsService } from '../../../../services/analytics.service';
 import type { ReportDefinition, ReportListResponse } from '../../../../types/analytics';
+import { useAuthContext } from '../../../../contexts/auth-context';
 
 // Load reports with SSR support
 export const useReportsData = routeLoader$(async (requestEvent) => {
@@ -48,6 +49,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export default component$(() => {
+  const auth = useAuthContext();
   const nav = useNavigate();
   const initialData = useReportsData();
   const draggedItem = useSignal<string | null>(null);
@@ -62,6 +64,29 @@ export default component$(() => {
     viewMode: 'grid' as 'grid' | 'list',
     sortBy: 'recent' as 'recent' | 'name' | 'type',
     showFilters: false,
+  });
+
+  const permissionState = useStore({
+    canCreateReports: true,
+    canViewDashboards: false,
+  });
+
+  useVisibleTask$(({ track }) => {
+    track(() => auth.user?.id);
+    track(() => auth.user?.business_roles?.length || 0);
+
+    const activeBusinessId = window.localStorage.getItem('ugcl_current_business_vertical');
+    const businessRole = activeBusinessId
+      ? auth.user?.business_roles?.find((role) => role.business_vertical_id === activeBusinessId)
+      : auth.user?.business_roles?.[0];
+
+    const globalPermissions = auth.user?.permissions || [];
+    const businessPermissions = businessRole?.permissions || [];
+    const allPermissions = new Set([...globalPermissions, ...businessPermissions]);
+
+    // Keep create actions visible in UI; backend remains the source of truth for authorization.
+    permissionState.canCreateReports = true;
+    permissionState.canViewDashboards = allPermissions.has('dashboard:view') || !!auth.user?.is_super_admin;
   });
 
   // Add animation on mount
@@ -193,6 +218,7 @@ export default component$(() => {
               </div>
             </div>
             <div class="flex gap-3">
+              {permissionState.canViewDashboards && (
               <button
                 onClick$={() => nav('/admin/analytics/dashboards')}
                 class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center gap-2"
@@ -202,6 +228,8 @@ export default component$(() => {
                 </svg>
                 Dashboards
               </button>
+              )}
+              {permissionState.canCreateReports && (
               <button
                 onClick$={() => nav('/admin/analytics/reports/builder')}
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
@@ -211,6 +239,7 @@ export default component$(() => {
                 </svg>
                 Create Report
               </button>
+              )}
             </div>
           </div>
 
@@ -478,6 +507,14 @@ export default component$(() => {
                             {report.chart_type}
                           </span>
                         )}
+                        {/* Visibility badge */}
+                        {report.is_public ? (
+                          <span class="badge badge-sm bg-emerald-100 text-emerald-700 border border-emerald-200">Public</span>
+                        ) : (
+                          <span class="badge badge-sm bg-amber-100 text-amber-700 border border-amber-200" title={(report.allowed_roles || []).length > 0 ? `Roles: ${(report.allowed_roles || []).join(', ')}` : 'Creator only'}>
+                            {(report.allowed_roles || []).length > 0 ? `Private (${(report.allowed_roles || []).length} role${(report.allowed_roles || []).length !== 1 ? 's' : ''})` : 'Private'}
+                          </span>
+                        )}
                       </div>
 
                       <div class="flex items-center gap-2 text-xs text-gray-500 mb-4">
@@ -498,6 +535,7 @@ export default component$(() => {
                         >
                           View
                         </button>
+                        {permissionState.canCreateReports && (
                         <button
                           onClick$={(e) => {
                             e.stopPropagation();
@@ -510,6 +548,7 @@ export default component$(() => {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                           </svg>
                         </button>
+                        )}
                         <button
                           onClick$={(e) => {
                             e.stopPropagation();
@@ -587,6 +626,14 @@ export default component$(() => {
                                   {report.chart_type}
                                 </span>
                               )}
+                              {/* Visibility badge */}
+                              {report.is_public ? (
+                                <span class="badge badge-sm bg-emerald-100 text-emerald-700 border border-emerald-200">Public</span>
+                              ) : (
+                                <span class="badge badge-sm bg-amber-100 text-amber-700 border border-amber-200" title={(report.allowed_roles || []).length > 0 ? `Roles: ${(report.allowed_roles || []).join(', ')}` : 'Creator only'}>
+                                  {(report.allowed_roles || []).length > 0 ? `Private (${(report.allowed_roles || []).length}r)` : 'Private'}
+                                </span>
+                              )}
                               <span class="text-xs text-gray-500 flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -621,6 +668,7 @@ export default component$(() => {
                             >
                               View
                             </button>
+                            {permissionState.canCreateReports && (
                             <button
                               onClick$={(e) => {
                                 e.stopPropagation();
@@ -633,6 +681,7 @@ export default component$(() => {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                               </svg>
                             </button>
+                            )}
                             <button
                               onClick$={(e) => {
                                 e.stopPropagation();

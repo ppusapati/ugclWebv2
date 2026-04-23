@@ -41,7 +41,7 @@ export default component$(() => {
     error: (initialData.value as any).error || '',
     searchQuery: '',
     viewMode: 'grid' as 'grid' | 'list',
-    selectedFilter: 'all' as 'all' | 'default' | 'public' | 'private',
+    selectedFilter: 'all' as 'all' | 'default',
     favorites: [] as string[],
   });
 
@@ -118,10 +118,6 @@ export default component$(() => {
     // Apply type filter
     if (state.selectedFilter === 'default') {
       filtered = filtered.filter(d => d.is_default);
-    } else if (state.selectedFilter === 'public') {
-      filtered = filtered.filter(d => d.is_public);
-    } else if (state.selectedFilter === 'private') {
-      filtered = filtered.filter(d => !d.is_public);
     }
 
     return filtered;
@@ -134,7 +130,7 @@ export default component$(() => {
     total: state.dashboards.length,
     favorites: state.favorites.length,
     default: state.dashboards.filter(d => d.is_default).length,
-    public: state.dashboards.filter(d => d.is_public).length,
+    private: state.dashboards.length,
   };
 
   return (
@@ -184,10 +180,10 @@ export default component$(() => {
               <div class="text-sm text-purple-100">Default</div>
             </div>
             <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all cursor-pointer"
-              onClick$={() => state.selectedFilter = 'public'}
+              onClick$={() => state.selectedFilter = 'all'}
             >
-              <div class="text-3xl font-bold">{stats.public}</div>
-              <div class="text-sm text-purple-100">Public</div>
+              <div class="text-3xl font-bold">{stats.private}</div>
+              <div class="text-sm text-purple-100">My Dashboards</div>
             </div>
           </div>
         </div>
@@ -231,7 +227,7 @@ export default component$(() => {
 
             {/* Filter Pills */}
             <div class="flex flex-wrap gap-2 mt-4">
-              {(['all', 'default', 'public', 'private'] as const).map((filter) => (
+              {(['all', 'default'] as const).map((filter) => (
                 <button
                   key={filter}
                   onClick$={() => state.selectedFilter = filter}
@@ -242,9 +238,7 @@ export default component$(() => {
                   }`}
                 >
                   {filter === 'all' ? '📊 All Dashboards' :
-                   filter === 'default' ? '⭐ Default' :
-                   filter === 'public' ? '🌐 Public' :
-                   '🔒 Private'}
+                   '⭐ Default'}
                 </button>
               ))}
             </div>
