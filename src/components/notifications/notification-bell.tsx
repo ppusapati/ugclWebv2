@@ -169,11 +169,11 @@ export const NotificationBell = component$<NotificationBellProps>(
           size="sm"
           variant="ghost"
           onClick$={handleToggleDropdown}
-          class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
+          class="relative h-10 w-10 p-0 rounded-lg border-0 bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           aria-label="Notifications"
         >
           <svg
-            class="w-6 h-6"
+            class="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

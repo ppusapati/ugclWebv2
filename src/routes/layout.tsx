@@ -29,15 +29,17 @@ export default component$(() => {
   const nav = useNavigate();
   const loc = useLocation();
   const state = useStore({
-    user: (auth.value.user || (auth.value.hasToken ? ({ id: 'session' } as any) : null)) as any,
+    user: (auth.value.user || null) as any,
     checked: true,
   });
   const isLandingRoute = loc.url.pathname === '/';
+  const isAuthRoute =
+    loc.url.pathname.startsWith('/login') ||
+    loc.url.pathname.startsWith('/register');
   const hideBreadcrumb = loc.url.pathname === '/' || loc.url.pathname.startsWith('/analytics/dashboards/view/');
   const isPublicRoute =
     isLandingRoute ||
-    loc.url.pathname.startsWith('/login') ||
-    loc.url.pathname.startsWith('/register');
+    isAuthRoute;
 
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(() => {
@@ -63,12 +65,11 @@ export default component$(() => {
     }
   });
 
-  // Not authenticated — render bare slot (login page fills this)
-  if (!state.user && !isLandingRoute) {
+  if (isAuthRoute) {
     return <Slot />;
   }
 
-  // Authenticated — full app shell
+  // Non-auth routes always use app shell to avoid missing header/sidebar on refresh.
   return (
     <div class="min-h-screen bg-gray-50">
       <Header />

@@ -1,38 +1,6 @@
-import { component$, Slot, useStore, useVisibleTask$ } from '@builder.io/qwik';
-import { useNavigate } from '@builder.io/qwik-city';
-import { getUser } from '~/utils/auth';
+import { component$, Slot } from '@builder.io/qwik';
 
 export default component$(() => {
-  const state = useStore({ user: null as any, checked: false });
-  const nav = useNavigate();
-
-  // Hydrate on client
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(() => {
-    const u = getUser();
-    state.user = u;
-    state.checked = true;
-    if (!u) {
-      void nav('/login');
-    }
-  });
-  if (!state.checked) {
-    return <div class="flex items-center justify-center min-h-screen bg-gray-50">
-      <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-        <p class="mt-4 text-gray-600">Loading...</p>
-      </div>
-    </div>;
-  }
-
-  if (!state.user) {
-    return <div class="flex items-center justify-center min-h-screen bg-gray-50">
-      <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-        <p class="mt-4 text-gray-600">Redirecting to login...</p>
-      </div>
-    </div>;
-  }
-
-  return (<Slot />);
+  return <Slot />;
 });
+

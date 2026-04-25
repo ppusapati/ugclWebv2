@@ -13,6 +13,24 @@ import type {
   PaginatedResponse,
 } from './types';
 
+function extractModules(payload: unknown): Module[] {
+  if (Array.isArray(payload)) {
+    return payload as Module[];
+  }
+
+  if (payload && typeof payload === 'object') {
+    const candidate = payload as { modules?: unknown; data?: unknown };
+    if (Array.isArray(candidate.modules)) {
+      return candidate.modules as Module[];
+    }
+    if (Array.isArray(candidate.data)) {
+      return candidate.data as Module[];
+    }
+  }
+
+  return [];
+}
+
 class FormService {
   /**
    * Get all modules
@@ -20,6 +38,39 @@ class FormService {
   async getModules(): Promise<Module[]> {
     const response = await apiClient.get<{ modules: Module[] }>('/modules');
     return response.modules;
+  }
+
+  /**
+   * Get modules for a specific business vertical.
+   * Falls back to all modules and filters client-side when backend mapping is unavailable.
+   */
+  async getModulesForBusinessVertical(verticalId: string): Promise<Module[]> {
+    try {
+      const response = await apiClient.get<unknown>(
+        `/admin/business-verticals/${verticalId}/modules`
+      );
+      const verticalModules = extractModules(response);
+      return verticalModules;
+    } catch {
+      // Fall through to generic modules endpoint.
+    }
+
+    const allModules = await this.getModules();
+    const filteredModules = allModules.filter((module) => {
+      const moduleWithVertical = module as Module & {
+        business_vertical_id?: string;
+        vertical_id?: string;
+        business_id?: string;
+      };
+      const moduleVerticalId =
+        moduleWithVertical.business_vertical_id ||
+        moduleWithVertical.vertical_id ||
+        moduleWithVertical.business_id;
+
+      return !moduleVerticalId || moduleVerticalId === verticalId;
+    });
+
+    return filteredModules;
   }
 
   /**

@@ -10,11 +10,29 @@ interface Module {
   code: string;
   description: string;
   icon?: string;
-  order?: number;
+  display_order?: number;
   is_active: boolean;
   schema_name?: string; // Database schema for form tables within this module
   created_at?: string;
 }
+
+const MODULE_ICON_OPTIONS = [
+  { value: 'i-heroicons-banknotes-solid', label: 'Finance' },
+  { value: 'i-heroicons-shopping-cart-solid', label: 'Procurement' },
+  { value: 'i-heroicons-archive-box-solid', label: 'Inventory' },
+  { value: 'i-heroicons-user-group-solid', label: 'Human Resources' },
+  { value: 'i-heroicons-folder-open-solid', label: 'Projects' },
+  { value: 'i-heroicons-building-office-solid', label: 'Administration' },
+  { value: 'i-heroicons-clipboard-document-list-solid', label: 'Operations' },
+  { value: 'i-heroicons-truck-solid', label: 'Logistics' },
+  { value: 'i-heroicons-chart-bar-solid', label: 'Reporting' },
+  { value: 'i-heroicons-shield-check-solid', label: 'Compliance' },
+  { value: 'i-heroicons-building-storefront-solid', label: 'Sales' },
+  { value: 'i-heroicons-currency-dollar-solid', label: 'Billing' },
+  { value: 'i-heroicons-wrench-screwdriver-solid', label: 'Maintenance' },
+  { value: 'i-heroicons-beaker-solid', label: 'Quality Control' },
+  { value: 'i-heroicons-cpu-chip-solid', label: 'IT Systems' },
+];
 
 // Server-side data loader - runs on every request
 export const useModulesLoader = routeLoader$(async (requestEvent) => {
@@ -44,7 +62,7 @@ export default component$(() => {
     code: "",
     description: "",
     icon: "",
-    order: 0,
+    display_order: 0,
     is_active: true,
   });
   const error = useSignal("");
@@ -53,6 +71,19 @@ export default component$(() => {
 
   // Create module
   const handleCreateModule = $(async () => {
+    const selectedIcon = (newModule.value.icon || '').trim();
+    if (!selectedIcon) {
+      error.value = 'Please select an icon for this module';
+      setTimeout(() => (error.value = ''), 5000);
+      return;
+    }
+
+    if (modules.value.some((module) => module.icon === selectedIcon)) {
+      error.value = 'Selected icon is already used by another module';
+      setTimeout(() => (error.value = ''), 5000);
+      return;
+    }
+
     try {
       // Try /modules endpoint first
       const result = await apiClient.post<any>(`/admin/masters/modules`, newModule.value);
@@ -84,7 +115,7 @@ export default component$(() => {
           code: "",
           description: "",
           icon: "",
-          order: 0,
+          display_order: 0,
           is_active: true,
         };
         success.value = "Module created successfully";
@@ -99,7 +130,7 @@ export default component$(() => {
         code: "",
         description: "",
         icon: "",
-        order: 0,
+        display_order: 0,
         is_active: true,
       };
       success.value = "Module created successfully";
@@ -119,18 +150,22 @@ export default component$(() => {
   // Update module
   const handleUpdateModule = $(async () => {
     if (!editingModule.value) return;
+
+    const selectedIcon = (editingModule.value.icon || '').trim();
+    if (!selectedIcon) {
+      error.value = 'Please select an icon for this module';
+      setTimeout(() => (error.value = ''), 5000);
+      return;
+    }
+
+    if (modules.value.some((module) => module.icon === selectedIcon && module.id !== editingModule.value!.id)) {
+      error.value = 'Selected icon is already used by another module';
+      setTimeout(() => (error.value = ''), 5000);
+      return;
+    }
+
     try {
-      // Try /modules endpoint first
-      let result;
-      try {
-        result = await apiClient.put<any>(`/modules/${editingModule.value.id}`, editingModule.value);
-      } catch (e: any) {
-        if (e.status === 404) {
-          result = await apiClient.put<any>(`/admin/masters/modules/${editingModule.value.id}`, editingModule.value);
-        } else {
-          throw e;
-        }
-      }
+      const result = await apiClient.put<any>(`/admin/masters/modules/${editingModule.value.id}`, editingModule.value);
 
       const updatedModule = result.module || result.data || result;
       const index = modules.value.findIndex((m: Module) => m.id === editingModule.value!.id);
@@ -155,16 +190,7 @@ export default component$(() => {
     if (!confirm("Are you sure you want to delete this module?")) return;
 
     try {
-      // Try /modules endpoint first
-      try {
-        await apiClient.delete(`/modules/${moduleId}`);
-      } catch (e: any) {
-        if (e.status === 404) {
-          await apiClient.delete(`/admin/masters/modules/${moduleId}`);
-        } else {
-          throw e;
-        }
-      }
+      await apiClient.delete(`/admin/masters/modules/${moduleId}`);
       modules.value = modules.value.filter((m: Module) => m.id !== moduleId);
       success.value = "Module deleted successfully";
       setTimeout(() => (success.value = ""), 3000);
@@ -373,26 +399,59 @@ export default component$(() => {
                   </FormField>
 
                   <div class="grid grid-cols-2 gap-4">
-                    <FormField id="module-icon" label="Icon (emoji)">
-                      <input
-                        id="module-icon"
-                        type="text"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={
-                          editingModule.value
-                            ? editingModule.value.icon || ""
-                            : newModule.value.icon
-                        }
-                        onInput$={(e) => {
-                          const value = (e.target as HTMLInputElement).value;
-                          if (editingModule.value) {
-                            editingModule.value = { ...editingModule.value, icon: value };
-                          } else {
-                            newModule.value = { ...newModule.value, icon: value };
-                          }
-                        }}
-                        placeholder="💧"
-                      />
+                    <FormField id="module-icon" label="Icon" required>
+                      <div class="space-y-2">
+                        {(() => {
+                          const editingId = editingModule.value?.id;
+                          const usedIcons = new Set(
+                            modules.value
+                              .filter((module) => module.id !== editingId)
+                              .map((module) => module.icon)
+                              .filter((icon): icon is string => Boolean(icon))
+                          );
+
+                          return (
+                        <div class="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                          {MODULE_ICON_OPTIONS.map((iconOption) => {
+                            const selectedIcon = editingModule.value
+                              ? editingModule.value.icon || ''
+                              : newModule.value.icon || '';
+                            const isSelected = selectedIcon === iconOption.value;
+                            const isDisabled = !isSelected && usedIcons.has(iconOption.value);
+
+                            return (
+                              <button
+                                key={iconOption.value}
+                                type="button"
+                                disabled={isDisabled}
+                                title={iconOption.label}
+                                aria-label={iconOption.label}
+                                class={`w-full h-10 rounded-md border flex items-center justify-center transition-colors ${
+                                  isSelected
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                    : isDisabled
+                                      ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'border-gray-300 hover:border-blue-300 hover:bg-blue-50'
+                                }`}
+                                onClick$={() => {
+                                  if (editingModule.value) {
+                                    editingModule.value = { ...editingModule.value, icon: iconOption.value };
+                                  } else {
+                                    newModule.value = { ...newModule.value, icon: iconOption.value };
+                                  }
+                                }}
+                              >
+                                <i class={`${iconOption.value} w-5 h-5 inline-block`} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                          );
+                        })()}
+                        <p class="text-xs text-gray-500">
+                          Icons already assigned to other modules are disabled.
+                        </p>
+                      </div>
                     </FormField>
 
                     <FormField id="module-order" label="Display Order">
@@ -402,17 +461,17 @@ export default component$(() => {
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         value={
                           editingModule.value
-                            ? editingModule.value.order || 0
-                            : newModule.value.order
+                            ? editingModule.value.display_order || 0
+                            : newModule.value.display_order
                         }
                         onInput$={(e) => {
                           const value = parseInt(
                             (e.target as HTMLInputElement).value
                           );
                           if (editingModule.value) {
-                            editingModule.value = { ...editingModule.value, order: value };
+                            editingModule.value = { ...editingModule.value, display_order: value };
                           } else {
-                            newModule.value = { ...newModule.value, order: value };
+                            newModule.value = { ...newModule.value, display_order: value };
                           }
                         }}
                       />
@@ -456,7 +515,7 @@ export default component$(() => {
                         code: "",
                         description: "",
                         icon: "",
-                        order: 0,
+                        display_order: 0,
                         is_active: true,
                       };
                     }}

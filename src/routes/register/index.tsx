@@ -1,8 +1,13 @@
 // src/routes/register/index.tsx
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
+import type { RequestHandler } from '@builder.io/qwik-city';
 import { Alert, Btn, SectionCard } from '~/components/ds';
 import { authService } from '~/services';
+
+export const onGet: RequestHandler = async () => {
+  // Keep register route always reachable to avoid stale-cookie redirect loops.
+};
 
 export default component$(() => {
   const nav = useNavigate();

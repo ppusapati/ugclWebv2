@@ -4,17 +4,27 @@ import { RouterHead } from "./components/router-head/router-head";
 import { AuthProvider } from "./contexts/auth-context";
 import { MenuProvider } from "./contexts/menu-context";
 import { ThemeProvider } from "./contexts/theme-context";
+import { notificationService } from "./services/notification.service";
 import "./styles/tokens.css";
 import 'virtual:uno.css';
 import "./global.css";
 
 export default component$(() => {
-  // Defer non-critical browser work until idle so first paint is not blocked.
-  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(() => {
-    const requestPermission = () => {
-      if ("Notification" in window && Notification.permission === "default") {
-        void Notification.requestPermission();
+    const syncExistingPermission = async () => {
+      if (!("Notification" in window)) return;
+
+      const path = window.location.pathname;
+      const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+      if (isAuthRoute) return;
+
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      if (!token) return;
+
+      if (Notification.permission === "granted") {
+        void notificationService.ensureWebPushSubscription().catch(() => {
+          // non-blocking best effort
+        });
       }
     };
     const browserWindow = window as Window & {
@@ -23,11 +33,15 @@ export default component$(() => {
     };
 
     if (browserWindow.requestIdleCallback) {
-      const idleId = browserWindow.requestIdleCallback(requestPermission, { timeout: 3000 });
+      const idleId = browserWindow.requestIdleCallback(() => {
+        void syncExistingPermission();
+      }, { timeout: 3000 });
       return () => browserWindow.cancelIdleCallback?.(idleId);
     }
 
-    const timeoutId = globalThis.setTimeout(requestPermission, 1500);
+    const timeoutId = globalThis.setTimeout(() => {
+      void syncExistingPermission();
+    }, 1500);
     return () => globalThis.clearTimeout(timeoutId);
   });
   /**

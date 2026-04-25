@@ -13,6 +13,37 @@ export function getUser() {
   }
 }
 
+export function isSuperAdminUser(user: any): boolean {
+  if (!user) return false;
+
+  const roleCandidates = [
+    user.role,
+    user.global_role,
+    user.globalRole,
+    user.global_role_name,
+    user.globalRoleName,
+  ]
+    .filter(Boolean)
+    .map((value: unknown) => String(value).toLowerCase().trim());
+
+  const roles = Array.isArray(user.roles)
+    ? user.roles.map((value: unknown) => String(value).toLowerCase().trim())
+    : [];
+
+  const permissions = Array.isArray(user.permissions)
+    ? user.permissions.map((value: unknown) => String(value).toLowerCase().trim())
+    : [];
+
+  return (
+    user.is_super_admin === true ||
+    user.isSuperAdmin === true ||
+    roleCandidates.includes('super_admin') ||
+    roles.includes('super_admin') ||
+    permissions.includes('*:*:*') ||
+    permissions.includes('super_admin')
+  );
+}
+
 export function getToken() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");

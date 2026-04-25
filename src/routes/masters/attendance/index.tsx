@@ -1,6 +1,6 @@
 import { $, component$, isServer, useSignal, useTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
-import { attendanceService } from '~/services';
+import { attendanceService, businessService } from '~/services';
 import type {
   AttendanceHeadcountSite,
   AttendanceSession,
@@ -33,19 +33,43 @@ function parseAnomalyFlags(raw?: string): string[] {
   }
 }
 
-function resolveCurrentBusinessCode(): string {
+async function resolveCurrentBusinessCode(): Promise<string> {
   try {
+    const selectedBusinessStr = localStorage.getItem('selectedBusiness');
+    if (selectedBusinessStr) {
+      const selectedBusiness = JSON.parse(selectedBusinessStr);
+      if (selectedBusiness?.code) {
+        return selectedBusiness.code;
+      }
+    }
+
     const userStr = localStorage.getItem('user');
-    if (!userStr) return '';
-
-    const user = JSON.parse(userStr);
     const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
-    const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
-    const currentBusiness =
-      businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
-      businessRoles[0];
 
-    return currentBusiness?.business_vertical?.code || '';
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
+      const currentBusiness =
+        businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
+        businessRoles[0];
+
+      if (currentBusiness?.business_vertical?.code) {
+        return currentBusiness.business_vertical.code;
+      }
+    }
+
+    const myBusinesses = await businessService.getMyBusinesses();
+    const fallbackBusiness = myBusinesses.find((business) => !!business?.code) || myBusinesses[0];
+
+    if (fallbackBusiness?.code) {
+      if (fallbackBusiness.id && !storedBusinessId) {
+        localStorage.setItem('ugcl_current_business_vertical', fallbackBusiness.id);
+      }
+      localStorage.setItem('selectedBusiness', JSON.stringify(fallbackBusiness));
+      return fallbackBusiness.code;
+    }
+
+    return '';
   } catch {
     return '';
   }
@@ -127,7 +151,7 @@ export default component$(() => {
       return;
     }
 
-    businessCode.value = resolveCurrentBusinessCode();
+    businessCode.value = await resolveCurrentBusinessCode();
     await loadDashboard();
   });
 

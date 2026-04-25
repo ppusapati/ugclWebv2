@@ -19,6 +19,71 @@ export class NotificationService {
   private baseUrl = '/notifications';
   private adminUrl = '/admin/notification-rules';
 
+  private async getPushServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return null;
+    }
+
+    const directMatch = await navigator.serviceWorker.getRegistration();
+    if (directMatch && directMatch.active?.scriptURL?.includes('/push-sw.js')) {
+      return directMatch;
+    }
+
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    return registrations.find((registration) => registration.active?.scriptURL?.includes('/push-sw.js')) || null;
+  }
+
+  async getWebPushStatus(): Promise<{
+    supported: boolean;
+    permission: NotificationPermission | 'unsupported';
+    serviceWorkerRegistered: boolean;
+    subscriptionActive: boolean;
+    endpoint?: string;
+  }> {
+    if (typeof window === 'undefined') {
+      return {
+        supported: false,
+        permission: 'unsupported',
+        serviceWorkerRegistered: false,
+        subscriptionActive: false,
+      };
+    }
+
+    const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    if (!supported) {
+      return {
+        supported: false,
+        permission: 'unsupported',
+        serviceWorkerRegistered: false,
+        subscriptionActive: false,
+      };
+    }
+
+    const registration = await this.getPushServiceWorkerRegistration();
+    const serviceWorkerRegistered = !!registration;
+    const subscription = registration ? await registration.pushManager.getSubscription() : null;
+
+    return {
+      supported,
+      permission: Notification.permission,
+      serviceWorkerRegistered,
+      subscriptionActive: !!subscription,
+      endpoint: subscription?.endpoint,
+    };
+  }
+
+  private urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const buffer = new ArrayBuffer(rawData.length);
+    const outputArray = new Uint8Array(buffer);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return buffer;
+  }
+
   private async getWithFallback<T>(primary: string, fallback: string): Promise<T> {
     try {
       return await apiClient.get<T>(primary);
@@ -151,6 +216,92 @@ export class NotificationService {
       preferences
     );
     return response.preferences;
+  }
+
+  /**
+   * Returns VAPID public key used by PushManager subscription.
+   */
+  async getWebPushPublicKey(): Promise<string> {
+    const response = await apiClient.get<{ public_key: string }>(`${this.baseUrl}/push/public-key`);
+    return response.public_key;
+  }
+
+  /**
+   * Save browser push subscription on backend.
+   */
+  async saveWebPushSubscription(subscription: PushSubscription): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/push/subscriptions`, subscription.toJSON());
+  }
+
+  /**
+   * Remove browser push subscription from backend.
+   */
+  async deleteWebPushSubscription(endpoint: string): Promise<void> {
+    await apiClient.delete(`${this.baseUrl}/push/subscriptions?endpoint=${encodeURIComponent(endpoint)}`);
+  }
+
+  async sendTestWebPush(payload?: { title?: string; body?: string; url?: string }): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/push/test`, payload || {});
+  }
+
+  /**
+   * Register service worker + push subscription for background browser notifications.
+   */
+  async ensureWebPushSubscription(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!('Notification' in window)) return;
+
+    if (Notification.permission !== 'granted') return;
+
+    const publicKey = await this.getWebPushPublicKey();
+    if (!publicKey) return;
+
+    let registration = await this.getPushServiceWorkerRegistration();
+    if (!registration) {
+      registration = await navigator.serviceWorker.register('/push-sw.js');
+    }
+
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.urlBase64ToArrayBuffer(publicKey),
+      });
+    }
+
+    await this.saveWebPushSubscription(subscription);
+  }
+
+  async enableWebPush(): Promise<{
+    status: 'enabled' | 'blocked' | 'unsupported';
+    permission: NotificationPermission | 'unsupported';
+  }> {
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { status: 'unsupported', permission: 'unsupported' };
+    }
+
+    if (Notification.permission === 'denied') {
+      return { status: 'blocked', permission: Notification.permission };
+    }
+
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        return {
+          status: permission === 'denied' ? 'blocked' : 'unsupported',
+          permission,
+        };
+      }
+    }
+
+    if (Notification.permission === 'granted') {
+      await this.ensureWebPushSubscription();
+      return { status: 'enabled', permission: Notification.permission };
+    }
+
+    return { status: 'unsupported', permission: Notification.permission };
   }
 
   /**

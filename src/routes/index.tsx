@@ -7,6 +7,15 @@ import type { Dashboard, DashboardListResponse, ReportResult, ChartType } from '
 import { P9ETable } from '~/components/table/table';
 import { Alert, Badge, Btn } from '~/components/ds';
 
+export const onGet: import('@builder.io/qwik-city').RequestHandler = async ({ cookie, redirect }) => {
+  const token = cookie.get('token')?.value || '';
+  const rawUser = cookie.get('user')?.value || '';
+
+  if (!token || !rawUser) {
+    throw redirect(302, '/login');
+  }
+};
+
 const DASHBOARD_GRID_COLS = 12;
 const DASHBOARD_GRID_ROW_HEIGHT = 48;
 const DASHBOARD_CANVAS_MIN_WIDTH = 840;

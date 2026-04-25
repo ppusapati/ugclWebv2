@@ -55,6 +55,32 @@ export interface ProfileUpdateRequest {
   phone?: string;
 }
 
+export interface LoginHistoryEntry {
+  id: string;
+  timestamp: string;
+  ip_address: string;
+  user_agent: string;
+  status: string;
+}
+
+export interface ProfileResponse {
+  userID: string;
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  role?: string;
+  role_id?: string;
+  global_role?: string;
+  is_super_admin?: boolean;
+  is_active?: boolean;
+  permissions?: string[];
+  access_scope?: string;
+  permission_count?: number;
+  business_roles?: Array<Record<string, any>>;
+  recent_logins?: LoginHistoryEntry[];
+}
+
 // ============================================================================
 // BUSINESS VERTICAL TYPES
 // ============================================================================

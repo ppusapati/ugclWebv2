@@ -30,7 +30,7 @@ export const TenantSwitcher = component$(() => {
   });
 
   if (!auth.currentTenant) {
-    return null;
+    return <div class="hidden md:block h-10 w-[220px]" aria-hidden="true"></div>;
   }
 
   return (

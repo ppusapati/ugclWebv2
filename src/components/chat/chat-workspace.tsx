@@ -22,6 +22,13 @@ interface NewChatState {
   creating: boolean;
 }
 
+interface EditGroupState {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  saving: boolean;
+}
+
 // Common emoji set for the inline reaction picker
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
@@ -84,7 +91,7 @@ const ReactionBar = component$<{
 }>(({ reactions, currentUserId, onToggle$ }) => {
   if (!reactions || reactions.length === 0) return null;
   return (
-    <div class="mt-1 flex flex-wrap gap-1">
+    <div class="mt-1 inline-flex max-w-full flex-wrap gap-1">
       {reactions.map((r) => {
         const alreadyReacted = r.user_ids?.includes(currentUserId) ?? false;
         return (
@@ -92,10 +99,10 @@ const ReactionBar = component$<{
             type="button"
             key={r.reaction}
             onClick$={() => onToggle$(r.reaction, alreadyReacted)}
-            class={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11px] transition-colors ${
+            class={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] transition-colors border-0 ${
               alreadyReacted
-                ? 'border-blue-400 bg-blue-50 text-blue-700'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300'
+                ? 'bg-blue-50 text-blue-700'
+                : 'bg-transparent text-gray-700 hover:bg-gray-100'
             }`}
           >
             <span>{r.reaction}</span>
@@ -112,6 +119,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
   const messages = useSignal<MessageDTO[]>([]);
   const selectedConversationId = useSignal<string>(initialConversationId || '');
   const currentUserId = useSignal<string>('');
+  const bootstrapping = useSignal(true);
 
   const loadingConversations = useSignal(false);
   const loadingMessages = useSignal(false);
@@ -138,6 +146,13 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
     groupDescription: '',
     selectedMemberIds: [],
     creating: false,
+  });
+
+  const editGroup = useStore<EditGroupState>({
+    isOpen: false,
+    title: '',
+    description: '',
+    saving: false,
   });
 
   // ─── helpers ────────────────────────────────────────────────────────────────
@@ -407,6 +422,43 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
     }
   });
 
+  const openEditGroup = $(() => {
+    const conversation = conversations.value.find((c) => c.id === selectedConversationId.value);
+    if (!conversation || conversation.type !== 'group') {
+      return;
+    }
+    editGroup.title = conversation.title || '';
+    editGroup.description = conversation.description || '';
+    editGroup.isOpen = true;
+  });
+
+  const saveGroupEdits = $(async () => {
+    const conversationId = selectedConversationId.value;
+    const title = editGroup.title.trim();
+    if (!conversationId || !title) {
+      error.value = 'Group name is required';
+      return;
+    }
+
+    try {
+      editGroup.saving = true;
+      error.value = null;
+      await chatService.updateConversation(conversationId, {
+        title,
+        description: editGroup.description.trim(),
+      });
+      editGroup.isOpen = false;
+      await loadConversations();
+      if (selectedConversationId.value) {
+        await loadMessages(selectedConversationId.value);
+      }
+    } catch (err: any) {
+      error.value = err?.message || 'Failed to update group';
+    } finally {
+      editGroup.saving = false;
+    }
+  });
+
   const toggleMember = $((userId: string) => {
     const idx = newChat.selectedMemberIds.indexOf(userId);
     if (idx >= 0) {
@@ -450,9 +502,13 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
       selectedConversationId.value = initialConversationId;
     }
 
-    await loadConversations();
-    if (selectedConversationId.value) {
-      await loadMessages(selectedConversationId.value);
+    try {
+      await loadConversations();
+      if (selectedConversationId.value) {
+        await loadMessages(selectedConversationId.value);
+      }
+    } finally {
+      bootstrapping.value = false;
     }
 
     // ── SSE subscription ──────────────────────────────────────────────────────
@@ -514,6 +570,10 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
     );
   });
 
+  const showInitialSkeleton =
+    bootstrapping.value &&
+    (loadingConversations.value || conversations.value.length === 0);
+
   // ─── render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -534,7 +594,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
             sseConnected.value ? 'bg-green-500' : 'bg-gray-300'
           }`}
         />
-        {sseConnected.value ? 'Live updates active' : 'Connecting…'}
+        <span>Live updates</span>
       </div>
 
       {error.value && (
@@ -610,17 +670,42 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
 
         {/* ── Message thread ─────────────────────────────────────────────── */}
         <section class="flex h-[68vh] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          {activeConversation ? (
+          {showInitialSkeleton ? (
+            <>
+              <div class="border-b border-gray-200 px-4 py-3">
+                <div class="h-4 w-40 animate-pulse rounded bg-gray-200" />
+                <div class="mt-2 h-3 w-24 animate-pulse rounded bg-gray-100" />
+              </div>
+              <div class="flex-1 space-y-3 overflow-auto bg-gray-50 p-4">
+                <div class="h-14 w-[78%] animate-pulse rounded-2xl bg-gray-200" />
+                <div class="ml-auto h-14 w-[64%] animate-pulse rounded-2xl bg-blue-100" />
+                <div class="h-14 w-[72%] animate-pulse rounded-2xl bg-gray-200" />
+              </div>
+              <div class="border-t border-gray-200 bg-white p-3">
+                <div class="h-10 w-full animate-pulse rounded-lg bg-gray-200" />
+              </div>
+            </>
+          ) : activeConversation ? (
             <>
               {/* header */}
               <div class="border-b border-gray-200 px-4 py-3">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-2">
+                    {activeConversation.type === 'group' && (
+                      <i class="i-heroicons-user-group-solid h-4 w-4 text-blue-500 inline-block" />
+                    )}
+                    <p class="truncate text-sm font-semibold text-gray-900">
+                      {getConversationTitle(activeConversation)}
+                    </p>
+                  </div>
                   {activeConversation.type === 'group' && (
-                    <i class="i-heroicons-user-group-solid h-4 w-4 text-blue-500 inline-block" />
+                    <Btn variant="ghost" onClick$={openEditGroup}>
+                      <span class="flex items-center gap-1">
+                        <i class="i-heroicons-pencil-square-solid h-4 w-4 inline-block" />
+                        Edit Group
+                      </span>
+                    </Btn>
                   )}
-                  <p class="text-sm font-semibold text-gray-900">
-                    {getConversationTitle(activeConversation)}
-                  </p>
                 </div>
                 <p class="text-xs text-gray-500">
                   {activeConversation.type === 'group'
@@ -733,7 +818,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                               }}
                               class={`absolute -bottom-3 ${
                                 isMine ? 'left-1' : 'right-1'
-                              } hidden rounded-full border border-gray-200 bg-white px-1.5 py-0.5 text-xs text-gray-500 shadow-sm hover:bg-gray-100 group-hover:block`}
+                              } hidden rounded-full border-0 bg-white/95 px-1.5 py-0.5 text-xs text-gray-500 shadow-sm hover:bg-gray-100 group-hover:block`}
                               aria-label="Add reaction"
                             >
                               <i class="i-heroicons-face-smile-solid h-3.5 w-3.5 inline-block" />
@@ -743,7 +828,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                           {/* inline emoji picker */}
                           {showPicker && (
                             <div
-                              class={`mt-2 flex gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 shadow-md ${
+                              class={`mt-2 inline-flex max-w-full gap-1 rounded-full border-0 bg-white/95 px-2 py-1 shadow-md ${
                                 isMine ? 'justify-end' : 'justify-start'
                               }`}
                             >
@@ -760,7 +845,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                                     await toggleReaction(message.id, emoji, !!existing);
                                     activeReactionPickerId.value = '';
                                   }}
-                                  class="rounded-full px-1 py-0.5 text-lg hover:bg-gray-100"
+                                  class="border-0 bg-transparent rounded-full px-1 py-0.5 text-lg hover:bg-gray-100"
                                 >
                                   {emoji}
                                 </button>
@@ -891,6 +976,55 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
           )}
         </section>
       </div>
+
+      {/* ── Edit Group Modal ─────────────────────────────────────────────── */}
+      {editGroup.isOpen && (
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
+          <div class="w-full max-w-md overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+            <div class="border-b border-gray-200 px-4 py-3">
+              <p class="text-base font-semibold text-gray-900">Edit Group</p>
+            </div>
+
+            <div class="space-y-3 p-4">
+              <input
+                type="text"
+                value={editGroup.title}
+                onInput$={(e) => {
+                  editGroup.title = (e.target as HTMLInputElement).value;
+                }}
+                placeholder="Group name (required)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                value={editGroup.description}
+                onInput$={(e) => {
+                  editGroup.description = (e.target as HTMLInputElement).value;
+                }}
+                placeholder="Description (optional)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+              <Btn
+                variant="secondary"
+                onClick$={() => {
+                  editGroup.isOpen = false;
+                }}
+              >
+                Cancel
+              </Btn>
+              <Btn
+                onClick$={saveGroupEdits}
+                disabled={editGroup.saving || !editGroup.title.trim()}
+              >
+                {editGroup.saving ? 'Saving…' : 'Save Changes'}
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── New Chat / Create Group Modal ─────────────────────────────────── */}
       {newChat.isOpen && (

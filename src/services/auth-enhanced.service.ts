@@ -12,6 +12,7 @@ import type {
   ChangePasswordRequest,
   ProfileUpdateRequest,
   User,
+  ProfileResponse,
   BusinessVertical,
 } from './types';
 
@@ -51,8 +52,8 @@ class AuthService {
   /**
    * Get current user profile
    */
-  async getProfile(): Promise<User> {
-    return apiClient.get<User>('/profile');
+  async getProfile(): Promise<ProfileResponse> {
+    return apiClient.get<ProfileResponse>('/profile');
   }
 
   /**
