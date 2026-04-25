@@ -1,4 +1,4 @@
-import { Resource, component$, isServer, useResource$, useSignal, useTask$ } from '@builder.io/qwik';
+import { Resource, component$, isServer, useResource$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import type { EChartProps } from '~/components/echarts';
 import { buildApiUrl } from '~/config/api';
 import { Btn } from '~/components/ds';
@@ -41,28 +41,33 @@ export const StockKpi = component$(() => {
   const error = useSignal<string | null>(null);
   const selectedTab = useSignal('overview');
 
-  useTask$(async () => {
-    if (isServer) {
-      return;
-    }
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
       const res = await fetch(buildApiUrl('/kpi/stock'), {
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${token}`,
           'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',
         },
       });
       if (!res.ok) throw new Error(`Failed to fetch KPIs: ${res.status} ${res.statusText}`);
-      const data = await res.json();
-      kpis.value = data;
+      const raw = await res.json();
+      kpis.value = raw;
       error.value = null;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error occurred';
+      const msg = err instanceof Error && err.name === 'AbortError'
+        ? 'KPI request timed out. Please try again.'
+        : err instanceof Error ? err.message : 'Unknown error occurred';
+      error.value = msg;
       kpis.value = null;
     } finally {
+      window.clearTimeout(timeoutId);
       loading.value = false;
     }
   });

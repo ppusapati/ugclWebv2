@@ -57,7 +57,7 @@ export default component$<WorkflowPanelProps>((props) => {
   });
 
   const handleCreateNew = $(async () => {
-    await nav('/admin/workflows');
+    await nav('/workflows');
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

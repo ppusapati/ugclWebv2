@@ -1,0 +1,50 @@
+TARGET_FILES=41
+ACTIVE_CODE_FILES=184
+ZERO_INBOUND_CANDIDATES=4
+---CANDIDATES---
+src/contexts/navigation-context.tsx
+src/hooks/usePermissions.ts
+src/services/budget.service.ts
+src/types/workflow.ts.bak
+---INBOUND_COUNTS---
+src/contexts/auth-context.tsx :: 4
+src/contexts/menu-context.tsx :: 3
+src/contexts/navigation-context.tsx :: 0
+src/contexts/theme-context.tsx :: 2
+src/hooks/usePermissions.ts :: 0
+src/services/analytics.service.ts :: 6
+src/services/api-client.ts :: 34
+src/services/attendance.service.ts :: 1
+src/services/auth-enhanced.service.ts :: 3
+src/services/auth.service.ts :: 1
+src/services/breadcrumb.service.ts :: 1
+src/services/budget.service.ts :: 0
+src/services/business.service.ts :: 2
+src/services/chat.service.ts :: 1
+src/services/document.service.ts :: 6
+src/services/file.service.ts :: 1
+src/services/form-builder.service.ts :: 1
+src/services/form.service.ts :: 1
+src/services/index.ts :: 59
+src/services/kpi.service.ts :: 1
+src/services/notification.service.ts :: 3
+src/services/project.service.ts :: 1
+src/services/report.service.ts :: 2
+src/services/resource-attribute.service.ts :: 1
+src/services/role.service.ts :: 3
+src/services/site.service.ts :: 1
+src/services/task.service.ts :: 2
+src/services/types.ts :: 19
+src/services/user-attribute.service.ts :: 1
+src/services/user.service.ts :: 1
+src/services/workflow.service.ts :: 1
+src/types/abac.ts :: 1
+src/types/analytics.ts :: 7
+src/types/auth.ts :: 1
+src/types/chat.ts :: 2
+src/types/document.ts :: 7
+src/types/multitenant.ts :: 3
+src/types/notification.ts :: 7
+src/types/project.ts :: 12
+src/types/workflow.ts :: 31
+src/types/workflow.ts.bak :: 0

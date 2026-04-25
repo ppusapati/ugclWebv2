@@ -17,32 +17,32 @@ class BreadcrumbService {
   // Define route configurations for breadcrumb generation
   private routeConfigs: RouteConfig[] = [
     // Dashboard
-    { path: '/admin/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },
+    { path: '/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },
     { path: '/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },
 
     // Admin routes
-    { path: '/admin', label: 'Admin', icon: 'i-heroicons-shield-check-solid' },
-    { path: '/admin/masters', label: 'Masters', icon: 'i-heroicons-cube-solid', parent: '/admin' },
-    { path: '/admin/masters/module', label: 'Modules', icon: 'i-streamline-module-three-solid', parent: '/admin/masters' },
-    { path: '/admin/masters/sites', label: 'Sites', icon: 'i-heroicons-map-pin-solid', parent: '/admin/masters' },
-    { path: '/admin/masters/attendance', label: 'Attendance', icon: 'i-heroicons-clipboard-document-list-solid', parent: '/admin/masters' },
-    { path: '/admin/masters/business', label: 'Business Verticals', icon: 'i-heroicons-building-office-solid', parent: '/admin/masters' },
-    { path: '/admin/masters/sites/new', label: 'New Site', icon: 'i-heroicons-plus-circle-solid', parent: '/admin/masters/sites' },
-    { path: '/admin/users', label: 'Users', icon: 'i-heroicons-users-solid', parent: '/admin' },
-    { path: '/admin/rbac', label: 'RBAC', icon: 'i-heroicons-shield-check-solid', parent: '/admin' },
-    { path: '/admin/rbac/global-roles', label: 'Global Roles', icon: 'i-heroicons-shield-check-solid', parent: '/admin/rbac' },
-    { path: '/admin/rbac/business-roles', label: 'Business Roles', icon: 'i-heroicons-building-office-solid', parent: '/admin/rbac' },
-    { path: '/admin/rbac/permissions', label: 'Permissions', icon: 'i-heroicons-key-solid', parent: '/admin/rbac' },
+    { path: '/', label: 'Admin', icon: 'i-heroicons-shield-check-solid' },
+    { path: '/masters', label: 'Masters', icon: 'i-heroicons-cube-solid', parent: '/' },
+    { path: '/masters/module', label: 'Modules', icon: 'i-streamline-module-three-solid', parent: '/masters' },
+    { path: '/masters/sites', label: 'Sites', icon: 'i-heroicons-map-pin-solid', parent: '/masters' },
+    { path: '/masters/attendance', label: 'Attendance', icon: 'i-heroicons-clipboard-document-list-solid', parent: '/masters' },
+    { path: '/masters/business', label: 'Business Verticals', icon: 'i-heroicons-building-office-solid', parent: '/masters' },
+    { path: '/masters/sites/new', label: 'New Site', icon: 'i-heroicons-plus-circle-solid', parent: '/masters/sites' },
+    { path: '/users', label: 'Users', icon: 'i-heroicons-users-solid', parent: '/' },
+    { path: '/rbac', label: 'RBAC', icon: 'i-heroicons-shield-check-solid', parent: '/' },
+    { path: '/rbac/global-roles', label: 'Global Roles', icon: 'i-heroicons-shield-check-solid', parent: '/rbac' },
+    { path: '/rbac/business-roles', label: 'Business Roles', icon: 'i-heroicons-building-office-solid', parent: '/rbac' },
+    { path: '/rbac/permissions', label: 'Permissions', icon: 'i-heroicons-key-solid', parent: '/rbac' },
 
     // ABAC Policy routes
-    { path: '/admin/policies', label: 'ABAC Policies', icon: 'i-heroicons-shield-check-solid', parent: '/admin' },
-    { path: '/admin/policies/create', label: 'Create Policy', icon: 'i-heroicons-plus-circle-solid', parent: '/admin/policies' },
-    { path: '/admin/attributes', label: 'Attributes', icon: 'i-heroicons-tag-solid', parent: '/admin' },
+    { path: '/policies', label: 'ABAC Policies', icon: 'i-heroicons-shield-check-solid', parent: '/' },
+    { path: '/policies/create', label: 'Create Policy', icon: 'i-heroicons-plus-circle-solid', parent: '/policies' },
+    { path: '/attributes', label: 'Attributes', icon: 'i-heroicons-tag-solid', parent: '/' },
 
     { path: '/dashboard/admin/roles', label: 'Roles & Permissions', icon: 'i-heroicons-key-solid', parent: '/dashboard' },
-    { path: '/admin/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth-solid', parent: '/admin' },
-    { path: '/admin/audit', label: 'Audit Logs', icon: 'i-heroicons-document-text-solid', parent: '/admin' },
-    { path: '/admin/backup', label: 'Backup', icon: 'i-heroicons-cloud-arrow-down-solid', parent: '/admin' },
+    { path: '/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth-solid', parent: '/' },
+    { path: '/audit', label: 'Audit Logs', icon: 'i-heroicons-document-text-solid', parent: '/' },
+    { path: '/backup', label: 'Backup', icon: 'i-heroicons-cloud-arrow-down-solid', parent: '/' },
 
     // HR routes
     { path: '/hr', label: 'HR', icon: 'i-heroicons-users-solid' },

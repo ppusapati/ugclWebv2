@@ -295,7 +295,7 @@ export const NotificationBell = component$<NotificationBellProps>(
             {notifications.value.length > 0 && (
               <div class="px-4 py-3 border-t border-gray-200">
                 <a
-                  href="/admin/notifications"
+                  href="/notifications"
                   class="block text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                   View all notifications

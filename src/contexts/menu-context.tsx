@@ -82,12 +82,13 @@ const menuItems: MenuItem[] = [
     id: 'admin',
     label: 'Admin',
     subItems: [
-      { id: 'modules', label: 'Modules', href: '/admin/masters/module' },
-      { id: 'users', label: 'Users', href: '/admin/users' },
-      { id: 'roles', label: 'Roles & Permissions', href: '/admin/roles' },
-      { id: 'settings', label: 'Settings', href: '/admin/settings' },
-      { id: 'audit', label: 'Audit Logs', href: '/admin/audit' },
-      { id: 'backup', label: 'Backup', href: '/admin/backup' }
+      { id: 'dashboard', label: 'Home', href: '/' },
+      { id: 'modules', label: 'Modules', href: '/masters/module' },
+      { id: 'users', label: 'Users', href: '/users' },
+      { id: 'roles', label: 'Roles & Permissions', href: '/roles' },
+      { id: 'settings', label: 'Settings', href: '/settings' },
+      { id: 'audit', label: 'Audit Logs', href: '/audit' },
+      { id: 'backup', label: 'Backup', href: '/backup' }
     ]
   }
 ];

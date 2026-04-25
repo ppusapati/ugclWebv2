@@ -1,12 +1,10 @@
 import { $, component$, useStore } from "@builder.io/qwik";
 import { Btn } from '~/components/ds/btn';
 import { isValidPhone } from "~/utils/validations";
-import { useNavigate } from '@builder.io/qwik-city';
 import ImgLogo from '~/media/logo.png?jsx';
-import { buildApiRootUrl } from '~/config/api';
+import { buildApiUrl } from '~/config/api';
 
 export const LoginForm = component$(() => {
-  const nav = useNavigate();
     const state = useStore({
         phone: '',
         password: '',
@@ -54,7 +52,7 @@ export const LoginForm = component$(() => {
         }
         // Proceed with form submission (API call, etc.)
         try {
-            const resp = await fetch(buildApiRootUrl('/login'), {
+            const resp = await fetch(buildApiUrl('/login'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -80,8 +78,8 @@ export const LoginForm = component$(() => {
                 document.cookie = `token=${data.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
                 document.cookie = `user=${encodeURIComponent(JSON.stringify(data.user))}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
 
-                nav('/admin/dashboard'); 
-                // alert('Login successful! Response: ' + JSON.stringify(data));
+                // Full reload so layout remounts and useVisibleTask$ re-runs with the new auth state
+                window.location.href = '/dashboard';
             }
         } catch (err: any) {
             state.apiError = 'Network error: ' + err?.message || 'Unknown error';

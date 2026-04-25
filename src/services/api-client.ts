@@ -22,6 +22,19 @@ export interface ApiRequestOptions extends RequestInit {
 }
 
 const DEFAULT_TIMEOUT = 30000;
+const API_CLIENT_DEBUG = import.meta.env.VITE_API_DEBUG === 'true';
+
+function debugLog(...args: any[]) {
+  if (API_CLIENT_DEBUG) console.log(...args);
+}
+
+function debugError(...args: any[]) {
+  if (API_CLIENT_DEBUG) console.error(...args);
+}
+
+function debugTrace(...args: any[]) {
+  if (API_CLIENT_DEBUG) console.debug(...args);
+}
 
 /**
  * Resolve base URL depending on environment (SSR or client)
@@ -117,7 +130,7 @@ async function handleError(response: Response): Promise<never> {
   try {
     // Try JSON first
     data = await response.clone().json();
-    console.error('[API Error] JSON response data:', data);
+    debugError('[API Error] JSON response data:', data);
     message = data?.message || data?.error || message;
   } catch {
     try {
@@ -126,7 +139,7 @@ async function handleError(response: Response): Promise<never> {
       if (text) {
         data = { raw: text };
         message = text || response.statusText || message;
-        console.error('[API Error] Text response data:', text);
+        debugError('[API Error] Text response data:', text);
       } else {
         message = response.statusText || message;
       }
@@ -175,11 +188,11 @@ async function request<T>(
     if (typeof body === 'string' && (method === 'POST' || method === 'PUT')) {
       try {
         const parsed = JSON.parse(body);
-        console.debug('[API Request]', method, url, { body: parsed });
-        console.debug('[API Request] Raw body string:', body);
-        console.debug('[API Request] Headers:', headers);
+        debugTrace('[API Request]', method, url, { body: parsed });
+        debugTrace('[API Request] Raw body string:', body);
+        debugTrace('[API Request] Headers:', headers);
       } catch {
-        console.debug('[API Request]', method, url, { body });
+        debugTrace('[API Request]', method, url, { body });
       }
     }
 
@@ -271,13 +284,13 @@ export const apiClient = {
  */
 function extractTokenFromCookies(cookieHeader: string): string | undefined {
   if (!cookieHeader) {
-    console.log('[extractTokenFromCookies] No cookie header provided');
+    debugLog('[extractTokenFromCookies] No cookie header provided');
     return undefined;
   }
-  console.log('[extractTokenFromCookies] Cookie header:', cookieHeader);
+  debugLog('[extractTokenFromCookies] Cookie header:', cookieHeader);
   const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
   const token = match ? match[1] : undefined;
-  console.log('[extractTokenFromCookies] Extracted token:', token ? `Found (${token.substring(0, 20)}...)` : 'None');
+  debugLog('[extractTokenFromCookies] Extracted token:', token ? `Found (${token.substring(0, 20)}...)` : 'None');
   return token;
 }
 
@@ -290,14 +303,14 @@ export function createSSRApiClient(requestEvent: any) {
   const serverToken = extractTokenFromCookies(cookieHeader);
   const serverBaseUrl = resolveApiBaseUrl(requestEvent.url.hostname);
 
-  console.log('[createSSRApiClient] Token extracted:', serverToken ? 'Yes' : 'No');
-  console.log('[createSSRApiClient] Base URL:', serverBaseUrl);
-  console.log('[createSSRApiClient] Request URL:', requestEvent.url.pathname);
+  debugLog('[createSSRApiClient] Token extracted:', serverToken ? 'Yes' : 'No');
+  debugLog('[createSSRApiClient] Base URL:', serverBaseUrl);
+  debugLog('[createSSRApiClient] Request URL:', requestEvent.url.pathname);
 
   // Helper to handle 401 errors in SSR by throwing redirect
   const handleSSRUnauthorized = (error: any) => {
     if (error.status === 401) {
-      console.log('[SSR] 401 Unauthorized - redirecting to login');
+      debugLog('[SSR] 401 Unauthorized - redirecting to login');
       throw requestEvent.redirect(302, '/login');
     }
     throw error;

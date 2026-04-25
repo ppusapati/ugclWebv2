@@ -87,8 +87,9 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
       return;
     }
 
-    // If user doesn't have role info, try to fetch it from API
-    if (user.role === undefined && user.is_super_admin === undefined) {
+    // If user doesn't have role info, optionally fetch from API when strict auth verification is enabled
+    const verifyAuth = import.meta.env.VITE_VERIFY_AUTH === 'true';
+    if (verifyAuth && user.role === undefined && user.is_super_admin === undefined) {
       try {
         const response = await fetch(buildApiUrl('/profile'), {
           headers: {
