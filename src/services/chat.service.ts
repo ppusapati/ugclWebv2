@@ -1,4 +1,5 @@
 import { apiClient } from './api-client';
+import { resolveApiBaseUrl } from '~/config/api';
 import type {
   ConversationDTO,
   MessageDTO,
@@ -13,6 +14,7 @@ import type {
   AddParticipantRequest,
   UpdateParticipantRoleRequest,
   AddReactionRequest,
+  SendAttachmentRequest,
   ConversationListResponse,
   MessageListResponse,
   ParticipantListResponse,
@@ -270,10 +272,14 @@ export class ChatService {
   /**
    * Send an attachment
    */
-  async sendAttachment(conversationId: string, messageId: string, formData: FormData): Promise<AttachmentDTO> {
-    const response = await apiClient.upload(
+  async sendAttachment(
+    conversationId: string,
+    messageId: string,
+    req: SendAttachmentRequest
+  ): Promise<AttachmentDTO> {
+    const response = await apiClient.post(
       `${this.baseUrl}/conversations/${conversationId}/messages/${messageId}/attachments`,
-      formData
+      req
     ) as any;
     return this.unwrapPayload<AttachmentDTO>(response, 'attachment');
   }
@@ -308,6 +314,58 @@ export class ChatService {
     const response = await apiClient.get(`${this.baseUrl}/users`, { page_size: 200 }) as any;
     return this.unwrapPayload<UserOption[]>(response, 'users') || [];
   }
+
+  // ============================================================================
+  // Real-time SSE subscription
+  // ============================================================================
+
+  /**
+   * Subscribe to real-time chat events via Server-Sent Events.
+   * Returns a cleanup function that closes the connection.
+   */
+  subscribeToChatEvents(
+    onMessage: (event: ChatSSEEvent) => void,
+    onError?: (error: Error) => void
+  ): () => void {
+    const url = this.buildChatStreamUrl();
+    const eventSource = new EventSource(url, { withCredentials: true });
+
+    eventSource.onmessage = (ev) => {
+      try {
+        const event = JSON.parse(ev.data) as ChatSSEEvent;
+        if (event.type !== 'heartbeat' && event.type !== 'connected') {
+          onMessage(event);
+        }
+      } catch (err) {
+        console.error('Failed to parse chat SSE event:', err);
+        onError?.(err as Error);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error('Chat SSE stream error:', err);
+      onError?.(new Error('Chat stream connection error'));
+    };
+
+    return () => eventSource.close();
+  }
+
+  private buildChatStreamUrl(): string {
+    const base = resolveApiBaseUrl();
+    const url = new URL(`${base}/api/v1/chat/events`);
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      if (token) url.searchParams.set('token', token);
+    }
+    return url.toString();
+  }
+}
+
+// SSE event shape emitted by the backend /chat/events stream
+export interface ChatSSEEvent {
+  type: 'new_message' | 'heartbeat' | 'connected' | string;
+  conversation_id?: string;
+  message?: MessageDTO;
 }
 
 // Export singleton instance

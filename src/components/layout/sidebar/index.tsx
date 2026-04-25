@@ -91,7 +91,8 @@ export const Sidebar = component$(() => {
         { id: 'attendance', label: 'Attendance', href: '/masters/attendance', icon: 'i-heroicons-clipboard-document-list-solid' },
         { id: 'reports', label: 'Reports', href: '/analytics/reports', icon: 'i-heroicons-document-chart-bar-solid' },
         { id: 'dashboards', label: 'Dashboards', href: '/analytics/dashboards', icon: 'i-heroicons-document-chart-bar-solid' },
-         { id: 'notifications', label: 'Notifications', href: '/notifications', icon: 'i-heroicons-document-chart-bar-solid' }
+        { id: 'chat', label: 'Chat', href: '/chat', icon: 'i-heroicons-chat-bubble-left-right-solid' },
+        { id: 'notifications', label: 'Notifications', href: '/notifications', icon: 'i-heroicons-document-chart-bar-solid' }
       ]
     }
   ];

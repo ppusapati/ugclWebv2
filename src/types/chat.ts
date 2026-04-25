@@ -139,6 +139,16 @@ export interface AddReactionRequest {
   reaction: string;
 }
 
+export interface SendAttachmentRequest {
+  dms_file_id?: string;
+  dms_file_url?: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  thumbnail_url?: string;
+  metadata?: Record<string, any>;
+}
+
 // Response types
 export interface ConversationListResponse {
   conversations: ConversationDTO[];
