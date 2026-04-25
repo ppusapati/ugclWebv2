@@ -1,6 +1,7 @@
 import { component$, $, useSignal } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
+import { Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, FormField, PageHeader, SectionCard } from "~/components/ds";
 import { apiClient, createSSRApiClient } from "~/services";
 
 interface BusinessVertical {
@@ -33,11 +34,11 @@ export const useVerticalLoader = routeLoader$(async (requestEvent) => {
 });
 
 export default component$(() => {
-  console.log('🚀 Business Verticals Component Rendered');
+  console.log('Business Verticals Component Rendered');
 
   // Get data from routeLoader$
   const verticalsData = useVerticalLoader();
-  console.log('📦 Route Loader Data:', verticalsData.value);
+  console.log('Route Loader Data:', verticalsData.value);
 
   // Handle different response structures: { data: [...] } or { verticals: [...] }
   const initialVerticals = verticalsData.value.data || verticalsData.value.verticals || [];
@@ -195,23 +196,21 @@ export default component$(() => {
 
         {!loading.value && (
           <>
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold">Business Verticals</h1>
-            <p class="text-gray-600 text-sm mt-1">
-              Manage your organization's business units (WATER, SOLAR, HO, etc.)
-            </p>
-          </div>
-          <button
-            class="inline-flex items-center justify-center px-4 py-2 bg-secondary-600 text-white rounded-md font-medium text-sm hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-secondary-500 transition-colors border-none"
+        <PageHeader
+          title="Business Verticals"
+          subtitle="Manage your organization's business units (WATER, SOLAR, HO, etc.)"
+        >
+          <Btn
+            q:slot="actions"
+            variant="primary"
             onClick$={() => {
               showCreateModal.value = true;
               editingVertical.value = null;
             }}
           >
             + Create Business Vertical
-          </button>
-        </div>
+          </Btn>
+        </PageHeader>
 
         {/* Success/Error Messages */}
         {success.value && (
@@ -226,59 +225,42 @@ export default component$(() => {
         )}
 
         {/* Business Verticals Table */}
-        <div class="bg-white border rounded-lg overflow-hidden shadow">
-          <table class="w-full">
-            <thead class="bg-gray-50 border-b">
+        <SectionCard class="p-0 overflow-hidden">
+          <DataTable class="rounded-none border-0">
+            <DataTableHead>
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Code
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <DataTableHeaderCell>Name</DataTableHeaderCell>
+                <DataTableHeaderCell>Code</DataTableHeaderCell>
+                <DataTableHeaderCell>Description</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell>Actions</DataTableHeaderCell>
               </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            </DataTableHead>
+            <DataTableBody>
               {verticals.value.map((vertical) => (
-                <tr key={vertical.id} class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap">
+                <DataTableRow key={vertical.id}>
+                  <DataTableCell class="whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">
                       {vertical.name}
                     </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">
-                      {vertical.code}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4">
+                  </DataTableCell>
+                  <DataTableCell class="whitespace-nowrap">
+                    <Badge variant="info">{vertical.code}</Badge>
+                  </DataTableCell>
+                  <DataTableCell>
                     <div class="text-sm text-gray-600">
                       {vertical.description}
                     </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class={`px-2 py-1 text-xs rounded ${
-                        vertical.is_active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
+                  </DataTableCell>
+                  <DataTableCell class="whitespace-nowrap">
+                    <Badge variant={vertical.is_active ? "success" : "neutral"}>
                       {vertical.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm gap-1 flex">
-                    <button
-                      class="btn btn-primary"
+                    </Badge>
+                  </DataTableCell>
+                  <DataTableCell class="whitespace-nowrap text-sm gap-1 flex">
+                    <Btn
+                      size="sm"
+                      variant="primary"
                       onClick$={() => {
                         editingVertical.value = { ...vertical };
                         showCreateModal.value = true;
@@ -289,9 +271,10 @@ export default component$(() => {
                     Edit
                   </span>
 
-                    </button>
-                    <button
-                      class="btn btn-danger"
+                    </Btn>
+                    <Btn
+                      size="sm"
+                      variant="danger"
                       onClick$={() => handleDelete(vertical.id)}
                     >
                      <span class="flex gap-1">
@@ -299,24 +282,24 @@ export default component$(() => {
                     Delete
                   </span>
 
-                    </button>
-                  </td>
-                </tr>
+                    </Btn>
+                  </DataTableCell>
+                </DataTableRow>
               ))}
               {verticals.value.length === 0 && (
-                <tr>
-                  <td
+                <DataTableRow>
+                  <DataTableCell
                     colSpan={5}
                     class="px-6 py-12 text-center text-gray-500"
                   >
                     No business verticals found. Create your first one to get
                     started.
-                  </td>
-                </tr>
+                  </DataTableCell>
+                </DataTableRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </DataTableBody>
+          </DataTable>
+        </SectionCard>
 
         {/* Create/Edit Modal */}
         {showCreateModal.value && (
@@ -330,11 +313,9 @@ export default component$(() => {
                 </h3>
 
                 <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Name *
-                    </label>
+                  <FormField id="business-vertical-name" label="Name" required>
                     <input
+                      id="business-vertical-name"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={
@@ -352,13 +333,11 @@ export default component$(() => {
                       }}
                       placeholder="e.g., Water Works"
                     />
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Code *
-                    </label>
+                  <FormField id="business-vertical-code" label="Code" required>
                     <input
+                      id="business-vertical-code"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={
@@ -379,13 +358,11 @@ export default component$(() => {
                     <p class="text-xs text-gray-500 mt-1">
                       Unique identifier for this vertical (uppercase)
                     </p>
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
+                  <FormField id="business-vertical-description" label="Description">
                     <textarea
+                      id="business-vertical-description"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={3}
                       value={
@@ -403,7 +380,7 @@ export default component$(() => {
                       }}
                       placeholder="Describe this business vertical..."
                     />
-                  </div>
+                  </FormField>
 
                   <div class="flex items-center">
                     <input
@@ -434,8 +411,8 @@ export default component$(() => {
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
-                  <button
-                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                  <Btn
+                    variant="secondary"
                     onClick$={() => {
                       showCreateModal.value = false;
                       editingVertical.value = null;
@@ -448,13 +425,13 @@ export default component$(() => {
                     }}
                   >
                     Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  </Btn>
+                  <Btn
+                    variant="primary"
                     onClick$={editingVertical.value ? handleUpdate : handleCreate}
                   >
                     {editingVertical.value ? "Update" : "Create"}
-                  </button>
+                  </Btn>
                 </div>
               </div>
             </div>

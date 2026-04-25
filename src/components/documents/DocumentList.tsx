@@ -1,6 +1,7 @@
 import { component$, isServer, useStore, useTask$, $, type QRL } from '@builder.io/qwik';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentListParams, DocumentStatus } from '~/types/document';
+import { Btn } from '~/components/ds';
 
 interface DocumentListProps {
   businessVerticalId?: string;
@@ -124,6 +125,11 @@ export const DocumentList = component$<DocumentListProps>((props) => {
     loadDocuments();
   });
 
+  const getDocumentIconClass = (fileName: string) =>
+    documentService.isImage(fileName)
+      ? 'i-heroicons-photo-solid text-indigo-500'
+      : 'i-heroicons-document-text-solid text-gray-500';
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -178,22 +184,26 @@ export const DocumentList = component$<DocumentListProps>((props) => {
 
           {/* View Mode Toggle */}
           <div class="flex items-center gap-2">
-            <button
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`p-2 rounded ${state.viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
               onClick$={() => (state.viewMode = 'list')}
             >
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
               </svg>
-            </button>
-            <button
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`p-2 rounded ${state.viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
               onClick$={() => (state.viewMode = 'grid')}
             >
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
-            </button>
+            </Btn>
           </div>
         </div>
 
@@ -302,9 +312,7 @@ export const DocumentList = component$<DocumentListProps>((props) => {
                     <div class="flex items-center">
                       <div class="flex-shrink-0 h-10 w-10">
                         <div class="h-10 w-10 rounded bg-gray-100 flex items-center justify-center">
-                          <span class="text-xl">
-                            {documentService.isImage(document.file_name) ? '🖼️' : '📄'}
-                          </span>
+                          <i class={`${getDocumentIconClass(document.file_name)} h-5 w-5 inline-block`} aria-hidden="true"></i>
                         </div>
                       </div>
                       <div class="ml-4">
@@ -375,9 +383,7 @@ export const DocumentList = component$<DocumentListProps>((props) => {
                 </div>
               )}
               <div class="flex items-center justify-center h-32 bg-gray-100 rounded mb-3">
-                <span class="text-4xl">
-                  {documentService.isImage(document.file_name) ? '🖼️' : '📄'}
-                </span>
+                <i class={`${getDocumentIconClass(document.file_name)} h-10 w-10 inline-block`} aria-hidden="true"></i>
               </div>
               <h4 class="text-sm font-medium text-gray-900 truncate mb-1">{document.title}</h4>
               <p class="text-xs text-gray-500 truncate mb-2">{document.file_name}</p>
@@ -399,20 +405,24 @@ export const DocumentList = component$<DocumentListProps>((props) => {
             Page {state.page} of {state.pages}
           </div>
           <div class="flex gap-2">
-            <button
+            <Btn
+              size="sm"
+              variant="secondary"
               class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               onClick$={() => handlePageChange(state.page - 1)}
               disabled={state.page === 1}
             >
               Previous
-            </button>
-            <button
+            </Btn>
+            <Btn
+              size="sm"
+              variant="secondary"
               class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               onClick$={() => handlePageChange(state.page + 1)}
               disabled={state.page === state.pages}
             >
               Next
-            </button>
+            </Btn>
           </div>
         </div>
       )}

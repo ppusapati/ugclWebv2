@@ -1,6 +1,7 @@
 // src/routes/admin/attributes/index.tsx
 import { component$, isServer, useStore, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { apiClient } from '~/services';
+import { Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, FormField, PageHeader } from '~/components/ds';
 
 interface Attribute {
   id: string;
@@ -204,22 +205,11 @@ export default component$(() => {
 
   return (
     <div class="space-y-6">
-      {/* Header */}
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Attribute Management</h1>
-          <p class="text-gray-600 mt-1">Define and manage user and resource attributes for ABAC policies</p>
-        </div>
-        <button
-          onClick$={openCreateModal}
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+      <PageHeader title="Attribute Management" subtitle="Define and manage user and resource attributes for ABAC policies">
+        <Btn q:slot="actions" onClick$={openCreateModal}>
           Create Attribute
-        </button>
-      </div>
+        </Btn>
+      </PageHeader>
 
       {/* Error Message */}
       {error.value && (
@@ -231,20 +221,20 @@ export default component$(() => {
       {/* Filters */}
       <div class="bg-white rounded-lg shadow p-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <FormField id="attributes-search" label="Search">
             <input
+              id="attributes-search"
               type="text"
               value={filters.search}
               onInput$={(e) => (filters.search = (e.target as HTMLInputElement).value)}
               placeholder="Search attributes..."
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+          <FormField id="attributes-category" label="Category">
             <select
+              id="attributes-category"
               value={filters.category}
               onChange$={(e) => (filters.category = (e.target as HTMLSelectElement).value)}
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -256,11 +246,11 @@ export default component$(() => {
                 </option>
               ))}
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Data Type</label>
+          <FormField id="attributes-data-type" label="Data Type">
             <select
+              id="attributes-data-type"
               value={filters.dataType}
               onChange$={(e) => (filters.dataType = (e.target as HTMLSelectElement).value)}
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -272,7 +262,7 @@ export default component$(() => {
               <option value="date">Date</option>
               <option value="json">JSON</option>
             </select>
-          </div>
+          </FormField>
         </div>
       </div>
 
@@ -288,73 +278,77 @@ export default component$(() => {
             <p>No attributes found</p>
           </div>
         ) : (
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <DataTable>
+            <DataTableHead>
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Type</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Required</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">System</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <DataTableHeaderCell>Name</DataTableHeaderCell>
+                <DataTableHeaderCell>Category</DataTableHeaderCell>
+                <DataTableHeaderCell>Data Type</DataTableHeaderCell>
+                <DataTableHeaderCell>Required</DataTableHeaderCell>
+                <DataTableHeaderCell>System</DataTableHeaderCell>
+                <DataTableHeaderCell class="text-right">Actions</DataTableHeaderCell>
               </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            </DataTableHead>
+            <DataTableBody>
               {filteredAttributes.map((attribute) => (
-                <tr key={attribute.id} class="hover:bg-gray-50">
-                  <td class="px-6 py-4">
-                    <div>
-                      <div class="text-sm font-medium text-gray-900">{attribute.display_name}</div>
-                      <div class="text-sm text-gray-500">{attribute.name}</div>
-                      {attribute.description && (
-                        <div class="text-xs text-gray-500 mt-1">{attribute.description}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {attribute.category || 'General'}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                      {attribute.data_type}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-900">
+                <DataTableRow key={attribute.id}>
+                  <DataTableCell>
+                    <div class="text-sm font-medium text-neutral-900">{attribute.display_name}</div>
+                    <div class="text-sm text-neutral-500">{attribute.name}</div>
+                    {attribute.description && (
+                      <div class="text-xs text-neutral-500 mt-1">{attribute.description}</div>
+                    )}
+                  </DataTableCell>
+                  <DataTableCell>
+                    <Badge variant="info">{attribute.category || 'General'}</Badge>
+                  </DataTableCell>
+                  <DataTableCell>
+                    <Badge variant="neutral">{attribute.data_type}</Badge>
+                  </DataTableCell>
+                  <DataTableCell class="text-sm text-neutral-900">
                     {attribute.is_required ? (
-                      <span class="text-green-600">✓ Yes</span>
+                      <span class="text-success-600 inline-flex items-center gap-1">
+                        <i class="i-heroicons-check-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
+                        Yes
+                      </span>
                     ) : (
-                      <span class="text-gray-400">No</span>
+                      <span class="text-neutral-400">No</span>
                     )}
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-900">
+                  </DataTableCell>
+                  <DataTableCell class="text-sm text-neutral-900">
                     {attribute.is_system ? (
-                      <span class="text-orange-600">✓ System</span>
+                      <span class="text-warning-600 inline-flex items-center gap-1">
+                        <i class="i-heroicons-check-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
+                        System
+                      </span>
                     ) : (
-                      <span class="text-gray-400">Custom</span>
+                      <span class="text-neutral-400">Custom</span>
                     )}
-                  </td>
-                  <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                    <button
-                      onClick$={() => openEditModal(attribute)}
-                      class="text-indigo-600 hover:text-indigo-900"
-                      disabled={attribute.is_system}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick$={() => handleDelete(attribute.id, attribute.name)}
-                      class="text-red-600 hover:text-red-900"
-                      disabled={attribute.is_system}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                  </DataTableCell>
+                  <DataTableCell class="text-right">
+                    <div class="flex justify-end gap-2">
+                      <Btn
+                        size="sm"
+                        variant="primary"
+                        onClick$={() => openEditModal(attribute)}
+                        disabled={attribute.is_system}
+                      >
+                        Edit
+                      </Btn>
+                      <Btn
+                        size="sm"
+                        variant="danger"
+                        onClick$={() => handleDelete(attribute.id, attribute.name)}
+                        disabled={attribute.is_system}
+                      >
+                        Delete
+                      </Btn>
+                    </div>
+                  </DataTableCell>
+                </DataTableRow>
               ))}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         )}
       </div>
 
@@ -369,49 +363,55 @@ export default component$(() => {
 
               <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <FormField id="attr-name" label="Name" required hint="Unique identifier (dot notation)">
                     <input
+                      id="attr-name"
                       type="text"
                       value={form.name}
                       onInput$={(e) => (form.name = (e.target as HTMLInputElement).value)}
                       placeholder="e.g., user.department"
+                      required
+                      aria-required="true"
+                      aria-describedby="attr-name-hint"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     />
-                    <p class="text-xs text-gray-500 mt-1">Unique identifier (dot notation)</p>
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Display Name *</label>
+                  <FormField id="attr-display-name" label="Display Name" required>
                     <input
+                      id="attr-display-name"
                       type="text"
                       value={form.display_name}
                       onInput$={(e) => (form.display_name = (e.target as HTMLInputElement).value)}
                       placeholder="e.g., Department"
+                      required
+                      aria-required="true"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     />
-                  </div>
+                  </FormField>
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <FormField id="attr-description" label="Description">
                   <textarea
+                    id="attr-description"
                     value={form.description}
                     onInput$={(e) => (form.description = (e.target as HTMLTextAreaElement).value)}
                     rows={2}
                     placeholder="Describe this attribute..."
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   ></textarea>
-                </div>
+                </FormField>
 
                 <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Data Type *</label>
+                  <FormField id="attr-data-type" label="Data Type" required>
                     <select
+                      id="attr-data-type"
                       value={form.data_type}
                       onChange$={(e) =>
                         (form.data_type = (e.target as HTMLSelectElement).value as any)
                       }
+                      required
+                      aria-required="true"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="string">String</option>
@@ -420,18 +420,18 @@ export default component$(() => {
                       <option value="date">Date</option>
                       <option value="json">JSON</option>
                     </select>
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <FormField id="attr-category" label="Category">
                     <input
+                      id="attr-category"
                       type="text"
                       value={form.category}
                       onInput$={(e) => (form.category = (e.target as HTMLInputElement).value)}
                       placeholder="e.g., user, resource, system"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     />
-                  </div>
+                  </FormField>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -443,39 +443,38 @@ export default component$(() => {
                         onChange$={(e) => (form.is_required = (e.target as HTMLInputElement).checked)}
                         class="mr-2"
                       />
-                      <span class="text-sm font-medium text-gray-700">Required Attribute</span>
+                      <span class="text-sm font-medium text-neutral-700">Required Attribute</span>
                     </label>
                   </div>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Value</label>
+                  <FormField id="attr-default-value" label="Default Value">
                     <input
+                      id="attr-default-value"
                       type="text"
                       value={form.default_value}
                       onInput$={(e) => (form.default_value = (e.target as HTMLInputElement).value)}
                       placeholder="Optional default value"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     />
-                  </div>
+                  </FormField>
                 </div>
               </div>
 
               <div class="flex justify-end gap-3 mt-6">
-                <button
-                  class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                <Btn
+                  variant="secondary"
                   onClick$={() => {
                     showModal.value = false;
                     editingAttribute.value = null;
                   }}
                 >
                   Cancel
-                </button>
-                <button
-                  class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+                </Btn>
+                <Btn
                   onClick$={handleSave}
                 >
                   {editingAttribute.value ? 'Update' : 'Create'}
-                </button>
+                </Btn>
               </div>
             </div>
           </div>

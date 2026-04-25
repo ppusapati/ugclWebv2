@@ -1,4 +1,5 @@
 import { Signal, component$, useStylesScoped$, $, useComputed$ } from '@builder.io/qwik';
+import { Btn } from '~/components/ds';
 
 interface pageProps {
   pageNo: Signal<number>,
@@ -79,14 +80,14 @@ export const Pagination = component$((props: pageProps) => {
         </div>
       </div>
       <div class='btn-cont'>
-        <button disabled={props.pageNo.value === 0} onClick$={setFirstPage}>
+        <Btn size="sm" variant="secondary" disabled={props.pageNo.value === 0} onClick$={setFirstPage}>
           &lt;&lt;
-        </button>
-        <button onClick$={decPage}>&lt;</button>
-        <button onClick$={incPage}>&gt;</button>
-        <button disabled={props.pageNo.value === totalPage.value-1} onClick$={setLastPage}>
+        </Btn>
+        <Btn size="sm" variant="secondary" onClick$={decPage}>&lt;</Btn>
+        <Btn size="sm" variant="secondary" onClick$={incPage}>&gt;</Btn>
+        <Btn size="sm" variant="secondary" disabled={props.pageNo.value === totalPage.value-1} onClick$={setLastPage}>
           &gt;&gt;
-        </button>
+        </Btn>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import {
   useTask$,
   PropFunction,
 } from '@builder.io/qwik';
+import { Btn } from '~/components/ds';
 
 interface ColumnItem {
   key: string;
@@ -150,7 +151,7 @@ export const DualListbox = component$((props: DualListboxProps) => {
 
       <div 
         class="flex gap-6 items-stretch"
-        style={{ height: props.fixedHeight || '400px' }}
+        style={{ '--dual-list-height': props.fixedHeight || '400px' }}
       >
         {/* LEFT: Available columns */}
         <div class="flex-1 min-w-0">
@@ -167,16 +168,12 @@ export const DualListbox = component$((props: DualListboxProps) => {
               role="listbox"
               aria-label="Available columns"
               aria-multiselectable="true"
-              class="h-full overflow-y-auto bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-lg p-3 space-y-2"
-              style={{ 
-                maxHeight: `calc(${props.fixedHeight || '400px'} - 80px)`,
-                minHeight: `calc(${props.fixedHeight || '400px'} - 80px)`
-              }}
+              class="h-full overflow-y-auto bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-lg p-3 space-y-2 max-h-[calc(var(--dual-list-height)_-_80px)] min-h-[calc(var(--dual-list-height)_-_80px)]"
             >
               {!leftList.keys?.length && (
                 <li class="flex items-center justify-center h-32 text-slate-400 text-sm">
                   <div class="text-center">
-                    <div class="text-2xl mb-2">📋</div>
+                    <i class="i-heroicons-clipboard-document-list-solid mb-2 inline-block h-8 w-8" aria-hidden="true"></i>
                     <div>No columns available</div>
                   </div>
                 </li>
@@ -213,49 +210,57 @@ export const DualListbox = component$((props: DualListboxProps) => {
         {/* MIDDLE: Control buttons */}
         <div class="flex flex-col items-center justify-center gap-3 px-2">
           <div class="flex flex-col gap-2">
-            <button
+            <Btn
+              size="sm"
+              variant="primary"
               disabled={!leftList.selected?.size}
               onClick$={moveToRight}
               class="group relative w-12 h-12 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg hover:shadow-xl disabled:from-slate-300 disabled:to-slate-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:scale-100"
               title="Add selected columns"
             >
-              <span class="text-lg font-bold">→</span>
+              <i class="i-heroicons-arrow-right-solid h-5 w-5 inline-block" aria-hidden="true"></i>
               <div class="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-            </button>
+            </Btn>
             
-            <button
+            <Btn
+              size="sm"
+              variant="primary"
               disabled={!leftList.keys?.length}
               onClick$={moveAllToRight}
               class="group relative w-12 h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl disabled:from-slate-300 disabled:to-slate-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:scale-100"
               title="Add all columns"
             >
-              <span class="text-sm font-bold">⇒</span>
+              <i class="i-heroicons-chevron-double-right-solid h-5 w-5 inline-block" aria-hidden="true"></i>
               <div class="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-            </button>
+            </Btn>
           </div>
 
           <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent"></div>
 
           <div class="flex flex-col gap-2">
-            <button
+            <Btn
+              size="sm"
+              variant="secondary"
               disabled={!rightList.selected?.size}
               onClick$={moveToLeft}
               class="group relative w-12 h-12 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg hover:shadow-xl disabled:from-slate-300 disabled:to-slate-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:scale-100"
               title="Remove selected columns"
             >
-              <span class="text-lg font-bold">←</span>
+              <i class="i-heroicons-arrow-left-solid h-5 w-5 inline-block" aria-hidden="true"></i>
               <div class="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-            </button>
+            </Btn>
             
-            <button
+            <Btn
+              size="sm"
+              variant="secondary"
               disabled={!rightList.keys?.length}
               onClick$={moveAllToLeft}
               class="group relative w-12 h-12 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:shadow-xl disabled:from-slate-300 disabled:to-slate-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:scale-100"
               title="Remove all columns"
             >
-              <span class="text-sm font-bold">⇐</span>
+              <i class="i-heroicons-chevron-double-left-solid h-5 w-5 inline-block" aria-hidden="true"></i>
               <div class="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-            </button>
+            </Btn>
           </div>
         </div>
 
@@ -273,16 +278,12 @@ export const DualListbox = component$((props: DualListboxProps) => {
             <ul
               class={`h-full overflow-y-auto bg-white/80 backdrop-blur-sm rounded-xl border shadow-lg p-3 space-y-2 transition-all duration-200 ${
                 isDragActive.value ? 'border-secondary-300 bg-secondary-50/50' : 'border-slate-200/60'
-              }`}
-              style={{ 
-                maxHeight: `calc(${props.fixedHeight || '400px'} - 80px)`,
-                minHeight: `calc(${props.fixedHeight || '400px'} - 80px)`
-              }}
+              } max-h-[calc(var(--dual-list-height)_-_80px)] min-h-[calc(var(--dual-list-height)_-_80px)]`}
             >
               {!rightList.keys?.length && (
                 <li class="flex items-center justify-center h-32 text-slate-400 text-sm">
                   <div class="text-center">
-                    <div class="text-2xl mb-2">🎯</div>
+                    <i class="i-heroicons-cursor-arrow-rays-solid mb-2 inline-block h-8 w-8" aria-hidden="true"></i>
                     <div>Drag columns here</div>
                     <div class="text-xs mt-1">or use the arrow buttons</div>
                   </div>

@@ -1,6 +1,7 @@
 // src/routes/admin/workflows/index.tsx
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
+import { Badge, Btn, PageHeader, SectionCard } from '~/components/ds';
 import WorkflowDesigner from '~/components/form-builder/workflow/WorkflowDesigner';
 import { createSSRApiClient, workflowService } from '~/services';
 import type { WorkflowDefinition } from '~/types/workflow';
@@ -97,29 +98,21 @@ export default component$(() => {
   });
 
   return (
-    <div class="max-w-7xl mx-auto py-4">
-      {/* Header */}
-      <div class="mb-6 flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Workflow Management</h1>
-          <p class="text-gray-600 mt-1">Create and manage workflow state machines</p>
-        </div>
+    <div class="space-y-6">
+      <PageHeader title="Workflow Management" subtitle="Create and manage workflow state machines">
         {!showDesigner.value && (
-          <button
-            onClick$={handleCreateNew}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2"
-          >
+          <Btn q:slot="actions" onClick$={handleCreateNew} class="flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Create New Workflow
-          </button>
+          </Btn>
         )}
-      </div>
+      </PageHeader>
 
       {/* Show Designer or List */}
       {showDesigner.value ? (
-        <div class="bg-white rounded-lg shadow-sm">
+        <SectionCard class="p-0 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900">
               {isEditing.value ? `Edit: ${selectedWorkflow.value?.name}` : 'Create New Workflow'}
@@ -132,7 +125,7 @@ export default component$(() => {
               onCancel$={handleCancel}
             />
           </div>
-        </div>
+        </SectionCard>
       ) : (
         <>
           {/* Loading State */}
@@ -153,7 +146,7 @@ export default component$(() => {
           {!loading.value && !error.value && (
             <>
               {workflows.value.length === 0 ? (
-                <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+                <SectionCard class="p-12 text-center">
                   <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -161,13 +154,13 @@ export default component$(() => {
                   <p class="mt-1 text-sm text-gray-500">
                     Get started by creating a new workflow
                   </p>
-                </div>
+                </SectionCard>
               ) : (
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {workflows.value.map((workflow) => (
-                    <div
+                    <SectionCard
                       key={workflow.id}
-                      class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                      class="p-0 overflow-hidden hover:shadow-md transition-shadow"
                     >
                       {/* Card Header */}
                       <div class="px-6 py-4 border-b border-gray-200">
@@ -200,28 +193,30 @@ export default component$(() => {
                         {/* Initial State */}
                         <div class="text-sm">
                           <span class="text-gray-500">Initial State:</span>
-                          <span class="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded font-medium">
-                            {workflow.initial_state}
+                          <span class="ml-2">
+                            <Badge variant="neutral">{workflow.initial_state}</Badge>
                           </span>
                         </div>
                       </div>
 
                       {/* Card Footer */}
                       <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2 rounded-b-lg">
-                        <button
+                        <Btn
+                          size="sm"
+                          variant="primary"
                           onClick$={() => handleEdit(workflow)}
-                          class="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded font-medium"
                         >
                           Edit
-                        </button>
-                        <button
+                        </Btn>
+                        <Btn
+                          size="sm"
+                          variant="danger"
                           onClick$={() => handleDelete(workflow)}
-                          class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded font-medium"
                         >
                           Delete
-                        </button>
+                        </Btn>
                       </div>
-                    </div>
+                    </SectionCard>
                   ))}
                 </div>
               )}

@@ -1,6 +1,7 @@
 // src/routes/register/index.tsx
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
+import { Alert, Btn, SectionCard } from '~/components/ds';
 import { authService } from '~/services';
 
 export default component$(() => {
@@ -136,19 +137,19 @@ export default component$(() => {
         {/* Logo and Title */}
         <div class="text-center mb-8">
           <h1 class="text-4xl font-bold text-primary-600 mb-2">UGCL</h1>
-          <h2 class="text-2xl font-semibold text-dark-800">Create Account</h2>
-          <p class="text-dark-600 mt-2">Sign up to get started</p>
+          <h2 class="text-2xl font-semibold text-neutral-800">Create Account</h2>
+          <p class="text-neutral-600 mt-2">Sign up to get started</p>
         </div>
 
         {/* Registration Card */}
-        <div class="card bg-white shadow-xl rounded-2xl p-8">
+        <SectionCard class="p-8 shadow-xl">
           {success.value ? (
             <div class="text-center py-8">
-              <div class="text-success-500 text-6xl mb-4">✓</div>
-              <h3 class="text-2xl font-semibold text-dark-800 mb-2">
+              <i class="i-heroicons-check-circle-solid h-16 w-16 inline-block text-success-500 mb-4" aria-hidden="true"></i>
+              <h3 class="text-2xl font-semibold text-neutral-800 mb-2">
                 Registration Successful!
               </h3>
-              <p class="text-dark-600">
+              <p class="text-neutral-600">
                 Redirecting you to dashboard...
               </p>
             </div>
@@ -156,8 +157,8 @@ export default component$(() => {
             <form onSubmit$={handleSubmit} preventdefault:submit>
               {/* Name Field */}
               <div class="form-group mb-5">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Full Name <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Full Name <span class="text-error-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -169,19 +170,19 @@ export default component$(() => {
                     };
                   }}
                   class={`form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                    errors.value.name ? 'border-danger-500 focus:ring-danger-400' : 'border-light-300 focus:ring-primary-400'
+                    errors.value.name ? 'border-error-500 focus:ring-error-400' : 'border-neutral-300 focus:ring-primary-400'
                   }`}
                   placeholder="Enter your full name"
                 />
                 {errors.value.name && (
-                  <p class="form-error text-danger-600 text-sm mt-1">{errors.value.name}</p>
+                  <p class="form-error text-error-600 text-sm mt-1">{errors.value.name}</p>
                 )}
               </div>
 
               {/* Email Field */}
               <div class="form-group mb-5">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Email Address <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Email Address <span class="text-error-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -193,19 +194,19 @@ export default component$(() => {
                     };
                   }}
                   class={`form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                    errors.value.email ? 'border-danger-500 focus:ring-danger-400' : 'border-light-300 focus:ring-primary-400'
+                    errors.value.email ? 'border-error-500 focus:ring-error-400' : 'border-neutral-300 focus:ring-primary-400'
                   }`}
                   placeholder="your.email@example.com"
                 />
                 {errors.value.email && (
-                  <p class="form-error text-danger-600 text-sm mt-1">{errors.value.email}</p>
+                  <p class="form-error text-error-600 text-sm mt-1">{errors.value.email}</p>
                 )}
               </div>
 
               {/* Phone Field */}
               <div class="form-group mb-5">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Phone Number <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Phone Number <span class="text-error-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -218,20 +219,20 @@ export default component$(() => {
                     };
                   }}
                   class={`form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                    errors.value.phone ? 'border-danger-500 focus:ring-danger-400' : 'border-light-300 focus:ring-primary-400'
+                    errors.value.phone ? 'border-error-500 focus:ring-error-400' : 'border-neutral-300 focus:ring-primary-400'
                   }`}
                   placeholder="10-digit mobile number"
                   maxLength={10}
                 />
                 {errors.value.phone && (
-                  <p class="form-error text-danger-600 text-sm mt-1">{errors.value.phone}</p>
+                  <p class="form-error text-error-600 text-sm mt-1">{errors.value.phone}</p>
                 )}
               </div>
 
               {/* Password Field */}
               <div class="form-group mb-5">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Password <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Password <span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -245,45 +246,50 @@ export default component$(() => {
                       await updatePasswordStrength();
                     }}
                     class={`form-input w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.value.password ? 'border-danger-500 focus:ring-danger-400' : 'border-light-300 focus:ring-primary-400'
+                      errors.value.password ? 'border-error-500 focus:ring-error-400' : 'border-neutral-300 focus:ring-primary-400'
                     }`}
                     placeholder="Create a strong password"
                   />
-                  <button
+                  <Btn
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => {
                       showPassword.value = !showPassword.value;
                     }}
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-dark-600"
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   >
-                    {showPassword.value ? '👁️' : '👁️‍🗨️'}
-                  </button>
+                    <i
+                      class={`${showPassword.value ? 'i-heroicons-eye-slash-solid' : 'i-heroicons-eye-solid'} h-5 w-5 inline-block`}
+                      aria-hidden="true"
+                    ></i>
+                  </Btn>
                 </div>
                 {formData.value.password && (
                   <div class="mt-2">
                     <div class="flex justify-between text-xs mb-1">
-                      <span class="text-dark-600">Password Strength:</span>
+                      <span class="text-neutral-600">Password Strength:</span>
                       <span class={`text-${getStrengthColor()}-600 font-semibold`}>
                         {getStrengthText()}
                       </span>
                     </div>
-                    <div class="w-full bg-light-200 rounded-full h-2">
+                    <div class="w-full bg-neutral-200 rounded-full h-2">
                       <div
-                        class={`bg-${getStrengthColor()}-500 h-2 rounded-full transition-all duration-300`}
-                        style={`width: ${passwordStrength.value}%`}
+                        class={`bg-${getStrengthColor()}-500 h-2 rounded-full transition-all duration-300 w-[var(--progress-width)]`}
+                        style={{ '--progress-width': `${passwordStrength.value}%` }}
                       ></div>
                     </div>
                   </div>
                 )}
                 {errors.value.password && (
-                  <p class="form-error text-danger-600 text-sm mt-1">{errors.value.password}</p>
+                  <p class="form-error text-error-600 text-sm mt-1">{errors.value.password}</p>
                 )}
               </div>
 
               {/* Confirm Password Field */}
               <div class="form-group mb-5">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Confirm Password <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Confirm Password <span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -296,22 +302,27 @@ export default component$(() => {
                       };
                     }}
                     class={`form-input w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.value.confirmPassword ? 'border-danger-500 focus:ring-danger-400' : 'border-light-300 focus:ring-primary-400'
+                      errors.value.confirmPassword ? 'border-error-500 focus:ring-error-400' : 'border-neutral-300 focus:ring-primary-400'
                     }`}
                     placeholder="Re-enter your password"
                   />
-                  <button
+                  <Btn
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => {
                       showConfirmPassword.value = !showConfirmPassword.value;
                     }}
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-dark-600"
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   >
-                    {showConfirmPassword.value ? '👁️' : '👁️‍🗨️'}
-                  </button>
+                    <i
+                      class={`${showConfirmPassword.value ? 'i-heroicons-eye-slash-solid' : 'i-heroicons-eye-solid'} h-5 w-5 inline-block`}
+                      aria-hidden="true"
+                    ></i>
+                  </Btn>
                 </div>
                 {errors.value.confirmPassword && (
-                  <p class="form-error text-danger-600 text-sm mt-1">{errors.value.confirmPassword}</p>
+                  <p class="form-error text-error-600 text-sm mt-1">{errors.value.confirmPassword}</p>
                 )}
               </div>
 
@@ -329,7 +340,7 @@ export default component$(() => {
                     }}
                     class="form-checkbox mt-1 mr-2"
                   />
-                  <span class="text-sm text-dark-600">
+                  <span class="text-sm text-neutral-600">
                     I accept the{' '}
                     <a href="/terms" class="text-primary-600 hover:underline">
                       Terms and Conditions
@@ -341,29 +352,29 @@ export default component$(() => {
                   </span>
                 </label>
                 {errors.value.acceptTerms && (
-                  <p class="form-error text-danger-600 text-sm mt-1">{errors.value.acceptTerms}</p>
+                  <p class="form-error text-error-600 text-sm mt-1">{errors.value.acceptTerms}</p>
                 )}
               </div>
 
               {/* Submit Error */}
               {errors.value.submit && (
-                <div class="alert-danger mb-5">
+                <Alert variant="error" class="mb-5">
                   {errors.value.submit}
-                </div>
+                </Alert>
               )}
 
               {/* Submit Button */}
-              <button
+              <Btn
                 type="submit"
                 disabled={loading.value}
-                class="btn-primary w-full py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full py-3 text-lg font-semibold"
               >
                 {loading.value ? 'Creating Account...' : 'Create Account'}
-              </button>
+              </Btn>
 
               {/* Login Link */}
               <div class="text-center mt-6">
-                <p class="text-dark-600">
+                <p class="text-neutral-600">
                   Already have an account?{' '}
                   <a href="/login" class="text-primary-600 hover:underline font-semibold">
                     Sign In
@@ -372,7 +383,7 @@ export default component$(() => {
               </div>
             </form>
           )}
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

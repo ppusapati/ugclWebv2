@@ -5,6 +5,7 @@
  */
 import { component$, useStore, $, useTask$, isServer } from '@builder.io/qwik';
 import { routeLoader$ } from '@builder.io/qwik-city';
+import { Alert, Badge, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 import { apiClient, createSSRApiClient } from '~/services';
 
 interface Permission {
@@ -238,30 +239,23 @@ export default component$(() => {
   const filteredRoles = getFilteredRoles();
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container mx-auto max-w-7xl">
-        <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <div>
-            <h1 class="text-3xl font-bold text-dark-800">Roles Management</h1>
-            <p class="text-dark-600 mt-2">Manage global and business-specific roles</p>
-          </div>
-          <button onClick$={openCreateModal} class="btn-primary px-6 py-3 rounded-lg font-semibold">
-            + Create Role
-          </button>
-        </div>
+    <div class="space-y-6">
+      <PageHeader title="Roles Management" subtitle="Manage global and business-specific roles">
+        <Btn q:slot="actions" variant="primary" onClick$={openCreateModal}>+ Create Role</Btn>
+      </PageHeader>
 
         {state.error && (
-          <div class="alert-danger rounded-lg p-4 mb-6 bg-red-50 border-l-4 border-red-500">
+          <Alert variant="error" class="mb-6 border-l-4">
             <p class="text-red-800">{state.error}</p>
-          </div>
+          </Alert>
         )}
 
         {/* Filters */}
-        <div class="card bg-white shadow-lg rounded-xl p-6 mb-6">
+        <SectionCard class="mb-6">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Type Filter */}
             <div>
-              <label class="block text-sm font-medium text-dark-700 mb-2">Role Type</label>
+              <label class="block text-sm font-medium text-neutral-700 mb-2">Role Type</label>
               <select
                 value={state.filterType}
                 onChange$={(e) => {
@@ -270,7 +264,7 @@ export default component$(() => {
                     state.filterVerticalId = '';
                   }
                 }}
-                class="w-full px-4 py-2 border border-light-300 rounded-lg"
+                class="w-full px-4 py-2 border border-neutral-300 rounded-lg"
               >
                 <option value="all">All Roles</option>
                 <option value="global">Global Roles Only</option>
@@ -280,14 +274,14 @@ export default component$(() => {
 
             {/* Vertical Filter (only for business roles) */}
             <div>
-              <label class="block text-sm font-medium text-dark-700 mb-2">Business Vertical</label>
+              <label class="block text-sm font-medium text-neutral-700 mb-2">Business Vertical</label>
               <select
                 value={state.filterVerticalId}
                 onChange$={(e) => {
                   state.filterVerticalId = (e.target as HTMLSelectElement).value;
                 }}
                 disabled={state.filterType === 'global'}
-                class="w-full px-4 py-2 border border-light-300 rounded-lg disabled:opacity-50 disabled:bg-gray-100"
+                class="w-full px-4 py-2 border border-neutral-300 rounded-lg disabled:opacity-50 disabled:bg-gray-100"
               >
                 <option value="">All Verticals</option>
                 {state.verticals.map(v => (
@@ -298,7 +292,7 @@ export default component$(() => {
 
             {/* Search */}
             <div>
-              <label class="block text-sm font-medium text-dark-700 mb-2">Search</label>
+              <label class="block text-sm font-medium text-neutral-700 mb-2">Search</label>
               <input
                 type="text"
                 value={state.searchQuery}
@@ -306,83 +300,77 @@ export default component$(() => {
                   state.searchQuery = (e.target as HTMLInputElement).value;
                 }}
                 placeholder="Search by name or description..."
-                class="w-full px-4 py-2 border border-light-300 rounded-lg"
+                class="w-full px-4 py-2 border border-neutral-300 rounded-lg"
               />
             </div>
           </div>
 
           {/* Filter Summary */}
-          <div class="mt-4 flex items-center gap-2 text-sm text-dark-600">
+          <div class="mt-4 flex items-center gap-2 text-sm text-neutral-600">
             <span class="font-medium">Showing:</span>
             <span>{filteredRoles.length} role{filteredRoles.length !== 1 ? 's' : ''}</span>
             {state.filterType !== 'all' && (
-              <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+              <Badge variant="info">
                 {state.filterType === 'global' ? 'Global Only' : 'Business Only'}
-              </span>
+              </Badge>
             )}
             {state.filterVerticalId && (
-              <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded">
+              <Badge variant="neutral">
                 {state.verticals.find(v => v.id === state.filterVerticalId)?.name}
-              </span>
+              </Badge>
             )}
           </div>
-        </div>
+        </SectionCard>
 
         {/* Roles Table */}
-        <div class="card bg-white shadow-lg rounded-xl p-6">
+        <SectionCard class="p-6">
           {state.loading ? (
             <div class="text-center py-12">
               <div class="animate-spin text-4xl text-primary-500 mb-4">⏳</div>
-              <p class="text-dark-600">Loading roles...</p>
+              <p class="text-neutral-600">Loading roles...</p>
             </div>
           ) : filteredRoles.length === 0 ? (
             <div class="text-center py-12">
-              <div class="text-6xl text-light-300 mb-4">👥</div>
-              <h3 class="text-xl font-semibold text-dark-800 mb-2">No Roles Found</h3>
-              <p class="text-dark-600 mb-6">
+              <i class="i-heroicons-users-solid h-16 w-16 inline-block text-light-300 mb-4" aria-hidden="true"></i>
+              <h3 class="text-xl font-semibold text-neutral-800 mb-2">No Roles Found</h3>
+              <p class="text-neutral-600 mb-6">
                 {state.searchQuery || state.filterType !== 'all' || state.filterVerticalId
                   ? 'Try adjusting your filters'
                   : 'Create your first role'}
               </p>
               {!state.searchQuery && state.filterType === 'all' && !state.filterVerticalId && (
-                <button onClick$={openCreateModal} class="btn-primary px-6 py-3 rounded-lg">Create Role</button>
+                <Btn variant="primary" onClick$={openCreateModal}>Create Role</Btn>
               )}
             </div>
           ) : (
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-light-200">
-                <thead class="bg-light-50">
+                <thead class="bg-neutral-50">
                   <tr>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Role Name</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Type</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Vertical</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Level</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Permissions</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Status</th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-dark-700 uppercase">Actions</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Role Name</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Type</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Vertical</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Level</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Permissions</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Status</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-neutral-700 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-light-200">
                   {filteredRoles.map((role) => (
-                    <tr key={role.id} class="hover:bg-light-50 transition">
+                    <tr key={role.id} class="hover:bg-neutral-50 transition">
                       <td class="px-6 py-4">
                         <div>
-                          <div class="text-sm font-medium text-dark-800">{role.display_name || role.name}</div>
-                          {role.description && <div class="text-xs text-dark-500 mt-1">{role.description}</div>}
+                          <div class="text-sm font-medium text-neutral-800">{role.display_name || role.name}</div>
+                          {role.description && <div class="text-xs text-neutral-500 mt-1">{role.description}</div>}
                         </div>
                       </td>
                       <td class="px-6 py-4">
-                        {role.is_global ? (
-                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Global
-                          </span>
-                        ) : (
-                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Business
-                          </span>
-                        )}
+                        <Badge variant={role.is_global ? 'success' : 'info'}>
+                          {role.is_global ? 'Global' : 'Business'}
+                        </Badge>
                       </td>
-                      <td class="px-6 py-4 text-sm text-dark-700">
+                      <td class="px-6 py-4 text-sm text-neutral-700">
                         {role.is_global ? (
                           <span class="text-gray-400">-</span>
                         ) : (
@@ -390,11 +378,9 @@ export default component$(() => {
                         )}
                       </td>
                       <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          Level {role.level}
-                        </span>
+                        <Badge variant="neutral">Level {role.level}</Badge>
                       </td>
-                      <td class="px-6 py-4 text-sm text-dark-700">{role.permissions?.length || 0}</td>
+                      <td class="px-6 py-4 text-sm text-neutral-700">{role.permissions?.length || 0}</td>
                       <td class="px-6 py-4">
                         {role.is_active ? (
                           <span class="text-green-600 text-sm font-medium">Active</span>
@@ -404,18 +390,12 @@ export default component$(() => {
                       </td>
                       <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                          <button
-                            onClick$={() => openEditModal(role)}
-                            class="text-blue-600 hover:text-blue-700 px-3 py-1 text-sm font-medium"
-                          >
+                          <Btn size="sm" variant="primary" onClick$={() => openEditModal(role)}>
                             Edit
-                          </button>
-                          <button
-                            onClick$={() => handleDeleteRole(role)}
-                            class="text-red-600 hover:text-red-700 px-3 py-1 text-sm font-medium"
-                          >
+                          </Btn>
+                          <Btn size="sm" variant="danger" onClick$={() => handleDeleteRole(role)}>
                             Delete
-                          </button>
+                          </Btn>
                         </div>
                       </td>
                     </tr>
@@ -424,13 +404,13 @@ export default component$(() => {
               </table>
             </div>
           )}
-        </div>
+        </SectionCard>
 
         {/* Create/Edit Modal */}
         {state.showModal && (
-          <div class="fixed inset-0 bg-dark-950/50 z-50 flex items-center justify-center p-4">
+          <div class="fixed inset-0 bg-neutral-950/50 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h3 class="text-2xl font-bold text-dark-800 mb-6">
+              <h3 class="text-2xl font-bold text-neutral-800 mb-6">
                 {state.editingRole ? 'Edit Role' : 'Create Role'}
               </h3>
 
@@ -444,7 +424,7 @@ export default component$(() => {
                 {/* Role Type Selection (only for new roles) */}
                 {!state.editingRole && (
                   <div>
-                    <label class="block text-sm font-medium text-dark-700 mb-2">Role Type *</label>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Role Type *</label>
                     <div class="flex gap-4">
                       <label class="flex items-center cursor-pointer">
                         <input
@@ -475,62 +455,68 @@ export default component$(() => {
 
                 {/* Business Vertical (only for business roles) */}
                 {!state.newRole.is_global && (
-                  <div>
-                    <label class="block text-sm font-medium text-dark-700 mb-2">Business Vertical *</label>
+                  <FormField id="role-business-vertical" label="Business Vertical" required>
                     <select
+                      id="role-business-vertical"
                       value={state.newRole.business_vertical_id}
+                      required
+                      aria-required="true"
                       onChange$={(e) => {
                         state.newRole.business_vertical_id = (e.target as HTMLSelectElement).value;
                       }}
-                      class="w-full px-4 py-3 border border-light-300 rounded-lg"
+                      class="w-full px-4 py-3 border border-neutral-300 rounded-lg"
                     >
                       <option value="">Select Business Vertical</option>
                       {state.verticals.map(v => (
                         <option key={v.id} value={v.id}>{v.name}</option>
                       ))}
                     </select>
-                  </div>
+                  </FormField>
                 )}
 
-                <div>
-                  <label class="block text-sm font-medium text-dark-700 mb-2">Role Name *</label>
+                <FormField id="role-name" label="Role Name" required>
                   <input
+                    id="role-name"
                     type="text"
                     value={state.newRole.name}
+                    required
+                    aria-required="true"
                     onInput$={(e) => { state.newRole.name = (e.target as HTMLInputElement).value; }}
-                    class="w-full px-4 py-3 border border-light-300 rounded-lg"
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg"
                     placeholder="e.g., admin"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium text-dark-700 mb-2">Display Name</label>
+                <FormField id="role-display-name" label="Display Name">
                   <input
+                    id="role-display-name"
                     type="text"
                     value={state.newRole.display_name}
                     onInput$={(e) => { state.newRole.display_name = (e.target as HTMLInputElement).value; }}
-                    class="w-full px-4 py-3 border border-light-300 rounded-lg"
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg"
                     placeholder="e.g., Administrator"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium text-dark-700 mb-2">Description</label>
+                <FormField id="role-description" label="Description">
                   <textarea
+                    id="role-description"
                     value={state.newRole.description}
                     onInput$={(e) => { state.newRole.description = (e.target as HTMLTextAreaElement).value; }}
                     rows={3}
-                    class="w-full px-4 py-3 border border-light-300 rounded-lg"
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg"
                     placeholder="Role description"
                   ></textarea>
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium text-dark-700 mb-2">Level *</label>
+                <FormField id="role-level" label="Level" required>
                   <select
+                    id="role-level"
                     value={state.newRole.level}
+                    required
+                    aria-required="true"
                     onChange$={(e) => { state.newRole.level = parseInt((e.target as HTMLSelectElement).value); }}
-                    class="w-full px-4 py-3 border border-light-300 rounded-lg"
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   >
                     <option value={0}>Level 0 - Super Admin</option>
                     <option value={1}>Level 1 - System Admin</option>
@@ -539,10 +525,9 @@ export default component$(() => {
                     <option value={4}>Level 4 - Supervisor</option>
                     <option value={5}>Level 5 - Operator</option>
                   </select>
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium text-dark-700 mb-3">Permissions</label>
+                <FormField id="role-permissions" label="Permissions">
                   <div class="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p class="text-xs text-blue-800">
                       💡 <strong>Wildcard Support:</strong> Permissions with '*' grant access to all actions/resources.
@@ -551,15 +536,16 @@ export default component$(() => {
                       <code class="bg-blue-100 px-1 rounded">*:read</code> (read all resources)
                     </p>
                   </div>
-                  <div class="max-h-64 overflow-y-auto border border-light-300 rounded-lg p-4">
+                  <div class="max-h-64 overflow-y-auto border border-neutral-300 rounded-lg p-4">
                     {Object.entries(getGroupedPermissions()).map(([resource, perms]) => (
                       <div key={resource} class="mb-4">
                         <div class="flex items-center justify-between mb-2">
-                          <h4 class="text-sm font-semibold text-dark-700 capitalize">
-                            {resource === '*' ? '⭐ All Resources (Wildcard)' : resource}
+                          <h4 class="text-sm font-semibold text-neutral-700 capitalize">
+                            {resource === '*' ? 'All Resources (Wildcard)' : resource}
                           </h4>
-                          <button
-                            type="button"
+                          <Btn
+                            size="sm"
+                            variant="secondary"
                             onClick$={() => {
                               const permIds = perms.map((p: any) => p.id);
                               const allSelected = permIds.every((id: string) => state.newRole.permission_ids.includes(id));
@@ -569,14 +555,14 @@ export default component$(() => {
                                 state.newRole.permission_ids = [...new Set([...state.newRole.permission_ids, ...permIds])];
                               }
                             }}
-                            class="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                            class="text-xs"
                           >
                             {perms.every((p: any) => state.newRole.permission_ids.includes(p.id)) ? 'Deselect All' : 'Select All'}
-                          </button>
+                          </Btn>
                         </div>
                         <div class="space-y-2">
                           {perms.map((perm: any) => (
-                            <label key={perm.id} class="flex items-center cursor-pointer hover:bg-light-50 p-1 rounded">
+                            <label key={perm.id} class="flex items-center cursor-pointer hover:bg-neutral-50 p-1 rounded">
                               <input
                                 type="checkbox"
                                 checked={state.newRole.permission_ids.includes(perm.id)}
@@ -590,7 +576,7 @@ export default component$(() => {
                                 }}
                                 class="mr-2"
                               />
-                              <span class={`text-sm ${perm.name.includes('*') ? 'font-semibold text-blue-700' : 'text-dark-700'}`}>
+                              <span class={`text-sm ${perm.name.includes('*') ? 'font-semibold text-blue-700' : 'text-neutral-700'}`}>
                                 {perm.name}
                                 {perm.name.includes('*') && <span class="ml-1 text-xs text-blue-500">(wildcard)</span>}
                               </span>
@@ -600,29 +586,30 @@ export default component$(() => {
                       </div>
                     ))}
                   </div>
-                </div>
+                </FormField>
               </div>
 
               <div class="flex gap-4 mt-6">
-                <button
+                <Btn
+                  variant="primary"
                   onClick$={handleSaveRole}
                   disabled={state.saving}
-                  class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+                  class="flex-1"
                 >
                   {state.saving ? 'Saving...' : 'Save Role'}
-                </button>
-                <button
+                </Btn>
+                <Btn
                   onClick$={() => { state.showModal = false; state.error = ''; }}
                   disabled={state.saving}
-                  class="flex-1 px-4 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold"
+                  variant="secondary"
+                  class="flex-1"
                 >
                   Cancel
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 });

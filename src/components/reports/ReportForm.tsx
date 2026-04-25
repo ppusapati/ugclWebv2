@@ -3,6 +3,7 @@ import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { reportService, getReportConfig, fileService } from '~/services';
 import type { ReportKey } from '~/services';
+import { Btn, FormField } from '~/components/ds';
 
 interface ReportFormProps {
   reportType: ReportKey;
@@ -109,40 +110,43 @@ export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, b
 
   if (initialLoading.value) {
     return (
-      <div class="min-h-screen bg-light-50 flex items-center justify-center">
+      <div class="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div class="text-center">
-          <div class="animate-spin text-4xl text-primary-500 mb-4">⏳</div>
-          <p class="text-dark-600">Loading report...</p>
+          <i class="i-heroicons-arrow-path-solid animate-spin mb-4 inline-block h-10 w-10 text-primary-500" aria-hidden="true"></i>
+          <p class="text-neutral-600">Loading report...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
+    <div class="min-h-screen bg-neutral-50 py-8 px-4">
       <div class="container-md mx-auto">
         <div class="mb-6">
-          <button
+          <Btn
+            size="sm"
+            variant="ghost"
             onClick$={() => nav(`/reports/${reportType}`)}
             class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
           >
-            <span>←</span> Back to {config.displayName}
-          </button>
-          <h1 class="text-3xl font-bold text-dark-800 flex items-center gap-3">
-            <span class="text-4xl">{config.icon}</span>
+            <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to {config.displayName}
+          </Btn>
+          <h1 class="text-3xl font-bold text-neutral-800 flex items-center gap-3">
+            <i class={`${config.icon} h-10 w-10 inline-block text-primary-600`} aria-hidden="true"></i>
             {isEdit ? 'Edit' : 'Create'} {config.displayName.slice(0, -1)}
           </h1>
-          <p class="text-dark-600 mt-2">{config.description}</p>
+          <p class="text-neutral-600 mt-2">{config.description}</p>
         </div>
 
-        <div class="card bg-white shadow-lg rounded-xl p-8">
+        <SectionCard class="p-8 shadow-lg">
           {success.value ? (
             <div class="text-center py-8">
-              <div class="text-success-500 text-6xl mb-4">✓</div>
-              <h3 class="text-2xl font-semibold text-dark-800 mb-2">
+              <i class="i-heroicons-check-circle-solid mb-4 inline-block h-14 w-14 text-success-500" aria-hidden="true"></i>
+              <h3 class="text-2xl font-semibold text-neutral-800 mb-2">
                 {isEdit ? 'Report Updated!' : 'Report Created!'}
               </h3>
-              <p class="text-dark-600">Redirecting...</p>
+              <p class="text-neutral-600">Redirecting...</p>
             </div>
           ) : (
             <form onSubmit$={handleSubmit} preventdefault:submit>
@@ -152,104 +156,123 @@ export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, b
                     key={field.name}
                     class={field.type === 'textarea' ? 'md:col-span-2' : ''}
                   >
-                    <label class="form-label text-dark-700 font-semibold mb-2">
-                      {field.label}
-                      {field.required && <span class="text-danger-500 ml-1">*</span>}
-                    </label>
-
-                    {/* Text Input */}
-                    {(field.type === 'text' || field.type === 'email' || field.type === 'tel' || field.type === 'number' || field.type === 'date' || field.type === 'time' || field.type === 'datetime') && (
-                      <input
-                        type={field.type}
-                        value={formData.value[field.name]}
-                        onInput$={(e) => {
-                          formData.value = {
-                            ...formData.value,
-                            [field.name]: (e.target as HTMLInputElement).value,
-                          };
-                        }}
-                        min={field.min}
-                        max={field.max}
-                        class={`form-input w-full px-4 py-3 border rounded-lg ${
-                          errors.value[field.name]
-                            ? 'border-danger-500'
-                            : 'border-light-300 focus:ring-2 focus:ring-primary-400'
-                        }`}
-                        placeholder={field.placeholder}
-                      />
-                    )}
-
-                    {/* Textarea */}
-                    {field.type === 'textarea' && (
-                      <textarea
-                        value={formData.value[field.name]}
-                        onInput$={(e) => {
-                          formData.value = {
-                            ...formData.value,
-                            [field.name]: (e.target as HTMLTextAreaElement).value,
-                          };
-                        }}
-                        rows={field.rows || 4}
-                        class={`form-input w-full px-4 py-3 border rounded-lg ${
-                          errors.value[field.name]
-                            ? 'border-danger-500'
-                            : 'border-light-300 focus:ring-2 focus:ring-primary-400'
-                        }`}
-                        placeholder={field.placeholder}
-                      ></textarea>
-                    )}
-
-                    {/* Select */}
-                    {field.type === 'select' && (
-                      <select
-                        value={formData.value[field.name]}
-                        onChange$={(e) => {
-                          formData.value = {
-                            ...formData.value,
-                            [field.name]: (e.target as HTMLSelectElement).value,
-                          };
-                        }}
-                        class={`form-select w-full px-4 py-3 border rounded-lg ${
-                          errors.value[field.name]
-                            ? 'border-danger-500'
-                            : 'border-light-300 focus:ring-2 focus:ring-primary-400'
-                        }`}
+                    {field.type !== 'checkbox' ? (
+                      <FormField
+                        id={`report-form-${field.name}`}
+                        label={field.label}
+                        required={field.required}
+                        error={errors.value[field.name]}
                       >
-                        <option value="">{`-- Select ${field.label} --`}</option>
-                        {field.options?.map((option: any) => {
-                          const value = typeof option === 'string' ? option : option.value;
-                          const label = typeof option === 'string' ? option : option.label;
-                          return (
-                            <option key={value} value={value}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
 
-                    {/* File Input */}
-                    {(field.type === 'file' || field.type === 'file-multiple') && (
-                      <div>
-                        <input
-                          type="file"
-                          accept={field.accept}
-                          multiple={field.type === 'file-multiple'}
-                          onChange$={async (e) => {
-                            const files = (e.target as HTMLInputElement).files;
-                            if (files && files[0]) {
-                              await handleFileUpload(field.name, files[0]);
-                            }
-                          }}
-                          class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
-                        />
-                        {formData.value[field.name] && (
-                          <p class="text-xs text-success-600 mt-1">
-                            File uploaded successfully
-                          </p>
+                        {/* Text Input */}
+                        {(field.type === 'text' || field.type === 'email' || field.type === 'tel' || field.type === 'number' || field.type === 'date' || field.type === 'time' || field.type === 'datetime') && (
+                          <input
+                            id={`report-form-${field.name}`}
+                            type={field.type}
+                            value={formData.value[field.name]}
+                            onInput$={(e) => {
+                              formData.value = {
+                                ...formData.value,
+                                [field.name]: (e.target as HTMLInputElement).value,
+                              };
+                            }}
+                            min={field.min}
+                            max={field.max}
+                            required={field.required}
+                            aria-required={field.required ? 'true' : undefined}
+                            aria-describedby={errors.value[field.name] ? `report-form-${field.name}-error` : undefined}
+                            class={`form-input w-full px-4 py-3 border rounded-lg ${
+                              errors.value[field.name]
+                                ? 'border-error-500'
+                                : 'border-neutral-300 focus:ring-2 focus:ring-primary-400'
+                            }`}
+                            placeholder={field.placeholder}
+                          />
                         )}
-                      </div>
-                    )}
+
+                        {/* Textarea */}
+                        {field.type === 'textarea' && (
+                          <textarea
+                            id={`report-form-${field.name}`}
+                            value={formData.value[field.name]}
+                            onInput$={(e) => {
+                              formData.value = {
+                                ...formData.value,
+                                [field.name]: (e.target as HTMLTextAreaElement).value,
+                              };
+                            }}
+                            rows={field.rows || 4}
+                            required={field.required}
+                            aria-required={field.required ? 'true' : undefined}
+                            aria-describedby={errors.value[field.name] ? `report-form-${field.name}-error` : undefined}
+                            class={`form-input w-full px-4 py-3 border rounded-lg ${
+                              errors.value[field.name]
+                                ? 'border-error-500'
+                                : 'border-neutral-300 focus:ring-2 focus:ring-primary-400'
+                            }`}
+                            placeholder={field.placeholder}
+                          ></textarea>
+                        )}
+
+                        {/* Select */}
+                        {field.type === 'select' && (
+                          <select
+                            id={`report-form-${field.name}`}
+                            value={formData.value[field.name]}
+                            onChange$={(e) => {
+                              formData.value = {
+                                ...formData.value,
+                                [field.name]: (e.target as HTMLSelectElement).value,
+                              };
+                            }}
+                            required={field.required}
+                            aria-required={field.required ? 'true' : undefined}
+                            aria-describedby={errors.value[field.name] ? `report-form-${field.name}-error` : undefined}
+                            class={`form-select w-full px-4 py-3 border rounded-lg ${
+                              errors.value[field.name]
+                                ? 'border-error-500'
+                                : 'border-neutral-300 focus:ring-2 focus:ring-primary-400'
+                            }`}
+                          >
+                            <option value="">{`-- Select ${field.label} --`}</option>
+                            {field.options?.map((option: any) => {
+                              const value = typeof option === 'string' ? option : option.value;
+                              const label = typeof option === 'string' ? option : option.label;
+                              return (
+                                <option key={value} value={value}>
+                                  {label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        )}
+
+                        {/* File Input */}
+                        {(field.type === 'file' || field.type === 'file-multiple') && (
+                          <div>
+                            <input
+                              id={`report-form-${field.name}`}
+                              type="file"
+                              accept={field.accept}
+                              multiple={field.type === 'file-multiple'}
+                              onChange$={async (e) => {
+                                const files = (e.target as HTMLInputElement).files;
+                                if (files && files[0]) {
+                                  await handleFileUpload(field.name, files[0]);
+                                }
+                              }}
+                              class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
+                            />
+                            {formData.value[field.name] && (
+                              <p class="text-xs text-success-600 mt-1">
+                                File uploaded successfully
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                      </FormField>
+                    ) : null}
 
                     {/* Checkbox */}
                     {field.type === 'checkbox' && (
@@ -265,12 +288,12 @@ export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, b
                           }}
                           class="form-checkbox mr-3"
                         />
-                        <span class="text-dark-700">{field.label}</span>
+                        <span class="text-neutral-700">{field.label}</span>
                       </label>
                     )}
 
-                    {errors.value[field.name] && (
-                      <p class="form-error text-danger-600 text-sm mt-1">
+                    {field.type === 'checkbox' && errors.value[field.name] && (
+                      <p class="form-error text-error-600 text-sm mt-1">
                         {errors.value[field.name]}
                       </p>
                     )}
@@ -279,30 +302,32 @@ export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, b
               </div>
 
               {errors.value.submit && (
-                <div class="alert-danger rounded-lg p-4 mt-6 bg-danger-50 border-l-4 border-danger-500">
-                  <p class="text-danger-800">{errors.value.submit}</p>
-                </div>
+                <Alert variant="error" class="mt-6 border-l-4">
+                  <p class="text-error-800">{errors.value.submit}</p>
+                </Alert>
               )}
 
               <div class="flex gap-4 mt-8 flex-col sm:flex-row">
-                <button
+                <Btn
                   type="submit"
                   disabled={loading.value}
-                  class="btn-primary flex-1 py-3 text-lg font-semibold rounded-lg disabled:opacity-50"
+                  variant="primary"
+                  class="flex-1 py-3 text-lg font-semibold rounded-lg disabled:opacity-50"
                 >
                   {loading.value ? 'Saving...' : isEdit ? 'Update Report' : 'Create Report'}
-                </button>
-                <button
+                </Btn>
+                <Btn
                   type="button"
                   onClick$={() => nav(`/reports/${reportType}`)}
-                  class="btn-light-300 flex-1 py-3 text-lg font-semibold rounded-lg"
+                  variant="secondary"
+                  class="flex-1 py-3 text-lg font-semibold rounded-lg"
                 >
                   Cancel
-                </button>
+                </Btn>
               </div>
             </form>
           )}
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

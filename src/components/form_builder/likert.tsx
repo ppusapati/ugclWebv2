@@ -1,5 +1,6 @@
 import { $, component$, useStore } from '@builder.io/qwik';
 import {P9ECard} from "~/components/utility";
+import { Btn } from '~/components/ds';
 type TableData = {
   columns: string[];
   rows: string[][];
@@ -62,7 +63,7 @@ export const P9ELikert = component$(() => {
               <th key={colIndex}>
                 {column}
                 {colIndex > 0 && (
-                  <button onClick$={() => removeColumn(colIndex)}>Remove Column</button>
+                  <Btn size="sm" variant="danger" onClick$={() => removeColumn(colIndex)}>Remove Column</Btn>
                 )}
               </th>
             ))}
@@ -73,7 +74,7 @@ export const P9ELikert = component$(() => {
             <tr key={rowIndex}>
               <td>
                 {rowIndex > 0 && (
-                  <button onClick$={() => removeRow(rowIndex)}>Remove Row</button>
+                  <Btn size="sm" variant="danger" onClick$={() => removeRow(rowIndex)}>Remove Row</Btn>
                 )}
               </td>
               {row.map((cell, colIndex) => (
@@ -91,9 +92,9 @@ export const P9ELikert = component$(() => {
           ))}
         </tbody>
       </table>
-      <button onClick$={addRow}>Add Row</button>
-      <button onClick$={addColumn}>Add Column</button>
-      <button onClick$={captureJson}>Capture JSON</button>
+      <Btn size="sm" variant="secondary" onClick$={addRow}>Add Row</Btn>
+      <Btn size="sm" variant="secondary" onClick$={addColumn}>Add Column</Btn>
+      <Btn size="sm" variant="primary" onClick$={captureJson}>Capture JSON</Btn>
       </P9ECard>
     </div>
   );

@@ -1,6 +1,7 @@
 // src/components/business/business-dashboard.tsx
 import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
 import { buildApiUrl } from '~/config/api';
+import { Badge, Btn } from '~/components/ds';
 
 interface BusinessDashboardProps {
   businessCode: string;
@@ -63,14 +64,14 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           
           <div class="flex items-center gap-4">
             {state.businessContext?.is_super_admin && (
-              <span class="bg-red-100 text-red-800 px-3 py-1 rounded text-sm">
+              <Badge variant="error" class="px-3 py-1 text-sm">
                 Super Admin Access
-              </span>
+              </Badge>
             )}
             {state.businessContext?.is_admin && !state.businessContext?.is_super_admin && (
-              <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm">
+              <Badge variant="info" class="px-3 py-1 text-sm">
                 Business Admin
-              </span>
+              </Badge>
             )}
           </div>
         </div>
@@ -80,9 +81,9 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           <h3 class="text-sm font-medium text-gray-700 mb-2">Your Permissions:</h3>
           <div class="flex flex-wrap gap-2">
             {state.businessContext?.permissions?.map((permission: string) => (
-              <span key={permission} class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+              <Badge key={permission} variant="neutral" class="px-2 py-1 text-xs">
                 {permission}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
@@ -91,7 +92,8 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
       {/* Quick Actions */}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {state.businessContext?.permissions?.includes('read_reports') && (
-          <button
+          <Btn
+            variant="ghost"
             class="p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 text-left"
             onClick$={() => {
               window.location.href = `/admin/masters/business/${businessCode}/reports`;
@@ -99,11 +101,12 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           >
             <h3 class="font-medium text-blue-900">View Reports</h3>
             <p class="text-sm text-blue-700 mt-1">Access business reports</p>
-          </button>
+          </Btn>
         )}
 
         {state.businessContext?.permissions?.includes('business_manage_users') && (
-          <button
+          <Btn
+            variant="ghost"
             class="p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 text-left"
             onClick$={() => {
               window.location.href = `/admin/masters/business/${businessCode}/users`;
@@ -111,11 +114,12 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           >
             <h3 class="font-medium text-green-900">Manage Users</h3>
             <p class="text-sm text-green-700 mt-1">Add and manage users</p>
-          </button>
+          </Btn>
         )}
 
         {businessCode === 'SOLAR' && state.businessContext?.permissions?.includes('solar_read_generation') && (
-          <button
+          <Btn
+            variant="ghost"
             class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 text-left"
             onClick$={() => {
               window.location.href = `/admin/masters/business/${businessCode}/solar/generation`;
@@ -123,11 +127,12 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           >
             <h3 class="font-medium text-yellow-900">Solar Generation</h3>
             <p class="text-sm text-yellow-700 mt-1">Monitor solar output</p>
-          </button>
+          </Btn>
         )}
 
         {businessCode === 'WATER' && state.businessContext?.permissions?.includes('water_read_consumption') && (
-          <button
+          <Btn
+            variant="ghost"
             class="p-4 bg-cyan-50 border border-cyan-200 rounded-lg hover:bg-cyan-100 text-left"
             onClick$={() => {
               window.location.href = `/admin/masters/business/${businessCode}/water/consumption`;
@@ -135,7 +140,7 @@ export const BusinessDashboard = component$<BusinessDashboardProps>(({ businessC
           >
             <h3 class="font-medium text-cyan-900">Water Consumption</h3>
             <p class="text-sm text-cyan-700 mt-1">Monitor water usage</p>
-          </button>
+          </Btn>
         )}
       </div>
 

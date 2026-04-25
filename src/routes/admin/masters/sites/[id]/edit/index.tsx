@@ -3,6 +3,7 @@ import { component$, isServer, useSignal, $, useTask$ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { siteService } from '~/services';
 import type { Site } from '~/services';
+import { Alert, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 
 export default component$(() => {
   const loc = useLocation();
@@ -104,100 +105,95 @@ export default component$(() => {
 
   if (initialLoading.value) {
     return (
-      <div class="min-h-screen bg-light-50 flex items-center justify-center">
+      <div class="flex items-center justify-center py-16">
         <div class="text-center">
           <div class="animate-spin text-4xl text-primary-500 mb-4">⏳</div>
-          <p class="text-dark-600">Loading site...</p>
+          <p class="text-neutral-600">Loading site...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container mx-auto">
-        <div class="mb-6">
-          <button
-            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
-            class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
-          >
-            <span>←</span> Back to Sites
-          </button>
-          <h1 class="text-3xl font-bold text-dark-800">Edit Site</h1>
-          <p class="text-dark-600 mt-2">Update site information</p>
-        </div>
+    <div class="space-y-6 py-2">
+        <PageHeader title="Edit Site" subtitle="Update site information">
+          <Btn q:slot="actions" variant="ghost" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}>
+            <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to Sites
+          </Btn>
+        </PageHeader>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2">
-            <div class="card bg-white shadow-lg rounded-xl p-8">
+            <SectionCard class="p-8">
               <form onSubmit$={handleSubmit} preventdefault:submit>
-                <div class="form-group mb-6">
-                  <label class="form-label text-dark-700 font-semibold mb-2">
-                    Site Name <span class="text-danger-500">*</span>
-                  </label>
+                <FormField id="edit-site-name" label="Site Name" required error={errors.value.name} class="mb-6">
                   <input
+                    id="edit-site-name"
                     type="text"
                     value={formData.value.name}
+                    required
+                    aria-required="true"
+                    aria-describedby={errors.value.name ? 'edit-site-name-error' : ''}
                     onInput$={(e) => { formData.value = { ...formData.value, name: (e.target as HTMLInputElement).value }; }}
                     class="form-input"
                   />
-                  {errors.value.name && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.name}</p>}
-                </div>
+                </FormField>
 
-                <div class="form-group mb-6">
-                  <label class="form-label text-dark-700 font-semibold mb-2">Site Code</label>
+                <FormField id="edit-site-code" label="Site Code" hint="Code cannot be changed" class="mb-6">
                   <input
+                    id="edit-site-code"
                     type="text"
                     value={site.value?.code}
+                    aria-describedby="edit-site-code-hint"
                     disabled
-                    class="form-input w-full px-4 py-3 border border-light-300 rounded-lg bg-light-100 font-mono cursor-not-allowed"
+                    class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg bg-neutral-100 font-mono cursor-not-allowed"
                   />
-                  <p class="text-xs text-dark-500 mt-1">Code cannot be changed</p>
-                </div>
+                </FormField>
 
-                <div class="form-group mb-6">
-                  <label class="form-label text-dark-700 font-semibold mb-2">Description</label>
+                <FormField id="edit-site-description" label="Description" class="mb-6">
                   <textarea
+                    id="edit-site-description"
                     value={formData.value.description}
                     onInput$={(e) => { formData.value = { ...formData.value, description: (e.target as HTMLTextAreaElement).value }; }}
                     rows={4}
-                    class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                    class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   ></textarea>
-                </div>
+                </FormField>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div class="form-group">
-                    <label class="form-label text-dark-700 font-semibold mb-2">Latitude</label>
+                  <FormField id="edit-site-latitude" label="Latitude" error={errors.value.latitude}>
                     <input
+                      id="edit-site-latitude"
                       type="text"
                       value={formData.value.latitude}
+                      aria-describedby={errors.value.latitude ? 'edit-site-latitude-error' : ''}
                       onInput$={(e) => { formData.value = { ...formData.value, latitude: (e.target as HTMLInputElement).value }; }}
-                      class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                      class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                     />
-                    {errors.value.latitude && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.latitude}</p>}
-                  </div>
+                  </FormField>
 
-                  <div class="form-group">
-                    <label class="form-label text-dark-700 font-semibold mb-2">Longitude</label>
+                  <FormField id="edit-site-longitude" label="Longitude" error={errors.value.longitude}>
                     <input
+                      id="edit-site-longitude"
                       type="text"
                       value={formData.value.longitude}
+                      aria-describedby={errors.value.longitude ? 'edit-site-longitude-error' : ''}
                       onInput$={(e) => { formData.value = { ...formData.value, longitude: (e.target as HTMLInputElement).value }; }}
-                      class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                      class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                     />
-                    {errors.value.longitude && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.longitude}</p>}
-                  </div>
+                  </FormField>
                 </div>
 
-                <div class="form-group mb-6">
-                  <label class="form-label text-dark-700 font-semibold mb-2">Address</label>
+                <FormField id="edit-site-address" label="Address" class="mb-6">
                   <textarea
+                    id="edit-site-address"
                     value={formData.value.address}
                     onInput$={(e) => { formData.value = { ...formData.value, address: (e.target as HTMLTextAreaElement).value }; }}
                     rows={3}
-                    class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                    class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   ></textarea>
-                </div>
+                </FormField>
 
                 <div class="form-group mb-6">
                   <label class="flex items-center cursor-pointer">
@@ -207,30 +203,30 @@ export default component$(() => {
                       onChange$={(e) => { formData.value = { ...formData.value, is_active: (e.target as HTMLInputElement).checked }; }}
                       class="form-checkbox mr-3"
                     />
-                    <span class="text-dark-700 font-medium">Active</span>
+                    <span class="text-neutral-700 font-medium">Active</span>
                   </label>
                 </div>
 
                 {errors.value.submit && (
-                  <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-                    <p class="text-danger-800">{errors.value.submit}</p>
-                  </div>
+                  <Alert variant="error" class="mb-6 border-l-4">
+                    <p class="text-error-800">{errors.value.submit}</p>
+                  </Alert>
                 )}
 
                 <div class="flex gap-4 flex-col sm:flex-row">
-                  <button type="submit" disabled={loading.value} class="btn btn-info">
+                  <Btn type="submit" disabled={loading.value}>
                     {loading.value ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button type="button" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)} class="btn btn-dark">
+                  </Btn>
+                  <Btn type="button" variant="secondary" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}>
                     Cancel
-                  </button>
+                  </Btn>
                 </div>
               </form>
-            </div>
+            </SectionCard>
           </div>
 
           <div class="lg:col-span-1">
-            <div class="card bg-primary-50 border border-primary-200 rounded-xl p-6">
+            <SectionCard class="border-color-interactive-primary/20 bg-color-interactive-primary/5">
               <h3 class="text-lg font-semibold text-primary-800 mb-4">Current Info</h3>
               <div class="space-y-3 text-sm">
                 <div>
@@ -246,10 +242,9 @@ export default component$(() => {
                   </p>
                 </div>
               </div>
-            </div>
+            </SectionCard>
           </div>
         </div>
-      </div>
     </div>
   );
 });

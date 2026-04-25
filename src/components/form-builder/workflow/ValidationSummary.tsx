@@ -1,6 +1,7 @@
 // src/components/form-builder/workflow/ValidationSummary.tsx
 import { component$, type PropFunction } from '@builder.io/qwik';
 import type { ValidationResult } from './validation';
+import { Btn } from '~/components/ds';
 
 interface ValidationSummaryProps {
   validation: ValidationResult;
@@ -27,12 +28,14 @@ export default component$<ValidationSummaryProps>((props) => {
               </h3>
             </div>
             {props.onClose$ && (
-              <button
+              <Btn
+                size="sm"
+                variant="ghost"
                 onClick$={props.onClose$}
                 class="text-red-600 hover:text-red-800"
               >
                 ✕
-              </button>
+              </Btn>
             )}
           </div>
           <ul class="space-y-1">
@@ -61,12 +64,14 @@ export default component$<ValidationSummaryProps>((props) => {
               </h3>
             </div>
             {props.onClose$ && (
-              <button
+              <Btn
+                size="sm"
+                variant="ghost"
                 onClick$={props.onClose$}
                 class="text-yellow-600 hover:text-yellow-800"
               >
                 ✕
-              </button>
+              </Btn>
             )}
           </div>
           <ul class="space-y-1">

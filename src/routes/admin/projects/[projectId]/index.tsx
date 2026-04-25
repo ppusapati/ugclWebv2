@@ -6,6 +6,7 @@
 import { component$, useStore, useSignal, useResource$, Resource, $ } from '@builder.io/qwik';
 import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../services/api-client';
+import { Alert, Badge, Btn, TabBar } from '../../../../components/ds';
 import { projectService } from '../../../../services/project.service';
 import { taskService } from '../../../../services/task.service';
 import type { Project, Zone, Node, GeoJSONFeatureCollection, Task } from '../../../../types/project';
@@ -181,7 +182,7 @@ export default component$(() => {
 
   if (state.loading) {
     return (
-      <div class="container mx-auto px-4 py-6">
+      <div class="space-y-6 py-2">
         <div class="animate-pulse">
           <div class="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div class="h-64 bg-gray-200 rounded mb-6"></div>
@@ -197,25 +198,25 @@ export default component$(() => {
 
   if (state.error || !state.project) {
     return (
-      <div class="container mx-auto px-4 py-6">
-        <div class="alert-error p-4 rounded-md">
+      <div class="space-y-6 py-2">
+        <Alert variant="error">
           <i class="i-heroicons-exclamation-circle-solid w-4 h-4 inline-block mr-2"></i>
           {state.error || 'Project not found'}
-        </div>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div class="container mx-auto px-4 py-6">
+    <div class="space-y-6 py-2">
       {/* KMZ upload failure banner via query param */}
       {loc.url.searchParams.get('kmz') === 'failed' && (
-        <div class="alert-error p-3 rounded-md mb-4 text-sm flex items-start gap-2">
+        <Alert variant="error" class="mb-4 flex items-start gap-2 text-sm">
           <i class="i-heroicons-exclamation-triangle-solid w-4 h-4 inline-block mt-0.5"></i>
           <div>
             KMZ upload failed. Go to the Map tab to retry uploading the KMZ file.
           </div>
-        </div>
+        </Alert>
       )}
 
       {/* Header */}
@@ -232,14 +233,20 @@ export default component$(() => {
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-2">
               <h1 class="text-2xl font-bold text-gray-900">{state.project.name}</h1>
-              <span class={`px-3 py-1 rounded-full text-xs font-medium ${
-                state.project.status === 'active' ? 'bg-green-100 text-green-800' :
-                state.project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                state.project.status === 'on-hold' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <Badge
+                variant={
+                  state.project.status === 'active'
+                    ? 'success'
+                    : state.project.status === 'on-hold'
+                      ? 'warning'
+                      : state.project.status === 'completed'
+                        ? 'info'
+                        : 'neutral'
+                }
+                class="px-3 py-1 text-xs font-medium"
+              >
                 {state.project.status}
-              </span>
+              </Badge>
             </div>
             <p class="text-sm text-gray-600 mb-2">Code: {state.project.code}</p>
             {state.project.description && (
@@ -248,14 +255,14 @@ export default component$(() => {
           </div>
 
           <div class="flex gap-2">
-            <button class="btn btn-secondary">
+            <Btn variant="secondary">
               <i class="i-heroicons-pencil-square-solid w-4 h-4 inline-block text-white mr-2"></i>
               Edit
-            </button>
-            <button class="btn btn-primary" onClick$={handleCreateTask}>
+            </Btn>
+            <Btn onClick$={handleCreateTask}>
               <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
               New Task
-            </button>
+            </Btn>
           </div>
         </div>
       </div>
@@ -274,56 +281,22 @@ export default component$(() => {
       {/* Tabs */}
       <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         {/* Tab Navigation */}
-        <div class="border-b border-gray-200">
-          <div class="flex gap-1 p-2">
-            <button
-              onClick$={() => { activeTab.value = 'overview'; }}
-              class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab.value === 'overview'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <i class="i-heroicons-information-circle w-4 h-4 inline-block mr-2"></i>
-              Overview
-            </button>
-            <button
-              onClick$={() => { activeTab.value = 'map'; }}
-              class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab.value === 'map'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <i class="i-heroicons-map-solid w-4 h-4 inline-block mr-2"></i>
-              Map View
-            </button>
-            <button
-              onClick$={() => {
-                activeTab.value = 'tasks';
-                loadTasks();
-              }}
-              class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab.value === 'tasks'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <i class="i-heroicons-clipboard-document-list-solid w-4 h-4 inline-block mr-2"></i>
-              Tasks ({state.stats?.total_tasks || 0})
-            </button>
-            <button
-              onClick$={() => { activeTab.value = 'budget'; }}
-              class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab.value === 'budget'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <i class="i-heroicons-currency-dollar-solid w-4 h-4 inline-block mr-2"></i>
-              Budget
-            </button>
-          </div>
+        <div class="border-b border-gray-200 p-2">
+          <TabBar
+            items={[
+              { key: 'overview', label: 'Overview' },
+              { key: 'map', label: 'Map View' },
+              { key: 'tasks', label: `Tasks (${state.stats?.total_tasks || 0})` },
+              { key: 'budget', label: 'Budget' },
+            ]}
+            activeKey={activeTab.value}
+            onTabChange$={async (key) => {
+              activeTab.value = key as 'overview' | 'map' | 'tasks' | 'budget';
+              if (key === 'tasks') {
+                await loadTasks();
+              }
+            }}
+          />
         </div>
 
         {/* Tab Content */}
@@ -427,14 +400,20 @@ export default component$(() => {
                             <div class="font-medium text-gray-900">{node.name}</div>
                             <div class="text-xs text-gray-600 capitalize">{node.node_type}</div>
                           </div>
-                          <span class={`text-xs px-2 py-1 rounded ${
-                            node.status === 'available' ? 'bg-green-100 text-green-700' :
-                            node.status === 'allocated' ? 'bg-blue-100 text-blue-700' :
-                            node.status === 'in-progress' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
+                          <Badge
+                            variant={
+                              node.status === 'available'
+                                ? 'success'
+                                : node.status === 'in-progress'
+                                  ? 'warning'
+                                  : node.status === 'allocated'
+                                    ? 'info'
+                                    : 'neutral'
+                            }
+                            class="text-xs"
+                          >
                             {node.status}
-                          </span>
+                          </Badge>
                         </div>
                       ))}
                       {state.nodes.length > 10 && (
@@ -478,10 +457,10 @@ export default component$(() => {
                   <p class="text-sm text-gray-600 mb-4">Upload a KMZ file to view the project on a map</p>
                   <div class="mx-auto max-w-md bg-white rounded-md border border-gray-200 p-4 text-left">
                     {kmz.error && (
-                      <div class="alert-error p-2 rounded text-xs mb-3">{kmz.error}</div>
+                      <Alert variant="error" class="mb-3 px-2 py-2 text-xs">{kmz.error}</Alert>
                     )}
                     {kmz.success && (
-                      <div class="alert-success p-2 rounded text-xs mb-3">{kmz.success}</div>
+                      <Alert variant="success" class="mb-3 px-2 py-2 text-xs">{kmz.success}</Alert>
                     )}
                     <label class="form-label text-xs">Select KMZ file</label>
                     <input
@@ -490,13 +469,13 @@ export default component$(() => {
                       class="form-input w-full mb-3"
                       onChange$={onKmzFileChange}
                     />
-                    <button
-                      class="btn btn-primary w-full"
+                    <Btn
+                      class="w-full"
                       disabled={kmz.uploading}
                       onClick$={uploadKmz}
                     >
                       {kmz.uploading ? 'Uploading...' : 'Upload KMZ'}
-                    </button>
+                    </Btn>
                   </div>
                 </div>
               )}
@@ -535,10 +514,10 @@ export default component$(() => {
                   <i class="i-heroicons-clipboard-document-list w-16 h-16 inline-block text-gray-400 mb-3"></i>
                   <h3 class="text-lg font-semibold text-gray-900 mb-2">No Tasks Yet</h3>
                   <p class="text-sm text-gray-600 mb-4">Create your first task to get started</p>
-                  <button onClick$={handleCreateTask} class="btn btn-primary">
+                  <Btn onClick$={handleCreateTask}>
                     <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
                     Create Task
-                  </button>
+                  </Btn>
                 </div>
               )}
             </div>

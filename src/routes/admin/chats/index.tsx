@@ -1,6 +1,7 @@
 import { component$, useSignal, useStore, $, useVisibleTask$ } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
+import { Badge, Btn, FormField, PageHeader } from "~/components/ds";
 import { apiClient } from "~/services";
 import type {
   ConversationDTO,
@@ -267,16 +268,12 @@ export default component$(() => {
       }
     >
       <div class="space-y-6 p-6">
-        {/* Header */}
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold">Chat Groups</h1>
-            <p class="text-gray-600 text-sm mt-1">
-              Manage chat groups and team communication channels
-            </p>
-          </div>
-          <button
-            class="btn btn-primary"
+        <PageHeader
+          title="Chat Groups"
+          subtitle="Manage chat groups and team communication channels"
+        >
+          <Btn
+            q:slot="actions"
             onClick$={() => {
               editingGroup.value = null;
               resetForm();
@@ -287,8 +284,8 @@ export default component$(() => {
               <i class="i-heroicons-plus-solid w-5 h-5 inline-block" />
               Create Group
             </span>
-          </button>
-        </div>
+          </Btn>
+        </PageHeader>
 
         {/* Success/Error Messages */}
         {success.value && (
@@ -358,15 +355,9 @@ export default component$(() => {
                       </p>
                     </div>
                   </div>
-                  <span
-                    class={`px-2 py-1 text-xs rounded ${
-                      group.is_archived
-                        ? "bg-gray-100 text-gray-600"
-                        : "bg-green-100 text-green-800"
-                    }`}
-                  >
+                  <Badge variant={group.is_archived ? "neutral" : "success"}>
                     {group.is_archived ? "Archived" : "Active"}
-                  </span>
+                  </Badge>
                 </div>
 
                 {group.description && (
@@ -390,30 +381,31 @@ export default component$(() => {
 
                 {/* Actions */}
                 <div class="flex gap-2 pt-4 border-t border-gray-100">
-                  <button
-                    class="btn btn-secondary flex-1"
+                  <Btn
+                    variant="secondary"
+                    class="flex-1"
                     onClick$={() => handleViewDetails(group.id)}
                   >
                     <span class="flex items-center justify-center gap-1">
                       <i class="i-heroicons-eye-solid w-4 h-4 inline-block" />
                       View
                     </span>
-                  </button>
-                  <button
-                    class="btn btn-primary flex-1"
+                  </Btn>
+                  <Btn
+                    class="flex-1"
                     onClick$={() => handleOpenEdit(group)}
                   >
                     <span class="flex items-center justify-center gap-1">
                       <i class="i-heroicons-pencil-square-solid w-4 h-4 inline-block" />
                       Edit
                     </span>
-                  </button>
-                  <button
-                    class="btn btn-danger"
+                  </Btn>
+                  <Btn
+                    variant="danger"
                     onClick$={() => handleDeleteGroup(group.id)}
                   >
                     <i class="i-heroicons-trash-solid w-4 h-4 inline-block" />
-                  </button>
+                  </Btn>
                 </div>
               </div>
             ))}
@@ -445,11 +437,9 @@ export default component$(() => {
               <div class="p-6 overflow-y-auto flex-1">
                 <div class="space-y-4">
                   {/* Group Title */}
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Group Name *
-                    </label>
+                  <FormField id="chat-group-title" label="Group Name" required>
                     <input
+                      id="chat-group-title"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={formState.title}
@@ -458,14 +448,12 @@ export default component$(() => {
                       }}
                       placeholder="e.g., Project Alpha Team"
                     />
-                  </div>
+                  </FormField>
 
                   {/* Description */}
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
+                  <FormField id="chat-group-description" label="Description">
                     <textarea
+                      id="chat-group-description"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={3}
                       value={formState.description}
@@ -474,14 +462,12 @@ export default component$(() => {
                       }}
                       placeholder="What is this group for?"
                     />
-                  </div>
+                  </FormField>
 
                   {/* Max Participants */}
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Max Participants
-                    </label>
+                  <FormField id="chat-group-max-participants" label="Max Participants">
                     <input
+                      id="chat-group-max-participants"
                       type="number"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={formState.maxParticipants}
@@ -491,14 +477,11 @@ export default component$(() => {
                       min={2}
                       max={500}
                     />
-                  </div>
+                  </FormField>
 
                   {/* Member Selection */}
                   {!editingGroup.value && (
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Select Members *
-                      </label>
+                    <FormField id="chat-group-members" label="Select Members" required>
                       <div class="border border-gray-300 rounded-md">
                         {/* Search members */}
                         <div class="p-2 border-b border-gray-200">
@@ -554,15 +537,15 @@ export default component$(() => {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </FormField>
                   )}
                 </div>
               </div>
 
               {/* Modal Footer */}
               <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  class="btn bg-gray-200 text-gray-700 hover:bg-gray-300"
+                <Btn
+                  variant="secondary"
                   onClick$={() => {
                     showCreateModal.value = false;
                     editingGroup.value = null;
@@ -570,9 +553,8 @@ export default component$(() => {
                   }}
                 >
                   Cancel
-                </button>
-                <button
-                  class="btn btn-primary"
+                </Btn>
+                <Btn
                   onClick$={editingGroup.value ? handleUpdateGroup : handleCreateGroup}
                   disabled={loading.value}
                 >
@@ -586,7 +568,7 @@ export default component$(() => {
                   ) : (
                     "Create Group"
                   )}
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
@@ -631,15 +613,9 @@ export default component$(() => {
                     <div>
                       <label class="text-sm font-medium text-gray-500">Status</label>
                       <p>
-                        <span
-                          class={`px-2 py-1 text-xs rounded ${
-                            viewingGroup.value.is_archived
-                              ? "bg-gray-100 text-gray-600"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
+                        <Badge variant={viewingGroup.value.is_archived ? "neutral" : "success"}>
                           {viewingGroup.value.is_archived ? "Archived" : "Active"}
-                        </span>
+                        </Badge>
                       </p>
                     </div>
                     <div>
@@ -683,17 +659,17 @@ export default component$(() => {
                               </p>
                             </div>
                           </div>
-                          <span
-                            class={`px-2 py-1 text-xs rounded ${
+                          <Badge
+                            variant={
                               participant.role === "owner"
-                                ? "bg-purple-100 text-purple-800"
+                                ? "warning"
                                 : participant.role === "admin"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-600"
-                            }`}
+                                ? "info"
+                                : "neutral"
+                            }
                           >
                             {participant.role}
-                          </span>
+                          </Badge>
                         </div>
                       ))}
                       {(!viewingGroup.value.participants ||
@@ -709,17 +685,16 @@ export default component$(() => {
 
               {/* Modal Footer */}
               <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  class="btn bg-gray-200 text-gray-700 hover:bg-gray-300"
+                <Btn
+                  variant="secondary"
                   onClick$={() => {
                     showDetailsModal.value = false;
                     viewingGroup.value = null;
                   }}
                 >
                   Close
-                </button>
-                <button
-                  class="btn btn-primary"
+                </Btn>
+                <Btn
                   onClick$={() => {
                     if (viewingGroup.value) {
                       handleOpenEdit(viewingGroup.value);
@@ -729,7 +704,7 @@ export default component$(() => {
                   }}
                 >
                   Edit Group
-                </button>
+                </Btn>
               </div>
             </div>
           </div>

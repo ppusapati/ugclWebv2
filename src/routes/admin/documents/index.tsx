@@ -4,6 +4,7 @@ import { Link, routeLoader$ } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentCategory, DocumentTag } from '~/types/document';
+import { Btn, PageHeader } from '~/components/ds';
 
 export const useDocumentsMetaData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -88,16 +89,14 @@ export default component$(() => {
   });
 
   return (
-    <div class="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div class="mb-8 flex items-start justify-between">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Document Management</h1>
-          <p class="mt-2 text-gray-600">
-            Upload, organize, and manage your documents with version control and permissions.
-          </p>
-        </div>
+    <div class="space-y-8 py-2">
+      <PageHeader
+        title="Document Management"
+        subtitle="Upload, organize, and manage your documents with version control and permissions."
+        class="mb-8"
+      >
         <Link
+          q:slot="actions"
           href="/documents/categories"
           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
         >
@@ -106,7 +105,7 @@ export default component$(() => {
           </svg>
           Manage Categories
         </Link>
-      </div>
+      </PageHeader>
 
       {/* Main Layout with Sidebar */}
       <div class="flex gap-6">
@@ -129,15 +128,15 @@ export default component$(() => {
         <div class="flex-1 min-w-0">
           {/* Action Bar */}
           <div class="mb-6 flex gap-4">
-            <button
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            <Btn
+              class="rounded-lg"
               onClick$={() => (state.showUpload = !state.showUpload)}
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
               {state.showUpload ? 'Cancel Upload' : 'Upload Document'}
-            </button>
+            </Btn>
 
             {state.selectedDocumentIds.length > 0 && (
               <>

@@ -5,6 +5,7 @@ import { routeLoader$, useNavigate, type DocumentHead } from '@builder.io/qwik-c
 import { formBuilderService, createSSRApiClient } from '~/services';
 import type { AppForm } from '~/types/workflow';
 import type { BusinessVertical } from '~/services/types';
+import { Alert, Badge, Btn, FormField, PageHeader } from '~/components/ds';
 
 export const useFormsData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -97,34 +98,29 @@ export default component$(() => {
 
   return (
     <div class="py-4">
-      {/* Header */}
-      <div class="mb-6 flex justify-between items-center">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Form Builder</h1>
-          <p class="text-gray-600 mt-1">Create and manage dynamic forms</p>
-        </div>
-        <button onClick$={handleCreateNew} class="btn btn-primary">
+      <PageHeader title="Form Builder" subtitle="Create and manage dynamic forms">
+        <Btn q:slot="actions" onClick$={handleCreateNew}>
           <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
           Create New Form
-        </button>
-      </div>
+        </Btn>
+      </PageHeader>
 
       {/* Filters */}
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <label class="form-label text-xs mb-1">Search</label>
+          <FormField id="form-search" label="Search">
             <input
+              id="form-search"
               type="text"
               value={searchQuery.value}
               onInput$={(e) => searchQuery.value = (e.target as HTMLInputElement).value}
               placeholder="Search by code or title..."
               class="form-input w-full"
             />
-          </div>
-          <div>
-            <label class="form-label text-xs mb-1">Module</label>
+          </FormField>
+          <FormField id="form-module-filter" label="Module">
             <select
+              id="form-module-filter"
               value={selectedModule.value}
               onChange$={(e) => selectedModule.value = (e.target as HTMLSelectElement).value}
               class="form-input w-full"
@@ -134,7 +130,7 @@ export default component$(() => {
                 <option key={moduleId} value={moduleId}>{moduleId}</option>
               ))}
             </select>
-          </div>
+          </FormField>
         </div>
       </div>
 
@@ -147,10 +143,10 @@ export default component$(() => {
 
       {/* Error */}
       {error.value && (
-        <div class="alert-error p-4 rounded-md flex items-center gap-2">
+        <Alert variant="error" class="flex items-center gap-2">
           <i class="i-heroicons-exclamation-circle-solid w-4 h-4 flex-shrink-0"></i>
           {error.value}
-        </div>
+        </Alert>
       )}
 
       {/* Forms Table */}
@@ -202,42 +198,44 @@ export default component$(() => {
                         <span class="text-sm text-gray-600">{form.version ? `v${form.version}` : '-'}</span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <span class={`px-2 py-1 text-xs rounded-full font-medium ${
-                          form.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
+                        <Badge variant={form.is_active ? 'success' : 'neutral'}>
                           {form.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        </Badge>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right">
                         <div class="flex justify-end items-center gap-1">
-                          <button
+                          <Btn
+                            size="sm"
+                            variant={form.is_active ? 'secondary' : 'primary'}
                             onClick$={() => handleToggleStatus(form.code, form.is_active ?? false)}
-                            class={`p-1.5 rounded flex items-center justify-center ${form.is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
                             title={form.is_active ? 'Deactivate' : 'Activate'}
                           >
                             <i class={form.is_active ? 'i-heroicons-pause-solid w-3.5 h-3.5' : 'i-heroicons-play-solid w-3.5 h-3.5'} />
-                          </button>
-                          <button
+                          </Btn>
+                          <Btn
+                            size="sm"
+                            variant="secondary"
                             onClick$={() => handlePreview(form.code)}
-                            class="p-1.5 rounded flex items-center justify-center bg-blue-100 text-blue-700 hover:bg-blue-200"
                             title="Preview"
                           >
                             <i class="i-heroicons-eye-solid w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </Btn>
+                          <Btn
+                            size="sm"
+                            variant="secondary"
                             onClick$={() => handleEdit(form.code)}
-                            class="p-1.5 rounded flex items-center justify-center bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
                             title="Edit"
                           >
                             <i class="i-heroicons-pencil-solid w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </Btn>
+                          <Btn
+                            size="sm"
+                            variant="danger"
                             onClick$={() => handleDelete(form.code, form.title)}
-                            class="p-1.5 rounded flex items-center justify-center bg-red-100 text-red-700 hover:bg-red-200"
                             title="Delete"
                           >
                             <i class="i-heroicons-trash-solid w-3.5 h-3.5" />
-                          </button>
+                          </Btn>
                         </div>
                       </td>
                     </tr>

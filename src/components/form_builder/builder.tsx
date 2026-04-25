@@ -1,5 +1,6 @@
 
 import { $, component$, useStore } from '@builder.io/qwik';
+import { Btn } from '~/components/ds/btn';
 import { P9ELikert } from './likert';
 import { FieldPreviewComponent } from './fieldpreiview';
 import DragDrop from '../dragdrop';
@@ -178,9 +179,9 @@ export const FormBuilder = component$(() => {
         </div>
       )}
 
-      <button class="bg-green-600 text-white px-4 py-2 rounded mb-6" onClick$={addField} disabled={!state.selectedValue}>
+      <Btn class="mb-6" onClick$={addField} disabled={!state.selectedValue}>
         Add Field
-      </button>
+      </Btn>
 
       <DragDrop
         components={formState.fields.map((field, idx) => ({

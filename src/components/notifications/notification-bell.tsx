@@ -1,6 +1,7 @@
 import { component$, useSignal, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
 import { notificationService } from '~/services/notification.service';
 import type { NotificationDTO } from '~/types/notification';
+import { Btn } from '~/components/ds';
 
 interface NotificationBellProps {
   onNotificationClick$?: PropFunction<(notification: NotificationDTO) => void>;
@@ -128,21 +129,21 @@ export const NotificationBell = component$<NotificationBellProps>(
     const getTypeIcon = (type: string) => {
       switch (type) {
         case 'workflow_transition':
-          return '🔄';
+          return 'i-heroicons-arrow-path-rounded-square-solid';
         case 'approval_required':
-          return '⏰';
+          return 'i-heroicons-clock-solid';
         case 'approval_approved':
-          return '✅';
+          return 'i-heroicons-check-circle-solid';
         case 'approval_rejected':
-          return '❌';
+          return 'i-heroicons-x-circle-solid';
         case 'task_assigned':
-          return '📋';
+          return 'i-heroicons-clipboard-document-list-solid';
         case 'task_completed':
-          return '✓';
+          return 'i-heroicons-check-badge-solid';
         case 'system_alert':
-          return '⚠️';
+          return 'i-heroicons-exclamation-triangle-solid';
         default:
-          return '📬';
+          return 'i-heroicons-inbox-solid';
       }
     };
 
@@ -164,7 +165,9 @@ export const NotificationBell = component$<NotificationBellProps>(
     return (
       <div class="relative">
         {/* Bell Icon */}
-        <button
+        <Btn
+          size="sm"
+          variant="ghost"
           onClick$={handleToggleDropdown}
           class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
           aria-label="Notifications"
@@ -189,7 +192,7 @@ export const NotificationBell = component$<NotificationBellProps>(
               {unreadCount.value > 99 ? '99+' : unreadCount.value}
             </span>
           )}
-        </button>
+        </Btn>
 
         {/* Dropdown */}
         {isOpen.value && (
@@ -198,13 +201,15 @@ export const NotificationBell = component$<NotificationBellProps>(
             <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
               <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
               {unreadCount.value > 0 && (
-                <button
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={handleMarkAllAsRead}
                   disabled={isLoading.value}
                   class="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
                 >
                   Mark all as read
-                </button>
+                </Btn>
               )}
             </div>
 
@@ -229,8 +234,10 @@ export const NotificationBell = component$<NotificationBellProps>(
                 </div>
               ) : (
                 notifications.value.map((notification) => (
-                  <button
+                  <Btn
                     key={notification.id}
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => handleNotificationClick(notification)}
                     class={`w-full px-4 py-3 border-b border-gray-100 hover:bg-gray-50 text-left transition-colors ${
                       !notification.is_read ? 'bg-blue-50' : ''
@@ -238,9 +245,7 @@ export const NotificationBell = component$<NotificationBellProps>(
                   >
                     <div class="flex items-start gap-3">
                       {/* Type Icon */}
-                      <span class="text-2xl flex-shrink-0">
-                        {getTypeIcon(notification.type)}
-                      </span>
+                      <i class={`${getTypeIcon(notification.type)} h-6 w-6 flex-shrink-0 text-slate-600`} aria-hidden="true"></i>
 
                       {/* Content */}
                       <div class="flex-1 min-w-0">
@@ -281,7 +286,7 @@ export const NotificationBell = component$<NotificationBellProps>(
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </Btn>
                 ))
               )}
             </div>
@@ -293,7 +298,8 @@ export const NotificationBell = component$<NotificationBellProps>(
                   href="/admin/notifications"
                   class="block text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  View all notifications →
+                  View all notifications
+                  <i class="i-heroicons-arrow-right-solid ml-1 h-4 w-4 inline-block" aria-hidden="true"></i>
                 </a>
               </div>
             )}

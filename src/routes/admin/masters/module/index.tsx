@@ -1,6 +1,7 @@
 import { component$, useSignal, $ } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
+import { Badge, Btn, FormField, PageHeader } from "~/components/ds";
 import { createSSRApiClient, apiClient } from "~/services";
 
 interface Module {
@@ -35,11 +36,11 @@ export const useModulesLoader = routeLoader$(async (requestEvent) => {
 });
 
 export default component$(() => {
-  console.log('🚀 Module Component Rendered');
+  console.log('Module Component Rendered');
 
   // Get data from routeLoader$
   const modulesData = useModulesLoader();
-  console.log('📦 Route Loader Data:', modulesData.value);
+  console.log('Route Loader Data:', modulesData.value);
 
   const modules = useSignal<Module[]>(modulesData.value.modules || []);
 
@@ -208,18 +209,18 @@ export default component$(() => {
 
         {!loading.value && (
           <>
-        <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold">Module Master</h1>
-          <button
-            class="btn btn-secondary"
+        <PageHeader title="Module Master">
+          <Btn
+            q:slot="actions"
+            variant="secondary"
             onClick$={() => {
               showCreateModal.value = true;
               editingModule.value = null;
             }}
           >
             + Create Module
-          </button>
-        </div>
+          </Btn>
+        </PageHeader>
 
         {/* Success/Error Messages */}
         {success.value && (
@@ -258,15 +259,9 @@ export default component$(() => {
                     Code: {module.code}
                   </p>
                 </div>
-                <span
-                  class={`px-2 py-1 text-xs rounded ${
-                    module.is_active
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {module.is_active ? "Active" : "Inactive"}
-                </span>
+                  <Badge variant={module.is_active ? 'success' : 'neutral'}>
+                    {module.is_active ? "Active" : "Inactive"}
+                  </Badge>
               </div>
 
               <p class="text-sm text-gray-600 mb-2">{module.description}</p>
@@ -277,8 +272,7 @@ export default component$(() => {
               )}
 
               <div class="flex gap-2">
-                <button
-                  class="btn btn-primary"
+                <Btn
                   onClick$={() => {
                     editingModule.value = { ...module };
                     showCreateModal.value = true;
@@ -288,16 +282,16 @@ export default component$(() => {
                     <i class="i-heroicons-pencil-square-solid w-4 h-4 inline-block text-white" />
                     Edit
                   </span>
-                </button>
-                <button
-                  class="btn btn-danger"
+                </Btn>
+                <Btn
+                  variant="danger"
                   onClick$={() => handleDeleteModule(module.id)}
                 >
                   <span class="flex gap-1">
                     <i class="i-heroicons-trash-solid w-4 h-4 text-white inline-block" />
                     Delete
                   </span>
-                </button>
+                </Btn>
               </div>
             </div>
           ))}
@@ -319,11 +313,9 @@ export default component$(() => {
                 </h3>
 
                 <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Module Name *
-                    </label>
+                  <FormField id="module-name" label="Module Name" required>
                     <input
+                      id="module-name"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={
@@ -331,6 +323,8 @@ export default component$(() => {
                           ? editingModule.value.name
                           : newModule.value.name
                       }
+                      required
+                      aria-required="true"
                       onInput$={(e) => {
                         const value = (e.target as HTMLInputElement).value;
                         if (editingModule.value) {
@@ -341,13 +335,11 @@ export default component$(() => {
                       }}
                       placeholder="e.g., Water Management"
                     />
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Module Code *
-                    </label>
+                  <FormField id="module-code" label="Module Code" required>
                     <input
+                      id="module-code"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={
@@ -355,6 +347,8 @@ export default component$(() => {
                           ? editingModule.value.code
                           : newModule.value.code
                       }
+                      required
+                      aria-required="true"
                       onInput$={(e) => {
                         const value = (e.target as HTMLInputElement).value;
                         if (editingModule.value) {
@@ -365,13 +359,11 @@ export default component$(() => {
                       }}
                       placeholder="e.g., WATER_MGMT"
                     />
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
+                  <FormField id="module-description" label="Description">
                     <textarea
+                      id="module-description"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={3}
                       value={
@@ -389,14 +381,12 @@ export default component$(() => {
                       }}
                       placeholder="Describe the module..."
                     />
-                  </div>
+                  </FormField>
 
                   <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Icon (emoji)
-                      </label>
+                    <FormField id="module-icon" label="Icon (emoji)">
                       <input
+                        id="module-icon"
                         type="text"
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         value={
@@ -414,13 +404,11 @@ export default component$(() => {
                         }}
                         placeholder="💧"
                       />
-                    </div>
+                    </FormField>
 
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Display Order
-                      </label>
+                    <FormField id="module-order" label="Display Order">
                       <input
+                        id="module-order"
                         type="number"
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         value={
@@ -439,7 +427,7 @@ export default component$(() => {
                           }
                         }}
                       />
-                    </div>
+                    </FormField>
                   </div>
 
                   <div class="flex items-center">
@@ -468,8 +456,8 @@ export default component$(() => {
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
-                  <button
-                    class="btn bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  <Btn
+                    variant="secondary"
                     onClick$={() => {
                       showCreateModal.value = false;
                       editingModule.value = null;
@@ -485,9 +473,8 @@ export default component$(() => {
                     }}
                   >
                     Cancel
-                  </button>
-                  <button
-                    class="btn btn-primary"
+                  </Btn>
+                  <Btn
                     onClick$={
                       editingModule.value
                         ? handleUpdateModule
@@ -495,7 +482,7 @@ export default component$(() => {
                     }
                   >
                     {editingModule.value ? "Update" : "Create"}
-                  </button>
+                  </Btn>
                 </div>
               </div>
             </div>

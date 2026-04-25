@@ -381,6 +381,35 @@ export const designTokensTheme: Theme = {
       '850': 'var(--color-neutral-850)',
       '900': 'var(--color-neutral-900)'
     },
+    'light': {
+      '25': 'var(--color-neutral-25)',
+      '50': 'var(--color-neutral-50)',
+      '100': 'var(--color-neutral-100)',
+      '200': 'var(--color-neutral-200)',
+      '300': 'var(--color-neutral-300)',
+      '400': 'var(--color-neutral-400)',
+      '500': 'var(--color-neutral-500)',
+      '600': 'var(--color-neutral-600)',
+      '700': 'var(--color-neutral-700)',
+      '800': 'var(--color-neutral-800)',
+      '850': 'var(--color-neutral-850)',
+      '900': 'var(--color-neutral-900)'
+    },
+    'dark': {
+      '25': 'var(--color-neutral-25)',
+      '50': 'var(--color-neutral-50)',
+      '100': 'var(--color-neutral-100)',
+      '200': 'var(--color-neutral-200)',
+      '300': 'var(--color-neutral-300)',
+      '400': 'var(--color-neutral-400)',
+      '500': 'var(--color-neutral-500)',
+      '600': 'var(--color-neutral-600)',
+      '700': 'var(--color-neutral-700)',
+      '800': 'var(--color-neutral-800)',
+      '850': 'var(--color-neutral-850)',
+      '900': 'var(--color-neutral-900)',
+      '950': 'var(--color-neutral-black)'
+    },
     'green': {
       '50': 'var(--color-semantic-success-50)',
       '100': 'var(--color-semantic-success-100)',
@@ -418,6 +447,18 @@ export const designTokensTheme: Theme = {
       '900': 'var(--color-semantic-error-900)'
     },
     'error': {
+      '50': 'var(--color-semantic-error-50)',
+      '100': 'var(--color-semantic-error-100)',
+      '200': 'var(--color-semantic-error-200)',
+      '300': 'var(--color-semantic-error-300)',
+      '400': 'var(--color-semantic-error-400)',
+      '500': 'var(--color-semantic-error-500)',
+      '600': 'var(--color-semantic-error-600)',
+      '700': 'var(--color-semantic-error-700)',
+      '800': 'var(--color-semantic-error-800)',
+      '900': 'var(--color-semantic-error-900)'
+    },
+    'danger': {
       '50': 'var(--color-semantic-error-50)',
       '100': 'var(--color-semantic-error-100)',
       '200': 'var(--color-semantic-error-200)',
@@ -477,6 +518,35 @@ export const designTokensTheme: Theme = {
       '800': 'var(--color-semantic-info-800)',
       '900': 'var(--color-semantic-info-900)'
     },
+    'surface': {
+      'primary': 'var(--color-surface-primary)',
+      'secondary': 'var(--color-surface-secondary)',
+      'tertiary': 'var(--color-surface-tertiary)',
+      'inverse': 'var(--color-surface-inverse)',
+      'overlay': 'var(--color-surface-overlay)'
+    },
+    'text': {
+      'primary': 'var(--color-text-primary)',
+      'secondary': 'var(--color-text-secondary)',
+      'tertiary': 'var(--color-text-tertiary)',
+      'inverse': 'var(--color-text-inverse)',
+      'placeholder': 'var(--color-text-placeholder)',
+      'disabled': 'var(--color-text-disabled)'
+    },
+    'border': {
+      'primary': 'var(--color-border-primary)',
+      'secondary': 'var(--color-border-secondary)',
+      'focus': 'var(--color-border-focus)',
+      'inverse': 'var(--color-border-inverse)'
+    },
+    'interactive': {
+      'primary': 'var(--color-interactive-primary)',
+      'primary-hover': 'var(--color-interactive-primaryHover)',
+      'primary-active': 'var(--color-interactive-primaryActive)',
+      'secondary': 'var(--color-interactive-secondary)',
+      'secondary-hover': 'var(--color-interactive-secondaryHover)',
+      'secondary-active': 'var(--color-interactive-secondaryActive)'
+    },
     'white': 'var(--color-neutral-white)',
     'black': 'var(--color-neutral-black)'
   },
@@ -533,10 +603,14 @@ export const designTokensTheme: Theme = {
     '9xl': 'var(--typography-fontSize-9xl)'
   },
   fontFamily: {
+    'sans': 'var(--typography-fontFamily-primary)',
+    'serif': 'var(--typography-fontFamily-secondary)',
     'primary': 'var(--typography-fontFamily-primary)',
     'secondary': 'var(--typography-fontFamily-secondary)',
     'mono': 'var(--typography-fontFamily-mono)',
-    'display': 'var(--typography-fontFamily-display)'
+    'display': 'var(--typography-fontFamily-display)',
+    'body': 'var(--typography-fontFamily-primary)',
+    'heading': 'var(--typography-fontFamily-display)'
   },
   borderRadius: {
     'none': 'var(--BorderRadiusNone)',
@@ -611,13 +685,13 @@ export const animations = {
 // Component shortcuts using UnoCSS-compatible color names
 export const componentShortcuts = {
   // Base component shortcuts (using new UnoCSS-compatible color names)
-  'btn-primary': 'bg-primary-500 text-white border-primary-500 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-150 ease-out hover:bg-primary-600 hover:border-primary-600 hover:-translate-y-px active:bg-primary-700 active:border-primary-700 active:translate-y-0 disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50',
+  'btn-primary': 'bg-primary-500 text-white border border-primary-500 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-150 ease-out hover:bg-primary-600 hover:border-primary-600 hover:-translate-y-px active:bg-primary-700 active:border-primary-700 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50',
 
-  'btn-secondary': 'bg-white text-primary-600 border-gray-300 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-150 ease-out hover:bg-gray-50 hover:border-primary-300 hover:-translate-y-px',
+  'btn-secondary': 'bg-surface-primary text-primary-600 border border-border-primary rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-150 ease-out hover:bg-surface-secondary hover:border-primary-300 hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-primary-100',
 
-  'input-base': 'bg-white border-gray-300 rounded-md border text-gray-900 text-sm px-3 py-2 h-10 transition-all duration-150 ease-out placeholder:text-gray-500 focus:border-primary-500 focus:outline-none',
+  'input-base': 'bg-surface-primary border border-border-primary rounded-md text-text-primary text-sm px-3 py-2 h-10 transition-all duration-150 ease-out placeholder:text-text-placeholder focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100',
 
-  'card-base': 'bg-white border-gray-200 rounded-lg border shadow-sm p-6 transition-all duration-300 ease-out hover:shadow-md hover:-translate-y-0.5',
+  'card-base': 'bg-surface-primary border border-border-primary rounded-lg shadow-card p-6 text-text-primary transition-all duration-300 ease-out hover:shadow-md hover:-translate-y-0.5',
 
   // Legacy shortcuts (keep for backwards compatibility)
   'btn-primary-legacy': 'bg-color-brand-primary-500 text-color-neutral-white border-color-brand-primary-500 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-150 ease-out hover:bg-color-brand-primary-600 hover:border-color-brand-primary-600 hover:-translate-y-px active:bg-color-brand-primary-700 active:border-color-brand-primary-700 active:translate-y-0 disabled:bg-color-neutral-300 disabled:border-color-neutral-300 disabled:text-color-neutral-500 disabled:cursor-not-allowed disabled:opacity-50',

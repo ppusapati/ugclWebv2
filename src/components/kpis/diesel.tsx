@@ -1,6 +1,7 @@
 import { Resource, component$, isServer, useResource$, useSignal, useTask$ } from '@builder.io/qwik';
 import type { EChartProps } from '~/components/echarts';
 import { buildApiUrl } from '~/config/api';
+import { Btn } from '~/components/ds';
 
 const EChart = component$<EChartProps>((props) => {
   const chartResource = useResource$(async () => {
@@ -13,7 +14,7 @@ const EChart = component$<EChartProps>((props) => {
       value={chartResource}
       onPending={() => <div class="h-64 rounded-lg bg-gray-100 animate-pulse" />}
       onResolved={(ChartComponent) => (
-        <ChartComponent option={props.option} style={props.style} onClick={props.onClick} />
+        <ChartComponent option={props.option} class={props.class} onClick={props.onClick} />
       )}
     />
   );
@@ -109,7 +110,7 @@ export const DieselKpi = component$(() => {
                 <p class="text-primary-100 text-sm">Liters</p>
               </div>
               <div class="bg-primary-400 bg-opacity-30 rounded-full p-3">
-                ⛽
+                <i class="i-heroicons-beaker-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -122,7 +123,7 @@ export const DieselKpi = component$(() => {
                 <p class="text-green-100 text-sm">Cost</p>
               </div>
               <div class="bg-green-400 bg-opacity-30 rounded-full p-3">
-                💰
+                <i class="i-heroicons-banknotes-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -135,7 +136,7 @@ export const DieselKpi = component$(() => {
                 <p class="text-purple-100 text-sm">Per Liter</p>
               </div>
               <div class="bg-purple-400 bg-opacity-30 rounded-full p-3">
-                📊
+                <i class="i-heroicons-chart-bar-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -148,7 +149,7 @@ export const DieselKpi = component$(() => {
                 <p class="text-orange-100 text-sm">% Compliant</p>
               </div>
               <div class="bg-orange-400 bg-opacity-30 rounded-full p-3">
-                ✅
+                <i class="i-heroicons-check-circle-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -156,7 +157,10 @@ export const DieselKpi = component$(() => {
 
         {/* Key Insights */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">📈 Key Insights</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-presentation-chart-line-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Key Insights
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-primary-50 rounded-lg p-4">
               <h4 class="font-medium text-primary-900">Usage Trend</h4>
@@ -259,7 +263,10 @@ export const DieselKpi = component$(() => {
 
         {/* Interactive Map */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">🗺️ Diesel Entry Locations</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-map-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Diesel Entry Locations
+          </h3>
           <div class="w-full h-96 bg-gray-100 rounded-lg overflow-hidden">
             <iframe
               src={`data:text/html;charset=utf-8,${encodeURIComponent(`
@@ -289,8 +296,8 @@ export const DieselKpi = component$(() => {
                 <body>
                   <div id="map"></div>
                   <div class="info-panel">
-                    <strong>📍 ${totalLocations} Total Entries</strong><br>
-                    <span style="color: #666;">🎯 ${uniqueLocations} Unique Locations</span>
+                    <strong>${totalLocations} Total Entries</strong><br>
+                    <span style="color: #666;">${uniqueLocations} Unique Locations</span>
                   </div>
                   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
                   <script>
@@ -340,7 +347,7 @@ export const DieselKpi = component$(() => {
                           
                           marker.bindPopup(\`
                             <div style="text-align: center;">
-                              <strong>📍 Entry Point</strong><br>
+                              <strong>Entry Point</strong><br>
                               <span style="color: #666;">Lat: \${lat.toFixed(6)}</span><br>
                               <span style="color: #666;">Lng: \${lng.toFixed(6)}</span><br>
                               <strong style="color: \${color};">\${count} entries</strong>
@@ -385,7 +392,10 @@ export const DieselKpi = component$(() => {
 
         {/* Location Insights */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">📊 Location Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-chart-bar-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Location Analysis
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 class="font-medium mb-2">Geographic Distribution</h4>
@@ -396,8 +406,8 @@ export const DieselKpi = component$(() => {
                     <div class="flex items-center space-x-2">
                       <div class="w-24 bg-gray-200 rounded-full h-2">
                         <div 
-                          class="bg-primary-500 h-2 rounded-full" 
-                          style={`width: ${(site.value / Math.max(...kpis.value!.entriesPerSite.map(s => s.value))) * 100}%`}
+                          class="bg-primary-500 h-2 rounded-full w-[var(--bar-width)]" 
+                          style={{ '--bar-width': `${(site.value / Math.max(...kpis.value!.entriesPerSite.map(s => s.value))) * 100}%` }}
                         ></div>
                       </div>
                       <span class="text-sm font-medium w-8">{site.value}</span>
@@ -480,7 +490,10 @@ export const DieselKpi = component$(() => {
 
         {/* Card Usage Analysis */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">💳 Fuel Card Usage Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-credit-card-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Fuel Card Usage Analysis
+          </h3>
           <div class="overflow-x-auto">
             <table class="min-w-full">
               <thead>
@@ -502,8 +515,8 @@ export const DieselKpi = component$(() => {
                     <td class="py-3 px-4 text-center">
                       <div class="w-full bg-gray-200 rounded-full h-2">
                         <div 
-                          class="bg-primary-500 h-2 rounded-full" 
-                          style={`width: ${Math.min((card.value / Math.max(...kpis.value!.cardNumberUsage.map(c => c.value))) * 100, 100)}%`}
+                          class="bg-primary-500 h-2 rounded-full w-[var(--bar-width)]" 
+                          style={{ '--bar-width': `${Math.min((card.value / Math.max(...kpis.value!.cardNumberUsage.map(c => c.value))) * 100, 100)}%` }}
                         ></div>
                       </div>
                     </td>
@@ -522,7 +535,10 @@ export const DieselKpi = component$(() => {
       <div class="mx-auto">
         {/* Header */}
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">🚛 Diesel Management Dashboard</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <i class="i-heroicons-truck-solid h-8 w-8 inline-block text-primary-600" aria-hidden="true"></i>
+            Diesel Management Dashboard
+          </h1>
           <p class="text-gray-600">Comprehensive fuel consumption analytics and insights</p>
         </div>
 
@@ -535,7 +551,10 @@ export const DieselKpi = component$(() => {
 
         {error.value && (
           <div class="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div class="text-red-800 font-medium">⚠️ Error loading dashboard</div>
+            <div class="text-red-800 font-medium flex items-center gap-2">
+              <i class="i-heroicons-exclamation-triangle-solid h-5 w-5 inline-block" aria-hidden="true"></i>
+              Error loading dashboard
+            </div>
             <div class="text-red-600 text-sm mt-1">{error.value}</div>
           </div>
         )}
@@ -545,7 +564,9 @@ export const DieselKpi = component$(() => {
             {/* Tab Navigation */}
             <div class="bg-white rounded-lg border border-gray-200 mb-6">
               <div class="flex space-x-1 p-1">
-                <button
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'overview'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'overview' 
@@ -553,9 +574,12 @@ export const DieselKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  📊 Overview
-                </button>
-                <button
+                  <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Overview
+                </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'analytics'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'analytics' 
@@ -563,9 +587,12 @@ export const DieselKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  🔍 Analytics
-                </button>
-                <button
+                  <i class="i-heroicons-magnifying-glass-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Analytics
+                </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'map'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'map' 
@@ -573,8 +600,9 @@ export const DieselKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  🗺️ Locations
-                </button>
+                  <i class="i-heroicons-map-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Locations
+                </Btn>
               </div>
             </div>
 

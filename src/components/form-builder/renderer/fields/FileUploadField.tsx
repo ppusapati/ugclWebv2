@@ -1,10 +1,11 @@
 // src/components/form-builder/renderer/fields/FileUploadField.tsx
 import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
+import { Btn, FormField } from '~/components/ds';
 import { fileService } from '~/services';
-import type { FormField } from '~/types/workflow';
+import type { FormField as WorkflowFormField } from '~/types/workflow';
 
 interface FileUploadFieldProps {
-  field: FormField;
+  field: WorkflowFormField;
   value: string | string[];
   error?: string;
   onChange$: PropFunction<(value: string | string[]) => void>;
@@ -75,13 +76,16 @@ export default component$<FileUploadFieldProps>((props) => {
 
   return (
     <div class="field-wrapper">
-      <label class="block text-sm font-medium text-gray-700 mb-1">
-        {props.field.label}
-        {props.field.required && <span class="text-red-500 ml-1">*</span>}
-      </label>
+      <FormField
+        id={`file-input-${props.field.id}`}
+        label={props.field.label}
+        required={props.field.required}
+        hint={props.field.hint}
+        error={props.error}
+      >
 
-      {/* File Input */}
-      <div class="relative">
+        {/* File Input */}
+        <div class="relative">
         <input
           type="file"
           accept={props.field.accept}
@@ -105,9 +109,6 @@ export default component$<FileUploadFieldProps>((props) => {
             <p class="mt-2 text-sm text-gray-600">
               {uploading.value ? 'Uploading...' : 'Click to upload or drag and drop'}
             </p>
-            {props.field.hint && (
-              <p class="text-xs text-gray-500 mt-1">{props.field.hint}</p>
-            )}
             {props.field.accept && (
               <p class="text-xs text-gray-500 mt-1">
                 Accepted: {props.field.accept}
@@ -121,18 +122,19 @@ export default component$<FileUploadFieldProps>((props) => {
           </div>
         </label>
 
-        {/* Upload Progress */}
-        {uploading.value && (
-          <div class="mt-2">
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div
-                class="bg-blue-600 h-2 rounded-full transition-all"
-                style={`width: ${uploadProgress.value}%`}
-              />
+          {/* Upload Progress */}
+          {uploading.value && (
+            <div class="mt-2">
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  class="bg-blue-600 h-2 rounded-full transition-all w-[var(--upload-width)]"
+                  style={{ '--upload-width': `${uploadProgress.value}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </FormField>
 
       {/* Uploaded Files */}
       {uploadedFiles.value.length > 0 && (
@@ -163,20 +165,18 @@ export default component$<FileUploadFieldProps>((props) => {
               </div>
 
               {/* Remove button */}
-              <button
+              <Btn
                 type="button"
                 onClick$={() => removeFile(index)}
-                class="px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+                size="sm"
+                variant="danger"
+                class="rounded"
               >
                 Remove
-              </button>
+              </Btn>
             </div>
           ))}
         </div>
-      )}
-
-      {props.error && (
-        <p class="text-xs text-red-500 mt-1">{props.error}</p>
       )}
     </div>
   );

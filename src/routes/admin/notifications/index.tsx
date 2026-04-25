@@ -4,6 +4,7 @@ import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services';
 import { notificationService } from '~/services/notification.service';
 import type { NotificationDTO, NotificationListResponse } from '~/types/notification';
+import { Badge, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 
 export const useNotificationsData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -94,36 +95,36 @@ export default component$(() => {
   const getPriorityClass = (priority: string) => {
     switch (priority) {
       case 'critical':
-        return 'bg-red-100 border-red-300 text-red-800';
+        return 'error' as const;
       case 'high':
-        return 'bg-orange-100 border-orange-300 text-orange-800';
+        return 'warning' as const;
       case 'normal':
-        return 'bg-blue-100 border-blue-300 text-blue-800';
+        return 'info' as const;
       case 'low':
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return 'neutral' as const;
       default:
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return 'neutral' as const;
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'workflow_transition':
-        return '🔄';
+        return 'i-heroicons-arrow-path-rounded-square-solid';
       case 'approval_required':
-        return '⏰';
+        return 'i-heroicons-clock-solid';
       case 'approval_approved':
-        return '✅';
+        return 'i-heroicons-check-circle-solid';
       case 'approval_rejected':
-        return '❌';
+        return 'i-heroicons-x-circle-solid';
       case 'task_assigned':
-        return '📋';
+        return 'i-heroicons-clipboard-document-list-solid';
       case 'task_completed':
-        return '✓';
+        return 'i-heroicons-check-badge-solid';
       case 'system_alert':
-        return '⚠️';
+        return 'i-heroicons-exclamation-triangle-solid';
       default:
-        return '📬';
+        return 'i-heroicons-inbox-solid';
     }
   };
 
@@ -143,41 +144,32 @@ export default component$(() => {
   };
 
   return (
-    <div class="max-w-7xl mx-auto py-4">
-      {/* Header */}
-      <div class="mb-6 flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Notifications</h1>
-          <p class="text-gray-600 mt-1">Manage your notifications and alerts</p>
-        </div>
-        <div class="flex gap-2">
-          <button
-            onClick$={handleMarkAllAsRead}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-          >
-            Mark All as Read
-          </button>
-          <a
-            href="/admin/notifications/preferences"
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
-          >
-            Preferences
-          </a>
-        </div>
-      </div>
+    <div class="space-y-6">
+      <PageHeader title="Notifications" subtitle="Manage your notifications and alerts">
+        <Btn q:slot="actions" onClick$={handleMarkAllAsRead}>
+          Mark All as Read
+        </Btn>
+        <a
+          q:slot="actions"
+          href="/admin/notifications/preferences"
+          class="inline-flex items-center justify-center rounded-lg border border-color-border-primary bg-color-surface-primary px-4 py-2 text-sm font-medium text-color-text-secondary transition-colors duration-200 hover:bg-color-surface-secondary"
+        >
+          Preferences
+        </a>
+      </PageHeader>
 
       {/* Filters */}
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <SectionCard title="Filters" subtitle="Filter notifications by type, priority, and read status.">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+          <FormField id="notif-filter-type" label="Type">
             <select
+              id="notif-filter-type"
               value={filters.type}
               onChange$={(e) => {
                 filters.type = (e.target as HTMLSelectElement).value;
                 loadNotifications();
               }}
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
             >
               <option value="">All Types</option>
               <option value="workflow_transition">Workflow Transition</option>
@@ -187,17 +179,17 @@ export default component$(() => {
               <option value="task_assigned">Task Assigned</option>
               <option value="system_alert">System Alert</option>
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+          <FormField id="notif-filter-priority" label="Priority">
             <select
+              id="notif-filter-priority"
               value={filters.priority}
               onChange$={(e) => {
                 filters.priority = (e.target as HTMLSelectElement).value;
                 loadNotifications();
               }}
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
             >
               <option value="">All Priorities</option>
               <option value="critical">Critical</option>
@@ -205,25 +197,25 @@ export default component$(() => {
               <option value="normal">Normal</option>
               <option value="low">Low</option>
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <FormField id="notif-filter-status" label="Status">
             <select
+              id="notif-filter-status"
               value={filters.read}
               onChange$={(e) => {
                 filters.read = (e.target as HTMLSelectElement).value;
                 loadNotifications();
               }}
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
             >
               <option value="">All Status</option>
               <option value="false">Unread</option>
               <option value="true">Read</option>
             </select>
-          </div>
+          </FormField>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Loading State */}
       {loading.value && (
@@ -271,9 +263,7 @@ export default component$(() => {
                 >
                   <div class="flex items-start gap-4">
                     {/* Type Icon */}
-                    <span class="text-3xl flex-shrink-0">
-                      {getTypeIcon(notification.type)}
-                    </span>
+                    <i class={`${getTypeIcon(notification.type)} h-7 w-7 flex-shrink-0 text-slate-600`} aria-hidden="true"></i>
 
                     {/* Content */}
                     <div class="flex-1 min-w-0">
@@ -282,7 +272,7 @@ export default component$(() => {
                           {notification.title}
                         </h3>
                         {!notification.is_read && (
-                          <span class="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0 ml-2"></span>
+                          <span class="w-3 h-3 bg-interactive-primary rounded-full flex-shrink-0 ml-2"></span>
                         )}
                       </div>
 
@@ -290,18 +280,14 @@ export default component$(() => {
 
                       <div class="flex items-center gap-3 flex-wrap mb-3">
                         {/* Priority Badge */}
-                        <span
-                          class={`text-xs px-2 py-1 rounded border font-medium ${getPriorityClass(
-                            notification.priority
-                          )}`}
-                        >
+                        <Badge variant={getPriorityClass(notification.priority)}>
                           {notification.priority}
-                        </span>
+                        </Badge>
 
                         {/* Type Badge */}
-                        <span class="text-xs px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-700">
+                        <Badge variant="neutral">
                           {notification.type.replace(/_/g, ' ')}
-                        </span>
+                        </Badge>
 
                         {/* Time */}
                         <span class="text-xs text-gray-500">
@@ -319,27 +305,31 @@ export default component$(() => {
                       {/* Actions */}
                       <div class="flex items-center gap-2">
                         {!notification.is_read && (
-                          <button
+                          <Btn
+                            size="sm"
+                            variant="ghost"
                             onClick$={() => handleMarkAsRead(notification.id)}
-                            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
                           >
                             Mark as Read
-                          </button>
+                          </Btn>
                         )}
                         {notification.action_url && (
                           <a
                             href={notification.action_url}
                             class="text-sm text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            View Details →
+                            View Details
+                            <i class="i-heroicons-arrow-right-solid ml-1 h-4 w-4 inline-block" aria-hidden="true"></i>
                           </a>
                         )}
-                        <button
+                        <Btn
+                          size="sm"
+                          variant="danger"
                           onClick$={() => handleDelete(notification.id)}
-                          class="ml-auto text-sm text-red-600 hover:text-red-800 font-medium"
+                          class="ml-auto"
                         >
                           Delete
-                        </button>
+                        </Btn>
                       </div>
                     </div>
                   </div>

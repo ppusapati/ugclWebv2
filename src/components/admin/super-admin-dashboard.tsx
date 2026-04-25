@@ -1,5 +1,6 @@
 // src/components/admin/super-admin-dashboard.tsx
 import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
+import { Alert, Badge, Btn, SectionCard, StatCard } from '~/components/ds';
 import { authService } from '~/services/auth.service';
 
 export const SuperAdminDashboard = component$(() => {
@@ -33,9 +34,9 @@ export const SuperAdminDashboard = component$(() => {
 
   if (state.error) {
     return (
-      <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+      <Alert variant="error">
         <p class="text-red-800">{state.error}</p>
-      </div>
+      </Alert>
     );
   }
 
@@ -55,32 +56,32 @@ export const SuperAdminDashboard = component$(() => {
 
       {/* Global Statistics */}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="stat-card bg-white p-6 border rounded-lg shadow-sm">
+        <StatCard class="p-6">
           <h3 class="text-sm font-medium text-gray-500">Total Users</h3>
           <p class="text-3xl font-bold text-blue-600">{global_stats.total_users}</p>
-        </div>
-        <div class="stat-card bg-white p-6 border rounded-lg shadow-sm">
+        </StatCard>
+        <StatCard class="p-6">
           <h3 class="text-sm font-medium text-gray-500">Business Verticals</h3>
           <p class="text-3xl font-bold text-green-600">{global_stats.total_business_verticals}</p>
-        </div>
-        <div class="stat-card bg-white p-6 border rounded-lg shadow-sm">
+        </StatCard>
+        <StatCard class="p-6">
           <h3 class="text-sm font-medium text-gray-500">Global Roles</h3>
           <p class="text-3xl font-bold text-purple-600">{global_stats.total_global_roles}</p>
-        </div>
-        <div class="stat-card bg-white p-6 border rounded-lg shadow-sm">
+        </StatCard>
+        <StatCard class="p-6">
           <h3 class="text-sm font-medium text-gray-500">Business Roles</h3>
           <p class="text-3xl font-bold text-orange-600">{global_stats.total_business_roles}</p>
-        </div>
+        </StatCard>
       </div>
 
       {/* Business Verticals Overview */}
-      <div class="bg-white border rounded-lg">
+      <SectionCard class="overflow-hidden p-0">
         <div class="p-6 border-b">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold">Business Verticals</h2>
-            <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <Btn>
               Create New Business
-            </button>
+            </Btn>
           </div>
         </div>
         
@@ -118,39 +119,43 @@ export const SuperAdminDashboard = component$(() => {
                     </div>
                   </td>
                   <td class="px-6 py-4">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded">
+                    <Badge variant="neutral">
                       {business.code}
-                    </span>
+                    </Badge>
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-900">{business.user_count}</td>
                   <td class="px-6 py-4 text-sm text-gray-900">{business.role_count}</td>
                   <td class="px-6 py-4 text-sm text-gray-500">
                     {new Date(business.created_at).toLocaleDateString()}
                   </td>
-                  <td class="px-6 py-4 text-sm space-x-2">
-                    <button
+                  <td class="px-6 py-4 text-sm flex items-center gap-2">
+                    <Btn
+                      size="sm"
+                      variant="ghost"
                       class="text-blue-600 hover:text-blue-900"
                       onClick$={() => {
                         window.location.href = `/admin/masters/business/${business.code}/manage`;
                       }}
                     >
                       Manage
-                    </button>
-                    <button
+                    </Btn>
+                    <Btn
+                      size="sm"
+                      variant="secondary"
                       class="text-green-600 hover:text-green-900"
                       onClick$={() => {
                         window.location.href = `/admin/masters/business/${business.code}/dashboard`;
                       }}
                     >
                       View
-                    </button>
+                    </Btn>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 });

@@ -20,6 +20,7 @@
 
 import { component$, isServer, Slot, useSignal, useTask$ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
+import { Btn } from '~/components/ds/btn';
 import { authService } from '~/services/auth-enhanced.service';
 
 interface RouteGuardProps {
@@ -114,9 +115,9 @@ export const RouteGuard = component$<RouteGuardProps>((props) => {
     }
 
     return (
-      <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-900">
+      <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-neutral-900">
         <div class="text-center">
-          <div class="text-4xl mb-4 animate-spin">⏳</div>
+          <i class="i-heroicons-arrow-path-solid mb-4 inline-block h-10 w-10 animate-spin text-primary-600" aria-hidden="true"></i>
           <p class="text-gray-600 dark:text-gray-400">Checking permissions...</p>
         </div>
       </div>
@@ -127,9 +128,9 @@ export const RouteGuard = component$<RouteGuardProps>((props) => {
   if (hasAccess.value === false) {
     if (props.showUnauthorizedMessage) {
       return (
-        <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-900">
-          <div class="max-w-md w-full bg-white dark:bg-dark-800 rounded-lg shadow-lg p-8 text-center">
-            <div class="text-6xl mb-4">🔒</div>
+        <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-neutral-900">
+          <div class="max-w-md w-full bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-8 text-center">
+            <i class="i-heroicons-lock-closed-solid mb-4 inline-block h-14 w-14 text-error-500" aria-hidden="true"></i>
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Access Denied
             </h2>
@@ -137,12 +138,13 @@ export const RouteGuard = component$<RouteGuardProps>((props) => {
               {props.unauthorizedMessage ||
                 'You do not have permission to access this page.'}
             </p>
-            <button
+            <Btn
               onClick$={() => nav('/dashboard')}
-              class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+              size="lg"
+              class="font-semibold"
             >
               Go to Dashboard
-            </button>
+            </Btn>
           </div>
         </div>
       );

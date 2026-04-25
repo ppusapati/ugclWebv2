@@ -1,6 +1,7 @@
 // src/components/form-builder/FormBuilder.tsx
 import { component$, useSignal, useStore, $, type PropFunction } from '@builder.io/qwik';
-import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
+import { Btn, FormField } from '~/components/ds';
+import type { FormDefinition, FormStep, FormField as WorkflowFormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
 import type { BusinessVertical, Site } from '~/services/types';
 import FieldEditor from './FieldEditor';
 import { WorkflowPanel } from './workflow';
@@ -63,7 +64,7 @@ export default component$<FormBuilderProps>((props) => {
   });
 
   const addField = $(() => {
-    const newField: FormField = {
+    const newField: WorkflowFormField = {
       id: `field_${Date.now()}`,
       type: 'text',
       label: 'New Field',
@@ -76,7 +77,7 @@ export default component$<FormBuilderProps>((props) => {
     form.steps[stepIndex].fields.splice(fieldIndex, 1);
   });
 
-  const updateField = $((stepIndex: number, fieldIndex: number, updatedField: FormField) => {
+  const updateField = $((stepIndex: number, fieldIndex: number, updatedField: WorkflowFormField) => {
     form.steps[stepIndex].fields[fieldIndex] = updatedField;
   });
 
@@ -123,24 +124,25 @@ export default component$<FormBuilderProps>((props) => {
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div class="flex gap-3">
               {props.onCancel$ && (
-                <button
+                <Btn
+                  variant="secondary"
                   onClick$={props.onCancel$}
-                  class="btn btn-secondary"
                 >
                   Cancel
-                </button>
+                </Btn>
               )}
-              <button
+              <Btn
                 onClick$={() => props.onSave$(form)}
-                class="btn btn-primary"
               >
                 Save Form
-              </button>
+              </Btn>
             </div>
 
           {/* Tabs */}
           <div class="flex gap-4 mt-6 border-b border-gray-200">
-            <button
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab.value === 'basic'
                   ? 'bg-blue-100 text-blue-700'
@@ -149,8 +151,10 @@ export default component$<FormBuilderProps>((props) => {
               onClick$={() => (activeTab.value = 'basic')}
             >
               Basic Info
-            </button>
-            <button
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab.value === 'steps'
                   ? 'bg-blue-100 text-blue-700'
@@ -159,8 +163,10 @@ export default component$<FormBuilderProps>((props) => {
               onClick$={() => (activeTab.value = 'steps')}
             >
               Steps & Fields
-            </button>
-            <button
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab.value === 'workflow'
                   ? 'bg-blue-100 text-blue-700'
@@ -169,8 +175,10 @@ export default component$<FormBuilderProps>((props) => {
               onClick$={() => (activeTab.value = 'workflow')}
             >
               Workflow
-            </button>
-            <button
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab.value === 'json'
                   ? 'bg-blue-100 text-blue-700'
@@ -179,7 +187,7 @@ export default component$<FormBuilderProps>((props) => {
               onClick$={() => (activeTab.value = 'json')}
             >
               JSON Editor
-            </button>
+            </Btn>
           </div>
         </div>
 
@@ -190,90 +198,90 @@ export default component$<FormBuilderProps>((props) => {
 
             <div class="grid grid-cols-2 gap-12">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Form Code *
-                </label>
-                <input
-                  type="text"
-                  value={form.form_code}
-                  onInput$={(e) => (form.form_code = (e.target as HTMLInputElement).value)}
-                  class="form-input w-full"
-                  placeholder="e.g., water, hr_nmr"
-                  required
-                />
+                <FormField id="form-code" label="Form Code" required>
+                  <input
+                    id="form-code"
+                    type="text"
+                    value={form.form_code}
+                    onInput$={(e) => (form.form_code = (e.target as HTMLInputElement).value)}
+                    class="form-input w-full"
+                    placeholder="e.g., water, hr_nmr"
+                    required
+                  />
+                </FormField>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Version
-                </label>
-                <input
-                  type="text"
-                  value={form.version}
-                  onInput$={(e) => (form.version = (e.target as HTMLInputElement).value)}
-                  class="form-input w-full"
-                  placeholder="1.0.0"
-                />
+                <FormField id="form-version" label="Version">
+                  <input
+                    id="form-version"
+                    type="text"
+                    value={form.version}
+                    onInput$={(e) => (form.version = (e.target as HTMLInputElement).value)}
+                    class="form-input w-full"
+                    placeholder="1.0.0"
+                  />
+                </FormField>
               </div>
 
               <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onInput$={(e) => (form.title = (e.target as HTMLInputElement).value)}
-                  class="form-input w-full"
-                  placeholder="e.g., Water Supply Form"
-                  required
-                />
+                <FormField id="form-title" label="Title" required>
+                  <input
+                    id="form-title"
+                    type="text"
+                    value={form.title}
+                    onInput$={(e) => (form.title = (e.target as HTMLInputElement).value)}
+                    class="form-input w-full"
+                    placeholder="e.g., Water Supply Form"
+                    required
+                  />
+                </FormField>
               </div>
 
               <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onInput$={(e) => (form.description = (e.target as HTMLTextAreaElement).value)}
-                  class="form-input w-full"
-                  rows={3}
-                  placeholder="Brief description of the form"
-                />
+                <FormField id="form-description" label="Description">
+                  <textarea
+                    id="form-description"
+                    value={form.description}
+                    onInput$={(e) => (form.description = (e.target as HTMLTextAreaElement).value)}
+                    class="form-input w-full"
+                    rows={3}
+                    placeholder="Brief description of the form"
+                  />
+                </FormField>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Module *
-                </label>
-                <select
-                  value={form.module}
-                  onChange$={(e) => (form.module = (e.target as HTMLSelectElement).value as any)}
-                  class="form-input w-full"
-                  required
-                >
-                  <option value="">Select module</option>
-                  {props.modules.map((module) => (
-                    <option key={module.id} value={module.id}>
-                      {module.name}
-                    </option>
-                  ))}
-                </select>
+                <FormField id="form-module" label="Module" required>
+                  <select
+                    id="form-module"
+                    value={form.module}
+                    onChange$={(e) => (form.module = (e.target as HTMLSelectElement).value as any)}
+                    class="form-input w-full"
+                    required
+                  >
+                    <option value="">Select module</option>
+                    {props.modules.map((module) => (
+                      <option key={module.id} value={module.id}>
+                        {module.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Form Type
-                </label>
-                <select
-                  value={form.type}
-                  onChange$={(e) => (form.type = (e.target as HTMLSelectElement).value as any)}
-                  class="form-input w-full"
-                >
-                  <option value="single_page">Single Page</option>
-                  <option value="multi_step">Multi-Step</option>
-                </select>
+                <FormField id="form-type" label="Form Type">
+                  <select
+                    id="form-type"
+                    value={form.type}
+                    onChange$={(e) => (form.type = (e.target as HTMLSelectElement).value as any)}
+                    class="form-input w-full"
+                  >
+                    <option value="single_page">Single Page</option>
+                    <option value="multi_step">Multi-Step</option>
+                  </select>
+                </FormField>
               </div>
 
               <div class="col-span-2">
@@ -367,13 +375,12 @@ export default component$<FormBuilderProps>((props) => {
           <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex justify-between items-center mb-6">
               <h2 class="text-xl font-bold">Steps & Fields</h2>
-              <button
+              <Btn
                 onClick$={addStep}
-                class="btn btn-primary"
               >
                 <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
                 Add Step
-              </button>
+              </Btn>
             </div>
 
             {/* Step Tabs */}
@@ -390,15 +397,17 @@ export default component$<FormBuilderProps>((props) => {
                 >
                   <span>{step.title || `Step ${index + 1}`}</span>
                   {form.steps.length > 1 && (
-                    <button
+                    <Btn
                       onClick$={(e) => {
                         e.stopPropagation();
                         deleteStep(index);
                       }}
-                      class="text-red-600 hover:text-red-800"
+                      variant="danger"
+                      size="sm"
+                      class="min-w-0 px-2"
                     >
                       ✕
-                    </button>
+                    </Btn>
                   )}
                 </div>
               ))}
@@ -409,46 +418,46 @@ export default component$<FormBuilderProps>((props) => {
               <div>
                 <div class="grid grid-cols-2 gap-4 mb-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Step Title
-                    </label>
-                    <input
-                      type="text"
-                      value={form.steps[currentStepIndex.value].title}
-                      onInput$={(e) => {
-                        form.steps[currentStepIndex.value].title = (e.target as HTMLInputElement).value;
-                      }}
-                      class="form-input w-full"
-                      placeholder="Step title"
-                    />
+                    <FormField id="step-title" label="Step Title">
+                      <input
+                        id="step-title"
+                        type="text"
+                        value={form.steps[currentStepIndex.value].title}
+                        onInput$={(e) => {
+                          form.steps[currentStepIndex.value].title = (e.target as HTMLInputElement).value;
+                        }}
+                        class="form-input w-full"
+                        placeholder="Step title"
+                      />
+                    </FormField>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Step ID
-                    </label>
-                    <input
-                      type="text"
-                      value={form.steps[currentStepIndex.value].id}
-                      onInput$={(e) => {
-                        form.steps[currentStepIndex.value].id = (e.target as HTMLInputElement).value;
-                      }}
-                      class="form-input w-full"
-                      placeholder="step_id"
-                    />
+                    <FormField id="step-id" label="Step ID">
+                      <input
+                        id="step-id"
+                        type="text"
+                        value={form.steps[currentStepIndex.value].id}
+                        onInput$={(e) => {
+                          form.steps[currentStepIndex.value].id = (e.target as HTMLInputElement).value;
+                        }}
+                        class="form-input w-full"
+                        placeholder="step_id"
+                      />
+                    </FormField>
                   </div>
                   <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <input
-                      type="text"
-                      value={form.steps[currentStepIndex.value].description}
-                      onInput$={(e) => {
-                        form.steps[currentStepIndex.value].description = (e.target as HTMLInputElement).value;
-                      }}
-                      class="form-input w-full"
-                      placeholder="Step description"
-                    />
+                    <FormField id="step-description" label="Description">
+                      <input
+                        id="step-description"
+                        type="text"
+                        value={form.steps[currentStepIndex.value].description}
+                        onInput$={(e) => {
+                          form.steps[currentStepIndex.value].description = (e.target as HTMLInputElement).value;
+                        }}
+                        class="form-input w-full"
+                        placeholder="Step description"
+                      />
+                    </FormField>
                   </div>
                 </div>
 
@@ -456,13 +465,12 @@ export default component$<FormBuilderProps>((props) => {
                 <div>
                   <div class="flex justify-between items-center mb-4">
                     <h3 class="font-medium">Fields</h3>
-                    <button
+                    <Btn
                       onClick$={addField}
-                      class="btn btn-success"
                     >
                       <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
                       Add Field
-                    </button>
+                    </Btn>
                   </div>
 
                   {form.steps[currentStepIndex.value].fields.length === 0 ? (
@@ -472,7 +480,7 @@ export default component$<FormBuilderProps>((props) => {
                   ) : (
                     <div class="space-y-4">
                       {form.steps[currentStepIndex.value].fields.map((field, fieldIndex) => {
-                        const handleFieldUpdate = $((updatedField: FormField) => {
+                        const handleFieldUpdate = $((updatedField: WorkflowFormField) => {
                           updateField(currentStepIndex.value, fieldIndex, updatedField);
                         });
                         
@@ -516,27 +524,27 @@ export default component$<FormBuilderProps>((props) => {
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-xl font-bold mb-6">JSON Editor</h2>
             <div class="mb-4">
-              <button
+              <Btn
                 onClick$={async () => {
                   const json = await exportJSON();
                   navigator.clipboard.writeText(json);
                   alert('JSON copied to clipboard!');
                 }}
-                class="btn btn-primary mr-2"
+                class="mr-2"
               >
                 Copy JSON
-              </button>
-              <button
+              </Btn>
+              <Btn
                 onClick$={async () => {
                   const json = prompt('Paste JSON here:');
                   if (json) {
                     importJSON(json);
                   }
                 }}
-                class="btn btn-success"
+                variant="secondary"
               >
                 Import JSON
-              </button>
+              </Btn>
             </div>
             <textarea
               value={formJSON.value}

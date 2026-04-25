@@ -1,4 +1,5 @@
 import { $, component$, useStore } from "@builder.io/qwik";
+import { Btn } from "~/components/ds";
 
 type Cell = {
   value: string;
@@ -30,16 +31,16 @@ export const Spreadsheet = component$(() => {
 
   return (
     <>
-   <table style='border:none'>
+   <table class='border-0'>
         <tbody>
           {store.rows.map((row, rowIndex) => (
-            <tr key={rowIndex} style='padding-bottom: -5px'>
+            <tr key={rowIndex}>
               {row.map((cell, colIndex) => (
-                <td key={colIndex} style='width:auto; padding-right: 8px;'>
+                <td key={colIndex} class='w-auto pr-2'>
                   <input
                     value={cell.value}
                     onInput$={(e) => handleInputChange(e, rowIndex, colIndex)}
-                    style={{ padding: "8px 8px 8px 1px", border: "1px solid #ccc", width: "100%", margin: "0px 8px -4px 0px" }}
+                    class='w-full border border-neutral-300 py-2 pl-1 pr-2 mb-1 mr-2'
                   />
                 </td>
               ))}
@@ -47,9 +48,9 @@ export const Spreadsheet = component$(() => {
           ))}
         </tbody>
       </table>
-     <div style={{ marginTop: "10px" }}>
-     <button onClick$={addRow}>Add Row</button>
-     <button onClick$={addColumn} style={{ marginLeft: "10px" }}>Add Column</button>
+     <div class='mt-2.5'>
+     <Btn size="sm" variant="secondary" onClick$={addRow}>Add Row</Btn>
+     <Btn size="sm" variant="secondary" onClick$={addColumn} class='ml-2.5'>Add Column</Btn>
    </div>
    </>
   );

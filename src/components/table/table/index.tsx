@@ -16,6 +16,7 @@ import { searchData } from '../utils/searchedData';
 import { TableHead } from './TableHead';
 import { TableBody, type ActionButton, type ActionLink, type ActionItem, type ActionItems } from './Body';
 import { Search } from './Search';
+import { Btn } from '~/components/ds';
 
 // Re-export action types for consumer use
 export type { ActionButton, ActionLink, ActionItem, ActionItems };
@@ -211,7 +212,7 @@ export const P9ETable = component$(
         color: white;
       }
       
-      .stats-container {
+      .table-summary {
         display: flex;
         align-items: center;
         gap: 16px;
@@ -326,7 +327,7 @@ export const P9ETable = component$(
         opacity: 0.5;
       }
       
-      .footer-stats {
+      .table-footer-meta {
         padding: 16px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         border-top: 1px solid #e5e7eb;
@@ -732,19 +733,22 @@ export const P9ETable = component$(
                 <div class="flex items-center gap-4">
                   <div class="flex items-center gap-2">
                     <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <span class="text-white font-bold text-sm">📊</span>
+                      <i class="i-heroicons-chart-bar-solid h-5 w-5 inline-block text-white" aria-hidden="true"></i>
                     </div>
                     <div>
                       <h2 class="text-xl font-bold text-gray-800">{props.title}</h2>
-                      <div class="stats-container mt-1">
+                      <div class="table-summary mt-1">
                         <span class="stat-badge">
-                          📄 {serverPagination ? totalCountSignal.value : totalPosts.value} records
+                          <i class="i-heroicons-document-text-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
+                          {serverPagination ? totalCountSignal.value : totalPosts.value} records
                         </span>
                         <span class="stat-badge">
-                          📋 {props.header?.length || 0} columns
+                          <i class="i-heroicons-clipboard-document-list-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
+                          {props.header?.length || 0} columns
                         </span>
                         <span class="stat-badge">
-                          📑 Page {pageNo.value + 1}
+                          <i class="i-heroicons-document-duplicate-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
+                          Page {pageNo.value + 1}
                         </span>
                       </div>
                     </div>
@@ -754,7 +758,9 @@ export const P9ETable = component$(
                 {/* Export Buttons */}
                 {props.header?.length > 0 && (
                   <div class="export-buttons">
-                    <button
+                    <Btn
+                      size="sm"
+                      variant="primary"
                       onClick$={() =>
                         downloadCSV(
                           props.header.map((h) => ({ key: String(h.key), label: h.label }))
@@ -769,10 +775,15 @@ export const P9ETable = component$(
                           Exporting...
                         </div>
                       ) : (
-                        <>📊 CSV (All)</>
+                        <>
+                          <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                          CSV (All)
+                        </>
                       )}
-                    </button>
-                    <button
+                    </Btn>
+                    <Btn
+                      size="sm"
+                      variant="primary"
                       onClick$={() =>
                         downloadExcel(
                           props.header.map((h) => ({ key: String(h.key), label: h.label }))
@@ -787,10 +798,15 @@ export const P9ETable = component$(
                           Exporting...
                         </div>
                       ) : (
-                        <>📈 Excel (All)</>
+                        <>
+                          <i class="i-heroicons-presentation-chart-line-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                          Excel (All)
+                        </>
                       )}
-                    </button>
-                    <button
+                    </Btn>
+                    <Btn
+                      size="sm"
+                      variant="primary"
                       onClick$={() =>
                         downloadPDF(
                           props.header.map((h) => ({ key: String(h.key), label: h.label }))
@@ -805,9 +821,12 @@ export const P9ETable = component$(
                           Exporting...
                         </div>
                       ) : (
-                        <>📄 PDF (All)</>
+                        <>
+                          <i class="i-heroicons-document-text-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                          PDF (All)
+                        </>
                       )}
-                    </button>
+                    </Btn>
                   </div>
                 )}
               </div>
@@ -833,7 +852,9 @@ export const P9ETable = component$(
                 </div>
               ) : isEmpty() ? (
                 <div class="empty-state">
-                  <div class="empty-icon">📊</div>
+                  <div class="empty-icon">
+                    <i class="i-heroicons-chart-bar-solid h-10 w-10 inline-block" aria-hidden="true"></i>
+                  </div>
                   <div class="text-lg font-semibold text-gray-700 mb-2">No Data Available</div>
                   <div class="text-gray-500">No records match your current filters</div>
                 </div>
@@ -867,7 +888,7 @@ export const P9ETable = component$(
 
             {/* Footer */}
             {!isEmpty() && !isLoading && (
-              <div class="footer-stats">
+              <div class="table-footer-meta">
                 <div class="flex items-center gap-4">
                   <span>Showing {finalData.items.length} of {serverPagination ? totalCountSignal.value : totalPosts.value} entries</span>
                   {exportLoading.value && (

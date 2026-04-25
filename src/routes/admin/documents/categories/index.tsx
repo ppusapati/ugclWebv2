@@ -8,7 +8,7 @@ export default component$(() => {
   });
 
   return (
-    <div class="container mx-auto px-4 py-8">
+    <div class="py-2">
       <Resource
         value={categoryManagerComponent}
         onPending={() => <div class="h-96 rounded-lg bg-gray-100 animate-pulse" />}

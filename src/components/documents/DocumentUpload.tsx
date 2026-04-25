@@ -1,4 +1,5 @@
 import { component$, useSignal, useStore, $, type QRL, noSerialize, type NoSerialize } from '@builder.io/qwik';
+import { Btn, FormField } from '~/components/ds';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory, DocumentTag } from '~/types/document';
 
@@ -226,11 +227,9 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
       {state.selectedFile && (
         <div class="mt-6 space-y-4">
           {/* Title */}
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Title <span class="text-red-500">*</span>
-            </label>
+          <FormField id="document-upload-title" label="Title" required>
             <input
+              id="document-upload-title"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               value={state.title}
@@ -238,12 +237,12 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
               placeholder="Enter document title"
               disabled={state.isUploading}
             />
-          </div>
+          </FormField>
 
           {/* Description */}
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <FormField id="document-upload-description" label="Description">
             <textarea
+              id="document-upload-description"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               rows={3}
               value={state.description}
@@ -251,13 +250,13 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
               placeholder="Enter document description (optional)"
               disabled={state.isUploading}
             />
-          </div>
+          </FormField>
 
           {/* Category */}
           {categories.length > 0 && (
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <FormField id="document-upload-category" label="Category">
               <select
+                id="document-upload-category"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 value={state.categoryId}
                 onChange$={(e) => (state.categoryId = (e.target as HTMLSelectElement).value)}
@@ -270,13 +269,12 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
                   </option>
                 ))}
               </select>
-            </div>
+            </FormField>
           )}
 
           {/* Tags */}
           {tags.length > 0 && (
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+            <FormField id="document-upload-tags" label="Tags">
               <div class="flex flex-wrap gap-2">
                 {tags.map((tag) => (
                   <button
@@ -298,7 +296,7 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
                   </button>
                 ))}
               </div>
-            </div>
+            </FormField>
           )}
 
           {/* Public checkbox */}
@@ -325,8 +323,8 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${state.uploadProgress}%` }}
+                  class="bg-blue-600 h-2 rounded-full transition-all duration-300 w-[var(--upload-width)]"
+                  style={{ '--upload-width': `${state.uploadProgress}%` }}
                 />
               </div>
             </div>
@@ -341,22 +339,23 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
 
           {/* Action Buttons */}
           <div class="flex gap-3 pt-2">
-            <button
+            <Btn
               type="button"
-              class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              class="flex-1 rounded"
               onClick$={handleUpload}
               disabled={state.isUploading || !state.selectedFile || !state.title.trim()}
             >
               {state.isUploading ? 'Uploading...' : 'Upload Document'}
-            </button>
-            <button
+            </Btn>
+            <Btn
               type="button"
-              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+              variant="secondary"
+              class="rounded"
               onClick$={handleCancel}
               disabled={state.isUploading}
             >
               Cancel
-            </button>
+            </Btn>
           </div>
         </div>
       )}

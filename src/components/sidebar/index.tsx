@@ -122,7 +122,7 @@ const MenuItem = component$<{ item: any; collapsed: boolean }>((props) => {
           <button
             onClick$={toggleExpand}
             class={[
-              "flex items-center w-full px-4 py-2 rounded-lg transition-all no-underline text-dark-800 dark:text-white",
+              "flex items-center w-full px-4 py-2 rounded-lg transition-all no-underline text-neutral-800 dark:text-white",
               "hover:bg-primary-50 dark:hover:bg-primary-900 dark:hover:text-light-100",
             ].join(' ')}
           >
@@ -142,7 +142,7 @@ const MenuItem = component$<{ item: any; collapsed: boolean }>((props) => {
                   <a
                     href={child.href}
                     class={[
-                      "flex px-4 py-1.5 rounded-lg transition-all no-underline text-sm text-dark-700 dark:text-gray-300",
+                      "flex px-4 py-1.5 rounded-lg transition-all no-underline text-sm text-neutral-700 dark:text-gray-300",
                       "hover:bg-primary-50 dark:hover:bg-primary-900 dark:hover:text-light-100",
                     ].join(' ')}
                   >
@@ -157,7 +157,7 @@ const MenuItem = component$<{ item: any; collapsed: boolean }>((props) => {
         <a
           href={props.item.href}
           class={[
-            "flex px-4 py-2 rounded-lg transition-all no-underline text-dark-800 dark:text-white",
+            "flex px-4 py-2 rounded-lg transition-all no-underline text-neutral-800 dark:text-white",
             "hover:bg-primary-50 dark:hover:bg-primary-900 dark:hover:text-light-100",
           ].join(' ')}
         >
@@ -201,7 +201,7 @@ export default component$((props: {
       // GLASSY BORDER
       "border-r border-white/30 dark:border-white/10",
       // GLASSY BACKGROUND
-      "bg-white/60 dark:bg-dark-800/70 backdrop-blur-md",
+      "bg-white/60 dark:bg-neutral-800/70 backdrop-blur-md",
       // DROP SHADOW
       "shadow-lg",
       // WIDTH AND TRANSITION
@@ -222,7 +222,7 @@ export default component$((props: {
           <span
             class={[
               props.collapsed ? 'hidden' : 'block',
-              'text-lg font-bold text-center text-dark-900 dark:text-white',
+              'text-lg font-bold text-center text-neutral-900 dark:text-white',
             ].join(' ')}
           >
             Sree UGCL Projects Limited

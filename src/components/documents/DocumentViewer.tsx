@@ -1,4 +1,5 @@
 import { component$, isServer, useStore, useTask$, $, type QRL } from '@builder.io/qwik';
+import { Btn } from '~/components/ds/btn';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentVersion, DocumentAuditLog } from '~/types/document';
 
@@ -94,12 +95,9 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
         <div class="text-center">
           <p class="text-red-600">{state.error || 'Document not found'}</p>
           {onClose && (
-            <button
-              class="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              onClick$={onClose}
-            >
+            <Btn class="mt-4" variant="secondary" onClick$={onClose}>
               Close
-            </button>
+            </Btn>
           )}
         </div>
       </div>
@@ -118,14 +116,11 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
             <p class="mt-1 text-sm text-gray-500">{doc.file_name}</p>
           </div>
           {onClose && (
-            <button
-              class="ml-4 text-gray-400 hover:text-gray-500"
-              onClick$={onClose}
-            >
+            <Btn size="sm" variant="ghost" class="ml-4 text-gray-400 hover:text-gray-500" onClick$={onClose}>
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Btn>
           )}
         </div>
 
@@ -138,22 +133,24 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
         </div>
 
         <div class="mt-4 flex gap-3">
-          <button
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
+          <Btn
+            class="flex items-center gap-2"
             onClick$={handleDownload}
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Download
-          </button>
+          </Btn>
         </div>
       </div>
 
       {/* Tabs */}
       <div class="border-b border-gray-200">
         <nav class="flex -mb-px">
-          <button
+          <Btn
+            size="sm"
+            variant="ghost"
             class={`px-6 py-3 text-sm font-medium border-b-2 ${
               state.activeTab === 'details'
                 ? 'border-blue-500 text-blue-600'
@@ -162,8 +159,10 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
             onClick$={() => (state.activeTab = 'details')}
           >
             Details
-          </button>
-          <button
+          </Btn>
+          <Btn
+            size="sm"
+            variant="ghost"
             class={`px-6 py-3 text-sm font-medium border-b-2 ${
               state.activeTab === 'versions'
                 ? 'border-blue-500 text-blue-600'
@@ -172,8 +171,10 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
             onClick$={() => (state.activeTab = 'versions')}
           >
             Versions ({state.versions.length})
-          </button>
-          <button
+          </Btn>
+          <Btn
+            size="sm"
+            variant="ghost"
             class={`px-6 py-3 text-sm font-medium border-b-2 ${
               state.activeTab === 'audit'
                 ? 'border-blue-500 text-blue-600'
@@ -182,7 +183,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
             onClick$={() => (state.activeTab = 'audit')}
           >
             Activity ({state.auditLogs.length})
-          </button>
+          </Btn>
         </nav>
       </div>
 

@@ -1,5 +1,6 @@
 // src/components/form-builder/submissions/SubmissionList.tsx
 import { component$, useSignal, useStore, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
+import { Badge, Btn, FormField } from '~/components/ds';
 import { workflowService } from '~/services';
 import type { FormSubmission, SubmissionFilters } from '~/types/workflow';
 
@@ -45,15 +46,15 @@ export default component$<SubmissionListProps>((props) => {
     await loadSubmissions();
   });
 
-  const getStateBadgeClass = $((state: string) => {
-    const classes: Record<string, string> = {
-      draft: 'bg-gray-100 text-gray-700',
-      submitted: 'bg-blue-100 text-blue-700',
-      approved: 'bg-green-100 text-green-700',
-      rejected: 'bg-red-100 text-red-700',
+  const getStateBadgeVariant = (state: string) => {
+    const variants: Record<string, 'neutral' | 'info' | 'success' | 'error'> = {
+      draft: 'neutral',
+      submitted: 'info',
+      approved: 'success',
+      rejected: 'error',
     };
-    return classes[state] || 'bg-gray-100 text-gray-700';
-  });
+    return variants[state] || 'neutral';
+  };
 
   const formatDate = $((dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -77,12 +78,14 @@ export default component$<SubmissionListProps>((props) => {
     return (
       <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
         <p class="text-red-800">{error.value}</p>
-        <button
+        <Btn
           onClick$={loadSubmissions}
-          class="mt-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+          size="sm"
+          variant="danger"
+          class="mt-2 rounded"
         >
           Retry
-        </button>
+        </Btn>
       </div>
     );
   }
@@ -93,11 +96,9 @@ export default component$<SubmissionListProps>((props) => {
       <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
         <div class="grid grid-cols-4 gap-4">
           {/* State Filter */}
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
+          <FormField id="submission-filter-status" label="Status">
             <select
+              id="submission-filter-status"
               value={activeFilters.state}
               onChange$={async (e) => {
                 activeFilters.state = (e.target as HTMLSelectElement).value;
@@ -111,7 +112,7 @@ export default component$<SubmissionListProps>((props) => {
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
-          </div>
+          </FormField>
 
           {/* My Submissions Toggle */}
           <div class="flex items-end">
@@ -131,12 +132,14 @@ export default component$<SubmissionListProps>((props) => {
 
           {/* Refresh Button */}
           <div class="flex items-end">
-            <button
+            <Btn
               onClick$={loadSubmissions}
-              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              variant="secondary"
+              class="rounded"
             >
-              🔄 Refresh
-            </button>
+              <i class="i-heroicons-arrow-path-rounded-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Refresh
+            </Btn>
           </div>
 
           {/* Results Count */}
@@ -190,13 +193,12 @@ export default component$<SubmissionListProps>((props) => {
                     {submission.id.substring(0, 8)}...
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class={`px-2 py-1 text-xs font-medium rounded-full ${getStateBadgeClass(
-                        submission.current_state
-                      )}`}
+                    <Badge
+                      variant={getStateBadgeVariant(submission.current_state)}
+                      class="text-xs font-medium"
                     >
                       {submission.current_state}
-                    </span>
+                    </Badge>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {submission.submitted_by}
@@ -215,7 +217,8 @@ export default component$<SubmissionListProps>((props) => {
                       }}
                       class="text-blue-600 hover:text-blue-800 font-medium"
                     >
-                      View Details →
+                      View Details
+                      <i class="i-heroicons-arrow-right-solid ml-1 h-4 w-4 inline-block" aria-hidden="true"></i>
                     </button>
                   </td>
                 </tr>

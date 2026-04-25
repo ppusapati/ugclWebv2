@@ -4,24 +4,33 @@ This document outlines the standardized CSS patterns to be used across the entir
 
 ## Overview
 
-All components and routes should follow the patterns established in `src/routes/admin/masters/module/index.tsx` as the reference standard.
+All components and routes should use the design-system primitives and tokens as the reference standard.
+
+Audit enforcement currently covers:
+- `src/routes/**/*.tsx`
+- `src/components/**/*.tsx`
+
+Primary primitives:
+- `Btn` for actions instead of raw button classes or legacy `btn btn-*` shortcuts
+- `Badge` for semantic status pills instead of ad hoc color combinations
+- `FormField` for labels, hints, errors, required state, and `aria-describedby` wiring
+- Token-backed surfaces and text colors instead of raw semantic utility colors where DS equivalents exist
 
 ## Button Classes
 
 ### Standard Button Pattern
 
-**Always use:** `btn btn-[variant]`
+**Always use:** the DS `Btn` component
 
-**Available Variants:**
-- `btn btn-primary` - Primary blue buttons (main actions)
-- `btn btn-secondary` - Secondary gray buttons (cancel, back, etc.)
-- `btn btn-danger` - Red buttons (delete, destructive actions)
-- `btn btn-success` - Green buttons (success actions)
-- `btn btn-warning` - Yellow buttons (warning actions)
-- `btn btn-info` - Info buttons
-- `btn btn-ghost` - Transparent/borderless buttons
+**Preferred variants:**
+- `Btn variant="primary"` - Main actions
+- `Btn variant="secondary"` - Secondary actions
+- `Btn variant="danger"` - Destructive actions
+- `Btn variant="ghost"` - Low-emphasis actions
 
 ### ❌ DO NOT USE:
+- Raw `<button>` styling when `Btn` can be used
+- Legacy `btn btn-primary`, `btn btn-secondary`, `btn btn-danger`, etc.
 - `btn-primary-600`, `btn-gray-600`, `btn-green-600`, `btn-light-300`, `btn-info-500`
 - `btns-sm`, `btns-md`, `btns-lg` (size modifiers)
 - Custom color/size combinations
@@ -30,11 +39,12 @@ All components and routes should follow the patterns established in `src/routes/
 
 ```tsx
 // ✅ CORRECT
-<button class="btn btn-primary">Create</button>
-<button class="btn btn-secondary">Cancel</button>
-<button class="btn btn-danger">Delete</button>
+<Btn variant="primary">Create</Btn>
+<Btn variant="secondary">Cancel</Btn>
+<Btn variant="danger">Delete</Btn>
 
 // ❌ INCORRECT
+<button class="btn btn-primary">Create</button>
 <button class="btn-primary-600 btns-lg">Create</button>
 <button class="btn-gray-600 btns-md">Cancel</button>
 <button class="btn-green-600 btns-sm">Save</button>
@@ -130,7 +140,9 @@ const menuItems = [
 
 ### Standard Container Pattern
 
-**Always use:** `container` (without size modifiers)
+**Prefer:** route/page shell patterns built from `PageHeader`, `SectionCard`, shared spacing rhythms, and token-backed surfaces.
+
+If a generic wrapper is needed, use the plain `container` utility without custom size variants.
 
 ### ❌ DO NOT USE:
 - `container-lg`
@@ -180,15 +192,17 @@ const menuItems = [
 ### Form Elements
 
 ```tsx
-// Form group
-<div class="form-group">
-  <label class="form-label">Label Text</label>
-  <input class="form-input w-full" type="text" />
-  <div class="form-error">Error message</div>
-</div>
-
-// Form label (muted)
-<label class="form-label-muted">Optional Label</label>
+// Preferred DS field wrapper
+<FormField id="project-name" label="Project Name" required hint="Shown to end users">
+  <input
+    id="project-name"
+    class="form-input w-full"
+    type="text"
+    required
+    aria-required="true"
+    aria-describedby="project-name-hint"
+  />
+</FormField>
 ```
 
 ## Alert Messages
@@ -211,49 +225,49 @@ const menuItems = [
 
 ### Primary Action Button
 ```tsx
-<button class="btn btn-primary">
+<Btn>
   <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
   Create New
-</button>
+</Btn>
 ```
 
 ### Secondary Action Button
 ```tsx
-<button class="btn btn-secondary">
+<Btn variant="secondary">
   <i class="i-heroicons-arrow-left w-4 h-4 inline-block mr-2"></i>
   Cancel
-</button>
+</Btn>
 ```
 
 ### Danger Action Button
 ```tsx
-<button class="btn btn-danger">
+<Btn variant="danger">
   <i class="i-heroicons-trash-solid w-4 h-4 inline-block text-white mr-2"></i>
   Delete
-</button>
+</Btn>
 ```
 
 ### Loading State Button
 ```tsx
-<button class="btn btn-primary" disabled>
+<Btn disabled>
   <i class="i-heroicons-arrow-path-solid w-4 h-4 inline-block text-white animate-spin mr-2"></i>
   Loading...
-</button>
+</Btn>
 ```
 
-## Migration Script
+## Enforcement
 
-A standardization script is available at `standardize-styles.js` to automatically update files:
+Run the CSS audit before and after UI cleanup work:
 
 ```bash
-node standardize-styles.js
+pnpm run css:audit
 ```
 
-This script will:
-1. Replace all non-standard button classes with standard ones
-2. Replace all MDI icons with Heroicons
-3. Replace all emoji icons with Heroicons
-4. Replace all container size variants with standard `container`
+The audit currently blocks:
+1. Legacy `btn btn-*` button shortcuts
+2. Raw primary/success/danger button color classes
+3. Inline styles except approved CSS-variable cases
+4. `FormField` usages without `id`
 
 ## Benefits
 
@@ -263,13 +277,18 @@ This script will:
 ✅ **Performance** - Optimized icon loading via UnoCSS
 ✅ **Clarity** - Clear, semantic class names
 
-## Reference File
+## Reference Files
 
-**Master Reference:** `src/routes/admin/masters/module/index.tsx`
-
-This file demonstrates all the correct patterns and should be used as the standard for all components.
+Use these DS primitives as the source of truth:
+- `src/components/ds/btn.tsx`
+- `src/components/ds/badge.tsx`
+- `src/components/ds/form-field.tsx`
+- `src/components/ds/page-header.tsx`
+- `src/components/ds/section-card.tsx`
+- `src/components/ds/tab-bar.tsx`
+- `src/components/ds/data-table.tsx`
 
 ---
 
-**Last Updated:** 2025-11-03
-**Version:** 1.0
+**Last Updated:** 2026-04-24
+**Version:** 1.1

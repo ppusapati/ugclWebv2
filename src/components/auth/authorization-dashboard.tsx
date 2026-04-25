@@ -1,5 +1,6 @@
 // src/components/auth/authorization-dashboard.tsx
 import { component$, useStore, $ } from '@builder.io/qwik';
+import { Btn } from '~/components/ds/btn';
 import { RoleManagement } from './role-management';
 import { PermissionManagement } from './permission-management';
 import { UserRoleAssignment } from './user-role-assignment';
@@ -11,11 +12,11 @@ export const AuthorizationDashboard = component$(() => {
   });
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'users', label: 'User Roles', icon: '👥' },
-    { id: 'roles', label: 'Role Management', icon: '🔐' },
-    { id: 'permissions', label: 'Permissions', icon: '🛡️' },
-    { id: 'business', label: 'Business Access', icon: '🏢' },
+    { id: 'overview', label: 'Overview', icon: 'i-heroicons-chart-bar-solid' },
+    { id: 'users', label: 'User Roles', icon: 'i-heroicons-user-group-solid' },
+    { id: 'roles', label: 'Role Management', icon: 'i-heroicons-lock-closed-solid' },
+    { id: 'permissions', label: 'Permissions', icon: 'i-heroicons-shield-check-solid' },
+    { id: 'business', label: 'Business Access', icon: 'i-heroicons-building-office-solid' },
   ];
 
   const renderTabContent = $(() => {
@@ -41,22 +42,22 @@ export const AuthorizationDashboard = component$(() => {
             {/* Quick Stats */}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div class="bg-white border rounded-lg p-6 text-center hover:shadow-lg transition-shadow">
-                <div class="text-3xl mb-2">👥</div>
+                <i class="i-heroicons-user-group-solid mb-2 inline-block h-8 w-8 text-blue-600" aria-hidden="true"></i>
                 <div class="text-2xl font-bold text-blue-600">--</div>
                 <div class="text-sm text-gray-600">Total Users</div>
               </div>
               <div class="bg-white border rounded-lg p-6 text-center hover:shadow-lg transition-shadow">
-                <div class="text-3xl mb-2">🔐</div>
+                <i class="i-heroicons-lock-closed-solid mb-2 inline-block h-8 w-8 text-green-600" aria-hidden="true"></i>
                 <div class="text-2xl font-bold text-green-600">--</div>
                 <div class="text-sm text-gray-600">Active Roles</div>
               </div>
               <div class="bg-white border rounded-lg p-6 text-center hover:shadow-lg transition-shadow">
-                <div class="text-3xl mb-2">🛡️</div>
+                <i class="i-heroicons-shield-check-solid mb-2 inline-block h-8 w-8 text-purple-600" aria-hidden="true"></i>
                 <div class="text-2xl font-bold text-purple-600">--</div>
                 <div class="text-sm text-gray-600">Permissions</div>
               </div>
               <div class="bg-white border rounded-lg p-6 text-center hover:shadow-lg transition-shadow">
-                <div class="text-3xl mb-2">🏢</div>
+                <i class="i-heroicons-building-office-solid mb-2 inline-block h-8 w-8 text-orange-600" aria-hidden="true"></i>
                 <div class="text-2xl font-bold text-orange-600">--</div>
                 <div class="text-sm text-gray-600">Business Units</div>
               </div>
@@ -66,50 +67,51 @@ export const AuthorizationDashboard = component$(() => {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <div class="bg-white border rounded-lg p-6">
                 <h3 class="text-lg font-semibold mb-3 flex items-center">
-                  <span class="mr-2">👥</span>
+                  <i class="i-heroicons-user-group-solid mr-2 h-5 w-5 inline-block text-blue-600" aria-hidden="true"></i>
                   User Management
                 </h3>
                 <p class="text-gray-600 mb-4 text-sm">
                   Assign roles and manage user permissions across different business verticals
                 </p>
-                <button
-                  class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                <Btn
+                  class="w-full"
                   onClick$={() => { state.activeTab = 'users'; }}
                 >
                   Manage User Roles
-                </button>
+                </Btn>
               </div>
 
               <div class="bg-white border rounded-lg p-6">
                 <h3 class="text-lg font-semibold mb-3 flex items-center">
-                  <span class="mr-2">🔐</span>
+                  <i class="i-heroicons-lock-closed-solid mr-2 h-5 w-5 inline-block text-green-600" aria-hidden="true"></i>
                   Role Configuration
                 </h3>
                 <p class="text-gray-600 mb-4 text-sm">
                   Create and configure roles with specific permissions for different business needs
                 </p>
-                <button
-                  class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                <Btn
+                  variant="secondary"
+                  class="w-full"
                   onClick$={() => { state.activeTab = 'roles'; }}
                 >
                   Configure Roles
-                </button>
+                </Btn>
               </div>
 
               <div class="bg-white border rounded-lg p-6">
                 <h3 class="text-lg font-semibold mb-3 flex items-center">
-                  <span class="mr-2">🛡️</span>
+                  <i class="i-heroicons-shield-check-solid mr-2 h-5 w-5 inline-block text-purple-600" aria-hidden="true"></i>
                   Permission Control
                 </h3>
                 <p class="text-gray-600 mb-4 text-sm">
                   Define and manage granular permissions for different system features
                 </p>
-                <button
-                  class="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                <Btn
+                  class="w-full"
                   onClick$={() => { state.activeTab = 'permissions'; }}
                 >
                   Manage Permissions
-                </button>
+                </Btn>
               </div>
             </div>
 
@@ -119,7 +121,7 @@ export const AuthorizationDashboard = component$(() => {
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="text-center">
                   <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span class="text-2xl">👤</span>
+                    <i class="i-heroicons-user-solid h-8 w-8 inline-block text-blue-600" aria-hidden="true"></i>
                   </div>
                   <h4 class="font-medium mb-2">Users</h4>
                   <p class="text-sm text-gray-600">
@@ -128,7 +130,7 @@ export const AuthorizationDashboard = component$(() => {
                 </div>
                 <div class="text-center">
                   <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span class="text-2xl">🔐</span>
+                    <i class="i-heroicons-lock-closed-solid h-8 w-8 inline-block text-green-600" aria-hidden="true"></i>
                   </div>
                   <h4 class="font-medium mb-2">Roles</h4>
                   <p class="text-sm text-gray-600">
@@ -137,7 +139,7 @@ export const AuthorizationDashboard = component$(() => {
                 </div>
                 <div class="text-center">
                   <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span class="text-2xl">🏢</span>
+                    <i class="i-heroicons-building-office-solid h-8 w-8 inline-block text-purple-600" aria-hidden="true"></i>
                   </div>
                   <h4 class="font-medium mb-2">Business Verticals</h4>
                   <p class="text-sm text-gray-600">
@@ -181,7 +183,7 @@ export const AuthorizationDashboard = component$(() => {
                 }`}
                 onClick$={() => { state.activeTab = tab.id; }}
               >
-                <span>{tab.icon}</span>
+                <i class={`${tab.icon} h-4 w-4 inline-block`} aria-hidden="true"></i>
                 <span>{tab.label}</span>
               </button>
             ))}

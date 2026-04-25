@@ -1,6 +1,7 @@
 import { component$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { useAuthContext } from '~/contexts/auth-context';
+import { Btn } from '~/components/ds';
 
 export const TenantSelector = component$(() => {
   const auth = useAuthContext();
@@ -57,12 +58,9 @@ export const TenantSelector = component$(() => {
             </div>
             <h2 class="text-lg font-semibold text-gray-900 mb-2">Access Error</h2>
             <p class="text-red-600 mb-4">{auth.tenantError}</p>
-            <button
-              class="btn-primary"
-              onClick$={auth.refreshTenants}
-            >
+            <Btn variant="primary" onClick$={auth.refreshTenants}>
               Try Again
-            </button>
+            </Btn>
           </div>
         </div>
       </div>
@@ -107,29 +105,30 @@ export const TenantSelector = component$(() => {
 
                   <div class="flex flex-col gap-2 mt-4">
                     {/* Session-based selection (stays on current domain) */}
-                    <button
-                      class="btn-primary w-full"
-                      onClick$={() => selectTenant(tenant.id)}
-                    >
+                    <Btn variant="primary" class="w-full" onClick$={() => selectTenant(tenant.id)}>
                       Access {tenant.name}
-                    </button>
+                    </Btn>
 
                     {/* Alternative access methods */}
                     <div class="flex gap-2">
-                      <button
-                        class="btn-outline-primary flex-1 text-xs"
+                      <Btn
+                        variant="secondary"
+                        size="sm"
+                        class="flex-1 text-xs"
                         onClick$={() => switchToSubdomain(tenant.slug)}
                         title={`Access via ${tenant.slug}.ugcl.com`}
                       >
                         Subdomain
-                      </button>
-                      <button
-                        class="btn-outline-primary flex-1 text-xs"
+                      </Btn>
+                      <Btn
+                        variant="secondary"
+                        size="sm"
+                        class="flex-1 text-xs"
                         onClick$={() => switchToPath(tenant.slug)}
                         title={`Access via /${tenant.slug}/dashboard`}
                       >
                         Path
-                      </button>
+                      </Btn>
                     </div>
                   </div>
                 </div>
@@ -144,21 +143,18 @@ export const TenantSelector = component$(() => {
               </svg>
               <h3 class="text-lg font-medium text-gray-900 mb-2">No Organizations Available</h3>
               <p class="text-gray-500 mb-4">You don't have access to any organizations yet.</p>
-              <button class="btn-outline-primary" onClick$={auth.logout}>
+              <Btn variant="secondary" onClick$={auth.logout}>
                 Switch Account
-              </button>
+              </Btn>
             </div>
           )}
 
           <div class="mt-6 pt-6 border-t border-gray-200">
             <div class="flex items-center justify-between text-sm">
               <span class="text-gray-500">Signed in as {auth.user?.email}</span>
-              <button
-                class="text-red-600 hover:text-red-800 font-medium"
-                onClick$={auth.logout}
-              >
+              <Btn size="sm" variant="ghost" class="text-red-600 hover:text-red-800 font-medium" onClick$={auth.logout}>
                 Sign Out
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

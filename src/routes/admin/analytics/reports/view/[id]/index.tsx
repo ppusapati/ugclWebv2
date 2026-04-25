@@ -1,5 +1,5 @@
 // Report Viewer Screen
-import { component$, useStore, useResource$, Resource, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useResource$, Resource, $, useTask$ } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../../services/api-client';
@@ -7,6 +7,7 @@ import { analyticsService } from '../../../../../../services/analytics.service';
 import type { ReportDefinition, ReportResult, ReportFilter, ChartType } from '../../../../../../types/analytics';
 import { P9ETable } from '../../../../../../components/table/table';
 import { useAuthContext } from '../../../../../../contexts/auth-context';
+import { Badge, Btn } from '../../../../../../components/ds';
 
 // Helper function to transform report data into ECharts option format
 const transformToChartOption = (
@@ -248,9 +249,14 @@ export default component$(() => {
     canExport: false,
   });
 
-  useVisibleTask$(({ track }) => {
+  useTask$(({ track }) => {
     track(() => auth.user?.id);
     track(() => auth.user?.business_roles?.length || 0);
+
+    if (isServer) {
+      permissionState.canExport = false;
+      return;
+    }
 
     const activeBusinessId = window.localStorage.getItem('ugcl_current_business_vertical');
     const businessRole = activeBusinessId
@@ -309,11 +315,11 @@ export default component$(() => {
   });
 
   const reportConfig = state.report ? {
-    table: { icon: '📊', gradient: 'from-blue-500 to-blue-600' },
-    chart: { icon: '📈', gradient: 'from-purple-500 to-purple-600' },
-    kpi: { icon: '🎯', gradient: 'from-green-500 to-green-600' },
-    pivot: { icon: '🔲', gradient: 'from-orange-500 to-orange-600' },
-  }[state.report.report_type] || { icon: '📊', gradient: 'from-blue-500 to-blue-600' } : { icon: '📊', gradient: 'from-blue-500 to-blue-600' };
+    table: { icon: 'i-heroicons-chart-bar-solid', gradient: 'from-blue-500 to-blue-600' },
+    chart: { icon: 'i-heroicons-presentation-chart-line-solid', gradient: 'from-purple-500 to-purple-600' },
+    kpi: { icon: 'i-heroicons-cursor-arrow-rays-solid', gradient: 'from-green-500 to-green-600' },
+    pivot: { icon: 'i-heroicons-squares-2x2-solid', gradient: 'from-orange-500 to-orange-600' },
+  }[state.report.report_type] || { icon: 'i-heroicons-chart-bar-solid', gradient: 'from-blue-500 to-blue-600' } : { icon: 'i-heroicons-chart-bar-solid', gradient: 'from-blue-500 to-blue-600' };
 
   return (
     <div class="space-y-6">
@@ -328,12 +334,12 @@ export default component$(() => {
             </div>
             <h2 class="text-xl font-bold text-red-900 mb-2">Access Denied</h2>
             <p class="text-red-700 text-sm mb-6">You do not have permission to view this report. Contact the report creator or an administrator to request access.</p>
-            <button
+            <Btn
               onClick$={() => nav('/admin/analytics/reports')}
-              class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              variant="danger"
             >
               Back to Reports
-            </button>
+            </Btn>
           </div>
         </div>
       )}
@@ -346,23 +352,25 @@ export default component$(() => {
           <div class="absolute bottom-0 left-0 w-80 h-80 bg-black rounded-full -ml-40 -mb-40"></div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-6 py-6 relative">
+        <div class="py-6 relative">
           <div class="flex items-center justify-between gap-4 mb-4">
             {/* Left Section */}
             <div class="flex items-center gap-4">
-              <button
+              <Btn
                 onClick$={() => nav('/admin/analytics/reports')}
-                class="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all text-white"
+                size="sm"
+                variant="ghost"
+                class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
                 title="Back to Reports"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
-              </button>
+              </Btn>
 
               <div class="flex items-center gap-4">
                 <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                  <span class="text-4xl">{reportConfig.icon}</span>
+                  <i class={`${reportConfig.icon} h-10 w-10 inline-block text-white`} aria-hidden="true"></i>
                 </div>
                 <div>
                   <h1 class="text-3xl font-bold text-white mb-1">
@@ -387,16 +395,18 @@ export default component$(() => {
 
             {/* Right Section - Action Buttons */}
             <div class="flex flex-wrap gap-3">
-              <button
+              <Btn
                 onClick$={executeReport}
                 disabled={state.loading}
-                class="px-5 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl transition-all hover:scale-105 font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                size="sm"
+                variant="ghost"
+                class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg class={`w-5 h-5 ${state.loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
                 Refresh
-              </button>
+              </Btn>
 
               {permissionState.canExport && (
               <div class="dropdown dropdown-end">
@@ -411,13 +421,13 @@ export default component$(() => {
                 </label>
                 <ul tabIndex={0} class="dropdown-content z-20 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-2 shadow-xl text-sm text-gray-700">
                   <li>
-                    <button onClick$={exportToExcel} class="w-full rounded-lg px-3 py-2 text-left hover:bg-gray-50 transition-colors">Export Excel</button>
+                    <Btn size="sm" variant="ghost" onClick$={exportToExcel} class="w-full text-left rounded-lg">Export Excel</Btn>
                   </li>
                   <li>
-                    <button onClick$={exportToCSV} class="w-full rounded-lg px-3 py-2 text-left hover:bg-gray-50 transition-colors">Export CSV</button>
+                    <Btn size="sm" variant="ghost" onClick$={exportToCSV} class="w-full text-left rounded-lg">Export CSV</Btn>
                   </li>
                   <li>
-                    <button onClick$={exportToPDF} class="w-full rounded-lg px-3 py-2 text-left hover:bg-gray-50 transition-colors">Export PDF</button>
+                    <Btn size="sm" variant="ghost" onClick$={exportToPDF} class="w-full text-left rounded-lg">Export PDF</Btn>
                   </li>
                 </ul>
               </div>
@@ -429,7 +439,7 @@ export default component$(() => {
 
       {/* Error Alert */}
       {state.error && (
-        <div class="max-w-screen-2xl mx-auto px-6 py-4 animate-fade-in">
+        <div class="container mx-auto px-4 py-4 animate-fade-in">
           <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl p-5 flex items-start gap-4 shadow-lg">
             <div class="bg-red-100 dark:bg-red-900/40 rounded-full p-2">
               <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -440,14 +450,16 @@ export default component$(() => {
               <h4 class="font-semibold text-red-800 dark:text-red-300 text-lg">Error</h4>
               <p class="text-red-700 dark:text-red-400 mt-1">{state.error}</p>
             </div>
-            <button
+            <Btn
               onClick$={() => state.error = ''}
-              class="text-red-500 hover:text-red-700 transition-colors p-1"
+              size="sm"
+              variant="ghost"
+              class="text-red-500 hover:text-red-700"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
-            </button>
+            </Btn>
           </div>
         </div>
       )}
@@ -465,7 +477,7 @@ export default component$(() => {
 
       {/* Report Content */}
       {!state.loading && state.reportData && (
-        <div class="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        <div class="py-8 space-y-6">
           {/* Statistics Cards */}
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-md">
@@ -556,12 +568,12 @@ export default component$(() => {
                   </h2>
                   {state.report.chart_type && (
                     <div class="flex items-center gap-2">
-                      <span class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-semibold capitalize\">
+                      <Badge variant="info" class="px-4 py-2 text-sm font-semibold capitalize">
                         {state.report.chart_type} Chart
-                      </span>
-                      <span class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold\">
+                      </Badge>
+                      <Badge variant="info" class="px-4 py-2 text-sm font-semibold">
                         {state.reportData?.data.length || 0} Data Points
-                      </span>
+                      </Badge>
                     </div>
                   )}
                 </div>
@@ -580,7 +592,7 @@ export default component$(() => {
                             state.report!.chart_type || 'bar',
                             state.report!.name
                           )}
-                          style="width: 100%; height: 100%;"
+                          class="w-full h-full"
                         />
                       )}
                     />

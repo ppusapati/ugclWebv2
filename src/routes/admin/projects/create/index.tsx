@@ -5,6 +5,7 @@
 
 import { component$, useStore, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
+import { Alert, Btn, PageHeader, SectionCard } from '~/components/ds';
 import { ProjectCreateForm } from '../../../../components/projects/project-create-form';
 import { createSSRApiClient, apiClient } from '../../../../services/api-client';
 import type { CreateProjectRequest } from '../../../../types/project';
@@ -131,31 +132,26 @@ export default component$(() => {
   });
 
   return (
-    <div class="container mx-auto px-4 py-6">
+    <div class="space-y-6 py-2">
       {/* Header */}
-      <div class="mb-6">
-        <button
-          onClick$={handleCancel}
-          class="text-sm text-gray-600 hover:text-gray-900 mb-3 flex items-center gap-1"
-        >
-          <i class="i-mdi-arrow-left"></i>
+      <PageHeader title="Create New Project" subtitle="Add a new project and optionally upload KMZ file">
+        <Btn q:slot="actions" variant="secondary" onClick$={handleCancel} class="flex items-center gap-1">
+          <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block"></i>
           Back to Projects
-        </button>
-        <h1 class="text-2xl font-bold text-gray-900 mb-1">Create New Project</h1>
-        <p class="text-sm text-gray-600">Add a new project and optionally upload KMZ file</p>
-      </div>
+        </Btn>
+      </PageHeader>
 
       {/* Error Message */}
       {state.error && (
-        <div class="alert-error mb-6 p-4 rounded-md">
-          <i class="i-mdi-alert-circle mr-2"></i>
+        <Alert variant="error" class="mb-6">
+          <i class="i-heroicons-exclamation-circle-solid mr-2 h-4 w-4 inline-block"></i>
           {state.error}
-        </div>
+        </Alert>
       )}
 
       {/* Loading State */}
       {state.loading && (
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <SectionCard>
           <div class="animate-pulse space-y-4">
             <div class="h-4 bg-gray-200 rounded w-1/4"></div>
             <div class="h-10 bg-gray-200 rounded"></div>
@@ -164,18 +160,18 @@ export default component$(() => {
             <div class="h-4 bg-gray-200 rounded w-1/4"></div>
             <div class="h-20 bg-gray-200 rounded"></div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Form */}
       {!state.loading && (
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <SectionCard>
           <ProjectCreateForm
             businessVerticals={state.businessVerticals}
             onSubmit$={handleSubmit}
             onCancel$={handleCancel}
           />
-        </div>
+        </SectionCard>
       )}
     </div>
   );

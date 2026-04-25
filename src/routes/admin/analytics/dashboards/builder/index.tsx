@@ -6,6 +6,7 @@ import { createSSRApiClient } from '../../../../../services/api-client';
 import { analyticsService } from '../../../../../services/analytics.service';
 import type { Dashboard, DashboardWidget, WidgetType, ReportListResponse } from '../../../../../types/analytics';
 import { authService } from '../../../../../services';
+import { Alert, Badge, Btn, FormField, PageHeader, StatCard } from '../../../../../components/ds';
 
 // Load available reports with SSR support
 export const useAvailableReports = routeLoader$(async (requestEvent) => {
@@ -41,7 +42,7 @@ const WIDGET_TEMPLATES: Array<{
 }> = [
   {
     type: 'chart',
-    icon: '📊',
+    icon: 'i-heroicons-chart-bar-solid',
     label: 'Chart Widget',
     description: 'Visualize data with interactive charts',
     defaultSize: { w: 6, h: 4 },
@@ -49,7 +50,7 @@ const WIDGET_TEMPLATES: Array<{
   },
   {
     type: 'kpi',
-    icon: '📈',
+    icon: 'i-heroicons-presentation-chart-line-solid',
     label: 'KPI Widget',
     description: 'Display key performance indicators',
     defaultSize: { w: 3, h: 2 },
@@ -57,7 +58,7 @@ const WIDGET_TEMPLATES: Array<{
   },
   {
     type: 'table',
-    icon: '📋',
+    icon: 'i-heroicons-clipboard-document-list-solid',
     label: 'Table Widget',
     description: 'Show data in tabular format',
     defaultSize: { w: 8, h: 5 },
@@ -65,7 +66,7 @@ const WIDGET_TEMPLATES: Array<{
   },
   {
     type: 'text',
-    icon: '📝',
+    icon: 'i-heroicons-document-text-solid',
     label: 'Text Widget',
     description: 'Add text, notes, or descriptions',
     defaultSize: { w: 4, h: 2 },
@@ -73,7 +74,7 @@ const WIDGET_TEMPLATES: Array<{
   },
   {
     type: 'iframe',
-    icon: '🌐',
+    icon: 'i-heroicons-globe-alt-solid',
     label: 'Embed Widget',
     description: 'Embed external content or URLs',
     defaultSize: { w: 6, h: 4 },
@@ -114,6 +115,11 @@ export default component$(() => {
     loading: false,
     error: '',
   });
+
+  const fieldClass = 'w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-4 py-3 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none';
+  const compactFieldClass = 'w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none';
+  const textareaClass = `${fieldClass} min-h-24`;
+  const compactTextareaClass = `${compactFieldClass} min-h-20`;
 
   const widgetIdCounter = useSignal(0);
 
@@ -329,131 +335,119 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-2xl">
-        <div class="max-w-screen-2xl mx-auto px-6 py-8">
-          <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-              <button
-                onClick$={() => nav('/admin/analytics/dashboards')}
-                class="btn btn-ghost btn-sm text-white hover:bg-white/20"
-              >
-                ← Back
-              </button>
-              <div>
-                <h1 class="text-4xl font-bold flex items-center gap-3">
-                  📊 Dashboard Builder
-                </h1>
-                <p class="text-purple-100 mt-2">Create interactive dashboards with drag-and-drop widgets</p>
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Page Header with DS PageHeader */}
+      <PageHeader
+        title="Dashboard Builder"
+        subtitle="Create interactive dashboards with drag-and-drop widgets"
+      >
+        <div q:slot="actions" class="flex items-center gap-3">
+          <Btn
+            onClick$={() => state.currentStep = Math.max(1, state.currentStep - 1)}
+            disabled={state.currentStep === 1}
+            variant="secondary"
+            size="sm"
+          >
+            <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            Previous
+          </Btn>
+          {state.currentStep < 3 ? (
+            <Btn
+              onClick$={() => state.currentStep = Math.min(3, state.currentStep + 1)}
+              variant="primary"
+              size="sm"
+            >
+              Next
+              <i class="i-heroicons-arrow-right-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            </Btn>
+          ) : (
+            <Btn
+              onClick$={() => state.showSaveModal = true}
+              variant="primary"
+              size="sm"
+            >
+              <i class="i-heroicons-bookmark-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Save
+            </Btn>
+          )}
+        </div>
+      </PageHeader>
+
+      {/* Progress Steps */}
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center gap-4">
+          {['Info', 'Layout', 'Preview'].map((step, idx) => (
+            <div key={step} class="flex items-center">
+              <div class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                state.currentStep === idx + 1
+                  ? 'bg-interactive-primary text-white font-semibold scale-105'
+                  : state.currentStep > idx + 1
+                  ? 'bg-color-semantic-success-100 text-color-semantic-success-800'
+                  : 'bg-color-neutral-100 text-color-neutral-700'
+              }`}>
+                <span class="text-lg">{idx + 1}</span>
+                <span>{step}</span>
               </div>
-            </div>
-            <div class="flex gap-3">
-              <button
-                onClick$={() => state.currentStep = Math.max(1, state.currentStep - 1)}
-                disabled={state.currentStep === 1}
-                class="btn btn-ghost text-white hover:bg-white/20 disabled:opacity-50"
-              >
-                ← Previous
-              </button>
-              {state.currentStep < 3 ? (
-                <button
-                  onClick$={() => state.currentStep = Math.min(3, state.currentStep + 1)}
-                  class="btn bg-white text-purple-600 hover:bg-purple-50"
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  onClick$={() => state.showSaveModal = true}
-                  class="btn bg-white text-purple-600 hover:bg-purple-50"
-                >
-                  💾 Save Dashboard
-                </button>
+              {idx < 2 && (
+                <div class={`w-12 h-0.5 mx-2 ${
+                  state.currentStep > idx + 1 ? 'bg-color-semantic-success-800' : 'bg-color-neutral-300'
+                }`}></div>
               )}
             </div>
-          </div>
-
-          {/* Progress Steps */}
-          <div class="flex items-center gap-4">
-            {['Info', 'Layout', 'Preview'].map((step, idx) => (
-              <div key={step} class="flex items-center">
-                <div class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                  state.currentStep === idx + 1
-                    ? 'bg-white text-purple-600 font-semibold scale-105'
-                    : state.currentStep > idx + 1
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-white/20 text-purple-100'
-                }`}>
-                  <span class="text-lg">{idx + 1}</span>
-                  <span>{step}</span>
-                </div>
-                {idx < 2 && (
-                  <div class={`w-12 h-0.5 mx-2 ${
-                    state.currentStep > idx + 1 ? 'bg-purple-300' : 'bg-white/30'
-                  }`}></div>
-                )}
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Main Content */}
-      <div class="max-w-screen-2xl mx-auto px-6 py-8">
+      <div class="container mx-auto px-4 py-6">
         {/* Step 1: Dashboard Info */}
         {state.currentStep === 1 && (
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="card bg-white dark:bg-gray-800 shadow-xl">
-              <div class="card-body">
-                <h2 class="card-title text-2xl mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  📝 Dashboard Information
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+              <div class="p-6">
+                <h2 class="text-2xl font-bold mb-6 text-color-text-primary">
+                  <i class="i-heroicons-document-text-solid h-6 w-6 inline-block text-orange-600" aria-hidden="true"></i>
+                  Dashboard Information
                 </h2>
 
                 <div class="space-y-4">
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text font-semibold">Dashboard Code</span>
-                    </label>
+                  <FormField id="dashboard-builder-code" label="Dashboard Code">
                     <input
+                      id="dashboard-builder-code"
                       type="text"
                       value={dashboardConfig.code}
                       onInput$={(e) => dashboardConfig.code = (e.target as HTMLInputElement).value}
                       placeholder="Optional - auto-generated if empty"
-                      class="input input-bordered w-full"
+                      class={fieldClass}
                     />
-                  </div>
+                  </FormField>
 
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text font-semibold">Dashboard Name *</span>
-                    </label>
+                  <FormField id="dashboard-builder-name" label="Dashboard Name" required>
                     <input
+                      id="dashboard-builder-name"
                       type="text"
                       value={dashboardConfig.name}
                       onInput$={(e) => dashboardConfig.name = (e.target as HTMLInputElement).value}
                       placeholder="e.g., Sales Overview Dashboard"
-                      class="input input-bordered w-full"
+                      class={fieldClass}
+                      required
+                      aria-required="true"
                     />
-                  </div>
+                  </FormField>
 
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text font-semibold">Description</span>
-                    </label>
+                  <FormField id="dashboard-builder-description" label="Description">
                     <textarea
+                      id="dashboard-builder-description"
                       value={dashboardConfig.description}
                       onInput$={(e) => dashboardConfig.description = (e.target as HTMLTextAreaElement).value}
                       placeholder="Describe what this dashboard shows..."
-                      class="textarea textarea-bordered h-24"
+                      class={textareaClass}
                     />
-                  </div>
+                  </FormField>
 
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text font-semibold">Tags</span>
-                    </label>
+                  <FormField id="dashboard-builder-tags" label="Tags">
                     <input
+                      id="dashboard-builder-tags"
                       type="text"
                       value={dashboardConfig.tags?.join(', ')}
                       onInput$={(e) => {
@@ -461,9 +455,9 @@ export default component$(() => {
                         dashboardConfig.tags = value.split(',').map(t => t.trim()).filter(Boolean);
                       }}
                       placeholder="sales, revenue, monthly (comma-separated)"
-                      class="input input-bordered w-full"
+                      class={fieldClass}
                     />
-                  </div>
+                  </FormField>
 
                   <div class="flex gap-4">
                     <label class="label cursor-pointer flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -484,33 +478,36 @@ export default component$(() => {
               </div>
             </div>
 
-            <div class="card bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 shadow-xl">
-              <div class="card-body">
-                <h3 class="text-xl font-semibold mb-4">💡 Dashboard Tips</h3>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 shadow-lg">
+              <div class="p-6">
+                <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <i class="i-heroicons-light-bulb-solid h-5 w-5 inline-block text-amber-500" aria-hidden="true"></i>
+                  Dashboard Tips
+                </h3>
                 <ul class="space-y-3">
                   <li class="flex items-start gap-3">
-                    <span class="text-2xl">📊</span>
+                    <i class="i-heroicons-chart-bar-solid h-6 w-6 inline-block text-blue-600" aria-hidden="true"></i>
                     <div>
                       <p class="font-semibold">Choose Meaningful Names</p>
                       <p class="text-sm text-gray-600 dark:text-gray-400">Use clear, descriptive names that explain the dashboard's purpose</p>
                     </div>
                   </li>
                   <li class="flex items-start gap-3">
-                    <span class="text-2xl">🎨</span>
+                    <i class="i-heroicons-swatch-solid h-6 w-6 inline-block text-pink-600" aria-hidden="true"></i>
                     <div>
                       <p class="font-semibold">Plan Your Layout</p>
                       <p class="text-sm text-gray-600 dark:text-gray-400">Think about which widgets should be prominent and how to organize them</p>
                     </div>
                   </li>
                   <li class="flex items-start gap-3">
-                    <span class="text-2xl">🔄</span>
+                    <i class="i-heroicons-arrow-path-rounded-square-solid h-6 w-6 inline-block text-violet-600" aria-hidden="true"></i>
                     <div>
                       <p class="font-semibold">Real-time Updates</p>
                       <p class="text-sm text-gray-600 dark:text-gray-400">Configure refresh intervals for widgets that need live data</p>
                     </div>
                   </li>
                   <li class="flex items-start gap-3">
-                    <span class="text-2xl">👥</span>
+                    <i class="i-heroicons-user-group-solid h-6 w-6 inline-block text-green-600" aria-hidden="true"></i>
                     <div>
                       <p class="font-semibold">Set Permissions</p>
                       <p class="text-sm text-gray-600 dark:text-gray-400">Control who can view or edit your dashboard</p>
@@ -527,17 +524,18 @@ export default component$(() => {
           <div class="grid grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)_22rem] gap-6 items-start">
             {/* Widget Library - Left Sidebar */}
             <div class="space-y-4 xl:sticky xl:top-4 self-start">
-              <div class="card bg-white dark:bg-gray-800 shadow-xl">
-                <div class="card-body">
-                  <h3 class="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    🧩 Widget Library
+              <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                <div class="p-6">
+                  <h3 class="text-xl font-bold mb-4 text-color-text-primary">
+                    <i class="i-heroicons-squares-plus-solid h-6 w-6 inline-block text-indigo-600" aria-hidden="true"></i>
+                    Widget Library
                   </h3>
-                  <div class="alert alert-info text-xs mb-4">
+                  <Alert variant="info" class="mb-4 text-xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <span>Drag widgets to canvas. Connect data sources after adding.</span>
-                  </div>
+                  </Alert>
 
                   <div class="space-y-3">
                     {WIDGET_TEMPLATES.map((template) => {
@@ -551,20 +549,20 @@ export default component$(() => {
                         >
                           <div class="flex items-start gap-3">
                             <div class={`w-12 h-12 rounded-lg bg-gradient-to-br ${template.color} flex items-center justify-center text-2xl shadow-lg`}>
-                              {template.icon}
+                                <i class={`${template.icon} h-6 w-6 inline-block text-white`} aria-hidden="true"></i>
                             </div>
                             <div class="flex-1">
                               <h4 class="font-semibold text-sm">{template.label}</h4>
                               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{template.description}</p>
                               <div class="flex items-center gap-2 mt-2">
-                                <span class="text-xs text-purple-600 dark:text-purple-400">
+                                <span class="text-xs text-color-text-secondary">
                                   Size: {template.defaultSize.w}x{template.defaultSize.h}
                                 </span>
                                 {needsDataSource && (
-                                  <span class="badge badge-xs badge-info gap-1">
-                                    <span>📊</span>
+                                  <Badge variant="info" class="gap-1">
+                                    <i class="i-heroicons-chart-bar-solid h-3 w-3 inline-block" aria-hidden="true"></i>
                                     <span>Needs Data</span>
-                                  </span>
+                                  </Badge>
                                 )}
                               </div>
                             </div>
@@ -579,37 +577,36 @@ export default component$(() => {
 
             {/* Canvas - Main Area */}
             <div class="min-w-0">
-              <div class="card bg-white dark:bg-gray-800 shadow-xl">
-                <div class="card-body">
+              <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                <div class="p-6">
                   <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      🎨 Dashboard Canvas
+                    <h3 class="text-xl font-bold text-color-text-primary">
+                      <i class="i-heroicons-swatch-solid h-6 w-6 inline-block text-pink-600" aria-hidden="true"></i>
+                      Dashboard Canvas
                     </h3>
-                    <div class="badge badge-lg badge-primary">
+                    <Badge variant="info" class="px-3 py-1">
                       {dashboardConfig.widgets?.length || 0} widgets
-                    </div>
+                    </Badge>
                   </div>
 
                   <div
                     onDragOver$={handleDragOver}
                     onDrop$={handleDrop}
-                    class="border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-x-auto"
-                    style={{
-                      minHeight: `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
-                    }}
+                    class="border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-x-auto min-h-[var(--dashboard-canvas-min-height)]"
+                    style={{ '--dashboard-canvas-min-height': `${DASHBOARD_CANVAS_MIN_HEIGHT}px` }}
                   >
                     <div
-                      class="grid grid-cols-12 gap-4"
+                      class="grid grid-cols-12 gap-4 min-w-[var(--dashboard-canvas-min-width)] min-h-[var(--dashboard-canvas-min-height)] auto-rows-[var(--dashboard-grid-row-height)]"
                       style={{
-                        minWidth: `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
-                        minHeight: `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
-                        gridAutoRows: `${DASHBOARD_GRID_ROW_HEIGHT}px`,
+                        '--dashboard-canvas-min-width': `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
+                        '--dashboard-canvas-min-height': `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
+                        '--dashboard-grid-row-height': `${DASHBOARD_GRID_ROW_HEIGHT}px`,
                       }}
                     >
                     {dashboardConfig.widgets?.length === 0 ? (
                       <div class="absolute inset-0 flex items-center justify-center">
                         <div class="text-center">
-                          <div class="text-6xl mb-4">🎨</div>
+                          <i class="i-heroicons-swatch-solid mb-4 inline-block h-16 w-16 text-pink-500" aria-hidden="true"></i>
                           <p class="text-xl font-semibold text-gray-500 dark:text-gray-400">
                             Drag widgets here to start building
                           </p>
@@ -633,27 +630,29 @@ export default component$(() => {
                               state.selectedWidget?.id === widget.id
                                 ? 'ring-4 ring-purple-500 scale-105'
                                 : 'hover:shadow-xl hover:scale-102'
-                            } bg-gradient-to-br ${template.color}`}
+                            } bg-gradient-to-br ${template.color} [grid-column:var(--widget-grid-column)] [grid-row:var(--widget-grid-row)]`}
                             style={{
-                              gridColumn: `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
-                              gridRow: `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
+                              '--widget-grid-column': `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
+                              '--widget-grid-row': `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
                             }}
                           >
                             <div class="h-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg flex flex-col">
                               <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2">
-                                  <span class="text-2xl">{template.icon}</span>
+                                    <i class={`${template.icon} h-6 w-6 inline-block`} aria-hidden="true"></i>
                                   <span class="font-semibold text-sm truncate">{widget.title}</span>
                                 </div>
-                                <button
+                                <Btn
                                   onClick$={(e) => {
                                     e.stopPropagation();
                                     removeWidget(widget.id);
                                   }}
-                                  class="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+                                  size="sm"
+                                  variant="ghost"
+                                  class="h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
-                                  ✕
-                                </button>
+                                  <i class="i-heroicons-x-mark-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                                </Btn>
                               </div>
                               {widget.description && (
                                 <p class="text-xs text-gray-500 dark:text-gray-400">{widget.description}</p>
@@ -675,213 +674,196 @@ export default component$(() => {
             {/* Widget Configuration - Right Sidebar */}
             <div class="self-start 2xl:sticky 2xl:top-4 xl:col-span-full">
               {state.showWidgetConfig && state.selectedWidget ? (
-                <div class="card bg-white dark:bg-gray-800 shadow-xl">
-                  <div class="card-body">
-                    <h3 class="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      ⚙️ Widget Settings
+                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                  <div class="p-6">
+                    <h3 class="text-xl font-bold mb-4 text-color-text-primary">
+                      <i class="i-heroicons-cog-6-tooth-solid h-6 w-6 inline-block text-slate-600" aria-hidden="true"></i>
+                      Widget Settings
                     </h3>
 
                     <div class="space-y-4">
-                      <div class="form-control">
-                        <label class="label">
-                          <span class="label-text font-semibold">Widget Title</span>
-                        </label>
+                      <FormField id="dashboard-widget-title" label="Widget Title">
                         <input
+                          id="dashboard-widget-title"
                           type="text"
                           value={state.selectedWidget.title}
                           onInput$={(e) => updateWidgetConfig('title', (e.target as HTMLInputElement).value)}
-                          class="input input-bordered input-sm w-full"
+                          class={compactFieldClass}
                         />
-                      </div>
+                      </FormField>
 
-                      <div class="form-control">
-                        <label class="label">
-                          <span class="label-text font-semibold">Description</span>
-                        </label>
+                      <FormField id="dashboard-widget-description" label="Description">
                         <textarea
+                          id="dashboard-widget-description"
                           value={state.selectedWidget.description}
                           onInput$={(e) => updateWidgetConfig('description', (e.target as HTMLTextAreaElement).value)}
-                          class="textarea textarea-bordered textarea-sm w-full"
+                          class={compactTextareaClass}
                           rows={3}
                         />
-                      </div>
+                      </FormField>
 
                       {(state.selectedWidget.type === 'chart' || state.selectedWidget.type === 'kpi' || state.selectedWidget.type === 'table') && (
-                        <div class="form-control">
-                          <label class="label">
-                            <span class="label-text font-semibold">📊 Data Source (Report/KPI)</span>
-                          </label>
+                        <FormField id="dashboard-widget-report" label="Data Source (Report/KPI)">
+                          <div class="mb-1 flex items-center gap-1.5 text-xs text-color-text-secondary">
+                              <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block text-blue-600" aria-hidden="true"></i>
+                              <span>Connect a report or KPI source for this widget.</span>
+                          </div>
                           <select
+                            id="dashboard-widget-report"
                             value={state.selectedWidget.report_id || ''}
                             onChange$={(e) => updateWidgetConfig('report_id', (e.target as HTMLSelectElement).value)}
-                            class="select select-bordered select-sm w-full"
+                            class={compactFieldClass}
                           >
                             <option value="">Select a data source...</option>
                             {availableReportsData.value.reports.map((report) => {
-                              const icon = report.report_type === 'kpi' ? '🎯' : report.report_type === 'chart' ? '📈' : '📊';
+                              const iconLabel = report.report_type === 'kpi' ? '[KPI]' : report.report_type === 'chart' ? '[Chart]' : '[Table]';
                               return (
                                 <option key={report.id} value={report.id}>
-                                  {`${icon} ${report.name}`}
+                                  {`${iconLabel} ${report.name}`}
                                 </option>
                               );
                             })}
                           </select>
-                          <label class="label">
-                            <span class="label-text-alt">
-                              {availableReportsData.value.reports.length === 0
-                                ? 'No reports available. Create reports first.'
-                                : `${availableReportsData.value.reports.length} reports available`}
-                            </span>
-                          </label>
+                          <p class="mt-1 text-xs text-color-text-tertiary">
+                            {availableReportsData.value.reports.length === 0
+                              ? 'No reports available. Create reports first.'
+                              : `${availableReportsData.value.reports.length} reports available`}
+                          </p>
                           {state.selectedWidget.report_id && (
                             <div class="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
                               <div class="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
-                                <span>✓</span>
+                                <i class="i-heroicons-check-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
                                 <span>Data source connected</span>
                               </div>
                             </div>
                           )}
-                        </div>
+                        </FormField>
                       )}
 
                       {state.selectedWidget.type === 'text' && (
-                        <div class="form-control">
-                          <label class="label">
-                            <span class="label-text font-semibold">Text Content</span>
-                          </label>
+                        <FormField id="dashboard-widget-content" label="Text Content">
                           <textarea
+                            id="dashboard-widget-content"
                             value={state.selectedWidget.config?.content || ''}
                             onInput$={(e) => {
                               const newConfig = { ...state.selectedWidget!.config, content: (e.target as HTMLTextAreaElement).value };
                               updateWidgetConfig('config', newConfig);
                             }}
-                            class="textarea textarea-bordered textarea-sm w-full"
+                            class={compactTextareaClass}
                             rows={4}
                             placeholder="Enter text content..."
                           />
-                        </div>
+                        </FormField>
                       )}
 
                       {state.selectedWidget.type === 'iframe' && (
-                        <div class="form-control">
-                          <label class="label">
-                            <span class="label-text font-semibold">Embed URL</span>
-                          </label>
+                        <FormField id="dashboard-widget-url" label="Embed URL">
                           <input
+                            id="dashboard-widget-url"
                             type="url"
                             value={state.selectedWidget.config?.url || ''}
                             onInput$={(e) => {
                               const newConfig = { ...state.selectedWidget!.config, url: (e.target as HTMLInputElement).value };
                               updateWidgetConfig('config', newConfig);
                             }}
-                            class="input input-bordered input-sm w-full"
+                            class={compactFieldClass}
                             placeholder="https://example.com"
                           />
-                        </div>
+                        </FormField>
                       )}
 
-                      <div class="form-control">
-                        <label class="label">
-                          <span class="label-text font-semibold">Refresh Interval (seconds)</span>
-                        </label>
+                      <FormField id="dashboard-widget-refresh" label="Refresh Interval (seconds)" hint="0 = No auto-refresh">
                         <input
+                          id="dashboard-widget-refresh"
                           type="number"
                           value={state.selectedWidget.refresh_interval || 0}
                           onInput$={(e) => updateWidgetConfig('refresh_interval', parseInt((e.target as HTMLInputElement).value) || 0)}
-                          class="input input-bordered input-sm w-full"
+                          class={compactFieldClass}
                           min="0"
                           step="30"
                         />
-                        <label class="label">
-                          <span class="label-text-alt">0 = No auto-refresh</span>
-                        </label>
-                      </div>
+                      </FormField>
 
                       <div class="divider">Position & Size</div>
 
                       <div class="grid grid-cols-2 gap-2">
-                        <div class="form-control">
-                          <label class="label py-1">
-                            <span class="label-text text-xs">Width</span>
-                          </label>
+                        <FormField id="dashboard-widget-width" label="Width">
                           <input
+                            id="dashboard-widget-width"
                             type="number"
                             value={state.selectedWidget.position.w}
                             onInput$={(e) => {
                               const newPos = { ...state.selectedWidget!.position, w: parseInt((e.target as HTMLInputElement).value) || 1 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm w-full"
+                            class={compactFieldClass}
                             min="1"
                             max={state.gridCols}
                           />
-                        </div>
-                        <div class="form-control">
-                          <label class="label py-1">
-                            <span class="label-text text-xs">Height</span>
-                          </label>
+                        </FormField>
+                        <FormField id="dashboard-widget-height" label="Height">
                           <input
+                            id="dashboard-widget-height"
                             type="number"
                             value={state.selectedWidget.position.h}
                             onInput$={(e) => {
                               const newPos = { ...state.selectedWidget!.position, h: parseInt((e.target as HTMLInputElement).value) || 1 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm w-full"
+                            class={compactFieldClass}
                             min="1"
                             max={state.gridRows}
                           />
-                        </div>
-                        <div class="form-control">
-                          <label class="label py-1">
-                            <span class="label-text text-xs">X Position</span>
-                          </label>
+                        </FormField>
+                        <FormField id="dashboard-widget-x" label="X Position">
                           <input
+                            id="dashboard-widget-x"
                             type="number"
                             value={state.selectedWidget.position.x}
                             onInput$={(e) => {
                               const newPos = { ...state.selectedWidget!.position, x: parseInt((e.target as HTMLInputElement).value) || 0 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm w-full"
+                            class={compactFieldClass}
                             min="0"
                             max={state.gridCols - 1}
                           />
-                        </div>
-                        <div class="form-control">
-                          <label class="label py-1">
-                            <span class="label-text text-xs">Y Position</span>
-                          </label>
+                        </FormField>
+                        <FormField id="dashboard-widget-y" label="Y Position">
                           <input
+                            id="dashboard-widget-y"
                             type="number"
                             value={state.selectedWidget.position.y}
                             onInput$={(e) => {
                               const newPos = { ...state.selectedWidget!.position, y: parseInt((e.target as HTMLInputElement).value) || 0 };
                               updateWidgetConfig('position', newPos);
                             }}
-                            class="input input-bordered input-sm w-full"
+                            class={compactFieldClass}
                             min="0"
                             max={state.gridRows - 1}
                           />
-                        </div>
+                        </FormField>
                       </div>
 
-                      <button
+                      <Btn
                         onClick$={() => {
                           removeWidget(state.selectedWidget!.id);
                           state.showWidgetConfig = false;
                         }}
-                        class="btn btn-error btn-sm w-full mt-4"
+                        size="sm"
+                        variant="danger"
+                        class="w-full mt-4"
                       >
-                        🗑️ Remove Widget
-                      </button>
+                        <i class="i-heroicons-trash-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                        Remove Widget
+                      </Btn>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div class="card bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 shadow-xl">
-                  <div class="card-body items-center text-center">
-                    <div class="text-6xl mb-4">⚙️</div>
+                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 shadow-lg">
+                  <div class="p-8 flex flex-col items-center text-center">
+                    <i class="i-heroicons-cog-6-tooth-solid mb-4 inline-block h-16 w-16 text-slate-600" aria-hidden="true"></i>
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
                       No Widget Selected
                     </h3>
@@ -898,36 +880,49 @@ export default component$(() => {
         {/* Step 3: Preview */}
         {state.currentStep === 3 && (
           <div class="space-y-6">
-            <div class="card bg-white dark:bg-gray-800 shadow-xl">
-              <div class="card-body">
-                <h2 class="card-title text-2xl mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  👀 Dashboard Preview
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+              <div class="p-6">
+                <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <i class="i-heroicons-eye-solid h-6 w-6 inline-block text-indigo-600" aria-hidden="true"></i>
+                  Dashboard Preview
                 </h2>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                  <div class="stats shadow bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
-                    <div class="stat">
-                      <div class="stat-figure text-blue-600 text-3xl">📊</div>
-                      <div class="stat-title">Dashboard Name</div>
-                      <div class="stat-value text-lg text-blue-600">{dashboardConfig.name || 'Untitled'}</div>
+                  <StatCard tone="info" class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="text-sm text-color-text-secondary">Dashboard Name</div>
+                        <div class="mt-2 text-lg font-semibold text-blue-600">{dashboardConfig.name || 'Untitled'}</div>
+                      </div>
+                      <div class="text-blue-600 text-3xl">
+                        <i class="i-heroicons-chart-bar-solid h-8 w-8 inline-block" aria-hidden="true"></i>
+                      </div>
                     </div>
-                  </div>
+                  </StatCard>
 
-                  <div class="stats shadow bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
-                    <div class="stat">
-                      <div class="stat-figure text-purple-600 text-3xl">🧩</div>
-                      <div class="stat-title">Total Widgets</div>
-                      <div class="stat-value text-lg text-purple-600">{dashboardConfig.widgets?.length || 0}</div>
+                  <StatCard tone="accent" class="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="text-sm text-color-text-secondary">Total Widgets</div>
+                        <div class="mt-2 text-lg font-semibold text-purple-600">{dashboardConfig.widgets?.length || 0}</div>
+                      </div>
+                      <div class="text-purple-600 text-3xl">
+                        <i class="i-heroicons-squares-plus-solid h-8 w-8 inline-block" aria-hidden="true"></i>
+                      </div>
                     </div>
-                  </div>
+                  </StatCard>
 
-                  <div class="stats shadow bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-                    <div class="stat">
-                      <div class="stat-figure text-green-600 text-3xl">🏷️</div>
-                      <div class="stat-title">Tags</div>
-                      <div class="stat-value text-lg text-green-600">{dashboardConfig.tags?.length || 0}</div>
+                  <StatCard tone="success" class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="text-sm text-color-text-secondary">Tags</div>
+                        <div class="mt-2 text-lg font-semibold text-green-600">{dashboardConfig.tags?.length || 0}</div>
+                      </div>
+                      <div class="text-green-600 text-3xl">
+                        <i class="i-heroicons-tag-solid h-8 w-8 inline-block" aria-hidden="true"></i>
+                      </div>
                     </div>
-                  </div>
+                  </StatCard>
                 </div>
 
                 <div class="mb-6">
@@ -942,7 +937,7 @@ export default component$(() => {
                     <h3 class="font-semibold mb-2">Tags:</h3>
                     <div class="flex flex-wrap gap-2">
                       {dashboardConfig.tags.map((tag) => (
-                        <span key={tag} class="badge badge-primary">{tag}</span>
+                        <Badge key={tag} variant="info">{tag}</Badge>
                       ))}
                     </div>
                   </div>
@@ -950,7 +945,10 @@ export default component$(() => {
 
                 <div class="flex gap-4 mb-6">
                   {dashboardConfig.is_default && (
-                    <div class="badge badge-success badge-lg">⭐ Default Dashboard</div>
+                    <Badge variant="success" class="gap-1 px-3 py-1">
+                      <i class="i-heroicons-star-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                      Default Dashboard
+                    </Badge>
                   )}
                 </div>
 
@@ -958,11 +956,11 @@ export default component$(() => {
 
                 <div class="border-2 border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-x-auto">
                   <div
-                    class="grid grid-cols-12 gap-4"
+                    class="grid grid-cols-12 gap-4 min-w-[var(--dashboard-canvas-min-width)] min-h-[var(--dashboard-canvas-min-height)] auto-rows-[var(--dashboard-grid-row-height)]"
                     style={{
-                      minWidth: `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
-                      minHeight: `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
-                      gridAutoRows: `${DASHBOARD_GRID_ROW_HEIGHT}px`,
+                      '--dashboard-canvas-min-width': `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
+                      '--dashboard-canvas-min-height': `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
+                      '--dashboard-grid-row-height': `${DASHBOARD_GRID_ROW_HEIGHT}px`,
                     }}
                   >
                   {dashboardConfig.widgets?.map((widget) => {
@@ -970,15 +968,15 @@ export default component$(() => {
                     return (
                       <div
                         key={widget.id}
-                        class={`rounded-lg shadow-lg bg-gradient-to-br ${template.color} overflow-hidden`}
+                        class={`rounded-lg shadow-lg bg-gradient-to-br ${template.color} overflow-hidden [grid-column:var(--widget-grid-column)] [grid-row:var(--widget-grid-row)]`}
                         style={{
-                          gridColumn: `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
-                          gridRow: `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
+                          '--widget-grid-column': `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
+                          '--widget-grid-row': `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
                         }}
                       >
                         <div class="h-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg flex flex-col">
                           <div class="flex items-center gap-2 mb-2">
-                            <span class="text-2xl">{template.icon}</span>
+                            <i class={`${template.icon} h-6 w-6 inline-block`} aria-hidden="true"></i>
                             <span class="font-semibold text-sm">{widget.title}</span>
                           </div>
                           {widget.description && (
@@ -1008,45 +1006,49 @@ export default component$(() => {
           ></div>
           <div class="relative z-10 w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-800 shadow-2xl p-6">
             <h3 class="font-bold text-2xl mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              💾 Save Dashboard
+              <i class="i-heroicons-bookmark-square-solid h-6 w-6 inline-block text-indigo-600" aria-hidden="true"></i>
+              Save Dashboard
             </h3>
 
             <div class="space-y-4 mb-6">
-              <div class="alert alert-info">
-                <span>
-                  📊 <strong>{dashboardConfig.name || 'Untitled Dashboard'}</strong>
+              <Alert variant="info">
+                <span class="flex items-center gap-2">
+                  <i class="i-heroicons-chart-bar-solid h-5 w-5 inline-block" aria-hidden="true"></i>
+                  <strong>{dashboardConfig.name || 'Untitled Dashboard'}</strong>
                 </span>
-              </div>
+              </Alert>
 
-              <div class="stats stats-vertical w-full shadow">
-                <div class="stat">
-                  <div class="stat-title">Widgets</div>
-                  <div class="stat-value text-primary">{dashboardConfig.widgets?.length || 0}</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-title">Dashboard Code</div>
-                  <div class="stat-value text-lg">{dashboardConfig.code || 'Auto-generated on save'}</div>
-                </div>
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <StatCard tone="info">
+                  <div class="text-sm text-color-text-secondary">Widgets</div>
+                  <div class="mt-2 text-lg font-semibold text-primary-600">{dashboardConfig.widgets?.length || 0}</div>
+                </StatCard>
+                <StatCard>
+                  <div class="text-sm text-color-text-secondary">Dashboard Code</div>
+                  <div class="mt-2 text-lg font-semibold text-color-text-primary">{dashboardConfig.code || 'Auto-generated on save'}</div>
+                </StatCard>
               </div>
 
               {!dashboardConfig.name ? (
-                <div class="alert alert-warning">
-                  ⚠️ Please provide dashboard name before saving
-                </div>
+                <Alert variant="warning">
+                  <span class="flex items-center gap-2">
+                    <i class="i-heroicons-exclamation-triangle-solid h-5 w-5 inline-block" aria-hidden="true"></i>
+                    Please provide dashboard name before saving
+                  </span>
+                </Alert>
               ) : null}
             </div>
 
             <div class="modal-action flex justify-end gap-3">
-              <button
+              <Btn
                 onClick$={() => state.showSaveModal = false}
-                class="btn btn-ghost"
+                variant="ghost"
               >
                 Cancel
-              </button>
-              <button
+              </Btn>
+              <Btn
                 onClick$={saveDashboard}
                 disabled={!dashboardConfig.name || state.loading}
-                class="btn btn-primary"
               >
                 {state.loading ? (
                   <>
@@ -1054,9 +1056,12 @@ export default component$(() => {
                     Saving...
                   </>
                 ) : (
-                  <>💾 Save Dashboard</>
+                  <>
+                    <i class="i-heroicons-bookmark-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                    Save Dashboard
+                  </>
                 )}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@
  */
 
 import { component$, type QRL } from '@builder.io/qwik';
+import { Badge, Btn, SectionCard } from '~/components/ds';
 import type { Project } from '../../types/project';
 
 export interface ProjectCardProps {
@@ -28,15 +29,17 @@ export const ProjectCard = component$<ProjectCardProps>(({ project, onView$, onE
     : 0;
 
   return (
-    <div class="card bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4">
+    <SectionCard class="p-4 hover:shadow-md transition-shadow">
       {/* Header */}
       <div class="flex items-start justify-between mb-3">
         <div class="flex-1">
           <h3 class="text-base font-semibold text-gray-900 mb-1">{project.name}</h3>
           <p class="text-xs text-gray-500">Code: {project.code}</p>
         </div>
-        <span class={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+        <span>
+        <Badge class={getStatusColor(project.status).replace('bg-', 'bg-').replace('text-', 'text-')}>
           {project.status}
+        </Badge>
         </span>
       </div>
 
@@ -52,8 +55,8 @@ export const ProjectCard = component$<ProjectCardProps>(({ project, onView$, onE
           <div class="flex items-center gap-2">
             <div class="flex-1 bg-gray-200 rounded-full h-2">
               <div
-                class="bg-blue-600 h-2 rounded-full transition-all"
-                style={{ width: `${project.progress}%` }}
+                class="bg-blue-600 h-2 rounded-full transition-all w-[var(--progress-width)]"
+                style={{ '--progress-width': `${project.progress}%` }}
               ></div>
             </div>
             <span class="text-xs font-medium text-gray-700">{project.progress}%</span>
@@ -98,24 +101,27 @@ export const ProjectCard = component$<ProjectCardProps>(({ project, onView$, onE
       {/* Actions */}
       <div class="flex gap-2 pt-3 border-t border-gray-200">
         {onView$ && (
-          <button
+          <Btn
             onClick$={() => onView$(project)}
-            class="flex-1 btn btn-primary text-xs py-1.5"
+            class="flex-1"
+            size="sm"
           >
             <i class="i-heroicons-eye-solid w-4 h-4 inline-block text-white mr-1"></i>
             View
-          </button>
+          </Btn>
         )}
         {onEdit$ && (
-          <button
+          <Btn
+            variant="secondary"
             onClick$={() => onEdit$(project)}
-            class="flex-1 btn btn-secondary text-xs py-1.5"
+            class="flex-1"
+            size="sm"
           >
             <i class="i-heroicons-pencil-square-solid w-4 h-4 inline-block text-white mr-1"></i>
             Edit
-          </button>
+          </Btn>
         )}
       </div>
-    </div>
+    </SectionCard>
   );
 });

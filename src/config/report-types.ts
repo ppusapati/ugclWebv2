@@ -24,7 +24,7 @@ export interface ReportConfig {
 export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   dprsite: {
     displayName: 'DPR Site Reports',
-    icon: '📋',
+    icon: 'i-heroicons-clipboard-document-list-solid',
     description: 'Daily Progress Reports for construction sites',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -38,7 +38,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   water: {
     displayName: 'Water Tanker Reports',
-    icon: '🚚',
+    icon: 'i-heroicons-truck-solid',
     description: 'Water tanker delivery tracking',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -53,7 +53,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   wrapping: {
     displayName: 'Wrapping Reports',
-    icon: '📦',
+    icon: 'i-heroicons-archive-box-solid',
     description: 'Material wrapping and packaging records',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -66,7 +66,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   eway: {
     displayName: 'E-way Bills',
-    icon: '📄',
+    icon: 'i-heroicons-document-text-solid',
     description: 'Electronic way bill documentation',
     fields: [
       { name: 'bill_number', type: 'text', label: 'Bill Number', required: true },
@@ -82,7 +82,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   material: {
     displayName: 'Material Reports',
-    icon: '🏗️',
+    icon: 'i-heroicons-cube-solid',
     description: 'Material inventory and usage tracking',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -98,7 +98,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   payment: {
     displayName: 'Payment Records',
-    icon: '💰',
+    icon: 'i-heroicons-banknotes-solid',
     description: 'Payment transactions and records',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -113,7 +113,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   stock: {
     displayName: 'Stock Reports',
-    icon: '📊',
+    icon: 'i-heroicons-chart-bar-solid',
     description: 'Stock inventory management',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -128,7 +128,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   dairysite: {
     displayName: 'Dairy Site Reports',
-    icon: '🥛',
+    icon: 'i-heroicons-beaker-solid',
     description: 'Dairy operations and milk collection',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -140,7 +140,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   mnr: {
     displayName: 'MNR Reports',
-    icon: '📝',
+    icon: 'i-heroicons-document-text-solid',
     description: 'MNR operational reports',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -154,7 +154,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   nmr_vehicle: {
     displayName: 'NMR Vehicle Reports',
-    icon: '🚙',
+    icon: 'i-heroicons-truck-solid',
     description: 'NMR vehicle tracking and logs',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -170,7 +170,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   contractor: {
     displayName: 'Contractor Reports',
-    icon: '👷',
+    icon: 'i-heroicons-user-group-solid',
     description: 'Contractor work progress and payments',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -186,7 +186,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   painting: {
     displayName: 'Painting Reports',
-    icon: '🎨',
+    icon: 'i-heroicons-swatch-solid',
     description: 'Painting work progress tracking',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -201,7 +201,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   diesel: {
     displayName: 'Diesel Reports',
-    icon: '⛽',
+    icon: 'i-heroicons-beaker-solid',
     description: 'Diesel consumption and fuel tracking',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },
@@ -217,7 +217,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   tasks: {
     displayName: 'Tasks',
-    icon: '✅',
+    icon: 'i-heroicons-check-circle-solid',
     description: 'Task management and tracking',
     fields: [
       { name: 'title', type: 'text', label: 'Task Title', required: true },
@@ -232,7 +232,7 @@ export const REPORT_CONFIGS: Record<ReportKey, ReportConfig> = {
   },
   vehiclelog: {
     displayName: 'Vehicle Logs',
-    icon: '🚗',
+    icon: 'i-heroicons-truck-solid',
     description: 'Vehicle usage and maintenance logs',
     fields: [
       { name: 'date', type: 'date', label: 'Date', required: true },

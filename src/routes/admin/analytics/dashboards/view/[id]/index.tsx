@@ -5,6 +5,7 @@ import { createSSRApiClient } from '../../../../../../services/api-client';
 import { analyticsService } from '../../../../../../services/analytics.service';
 import type { Dashboard, DashboardListResponse, ReportResult, ChartType } from '../../../../../../types/analytics';
 import { P9ETable } from '../../../../../../components/table/table';
+import { Alert, Badge, Btn } from '../../../../../../components/ds';
 
 const DASHBOARD_GRID_COLS = 12;
 const DASHBOARD_GRID_ROW_HEIGHT = 48;
@@ -254,41 +255,41 @@ export default component$(() => {
 
   return (
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div class="max-w-screen-2xl mx-auto px-6 py-8">
+      <div class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-6">
-          <button
+          <Btn
             onClick$={() => nav('/admin/analytics/dashboards')}
-            class="btn btn-ghost"
+            variant="ghost"
           >
-            ← Back to Dashboards
-          </button>
+            <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to Dashboards
+          </Btn>
 
           {dashboard && (
-            <button
+            <Btn
               onClick$={executeDashboard}
               disabled={executionLoading.value}
-              class="btn btn-primary"
             >
               {executionLoading.value ? 'Running...' : 'Run Dashboard'}
-            </button>
+            </Btn>
           )}
         </div>
 
         {error && (
-          <div class="alert alert-error mb-6">
+          <Alert variant="error" class="mb-6">
             <span>{error}</span>
-          </div>
+          </Alert>
         )}
 
         {executionError.value && (
-          <div class="alert alert-warning mb-6">
+          <Alert variant="warning" class="mb-6">
             <span>{executionError.value}</span>
-          </div>
+          </Alert>
         )}
 
         {!dashboard && !error && (
-          <div class="card bg-white dark:bg-gray-800 shadow-xl">
-            <div class="card-body text-center py-16">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+            <div class="p-8 text-center py-16">
               <h2 class="text-2xl font-semibold mb-2">Dashboard not found</h2>
               <p class="text-gray-500">The dashboard may have been removed or you may not have access.</p>
             </div>
@@ -297,42 +298,42 @@ export default component$(() => {
 
         {dashboard && (
           <div class="space-y-6">
-            <div class="card bg-white dark:bg-gray-800 shadow-xl">
-              <div class="card-body">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+              <div class="p-6">
                 <div class="flex items-start justify-between gap-4">
                   <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{dashboard.name}</h1>
                     <p class="text-gray-600 dark:text-gray-300 mt-2">{dashboard.description || 'No description provided'}</p>
                   </div>
                   <div class="flex gap-2">
-                    {dashboard.is_default && <span class="badge badge-success">Default</span>}
-                    <span class="badge badge-ghost">Private</span>
+                    {dashboard.is_default && <Badge variant="success">Default</Badge>}
+                    <Badge variant="neutral">Private</Badge>
                   </div>
                 </div>
 
                 {dashboard.tags && dashboard.tags.length > 0 && (
                   <div class="mt-4 flex flex-wrap gap-2">
                     {dashboard.tags.map((tag) => (
-                      <span key={tag} class="badge badge-outline">{tag}</span>
+                      <Badge key={tag} variant="neutral">{tag}</Badge>
                     ))}
                   </div>
                 )}
               </div>
             </div>
 
-            <div class="card bg-white dark:bg-gray-800 shadow-xl">
-              <div class="card-body">
-                <h2 class="card-title text-xl mb-4">Widgets</h2>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+              <div class="p-6">
+                <h2 class="text-xl font-bold mb-4">Widgets</h2>
 
                 {!dashboard.widgets || dashboard.widgets.length === 0 ? (
                   <p class="text-gray-500">No widgets configured for this dashboard.</p>
                 ) : (
                   <div class="overflow-x-auto">
                     <div
-                      class="grid grid-cols-12 gap-4"
+                      class="grid grid-cols-12 gap-4 min-w-[var(--dashboard-canvas-min-width)] auto-rows-[var(--dashboard-grid-row-height)]"
                       style={{
-                        minWidth: `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
-                        gridAutoRows: `${DASHBOARD_GRID_ROW_HEIGHT}px`,
+                        '--dashboard-canvas-min-width': `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
+                        '--dashboard-grid-row-height': `${DASHBOARD_GRID_ROW_HEIGHT}px`,
                       }}
                     >
                     {dashboard.widgets.map((widget) => {
@@ -350,16 +351,16 @@ export default component$(() => {
                       return (
                       <div
                         key={widget.id}
-                        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white overflow-hidden"
+                        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white overflow-hidden [grid-column:var(--widget-grid-column)] [grid-row:var(--widget-grid-row)] min-h-[var(--widget-min-height)]"
                         style={{
-                          gridColumn: `${safeX + 1} / span ${clampedW}`,
-                          gridRow: `${safeY + 1} / span ${safeH}`,
-                          minHeight: `${DASHBOARD_GRID_ROW_HEIGHT * safeH}px`,
+                          '--widget-grid-column': `${safeX + 1} / span ${clampedW}`,
+                          '--widget-grid-row': `${safeY + 1} / span ${safeH}`,
+                          '--widget-min-height': `${DASHBOARD_GRID_ROW_HEIGHT * safeH}px`,
                         }}
                       >
                         <div class="flex items-center justify-between mb-2">
                           <h3 class="font-semibold">{widget.title}</h3>
-                          <span class="badge badge-sm capitalize">{widget.type}</span>
+                          <Badge variant="neutral" class="capitalize">{widget.type}</Badge>
                         </div>
                         {widget.description && (
                           <p class="text-sm text-gray-500 mb-3">{widget.description}</p>
@@ -402,7 +403,7 @@ export default component$(() => {
                                           (widget.config?.chart_type as ChartType) || 'bar',
                                           widget.title
                                         )}
-                                        style="width: 100%; height: 100%;"
+                                        class="w-full h-full"
                                       />
                                     )}
                                   />

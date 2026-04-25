@@ -14,8 +14,8 @@ export const P9ETabs = component$((props: P9ETabsProps) => {
   // Use navigation element and indicator style signal
   const navElement = useSignal<HTMLElement>();
   const indicatorStyle = useSignal<{
-    left: string;
-    width: string;
+    '--tabs-indicator-left': string;
+    '--tabs-indicator-width': string;
   }>();
 
   /**
@@ -30,8 +30,8 @@ export const P9ETabs = component$((props: P9ETabsProps) => {
     // Update indicator style to active element or reset it to undefined
     indicatorStyle.value = activeElement
       ? {
-          left: `${activeElement.offsetLeft || 0}px`,
-          width: `${activeElement.offsetWidth || 0}px`,
+          '--tabs-indicator-left': `${activeElement.offsetLeft || 0}px`,
+          '--tabs-indicator-width': `${activeElement.offsetWidth || 0}px`,
         }
       : undefined;
   });
@@ -74,7 +74,7 @@ export const P9ETabs = component$((props: P9ETabsProps) => {
         </nav>
         <div
           // window:onResize$={updateIndicatorStyle}
-          class="absolute -bottom-0.5 m-0 h-0.5 rounded bg-sky-600 duration-200 dark:bg-sky-400"
+          class="absolute -bottom-0.5 m-0 h-0.5 rounded bg-sky-600 duration-200 dark:bg-sky-400 left-[var(--tabs-indicator-left)] w-[var(--tabs-indicator-width)]"
           style={indicatorStyle.value}
         />
       </div>

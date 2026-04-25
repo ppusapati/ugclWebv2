@@ -482,7 +482,7 @@ export const ProjectMap = component$<ProjectMapProps>(({
   });
 
   return (
-    <div class="relative w-full" style={{ height }}>
+    <div class="relative w-full h-[var(--map-height)]" style={{ '--map-height': height }}>
       {errorMsg.value && (
         <div class="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
           <div class="text-center p-4">

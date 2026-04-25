@@ -17,6 +17,8 @@ import { component$, isServer, useStore, $, useTask$, type PropFunction } from '
 import { useNavigate, useLocation } from '@builder.io/qwik-city';
 import { P9ETable } from '~/components/table';
 import { DynamicForm, type FormField } from '~/components/form_generator';
+import { FormField as DSFormField } from '~/components/ds';
+import { Btn } from '~/components/ds';
 import { reportService, type ReportKey } from '~/services/report.service';
 import { siteService } from '~/services/site.service';
 import type { PaginationParams } from '~/services/types';
@@ -211,25 +213,31 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
     label: 'Actions',
     render: (_val, row) => (
       <div class="flex gap-2">
-        <button
+        <Btn
+          size="sm"
+          variant="ghost"
           onClick$={() => nav(`/reports/${props.reportType}/${row.id}`)}
-          class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+          class="text-blue-700"
         >
           View
-        </button>
-        <button
+        </Btn>
+        <Btn
+          size="sm"
+          variant="secondary"
           onClick$={() => nav(`/reports/${props.reportType}/${row.id}/edit`)}
-          class="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+          class="text-yellow-700"
         >
           Edit
-        </button>
-        <button
+        </Btn>
+        <Btn
+          size="sm"
+          variant="danger"
           onClick$={() => handleDelete(row.id)}
           disabled={state.deleting === row.id}
-          class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:opacity-50"
+          class="text-red-700 disabled:opacity-50"
         >
           {state.deleting === row.id ? 'Deleting...' : 'Delete'}
-        </button>
+        </Btn>
       </div>
     ),
   };
@@ -250,12 +258,13 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
               View and manage all {props.reportTitle.toLowerCase()}
             </p>
           </div>
-          <button
+          <Btn
             onClick$={() => nav(`/reports/${props.reportType}/new`)}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            variant="primary"
+            class="flex items-center gap-2"
           >
             <span>+</span> New Report
-          </button>
+          </Btn>
         </div>
 
         {/* Error Display */}
@@ -267,15 +276,13 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
 
         {/* Filters */}
         {(props.showDateFilter || props.showSiteFilter) && (
-          <div class="bg-white dark:bg-dark-800 rounded-lg shadow-md p-4 mb-4">
+          <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-4 mb-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               {props.showDateFilter && (
                 <>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Start Date
-                    </label>
+                  <DSFormField id="report-template-filter-start-date" label="Start Date">
                     <input
+                      id="report-template-filter-start-date"
                       type="date"
                       value={state.filters.start_date}
                       onInput$={(e) => {
@@ -284,12 +291,10 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
                       }}
                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
                     />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      End Date
-                    </label>
+                  </DSFormField>
+                  <DSFormField id="report-template-filter-end-date" label="End Date">
                     <input
+                      id="report-template-filter-end-date"
                       type="date"
                       value={state.filters.end_date}
                       onInput$={(e) => {
@@ -298,16 +303,14 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
                       }}
                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
                     />
-                  </div>
+                  </DSFormField>
                 </>
               )}
 
               {props.showSiteFilter && (
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Site
-                  </label>
+                <DSFormField id="report-template-filter-site" label="Site">
                   <select
+                    id="report-template-filter-site"
                     value={state.filters.site_id}
                     onChange$={(e) => {
                       state.filters.site_id = (e.target as HTMLSelectElement).value;
@@ -322,26 +325,28 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
                       </option>
                     ))}
                   </select>
-                </div>
+                </DSFormField>
               )}
 
               <div class="flex items-end">
-                <button
+                <Btn
+                  size="sm"
+                  variant="secondary"
                   onClick$={() => {
                     state.filters = { start_date: '', end_date: '', site_id: '' };
                     fetchReports(0);
                   }}
-                  class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                  class="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
                   Clear Filters
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
         )}
 
         {/* Reports Table */}
-        <div class="bg-white dark:bg-dark-800 rounded-lg shadow-md overflow-hidden">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
           <P9ETable
             header={allColumns}
             data={state.data}
@@ -396,12 +401,13 @@ export const ReportTemplate = component$<ReportTemplateProps>((props) => {
             onClick$={() => nav(`/reports/${props.reportType}`)}
             class="text-blue-600 hover:text-blue-800 flex items-center gap-2"
           >
-            <span>←</span> Back to {props.reportTitle}
+            <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to {props.reportTitle}
           </button>
         </div>
 
         {/* Form Card */}
-        <div class="bg-white dark:bg-dark-800 rounded-lg shadow-md p-6">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6">
           <h1 class="text-2xl font-bold mb-6">
             {isEditView ? 'Edit Report' : 'Create New Report'}
           </h1>

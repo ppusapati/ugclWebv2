@@ -88,15 +88,9 @@ export const DynamicIcon = component$<DynamicIconProps>(({ analyser }) => {
     });
   });
 
-  // Styles for the SVG element
-  const svgStyles = {
-    width: "100%",
-    height: "100%",
-  };
-
   // Render the SVG element with bars
   return (
-    <svg ref={ref} style={svgStyles}>
+    <svg ref={ref} class="w-full h-full">
       {[...Array(analyser.value?.frequencyBinCount || 0)].map((_, i) => (
         <rect
           class="bar"

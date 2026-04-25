@@ -100,14 +100,14 @@ export default component$<WorkflowDiagramProps>((props) => {
                       {/* Initial State Indicator */}
                       {isInitial && (
                         <div class="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span class="text-white text-xs font-bold">▶</span>
+                          <i class="i-heroicons-play-solid h-3 w-3 inline-block text-white" aria-hidden="true"></i>
                         </div>
                       )}
 
                       {/* Final State Indicator */}
                       {state.is_final && (
                         <div class="absolute -top-2 -left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                          <span class="text-white text-xs font-bold">✓</span>
+                          <i class="i-heroicons-check-solid h-3 w-3 inline-block text-white" aria-hidden="true"></i>
                         </div>
                       )}
 
@@ -120,8 +120,14 @@ export default component$<WorkflowDiagramProps>((props) => {
 
                       {/* Connection counts */}
                       <div class="flex gap-2 mt-2 text-xs opacity-70">
-                        <span title="Incoming transitions">← {incoming.length}</span>
-                        <span title="Outgoing transitions">→ {outgoing.length}</span>
+                        <span title="Incoming transitions" class="flex items-center gap-1">
+                          <i class="i-heroicons-arrow-left-solid h-3 w-3 inline-block" aria-hidden="true"></i>
+                          {incoming.length}
+                        </span>
+                        <span title="Outgoing transitions" class="flex items-center gap-1">
+                          <i class="i-heroicons-arrow-right-solid h-3 w-3 inline-block" aria-hidden="true"></i>
+                          {outgoing.length}
+                        </span>
                       </div>
                     </div>
 
@@ -151,10 +157,15 @@ export default component$<WorkflowDiagramProps>((props) => {
                                       {transition.label || transition.action}
                                     </span>
                                     {transition.permission && (
-                                      <span class="ml-2 text-xs text-gray-500">🔒 {transition.permission}</span>
+                                      <span class="ml-2 text-xs text-gray-500 inline-flex items-center gap-1">
+                                        <i class="i-heroicons-lock-closed-solid h-3 w-3 inline-block" aria-hidden="true"></i>
+                                        {transition.permission}
+                                      </span>
                                     )}
                                     {transition.requires_comment && (
-                                      <span class="ml-2 text-xs text-gray-500">💬</span>
+                                      <span class="ml-2 text-xs text-gray-500 inline-flex items-center">
+                                        <i class="i-heroicons-chat-bubble-left-ellipsis-solid h-3 w-3 inline-block" aria-hidden="true"></i>
+                                      </span>
                                     )}
                                   </div>
 
@@ -216,13 +227,19 @@ export default component$<WorkflowDiagramProps>((props) => {
         <div class="mt-4">
           {props.states.filter(s => s.code === props.initialState).length === 0 && (
             <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-              ⚠️ Warning: Initial state "{props.initialState}" is not defined in states list
+              <span class="inline-flex items-center gap-2">
+                <i class="i-heroicons-exclamation-triangle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Warning: Initial state "{props.initialState}" is not defined in states list
+              </span>
             </div>
           )}
 
           {props.states.filter(s => !s.is_final).some(s => getStateConnections(s.code).outgoing.length === 0) && (
             <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 mt-2">
-              ⚠️ Warning: Some non-final states have no outgoing transitions
+              <span class="inline-flex items-center gap-2">
+                <i class="i-heroicons-exclamation-triangle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Warning: Some non-final states have no outgoing transitions
+              </span>
             </div>
           )}
         </div>

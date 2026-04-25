@@ -1,4 +1,4 @@
-import { type Signal, component$, useComputed$, useStylesScoped$, type QRL } from '@builder.io/qwik';
+import { type Signal, component$, useComputed$, type QRL } from '@builder.io/qwik';
 import { extractImageUrls, isImage } from '../utils/imageBool';
 
 function formatDate(val: string, formatStr = 'dd-MM-yyyy') {
@@ -49,8 +49,6 @@ type cellType = {
 }
 
 export const TableBody = component$((props: bodyProps) => {
-  useStylesScoped$(AppCSS);
-
 const computedPosts = useComputed$(() => {
   if (props.serverPagination) {
     return props.data; // already paginated by backend
@@ -131,7 +129,7 @@ const computedPosts = useComputed$(() => {
                       width={50}
                       height={50}
                       alt="photo"
-                      style={{ marginRight: '4px', borderRadius: '4px' }}
+                      class='mr-1 rounded object-cover'
                     />
                   )}
                 </td>
@@ -148,14 +146,3 @@ const computedPosts = useComputed$(() => {
     </tbody>
   );
 });
-
-export const AppCSS = `
-  tbody {
-    color: #0f172a;
-    font-size: 15px;
-    letter-spacing: 0.3px;
-  }
-  img {
-    object-fit: cover;
-  }
-`;

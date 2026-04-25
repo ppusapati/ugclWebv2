@@ -2,6 +2,7 @@ import { component$, useSignal, useStore, $ } from '@builder.io/qwik';
 import { routeLoader$, useNavigate } from '@builder.io/qwik-city';
 import { apiClient } from '~/services/api-client';
 import { createSSRApiClient } from '~/services';
+import { Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, PageHeader, SectionCard } from '~/components/ds';
 
 interface Policy {
   id: string;
@@ -151,68 +152,57 @@ export default component$(() => {
 
   return (
     <div class="space-y-6">
-      {/* Header */}
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Policy Management</h1>
-          <p class="text-gray-600 mt-1">Manage ABAC policies and authorization rules</p>
-        </div>
-        <button
-          onClick$={() => nav('/admin/policies/create')}
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+      <PageHeader title="Policy Management" subtitle="Manage ABAC policies and authorization rules">
+        <Btn q:slot="actions" onClick$={() => nav('/admin/policies/create')}>
           Create Policy
-        </button>
-      </div>
+        </Btn>
+      </PageHeader>
 
       {/* Statistics Cards */}
       {stats.value && (
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Total Policies by Status */}
           {stats.value.by_status?.map((stat: any) => (
-            <div key={stat.status} class="bg-white rounded-lg shadow p-6">
-              <div class="text-sm font-medium text-gray-600 uppercase">{stat.status}</div>
-              <div class="text-3xl font-bold text-gray-900 mt-2">{stat.count}</div>
-            </div>
+            <SectionCard key={stat.status} class="p-6">
+              <div class="text-sm font-medium uppercase text-color-text-secondary">{stat.status}</div>
+              <div class="mt-2 text-3xl font-bold text-color-text-primary">{stat.count}</div>
+            </SectionCard>
           ))}
 
           {/* Total Evaluations */}
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm font-medium text-gray-600 uppercase">Total Evaluations</div>
-            <div class="text-3xl font-bold text-gray-900 mt-2">{stats.value.total_evaluations}</div>
-          </div>
+          <SectionCard class="p-6">
+            <div class="text-sm font-medium uppercase text-color-text-secondary">Total Evaluations</div>
+            <div class="mt-2 text-3xl font-bold text-color-text-primary">{stats.value.total_evaluations}</div>
+          </SectionCard>
 
           {/* Last 24h Evaluations */}
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm font-medium text-gray-600 uppercase">Last 24 Hours</div>
-            <div class="text-3xl font-bold text-gray-900 mt-2">{stats.value.evaluations_last_24h}</div>
-          </div>
+          <SectionCard class="p-6">
+            <div class="text-sm font-medium uppercase text-color-text-secondary">Last 24 Hours</div>
+            <div class="mt-2 text-3xl font-bold text-color-text-primary">{stats.value.evaluations_last_24h}</div>
+          </SectionCard>
         </div>
       )}
 
       {/* Filters */}
-      <div class="bg-white rounded-lg shadow p-6">
+      <SectionCard title="Filters" subtitle="Refine policies by search term, status, and effect.">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label class="mb-2 block text-sm font-medium text-color-text-secondary">Search</label>
             <input
               type="text"
               value={filters.search}
               onInput$={(e) => filters.search = (e.target as HTMLInputElement).value}
               placeholder="Search policies..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-4 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label class="mb-2 block text-sm font-medium text-color-text-secondary">Status</label>
             <select
               value={filters.status}
               onChange$={(e) => filters.status = (e.target as HTMLSelectElement).value}
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-4 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
             >
               <option value="">All Statuses</option>
               <option value="active">Active</option>
@@ -223,11 +213,11 @@ export default component$(() => {
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Effect</label>
+            <label class="mb-2 block text-sm font-medium text-color-text-secondary">Effect</label>
             <select
               value={filters.effect}
               onChange$={(e) => filters.effect = (e.target as HTMLSelectElement).value}
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-4 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
             >
               <option value="">All Effects</option>
               <option value="ALLOW">Allow</option>
@@ -235,10 +225,10 @@ export default component$(() => {
             </select>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Policies Table */}
-      <div class="bg-white rounded-lg shadow overflow-hidden">
+      <SectionCard class="overflow-hidden p-0">
         {loading.value ? (
           <div class="p-12 text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
@@ -253,129 +243,80 @@ export default component$(() => {
             <p class="text-gray-600">No policies found</p>
           </div>
         ) : (
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <DataTable>
+            <DataTableHead>
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Policy Name
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Effect
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <DataTableHeaderCell>Policy Name</DataTableHeaderCell>
+                <DataTableHeaderCell>Effect</DataTableHeaderCell>
+                <DataTableHeaderCell>Priority</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell class="text-right">Actions</DataTableHeaderCell>
               </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            </DataTableHead>
+            <DataTableBody>
               {filteredPolicies.map((policy) => (
-                <tr key={policy.id} class="hover:bg-gray-50">
-                  <td class="px-6 py-4">
-                    <div>
-                      <div class="text-sm font-medium text-gray-900">{policy.display_name}</div>
-                      <div class="text-sm text-gray-500">{policy.description}</div>
+                <DataTableRow key={policy.id}>
+                  <DataTableCell>
+                    <div class="text-sm font-medium text-neutral-900">{policy.display_name}</div>
+                    <div class="text-sm text-neutral-500">{policy.description}</div>
+                  </DataTableCell>
+                  <DataTableCell>
+                    <Badge variant={policy.effect === 'ALLOW' ? 'success' : 'error'}>{policy.effect}</Badge>
+                  </DataTableCell>
+                  <DataTableCell class="text-sm text-neutral-900">{policy.priority}</DataTableCell>
+                  <DataTableCell>
+                    <Badge variant={
+                      policy.status === 'active' ? 'success' :
+                      policy.status === 'draft' ? 'warning' :
+                      'neutral'
+                    }>{policy.status}</Badge>
+                  </DataTableCell>
+                  <DataTableCell class="text-right">
+                    <div class="flex justify-end gap-1">
+                      <Btn size="sm" variant="ghost" onClick$={() => nav(`/admin/policies/${policy.id}`)}>View</Btn>
+                      <Btn size="sm" variant="primary" onClick$={() => nav(`/admin/policies/${policy.id}/edit`)}>Edit</Btn>
+                      <Btn size="sm" variant="ghost" onClick$={() => nav(`/admin/policies/${policy.id}/test`)}>Test</Btn>
+                      {policy.status === 'active' ? (
+                        <Btn size="sm" variant="secondary" onClick$={() => deactivatePolicy(policy.id)}>Deactivate</Btn>
+                      ) : (
+                        <Btn size="sm" variant="secondary" onClick$={() => activatePolicy(policy.id)}>Activate</Btn>
+                      )}
+                      <Btn size="sm" variant="danger" onClick$={() => deletePolicy(policy.id)}>Delete</Btn>
                     </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      policy.effect === 'ALLOW'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {policy.effect}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-900">
-                    {policy.priority}
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      policy.status === 'active' ? 'bg-green-100 text-green-800' :
-                      policy.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                      policy.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {policy.status}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                    <button
-                      onClick$={() => nav(`/admin/policies/${policy.id}`)}
-                      class="text-primary-600 hover:text-primary-900"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick$={() => nav(`/admin/policies/${policy.id}/edit`)}
-                      class="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick$={() => nav(`/admin/policies/${policy.id}/test`)}
-                      class="text-blue-600 hover:text-blue-900"
-                    >
-                      Test
-                    </button>
-                    {policy.status === 'active' ? (
-                      <button
-                        onClick$={() => deactivatePolicy(policy.id)}
-                        class="text-orange-600 hover:text-orange-900"
-                      >
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button
-                        onClick$={() => activatePolicy(policy.id)}
-                        class="text-green-600 hover:text-green-900"
-                      >
-                        Activate
-                      </button>
-                    )}
-                    <button
-                      onClick$={() => deletePolicy(policy.id)}
-                      class="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                  </DataTableCell>
+                </DataTableRow>
               ))}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         )}
-      </div>
+      </SectionCard>
 
       {/* Pagination */}
       {pagination.total > pagination.limit && (
-        <div class="flex justify-between items-center bg-white px-6 py-4 rounded-lg shadow">
-          <div class="text-sm text-gray-700">
+        <SectionCard class="px-6 py-4">
+          <div class="flex items-center justify-between gap-4">
+            <div class="text-sm text-color-text-secondary">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
             {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} policies
+            </div>
+            <div class="flex gap-2">
+              <Btn
+                variant="secondary"
+                onClick$={() => { pagination.page--; fetchPolicies(); }}
+                disabled={pagination.page === 1}
+              >
+                Previous
+              </Btn>
+              <Btn
+                variant="secondary"
+                onClick$={() => { pagination.page++; fetchPolicies(); }}
+                disabled={pagination.page * pagination.limit >= pagination.total}
+              >
+                Next
+              </Btn>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button
-              onClick$={() => { pagination.page--; fetchPolicies(); }}
-              disabled={pagination.page === 1}
-              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              onClick$={() => { pagination.page++; fetchPolicies(); }}
-              disabled={pagination.page * pagination.limit >= pagination.total}
-              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        </SectionCard>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 // src/components/geofence/GeofenceMap.tsx
 import { component$, useSignal, useTask$, $, type QRL, noSerialize, type NoSerialize, isServer } from '@builder.io/qwik';
+import { Alert, Btn } from '~/components/ds';
 import type { Coordinate, Geofence } from '~/utils/geofence';
 import { validateGeofence, calculatePolygonCenter, autoClosePolygon, calculatePolygonArea, formatArea } from '~/utils/geofence';
 
@@ -351,32 +352,32 @@ export default component$<GeofenceMapProps>((props) => {
       {!props.readonly && (
         <div class="mb-4 space-y-4">
           <div class="flex gap-2 flex-wrap">
-            <button
+            <Btn
               type="button"
               onClick$={toggleDrawing}
-              class={`btn ${drawingMode.value ? 'btn-primary' : 'btn-secondary'} px-4 py-2`}
+              variant={drawingMode.value ? 'primary' : 'secondary'}
             >
-              {drawingMode.value ? '✓ Drawing Mode Active' : 'Start Drawing'}
-            </button>
-            <button
+              {drawingMode.value ? 'Drawing Mode Active' : 'Start Drawing'}
+            </Btn>
+            <Btn
+              variant="secondary"
               type="button"
               onClick$={undoLastPoint}
               disabled={coordinates.value.length === 0}
-              class="btn btn-secondary px-4 py-2 disabled:opacity-50"
             >
               Undo Last Point
-            </button>
-            <button
+            </Btn>
+            <Btn
+              variant="danger"
               type="button"
               onClick$={clearGeofence}
               disabled={coordinates.value.length === 0}
-              class="btn btn-danger px-4 py-2 disabled:opacity-50"
             >
               Clear Geofence
-            </button>
+            </Btn>
           </div>
 
-          <div class="text-sm text-dark-600 bg-light-100 p-3 rounded">
+          <div class="text-sm text-neutral-600 bg-neutral-100 p-3 rounded">
             <strong>Instructions:</strong> Click "Start Drawing" then click on the map to add points.
             You can drag the red markers to adjust positions. At least 3 points are required.
           </div>
@@ -397,30 +398,30 @@ export default component$<GeofenceMapProps>((props) => {
           )}
 
           {validationError.value && (
-            <div class="alert-danger rounded-lg p-3 bg-danger-50 border-l-4 border-danger-500">
-              <p class="text-danger-800 text-sm">{validationError.value}</p>
-            </div>
+            <Alert variant="error" class="border-l-4 px-3 py-3">
+              <p class="text-error-800 text-sm">{validationError.value}</p>
+            </Alert>
           )}
         </div>
       )}
 
       <div
         ref={mapContainer}
-        style={{ height: props.height || '500px' }}
-        class="rounded-lg border border-light-300 shadow"
+        style={{ '--map-height': props.height || '500px' }}
+        class="rounded-lg border border-neutral-300 shadow h-[var(--map-height)]"
       />
 
       {props.readonly && coordinates.value.length > 0 && (
-        <div class="mt-3 bg-light-50 border border-light-200 rounded-lg p-3">
+        <div class="mt-3 bg-neutral-50 border border-neutral-200 rounded-lg p-3">
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span class="text-dark-600">Points:</span>
-              <span class="ml-2 font-medium text-dark-800">{coordinates.value.length}</span>
+              <span class="text-neutral-600">Points:</span>
+              <span class="ml-2 font-medium text-neutral-800">{coordinates.value.length}</span>
             </div>
             {polygonArea.value > 0 && (
               <div>
-                <span class="text-dark-600">Area:</span>
-                <span class="ml-2 font-medium text-dark-800">{formatArea(polygonArea.value)}</span>
+                <span class="text-neutral-600">Area:</span>
+                <span class="ml-2 font-medium text-neutral-800">{formatArea(polygonArea.value)}</span>
               </div>
             )}
           </div>

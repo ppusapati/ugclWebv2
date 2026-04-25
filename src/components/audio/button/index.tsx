@@ -1,6 +1,7 @@
 import { type QRL, component$, type NoSerialize, type Signal } from "@builder.io/qwik";
 import { type RecordingStatus } from "../hooks/useMediaRecorder";
 import { DynamicIcon } from "../dynamic/DynamicIcon";
+import { Btn } from '~/components/ds';
 
 export type MediaButtonProps = {
   status: Signal<RecordingStatus>;
@@ -15,26 +16,26 @@ export const MediaButton = component$<MediaButtonProps>(
     switch (status.value) {
       case "ready":
         return (
-          <button key="ready" onClick$={onStart}>
+          <Btn key="ready" size="sm" variant="primary" onClick$={onStart}>
             Record
-          </button>
+          </Btn>
         );
       case "recording":
         return (
-          <button key="recording" onClick$={onStop}>
+          <Btn key="recording" size="sm" variant="danger" onClick$={onStop}>
             Recording {formattedDuration.value}
             {analyser && <DynamicIcon analyser={analyser} />}
             Stop
-          </button>
+          </Btn>
         );
       case "stopped":
         return (
-          <button key="stopped" onClick$={onStart}>
+          <Btn key="stopped" size="sm" variant="secondary" onClick$={onStart}>
             Record again
-          </button>
+          </Btn>
         );
       default:
-        return <button key="denied">Access denied for microphone</button>;
+        return <Btn key="denied" size="sm" variant="ghost">Access denied for microphone</Btn>;
     }
   }
 );

@@ -1,6 +1,7 @@
 // src/routes/change-password/index.tsx
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
+import { Alert, Btn, PageHeader, SectionCard } from '~/components/ds';
 import { authService } from '~/services';
 
 export default component$(() => {
@@ -110,29 +111,22 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container-md mx-auto">
-        {/* Header */}
-        <div class="mb-6">
-          <button
-            onClick$={() => nav('/profile')}
-            class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
-          >
-            <span>←</span> Back to Profile
-          </button>
-          <h1 class="text-3xl font-bold text-dark-800">Change Password</h1>
-          <p class="text-dark-600 mt-2">Update your password to keep your account secure</p>
-        </div>
+    <div class="space-y-6 py-2">
+        <PageHeader title="Change Password" subtitle="Update your password to keep your account secure">
+          <Btn q:slot="actions" variant="secondary" size="sm" onClick$={() => nav('/profile')}>
+            <i class="i-heroicons-arrow-left w-4 h-4 inline-block mr-2"></i>
+            Back to Profile
+          </Btn>
+        </PageHeader>
 
-        {/* Change Password Card */}
-        <div class="card bg-white shadow-lg rounded-xl p-8 max-w-2xl">
+        <SectionCard class="max-w-2xl p-8">
           {success.value ? (
             <div class="text-center py-8">
-              <div class="text-success-500 text-6xl mb-4">✓</div>
-              <h3 class="text-2xl font-semibold text-dark-800 mb-2">
+              <i class="i-heroicons-check-circle-solid h-16 w-16 inline-block text-success-500 mb-4" aria-hidden="true"></i>
+              <h3 class="text-2xl font-semibold text-neutral-800 mb-2">
                 Password Changed Successfully!
               </h3>
-              <p class="text-dark-600">
+              <p class="text-neutral-600">
                 Your password has been updated. Redirecting...
               </p>
             </div>
@@ -140,8 +134,8 @@ export default component$(() => {
             <form onSubmit$={handleSubmit} preventdefault:submit>
               {/* Current Password */}
               <div class="form-group mb-6">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Current Password <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Current Password <span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -155,23 +149,28 @@ export default component$(() => {
                     }}
                     class={`form-input w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition ${
                       errors.value.currentPassword
-                        ? 'border-danger-500 focus:ring-danger-400'
-                        : 'border-light-300 focus:ring-primary-400'
+                        ? 'border-error-500 focus:ring-error-400'
+                        : 'border-neutral-300 focus:ring-primary-400'
                     }`}
                     placeholder="Enter your current password"
                   />
-                  <button
+                  <Btn
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => {
                       showCurrentPassword.value = !showCurrentPassword.value;
                     }}
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-dark-600"
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   >
-                    {showCurrentPassword.value ? '👁️' : '👁️‍🗨️'}
-                  </button>
+                    <i
+                      class={`${showCurrentPassword.value ? 'i-heroicons-eye-slash-solid' : 'i-heroicons-eye-solid'} h-5 w-5 inline-block`}
+                      aria-hidden="true"
+                    ></i>
+                  </Btn>
                 </div>
                 {errors.value.currentPassword && (
-                  <p class="form-error text-danger-600 text-sm mt-1">
+                  <p class="form-error text-error-600 text-sm mt-1">
                     {errors.value.currentPassword}
                   </p>
                 )}
@@ -182,8 +181,8 @@ export default component$(() => {
 
               {/* New Password */}
               <div class="form-group mb-6">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  New Password <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  New Password <span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -198,48 +197,53 @@ export default component$(() => {
                     }}
                     class={`form-input w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition ${
                       errors.value.newPassword
-                        ? 'border-danger-500 focus:ring-danger-400'
-                        : 'border-light-300 focus:ring-primary-400'
+                        ? 'border-error-500 focus:ring-error-400'
+                        : 'border-neutral-300 focus:ring-primary-400'
                     }`}
                     placeholder="Create a strong new password"
                   />
-                  <button
+                  <Btn
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => {
                       showNewPassword.value = !showNewPassword.value;
                     }}
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-dark-600"
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   >
-                    {showNewPassword.value ? '👁️' : '👁️‍🗨️'}
-                  </button>
+                    <i
+                      class={`${showNewPassword.value ? 'i-heroicons-eye-slash-solid' : 'i-heroicons-eye-solid'} h-5 w-5 inline-block`}
+                      aria-hidden="true"
+                    ></i>
+                  </Btn>
                 </div>
 
                 {/* Password Strength Indicator */}
                 {formData.value.newPassword && (
                   <div class="mt-2">
                     <div class="flex justify-between text-xs mb-1">
-                      <span class="text-dark-600">Password Strength:</span>
+                      <span class="text-neutral-600">Password Strength:</span>
                       <span class={`text-${getStrengthColor()}-600 font-semibold`}>
                         {getStrengthText()}
                       </span>
                     </div>
-                    <div class="w-full bg-light-200 rounded-full h-2">
+                    <div class="w-full bg-neutral-200 rounded-full h-2">
                       <div
-                        class={`bg-${getStrengthColor()}-500 h-2 rounded-full transition-all duration-300`}
-                        style={`width: ${passwordStrength.value}%`}
+                        class={`bg-${getStrengthColor()}-500 h-2 rounded-full transition-all duration-300 w-[var(--progress-width)]`}
+                        style={{ '--progress-width': `${passwordStrength.value}%` }}
                       ></div>
                     </div>
                   </div>
                 )}
 
                 {errors.value.newPassword && (
-                  <p class="form-error text-danger-600 text-sm mt-1">
+                  <p class="form-error text-error-600 text-sm mt-1">
                     {errors.value.newPassword}
                   </p>
                 )}
 
                 {/* Password Requirements */}
-                <div class="mt-3 text-xs text-dark-500">
+                <div class="mt-3 text-xs text-neutral-500">
                   <p class="font-semibold mb-1">Password must contain:</p>
                   <ul class="list-disc list-inside space-y-1">
                     <li>At least 8 characters</li>
@@ -252,8 +256,8 @@ export default component$(() => {
 
               {/* Confirm New Password */}
               <div class="form-group mb-6">
-                <label class="form-label text-dark-700 font-semibold mb-2">
-                  Confirm New Password <span class="text-danger-500">*</span>
+                <label class="form-label text-neutral-700 font-semibold mb-2">
+                  Confirm New Password <span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -267,23 +271,28 @@ export default component$(() => {
                     }}
                     class={`form-input w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition ${
                       errors.value.confirmPassword
-                        ? 'border-danger-500 focus:ring-danger-400'
-                        : 'border-light-300 focus:ring-primary-400'
+                        ? 'border-error-500 focus:ring-error-400'
+                        : 'border-neutral-300 focus:ring-primary-400'
                     }`}
                     placeholder="Re-enter your new password"
                   />
-                  <button
+                  <Btn
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => {
                       showConfirmPassword.value = !showConfirmPassword.value;
                     }}
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-dark-600"
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   >
-                    {showConfirmPassword.value ? '👁️' : '👁️‍🗨️'}
-                  </button>
+                    <i
+                      class={`${showConfirmPassword.value ? 'i-heroicons-eye-slash-solid' : 'i-heroicons-eye-solid'} h-5 w-5 inline-block`}
+                      aria-hidden="true"
+                    ></i>
+                  </Btn>
                 </div>
                 {errors.value.confirmPassword && (
-                  <p class="form-error text-danger-600 text-sm mt-1">
+                  <p class="form-error text-error-600 text-sm mt-1">
                     {errors.value.confirmPassword}
                   </p>
                 )}
@@ -291,35 +300,35 @@ export default component$(() => {
 
               {/* Submit Error */}
               {errors.value.submit && (
-                <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-                  <p class="text-danger-800">{errors.value.submit}</p>
-                </div>
+                <Alert variant="error" class="mb-6 border-l-4">
+                  <p class="text-error-800">{errors.value.submit}</p>
+                </Alert>
               )}
 
               {/* Action Buttons */}
               <div class="flex gap-4 flex-col sm:flex-row">
-                <button
+                <Btn
                   type="submit"
                   disabled={loading.value}
-                  class="btn-primary flex-1 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex-1 py-3 text-lg font-semibold"
                 >
                   {loading.value ? 'Changing Password...' : 'Change Password'}
-                </button>
-                <button
+                </Btn>
+                <Btn
                   type="button"
+                  variant="secondary"
                   onClick$={() => nav('/profile')}
-                  class="btn-light-300 flex-1 py-3 text-lg font-semibold rounded-lg"
+                  class="flex-1 py-3 text-lg font-semibold"
                 >
                   Cancel
-                </button>
+                </Btn>
               </div>
             </form>
           )}
-        </div>
+        </SectionCard>
 
-        {/* Security Tips */}
-        <div class="card bg-info-50 border border-info-200 rounded-xl p-6 mt-6 max-w-2xl">
-          <h3 class="text-lg font-semibold text-info-800 mb-3">Security Tips</h3>
+        <SectionCard class="mt-6 max-w-2xl border-color-interactive-primary/20 bg-color-interactive-primary/5">
+          <h3 class="mb-3 text-lg font-semibold text-info-800">Security Tips</h3>
           <ul class="space-y-2 text-sm text-info-700">
             <li class="flex items-start gap-2">
               <span class="text-info-600">•</span>
@@ -338,8 +347,7 @@ export default component$(() => {
               <span>Avoid using personal information in your password</span>
             </li>
           </ul>
-        </div>
-      </div>
+        </SectionCard>
     </div>
   );
 });

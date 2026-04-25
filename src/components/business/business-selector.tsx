@@ -1,6 +1,7 @@
 // src/components/business/business-selector.tsx
 import { component$, isServer, useStore, useTask$ } from '@builder.io/qwik';
 import { authService, type BusinessVertical } from '~/services/auth.service';
+import { Badge, Btn } from '~/components/ds';
 
 export const BusinessSelector = component$(() => {
   const state = useStore({
@@ -48,9 +49,9 @@ export const BusinessSelector = component$(() => {
           >
             <div class="flex items-center justify-between mb-2">
               <h4 class="font-medium">{business.name}</h4>
-              <span class="text-xs bg-gray-100 px-2 py-1 rounded">
+              <Badge variant="neutral">
                 {business.code}
-              </span>
+              </Badge>
             </div>
             
             <p class="text-sm text-gray-600 mb-3">{business.description}</p>
@@ -58,22 +59,22 @@ export const BusinessSelector = component$(() => {
             <div class="space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <span class="text-gray-500">Access Type:</span>
-                <span class={`px-2 py-1 rounded ${
+                <Badge variant={
                   business.access_type === 'super_admin' 
-                    ? 'bg-red-100 text-red-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
+                    ? 'error' 
+                    : 'success'
+                }>
                   {business.access_type === 'super_admin' ? 'Super Admin' : 'Business Role'}
-                </span>
+                </Badge>
               </div>
               
               <div class="text-xs">
                 <span class="text-gray-500">Roles:</span>
                 <div class="flex flex-wrap gap-1 mt-1">
                   {business.roles.map((role) => (
-                    <span key={role} class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    <Badge key={role} variant="info">
                       {role}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -88,8 +89,8 @@ export const BusinessSelector = component$(() => {
             Selected: {state.selectedBusiness.name}
           </h4>
           <div class="flex gap-2">
-            <button
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            <Btn
+              class="rounded"
               onClick$={async () => {
                 await authService.setActiveBusinessContext(state.selectedBusiness!);
                 // Navigate to business dashboard
@@ -97,9 +98,10 @@ export const BusinessSelector = component$(() => {
               }}
             >
               Enter Dashboard
-            </button>
-            <button
-              class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            </Btn>
+            <Btn
+              variant="secondary"
+              class="rounded"
               onClick$={async () => {
                 await authService.setActiveBusinessContext(state.selectedBusiness!);
                 // Navigate to business management
@@ -107,7 +109,7 @@ export const BusinessSelector = component$(() => {
               }}
             >
               Manage Business
-            </button>
+            </Btn>
           </div>
         </div>
       )}

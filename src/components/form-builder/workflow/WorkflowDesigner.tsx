@@ -1,5 +1,6 @@
 // src/components/form-builder/workflow/WorkflowDesigner.tsx
 import { component$, useStore, useSignal, $, useComputed$, useTask$, type PropFunction } from '@builder.io/qwik';
+import { Btn, FormField } from '~/components/ds';
 import type { WorkflowDefinition, WorkflowState, WorkflowTransitionDef } from '~/types/workflow';
 import StateEditor from './StateEditor';
 import TransitionEditor from './TransitionEditor';
@@ -163,35 +164,44 @@ export default component$<WorkflowDesignerProps>((props) => {
               )}
             </div>
             <div class="flex gap-3">
-              <button
+              <Btn
+                size="sm"
+                variant="secondary"
                 onClick$={handleValidate}
-                class="px-4 py-2 border border-blue-300 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                class="border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100"
                 title="Validate workflow configuration"
               >
-                ✓ Validate
-              </button>
+                <i class="i-heroicons-check-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Validate
+              </Btn>
               {props.onCancel$ && (
-                <button
+                <Btn
+                  size="sm"
+                  variant="secondary"
                   onClick$={props.onCancel$}
-                  class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
-                </button>
+                </Btn>
               )}
-              <button
+              <Btn
+                size="sm"
+                variant="primary"
                 onClick$={handleSave}
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={validation.value && !validation.value.valid}
                 title={validation.value && !validation.value.valid ? 'Fix errors before saving' : 'Save workflow'}
               >
-                💾 Save Workflow
-              </button>
+                <i class="i-heroicons-bookmark-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Save Workflow
+              </Btn>
             </div>
           </div>
 
           {/* Tabs */}
           <div class="flex gap-4 mt-6 border-b border-gray-200">
-            <button
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 font-medium transition-colors ${
                 activeTab.value === 'info'
                   ? 'text-blue-600 border-b-2 border-blue-600'
@@ -199,9 +209,12 @@ export default component$<WorkflowDesignerProps>((props) => {
               }`}
               onClick$={() => (activeTab.value = 'info')}
             >
-              📝 Basic Info
-            </button>
-            <button
+              <i class="i-heroicons-document-text-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Basic Info
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 font-medium transition-colors ${
                 activeTab.value === 'states'
                   ? 'text-blue-600 border-b-2 border-blue-600'
@@ -209,9 +222,12 @@ export default component$<WorkflowDesignerProps>((props) => {
               }`}
               onClick$={() => (activeTab.value = 'states')}
             >
-              🔵 States ({workflow.states?.length || 0})
-            </button>
-            <button
+              <i class="i-heroicons-circle-stack-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              States ({workflow.states?.length || 0})
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 font-medium transition-colors ${
                 activeTab.value === 'transitions'
                   ? 'text-blue-600 border-b-2 border-blue-600'
@@ -219,9 +235,12 @@ export default component$<WorkflowDesignerProps>((props) => {
               }`}
               onClick$={() => (activeTab.value = 'transitions')}
             >
-              ➡️ Transitions ({workflow.transitions?.length || 0})
-            </button>
-            <button
+              <i class="i-heroicons-arrow-right-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Transitions ({workflow.transitions?.length || 0})
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 font-medium transition-colors ${
                 activeTab.value === 'diagram'
                   ? 'text-blue-600 border-b-2 border-blue-600'
@@ -229,9 +248,12 @@ export default component$<WorkflowDesignerProps>((props) => {
               }`}
               onClick$={() => (activeTab.value = 'diagram')}
             >
-              📊 Diagram
-            </button>
-            <button
+              <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Diagram
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
               class={`px-4 py-2 font-medium transition-colors ${
                 activeTab.value === 'preview'
                   ? 'text-blue-600 border-b-2 border-blue-600'
@@ -239,8 +261,9 @@ export default component$<WorkflowDesignerProps>((props) => {
               }`}
               onClick$={() => (activeTab.value = 'preview')}
             >
-              👁️ Preview
-            </button>
+              <i class="i-heroicons-eye-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Preview
+            </Btn>
           </div>
         </div>
 
@@ -260,69 +283,62 @@ export default component$<WorkflowDesignerProps>((props) => {
             <h2 class="text-xl font-bold mb-6">Workflow Information</h2>
 
             <div class="grid grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Workflow Code *
-                </label>
+              <FormField id="workflow-designer-code" label="Workflow Code" required>
                 <input
+                  id="workflow-designer-code"
                   type="text"
                   value={workflow.code}
                   onInput$={(e) => (workflow.code = (e.target as HTMLInputElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., standard_approval"
                   required
+                  aria-required="true"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Version
-                </label>
+              <FormField id="workflow-designer-version" label="Version">
                 <input
+                  id="workflow-designer-version"
                   type="text"
                   value={workflow.version}
                   onInput$={(e) => (workflow.version = (e.target as HTMLInputElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="1.0.0"
                 />
-              </div>
+              </FormField>
 
-              <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Workflow Name *
-                </label>
+              <FormField id="workflow-designer-name" label="Workflow Name" required class="col-span-2">
                 <input
+                  id="workflow-designer-name"
                   type="text"
                   value={workflow.name}
                   onInput$={(e) => (workflow.name = (e.target as HTMLInputElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Standard Approval Workflow"
                   required
+                  aria-required="true"
                 />
-              </div>
+              </FormField>
 
-              <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
+              <FormField id="workflow-designer-description" label="Description" class="col-span-2">
                 <textarea
+                  id="workflow-designer-description"
                   value={workflow.description}
                   onInput$={(e) => (workflow.description = (e.target as HTMLTextAreaElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Brief description of this workflow"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Initial State *
-                </label>
+              <FormField id="workflow-designer-initial-state" label="Initial State" required>
                 <select
+                  id="workflow-designer-initial-state"
                   value={workflow.initial_state}
                   onChange$={(e) => (workflow.initial_state = (e.target as HTMLSelectElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
+                  aria-required="true"
                 >
                   {workflow.states?.map((state) => (
                     <option key={state.code} value={state.code}>
@@ -330,7 +346,7 @@ export default component$<WorkflowDesignerProps>((props) => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </FormField>
 
               <div class="flex items-center">
                 <label class="flex items-center">
@@ -354,19 +370,22 @@ export default component$<WorkflowDesignerProps>((props) => {
             <div class="bg-white rounded-lg shadow-sm p-6">
               <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">States</h2>
-                <button
+                <Btn
+                  size="sm"
+                  variant="primary"
                   onClick$={addState}
-                  class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                 >
                   + Add
-                </button>
+                </Btn>
               </div>
 
               <div class="space-y-2">
                 {workflow.states?.map((state, index) => (
-                  <button
+                  <Btn
                     key={state.code}
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => (selectedStateIndex.value = index)}
                     class={`w-full text-left px-3 py-2 rounded border ${
                       selectedStateIndex.value === index
@@ -376,7 +395,7 @@ export default component$<WorkflowDesignerProps>((props) => {
                   >
                     <div class="font-medium">{state.name}</div>
                     <div class="text-sm text-gray-500">{state.code}</div>
-                  </button>
+                  </Btn>
                 ))}
               </div>
             </div>
@@ -406,19 +425,22 @@ export default component$<WorkflowDesignerProps>((props) => {
             <div class="bg-white rounded-lg shadow-sm p-6">
               <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">Transitions</h2>
-                <button
+                <Btn
+                  size="sm"
+                  variant="primary"
                   onClick$={addTransition}
-                  class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                 >
                   + Add
-                </button>
+                </Btn>
               </div>
 
               <div class="space-y-2">
                 {workflow.transitions?.map((transition, index) => (
-                  <button
+                  <Btn
                     key={index}
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick$={() => (selectedTransitionIndex.value = index)}
                     class={`w-full text-left px-3 py-2 rounded border ${
                       selectedTransitionIndex.value === index
@@ -428,9 +450,9 @@ export default component$<WorkflowDesignerProps>((props) => {
                   >
                     <div class="font-medium">{transition.label || transition.action || 'Untitled'}</div>
                     <div class="text-sm text-gray-500">
-                      {transition.from} → {transition.to}
+                      {transition.from} {' '}<i class="i-heroicons-arrow-right-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>{' '}{transition.to}
                     </div>
-                  </button>
+                  </Btn>
                 ))}
               </div>
             </div>
@@ -541,16 +563,19 @@ export default component$<WorkflowDesignerProps>((props) => {
                     <span class="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded">
                       {workflow.states?.find(s => s.code === transition.from)?.name || transition.from}
                     </span>
-                    <span class="text-gray-400">→</span>
+                    <i class="i-heroicons-arrow-right-solid h-4 w-4 inline-block text-gray-400" aria-hidden="true"></i>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-sm rounded">
                       {workflow.states?.find(s => s.code === transition.to)?.name || transition.to}
                     </span>
                     <div class="ml-auto flex items-center gap-3">
-                      <button class="px-3 py-1 bg-blue-600 text-white text-sm rounded">
+                      <Btn size="sm">
                         {transition.label || transition.action}
-                      </button>
+                      </Btn>
                       {transition.permission && (
-                        <span class="text-xs text-gray-500">🔒 {transition.permission}</span>
+                        <span class="text-xs text-gray-500 inline-flex items-center gap-1">
+                          <i class="i-heroicons-lock-closed-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
+                          {transition.permission}
+                        </span>
                       )}
                       {transition.requires_comment && (
                         <span class="text-xs text-gray-500">💬 Comment required</span>
@@ -565,15 +590,16 @@ export default component$<WorkflowDesignerProps>((props) => {
             <div class="mt-8">
               <div class="flex justify-between items-center mb-4">
                 <h3 class="font-medium">JSON Definition</h3>
-                <button
+                <Btn
+                  size="sm"
+                  variant="secondary"
                   onClick$={() => {
                     navigator.clipboard.writeText(exportJSON.value);
                     alert('JSON copied to clipboard!');
                   }}
-                  class="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
                 >
                   Copy JSON
-                </button>
+                </Btn>
               </div>
               <textarea
                 value={exportJSON.value}

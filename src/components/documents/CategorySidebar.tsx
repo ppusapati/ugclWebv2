@@ -9,6 +9,41 @@ interface CategorySidebarProps {
   refreshKey?: number;
 }
 
+const DEFAULT_CATEGORY_ICON = 'i-heroicons-folder-solid';
+
+const LEGACY_ICON_MAP: Record<string, string> = {
+  '📁': 'i-heroicons-folder-solid',
+  '📄': 'i-heroicons-document-text-solid',
+  '📋': 'i-heroicons-clipboard-document-list-solid',
+  '📊': 'i-heroicons-chart-bar-solid',
+  '📈': 'i-heroicons-presentation-chart-line-solid',
+  '📉': 'i-heroicons-chart-bar-square-solid',
+  '📦': 'i-heroicons-archive-box-solid',
+  '🗂️': 'i-heroicons-folder-open-solid',
+  '📚': 'i-heroicons-book-open-solid',
+  '📝': 'i-heroicons-pencil-square-solid',
+  '🔒': 'i-heroicons-lock-closed-solid',
+  '🌟': 'i-heroicons-star-solid',
+  '⚙️': 'i-heroicons-cog-6-tooth-solid',
+  '💼': 'i-heroicons-briefcase-solid',
+  '🏢': 'i-heroicons-building-office-solid',
+  '📱': 'i-heroicons-device-phone-mobile-solid',
+  '💻': 'i-heroicons-computer-desktop-solid',
+  '🎨': 'i-heroicons-swatch-solid',
+  '🔧': 'i-heroicons-wrench-screwdriver-solid',
+  '📷': 'i-heroicons-camera-solid',
+};
+
+const resolveCategoryIcon = (icon?: string): string => {
+  if (!icon) {
+    return DEFAULT_CATEGORY_ICON;
+  }
+  if (icon.startsWith('i-')) {
+    return icon;
+  }
+  return LEGACY_ICON_MAP[icon] || DEFAULT_CATEGORY_ICON;
+};
+
 export const CategorySidebar = component$<CategorySidebarProps>((props) => {
   const { businessVerticalId, selectedCategoryId, onCategorySelect, refreshKey = 0 } = props;
 
@@ -90,10 +125,10 @@ export const CategorySidebar = component$<CategorySidebarProps>((props) => {
         <div key={category.id}>
           <div
             class={`
-              flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors
+              flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors pl-[var(--category-indent)]
               ${isSelected ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-gray-100 text-gray-700'}
             `}
-            style={{ paddingLeft: `${level * 16 + 12}px` }}
+            style={{ '--category-indent': `${level * 16 + 12}px` }}
           >
             {/* Expand/Collapse Arrow */}
             {children ? (
@@ -125,12 +160,12 @@ export const CategorySidebar = component$<CategorySidebarProps>((props) => {
               class="flex-1 flex items-center gap-2 min-w-0"
               onClick$={() => handleCategoryClick(category.id)}
             >
-              <span class="text-lg flex-shrink-0">{category.icon || '📁'}</span>
+              <i class={`${resolveCategoryIcon(category.icon)} h-5 w-5 inline-block flex-shrink-0 text-gray-600`} aria-hidden="true"></i>
               <span class="truncate flex-1">{category.name}</span>
               {category.color && (
                 <span
-                  class="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
-                  style={{ backgroundColor: category.color }}
+                  class="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0 bg-[var(--category-color)]"
+                  style={{ '--category-color': category.color }}
                 />
               )}
             </div>
@@ -157,7 +192,7 @@ export const CategorySidebar = component$<CategorySidebarProps>((props) => {
           `}
           onClick$={() => handleCategoryClick(undefined)}
         >
-          <span class="text-lg">📚</span>
+          <i class="i-heroicons-book-open-solid h-5 w-5 inline-block" aria-hidden="true"></i>
           <span class="flex-1">All Documents</span>
         </div>
       </div>
@@ -199,7 +234,7 @@ export const CategorySidebar = component$<CategorySidebarProps>((props) => {
           `}
           onClick$={() => handleCategoryClick('uncategorized')}
         >
-          <span class="text-lg">📄</span>
+          <i class="i-heroicons-document-text-solid h-5 w-5 inline-block" aria-hidden="true"></i>
           <span class="flex-1">Uncategorized</span>
         </div>
       </div>

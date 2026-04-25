@@ -29,7 +29,6 @@ export const P9EIcon = component$((props: P9EIconProps) => {
       viewBox="0 0 24 24"
       width={props.iconSize || 24}
       height={props.iconSize || 24}
-      style={props.style}
       onClick$={props.iconClick$}
       class={props.class}
     >

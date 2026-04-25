@@ -26,7 +26,7 @@ export const TableHead = component$((props: HeaderProps) => {
         {props.header.map(({ key, label }) => (
           <th
             key={key}
-            style={{ width: props.colWidths[key] || 'auto' }}
+            style={{ '--col-width': props.colWidths[key] || 'auto' }}
             class="th-cell"
           >
             <div class="cell-content">
@@ -43,10 +43,11 @@ export const TableHead = component$((props: HeaderProps) => {
 
 export const AppCSS = `
   .th-cell {
+  width: var(--col-width, auto);
   position: relative;
-  color: #334155;
+  color: var(--color-text-secondary);
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-primary);
   user-select: none;
   white-space: nowrap;
   overflow: hidden;

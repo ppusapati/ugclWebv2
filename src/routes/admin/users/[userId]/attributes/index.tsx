@@ -3,6 +3,7 @@ import { routeLoader$, useNavigate } from '@builder.io/qwik-city';
 import { apiClient, createSSRApiClient, userAttributeService } from '~/services';
 import type { Attribute } from '~/types/abac';
 import type { User } from '~/services/types';
+import { Badge, Btn } from '~/components/ds';
 
 // SSR data loading
 export const useUserAttributesData = routeLoader$(async (requestEvent) => {
@@ -142,13 +143,14 @@ export default component$(() => {
             </p>
           )}
         </div>
-        <button
+        <Btn
           type="button"
           onClick$={() => nav(`/admin/users/${userId}`)}
-          class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+          variant="secondary"
+          class="rounded-lg"
         >
           Back to User
-        </button>
+        </Btn>
       </div>
 
       {/* Alerts */}
@@ -169,15 +171,15 @@ export default component$(() => {
         <div class="text-sm text-gray-600">
           {Object.keys(userAttributes.value).length} attribute(s) assigned
         </div>
-        <button
+        <Btn
           type="button"
           onClick$={() => showAssignModal.value = true}
-          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          class="rounded-lg"
           disabled={loading.value}
         >
           <span class="i-heroicons-plus mr-2"></span>
           Assign Attribute
-        </button>
+        </Btn>
       </div>
 
       {/* Attributes List */}
@@ -221,22 +223,23 @@ export default component$(() => {
                       )}
                     </td>
                     <td class="px-6 py-4">
-                      <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                      <Badge variant="info" class="px-3 py-1 text-sm font-medium">
                         {value}
-                      </span>
+                      </Badge>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
                       {attribute?.data_type || 'string'}
                     </td>
                     <td class="px-6 py-4 text-right">
-                      <button
+                      <Btn
                         type="button"
+                        size="sm"
+                        variant="danger"
                         onClick$={() => attribute && handleRemoveAttribute(attribute.id)}
-                        class="text-red-600 hover:text-red-800 transition-colors"
                         disabled={loading.value}
                       >
                         <span class="i-heroicons-trash"></span>
-                      </button>
+                      </Btn>
                     </td>
                   </tr>
                 );
@@ -267,13 +270,14 @@ export default component$(() => {
           <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h3 class="text-xl font-semibold text-gray-900">Assign Attribute</h3>
-              <button
+              <Btn
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick$={() => showAssignModal.value = false}
-                class="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <span class="i-heroicons-x-mark text-2xl"></span>
-              </button>
+              </Btn>
             </div>
 
             <form preventdefault:submit onSubmit$={handleAssignAttribute} class="p-6 space-y-4">
@@ -344,20 +348,20 @@ export default component$(() => {
 
               {/* Actions */}
               <div class="flex justify-end space-x-3 pt-4">
-                <button
+                <Btn
                   type="button"
+                  variant="secondary"
                   onClick$={() => showAssignModal.value = false}
-                  class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </Btn>
+                <Btn
                   type="submit"
-                  class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+                  class="rounded-lg"
                   disabled={loading.value}
                 >
                   {loading.value ? 'Assigning...' : 'Assign Attribute'}
-                </button>
+                </Btn>
               </div>
             </form>
           </div>

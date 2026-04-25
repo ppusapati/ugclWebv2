@@ -1,11 +1,12 @@
 // Reports List Screen - Enhanced Professional Design
-import { component$, isServer, useStore, $, useSignal, useTask$, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, $, useSignal, useTask$ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../services/api-client';
 import { analyticsService } from '../../../../services/analytics.service';
 import type { ReportDefinition, ReportListResponse } from '../../../../types/analytics';
 import { useAuthContext } from '../../../../contexts/auth-context';
+import { Badge, Btn, PageHeader } from '../../../../components/ds';
 
 // Load reports with SSR support
 export const useReportsData = routeLoader$(async (requestEvent) => {
@@ -34,19 +35,26 @@ export const useReportsData = routeLoader$(async (requestEvent) => {
 
 // Report type icons and colors
 const reportTypeConfig = {
-  table: { icon: '📊', color: 'bg-gradient-to-br from-blue-600 to-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', textColor: 'text-blue-700' },
-  chart: { icon: '📈', color: 'bg-gradient-to-br from-violet-600 to-fuchsia-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', textColor: 'text-purple-700' },
-  kpi: { icon: '🎯', color: 'bg-gradient-to-br from-emerald-600 to-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-700' },
-  pivot: { icon: '🔲', color: 'bg-gradient-to-br from-amber-500 to-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', textColor: 'text-orange-700' },
+  table: { icon: 'i-heroicons-chart-bar-solid', color: 'bg-gradient-to-br from-blue-600 to-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', textColor: 'text-blue-700' },
+  chart: { icon: 'i-heroicons-presentation-chart-line-solid', color: 'bg-gradient-to-br from-violet-600 to-fuchsia-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', textColor: 'text-purple-700' },
+  kpi: { icon: 'i-heroicons-cursor-arrow-rays-solid', color: 'bg-gradient-to-br from-emerald-600 to-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-700' },
+  pivot: { icon: 'i-heroicons-squares-2x2-solid', color: 'bg-gradient-to-br from-amber-500 to-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', textColor: 'text-orange-700' },
 };
 
-const categoryColors: Record<string, string> = {
-  Analytics: 'badge-primary',
-  Operations: 'badge-secondary',
-  Finance: 'badge-success',
-  HR: 'badge-warning',
-  default: 'badge-ghost',
-};
+function getCategoryVariant(category?: string): 'info' | 'neutral' | 'success' | 'warning' {
+  switch (category) {
+    case 'Analytics':
+      return 'info';
+    case 'Operations':
+      return 'neutral';
+    case 'Finance':
+      return 'success';
+    case 'HR':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
 
 export default component$(() => {
   const auth = useAuthContext();
@@ -71,9 +79,15 @@ export default component$(() => {
     canViewDashboards: false,
   });
 
-  useVisibleTask$(({ track }) => {
+  useTask$(({ track }) => {
     track(() => auth.user?.id);
     track(() => auth.user?.business_roles?.length || 0);
+
+    if (isServer) {
+      permissionState.canCreateReports = true;
+      permissionState.canViewDashboards = false;
+      return;
+    }
 
     const activeBusinessId = window.localStorage.getItem('ugcl_current_business_vertical');
     const businessRole = activeBusinessId
@@ -200,191 +214,129 @@ export default component$(() => {
   };
 
   return (
-    <div class="space-y-6">
-      {/* Standard Admin Header */}
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-6 py-6">
-          {/* Header Content */}
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div class="bg-blue-600 rounded-lg p-3">
-                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
-                </svg>
-              </div>
-              <div>
-                <h1 class="text-2xl font-bold text-gray-900">Analytics Reports</h1>
-                <p class="text-sm text-gray-600">Manage and analyze custom reports</p>
-              </div>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Header with Gradient */}
+      <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-2xl">
+        <div class="container mx-auto px-4 py-8">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 class="text-4xl font-bold flex items-center gap-3 mb-2">
+                <i class="i-heroicons-clipboard-document-list-solid h-9 w-9 inline-block" aria-hidden="true"></i>
+                Analytics Reports
+              </h1>
+              <p class="text-indigo-100">Manage and analyze custom reports</p>
             </div>
             <div class="flex gap-3">
               {permissionState.canViewDashboards && (
-              <button
+              <Btn
                 onClick$={() => nav('/admin/analytics/dashboards')}
-                class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center gap-2"
+                variant="ghost"
+                class="border border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
+                <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
                 Dashboards
-              </button>
+              </Btn>
               )}
               {permissionState.canCreateReports && (
-              <button
+              <Btn
                 onClick$={() => nav('/admin/analytics/reports/builder')}
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                class="bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
+                <i class="i-heroicons-plus-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
                 Create Report
-              </button>
+              </Btn>
               )}
             </div>
           </div>
 
-          {/* Stats Cards Grid */}
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-blue-700 text-sm font-medium">Total Reports</p>
-                  <p class="text-2xl font-bold text-blue-900 mt-1">{reportStats.total}</p>
-                </div>
-                <div class="bg-blue-100 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                </div>
-              </div>
+          {/* Statistics Cards */}
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all cursor-pointer">
+              <div class="text-3xl font-bold">{reportStats.total}</div>
+              <div class="text-sm text-indigo-100">Total Reports</div>
             </div>
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-yellow-700 text-sm font-medium">Favorites</p>
-                  <p class="text-2xl font-bold text-yellow-900 mt-1">{reportStats.favorites}</p>
-                </div>
-                <div class="bg-yellow-100 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                </div>
-              </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all cursor-pointer">
+              <div class="text-3xl font-bold">{reportStats.favorites}</div>
+              <div class="text-sm text-indigo-100">Favorites</div>
             </div>
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-purple-700 text-sm font-medium">Charts</p>
-                  <p class="text-2xl font-bold text-purple-900 mt-1">{reportStats.byType.chart || 0}</p>
-                </div>
-                <div class="bg-purple-100 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-                  </svg>
-                </div>
-              </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all cursor-pointer">
+              <div class="text-3xl font-bold">{reportStats.byType.chart || 0}</div>
+              <div class="text-sm text-indigo-100">Charts</div>
             </div>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-green-700 text-sm font-medium">Tables</p>
-                  <p class="text-2xl font-bold text-green-900 mt-1">{reportStats.byType.table || 0}</p>
-                </div>
-                <div class="bg-green-100 rounded-lg p-2">
-                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                  </svg>
-                </div>
-              </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all cursor-pointer">
+              <div class="text-3xl font-bold">{reportStats.byType.table || 0}</div>
+              <div class="text-sm text-indigo-100">Tables</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters & Controls Section */}
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-6 py-5">
-          <div class="flex flex-col lg:flex-row gap-4">
-            {/* Search Bar */}
-            <div class="flex-1 relative">
-              <input
-                type="text"
-                class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                placeholder="Search reports by name or description..."
-                value={state.searchQuery}
-                onInput$={(e: any) => state.searchQuery = e.target.value}
-              />
-              <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-              {state.searchQuery && (
-                <button
-                  onClick$={() => state.searchQuery = ''}
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      {/* Search and Filters */}
+      <div class="container mx-auto px-4 py-6">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg mb-6">
+          <div class="p-6">
+            <div class="flex flex-col lg:flex-row gap-4">
+              {/* Search */}
+              <div class="flex-1">
+                <div class="relative">
+                  <input
+                    type="text"
+                    placeholder="Search reports by name or description..."
+                    value={state.searchQuery}
+                    onInput$={(e: any) => state.searchQuery = e.target.value}
+                    class="w-full rounded-lg border border-color-border-primary bg-color-surface-secondary py-3 pl-10 pr-4 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
+                  />
+                  <i class="i-heroicons-magnifying-glass-solid absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" aria-hidden="true"></i>
+                </div>
+              </div>
+
+              {/* View Toggle */}
+              <div class="flex gap-2">
+                <Btn
+                  variant={state.viewMode === 'grid' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick$={() => state.viewMode = 'grid'}
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              )}
+                  <i class="i-heroicons-squares-2x2-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Grid
+                </Btn>
+                <Btn
+                  variant={state.viewMode === 'list' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick$={() => state.viewMode = 'list'}
+                >
+                  <i class="i-heroicons-list-bullet-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  List
+                </Btn>
+              </div>
             </div>
 
-            {/* Category Pills */}
-            <div class="flex gap-2 overflow-x-auto pb-2 lg:pb-0 flex-shrink-0">
+            {/* Filter Pills */}
+            <div class="flex flex-wrap gap-2 mt-4">
               {categories.map((cat) => (
-                <button
+                <Btn
                   key={cat || 'all'}
                   onClick$={() => state.selectedCategory = cat || 'all'}
-                  class={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap border ${
-                    state.selectedCategory === cat
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                  }`}
+                  size="sm"
+                  variant={state.selectedCategory === cat ? 'primary' : 'ghost'}
                 >
-                  {cat === 'all' ? 'All' : cat || 'Unknown'}
-                </button>
+                  {cat === 'all' ? (
+                    <>
+                      <i class="i-heroicons-clipboard-document-list-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                      All Reports
+                    </>
+                  ) : (
+                    cat
+                  )}
+                </Btn>
               ))}
-            </div>
-
-            {/* View Controls */}
-            <div class="flex gap-2 flex-shrink-0">
-              <select
-                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                value={state.sortBy}
-                onChange$={(e: any) => state.sortBy = e.target.value}
-              >
-                <option value="recent">Most Recent</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="type">Type</option>
-              </select>
-
-              <div class="flex border border-gray-200 rounded-lg overflow-hidden">
-                <button
-                  onClick$={() => state.viewMode = 'grid'}
-                  class={`px-3 py-2.5 transition-colors ${state.viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-                  </svg>
-                </button>
-                <button
-                  onClick$={() => state.viewMode = 'list'}
-                  class={`px-3 py-2.5 transition-colors border-l border-gray-200 ${state.viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                  </svg>
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Error Alert */}
-      {state.error && (
-        <div class="max-w-7xl mx-auto px-6 py-4">
-              <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3 shadow-sm">
+      {/* Main Content Area */}
+      <div class="container mx-auto px-4 py-6">
             <svg class="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -392,11 +344,11 @@ export default component$(() => {
                   <h4 class="font-semibold text-red-800">Error</h4>
                   <p class="text-red-700 text-sm mt-1">{state.error}</p>
             </div>
-            <button onClick$={() => state.error = ''} class="ml-auto text-red-500 hover:text-red-700">
+            <Btn size="sm" variant="ghost" onClick$={() => state.error = ''} class="ml-auto text-red-500 hover:text-red-700">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
-            </button>
+            </Btn>
           </div>
         </div>
       )}
@@ -414,7 +366,8 @@ export default component$(() => {
 
       {/* Reports Display */}
       {!state.loading && (
-        <div class="max-w-7xl mx-auto px-6 py-8">
+        <>
+        <div class="py-8">
           {filteredReports.length === 0 ? (
             <div class="text-center py-16">
               <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -430,15 +383,14 @@ export default component$(() => {
                   ? 'Try adjusting your search or filters to find what you\'re looking for'
                   : 'Get started by creating your first analytics report'}
               </p>
-              <button
+              <Btn
                 onClick$={() => nav('/admin/analytics/reports/builder')}
-                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium inline-flex items-center gap-2"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
                 Create Your First Report
-              </button>
+              </Btn>
             </div>
           ) : state.viewMode === 'grid' ? (
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -465,9 +417,11 @@ export default component$(() => {
                     <div class={`${config.color} p-6 rounded-t-2xl`}>
                       <div class="flex items-start justify-between">
                         <div class={`${config.bgColor} ${config.borderColor} border rounded-xl p-3`}>
-                          <span class="text-3xl">{config.icon}</span>
+                          <i class={`${config.icon} h-8 w-8 inline-block text-white`} aria-hidden="true"></i>
                         </div>
-                        <button
+                        <Btn
+                          size="sm"
+                          variant="ghost"
                           onClick$={(e) => toggleFavorite(report.id, e)}
                           class="p-2 hover:bg-white/20 rounded-lg transition-colors"
                         >
@@ -480,7 +434,7 @@ export default component$(() => {
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                             </svg>
                           )}
-                        </button>
+                        </Btn>
                       </div>
 
                       <h3 class="text-xl font-bold text-white mt-4 mb-2 line-clamp-2">
@@ -495,24 +449,26 @@ export default component$(() => {
                     <div class="p-6 bg-white rounded-b-2xl">
                       <div class="flex flex-wrap gap-2 mb-4">
                         {report.category && (
-                          <span class={`badge ${categoryColors[report.category] || categoryColors.default} badge-sm font-medium`}>
+                          <Badge variant={getCategoryVariant(report.category)}>
                             {report.category}
-                          </span>
+                          </Badge>
                         )}
-                        <span class="badge badge-outline badge-sm capitalize border-gray-300 text-gray-700">
+                        <Badge variant="neutral">
                           {report.report_type}
-                        </span>
+                        </Badge>
                         {report.chart_type && (
-                          <span class="badge badge-ghost badge-sm capitalize bg-gray-100 text-gray-700">
+                          <Badge variant="neutral">
                             {report.chart_type}
-                          </span>
+                          </Badge>
                         )}
                         {/* Visibility badge */}
                         {report.is_public ? (
-                          <span class="badge badge-sm bg-emerald-100 text-emerald-700 border border-emerald-200">Public</span>
+                          <Badge variant="success">Public</Badge>
                         ) : (
-                          <span class="badge badge-sm bg-amber-100 text-amber-700 border border-amber-200" title={(report.allowed_roles || []).length > 0 ? `Roles: ${(report.allowed_roles || []).join(', ')}` : 'Creator only'}>
-                            {(report.allowed_roles || []).length > 0 ? `Private (${(report.allowed_roles || []).length} role${(report.allowed_roles || []).length !== 1 ? 's' : ''})` : 'Private'}
+                          <span title={(report.allowed_roles || []).length > 0 ? `Roles: ${(report.allowed_roles || []).join(', ')}` : 'Creator only'}>
+                            <Badge variant="warning">
+                              {(report.allowed_roles || []).length > 0 ? `Private (${(report.allowed_roles || []).length} role${(report.allowed_roles || []).length !== 1 ? 's' : ''})` : 'Private'}
+                            </Badge>
                           </span>
                         )}
                       </div>
@@ -526,41 +482,44 @@ export default component$(() => {
 
                       {/* Action Buttons */}
                       <div class="flex gap-2">
-                        <button
+                        <Btn
                           onClick$={(e) => {
                             e.stopPropagation();
                             nav(`/admin/analytics/reports/view/${report.id}`);
                           }}
-                          class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                          size="sm"
+                          class="flex-1"
                         >
                           View
-                        </button>
+                        </Btn>
                         {permissionState.canCreateReports && (
-                        <button
+                        <Btn
+                          size="sm"
+                          variant="secondary"
                           onClick$={(e) => {
                             e.stopPropagation();
                             nav(`/admin/analytics/reports/builder?clone=${report.id}`);
                           }}
-                          class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm"
                           title="Clone"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                           </svg>
-                        </button>
+                        </Btn>
                         )}
-                        <button
+                        <Btn
+                          size="sm"
+                          variant="danger"
                           onClick$={(e) => {
                             e.stopPropagation();
                             deleteReport(report.id, report.name);
                           }}
-                          class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium text-sm"
                           title="Delete"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                           </svg>
-                        </button>
+                        </Btn>
                       </div>
                     </div>
 
@@ -599,7 +558,7 @@ export default component$(() => {
                     <div class="flex items-center gap-6 p-6">
                       {/* Icon */}
                       <div class={`${config.color} w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                        <span class="text-2xl">{config.icon}</span>
+                        <i class={`${config.icon} h-8 w-8 inline-block text-white`} aria-hidden="true"></i>
                       </div>
 
                       {/* Info */}
@@ -614,24 +573,26 @@ export default component$(() => {
                             </p>
                             <div class="flex flex-wrap items-center gap-2">
                               {report.category && (
-                                <span class={`badge ${categoryColors[report.category] || categoryColors.default} badge-sm`}>
+                                <Badge variant={getCategoryVariant(report.category)}>
                                   {report.category}
-                                </span>
+                                </Badge>
                               )}
-                              <span class="badge badge-outline badge-sm capitalize">
+                              <Badge variant="neutral">
                                 {report.report_type}
-                              </span>
+                              </Badge>
                               {report.chart_type && (
-                                <span class="badge badge-ghost badge-sm capitalize">
+                                <Badge variant="neutral">
                                   {report.chart_type}
-                                </span>
+                                </Badge>
                               )}
                               {/* Visibility badge */}
                               {report.is_public ? (
-                                <span class="badge badge-sm bg-emerald-100 text-emerald-700 border border-emerald-200">Public</span>
+                                <Badge variant="success">Public</Badge>
                               ) : (
-                                <span class="badge badge-sm bg-amber-100 text-amber-700 border border-amber-200" title={(report.allowed_roles || []).length > 0 ? `Roles: ${(report.allowed_roles || []).join(', ')}` : 'Creator only'}>
-                                  {(report.allowed_roles || []).length > 0 ? `Private (${(report.allowed_roles || []).length}r)` : 'Private'}
+                                <span title={(report.allowed_roles || []).length > 0 ? `Roles: ${(report.allowed_roles || []).join(', ')}` : 'Creator only'}>
+                                  <Badge variant="warning">
+                                    {(report.allowed_roles || []).length > 0 ? `Private (${(report.allowed_roles || []).length}r)` : 'Private'}
+                                  </Badge>
                                 </span>
                               )}
                               <span class="text-xs text-gray-500 flex items-center gap-1">
@@ -645,7 +606,9 @@ export default component$(() => {
 
                           {/* Actions */}
                           <div class="flex items-center gap-2">
-                            <button
+                            <Btn
+                              size="sm"
+                              variant="ghost"
                               onClick$={(e) => toggleFavorite(report.id, e)}
                               class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
@@ -658,42 +621,44 @@ export default component$(() => {
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                                 </svg>
                               )}
-                            </button>
-                            <button
+                            </Btn>
+                            <Btn
                               onClick$={(e) => {
                                 e.stopPropagation();
                                 nav(`/admin/analytics/reports/view/${report.id}`);
                               }}
-                              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                              size="sm"
                             >
                               View
-                            </button>
+                            </Btn>
                             {permissionState.canCreateReports && (
-                            <button
+                            <Btn
+                              size="sm"
+                              variant="secondary"
                               onClick$={(e) => {
                                 e.stopPropagation();
                                 nav(`/admin/analytics/reports/builder?clone=${report.id}`);
                               }}
-                              class="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
                               title="Clone"
                             >
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                               </svg>
-                            </button>
+                            </Btn>
                             )}
-                            <button
+                            <Btn
+                              size="sm"
+                              variant="danger"
                               onClick$={(e) => {
                                 e.stopPropagation();
                                 deleteReport(report.id, report.name);
                               }}
-                              class="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600"
                               title="Delete"
                             >
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                               </svg>
-                            </button>
+                            </Btn>
                           </div>
                         </div>
                       </div>

@@ -1,5 +1,6 @@
 import { component$, $, useSignal } from '@builder.io/qwik';
 import { useAuthContext } from '~/contexts/auth-context';
+import { Btn } from '~/components/ds';
 
 export const BusinessVerticalSwitcher = component$(() => {
   const auth = useAuthContext();
@@ -47,7 +48,9 @@ export const BusinessVerticalSwitcher = component$(() => {
 
   return (
     <div class="relative">
-      <button
+      <Btn
+        size="sm"
+        variant="ghost"
         class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
         onClick$={toggleDropdown}
       >
@@ -79,7 +82,7 @@ export const BusinessVerticalSwitcher = component$(() => {
         >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </Btn>
 
       {/* Dropdown Menu */}
       {isOpen.value && (
@@ -104,8 +107,10 @@ export const BusinessVerticalSwitcher = component$(() => {
                 const isCurrent = businessRole.business_vertical_id === currentBusiness?.business_vertical_id;
 
                 return (
-                  <button
+                  <Btn
                     key={businessRole.business_vertical_id}
+                    size="sm"
+                    variant="ghost"
                     class={`w-full text-left p-3 hover:bg-gray-50 flex items-center gap-3 ${
                       isCurrent ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                     }`}
@@ -144,7 +149,7 @@ export const BusinessVerticalSwitcher = component$(() => {
                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                       </svg>
                     )}
-                  </button>
+                  </Btn>
                 );
               })}
             </div>

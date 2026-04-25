@@ -28,7 +28,7 @@ export const Breadcrumb = component$(() => {
       <ol class='inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse'>
       <li class="inline-flex items-center">
       <a href="/" class="animate-fade-in inline-flex no-underline items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-       <span class="w-4 h-4 me-1.5 i-mdi-home" aria-hidden="true"/> 
+       <span class="i-heroicons-home-solid me-1.5 h-4 w-4" aria-hidden="true"/> 
         Home
       </a>
     </li>

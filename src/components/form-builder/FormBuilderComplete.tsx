@@ -1,7 +1,8 @@
 // src/components/form-builder/FormBuilderComplete.tsx
 import { component$, useSignal, useStore, $, useComputed$, type PropFunction } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
-import type { FormDefinition, FormStep, FormField, Module, WorkflowDefinition } from '~/types/workflow';
+import { Badge, Btn, FormField } from '~/components/ds';
+import type { FormDefinition, FormStep, FormField as WorkflowFormField, Module, WorkflowDefinition } from '~/types/workflow';
 import FieldEditorComplete from './workflow/FieldEditorComplete';
 
 interface FormBuilderCompleteProps {
@@ -61,7 +62,7 @@ export default component$<FormBuilderCompleteProps>((props) => {
   });
 
   const addField = $(() => {
-    const newField: FormField = {
+    const newField: WorkflowFormField = {
       id: `field_${Date.now()}`,
       type: 'text',
       label: 'New Field',
@@ -71,7 +72,7 @@ export default component$<FormBuilderCompleteProps>((props) => {
     selectedFieldIndex.value = form.steps[currentStepIndex.value].fields.length - 1;
   });
 
-  const updateField = $((stepIndex: number, fieldIndex: number, updatedField: FormField) => {
+  const updateField = $((stepIndex: number, fieldIndex: number, updatedField: WorkflowFormField) => {
     form.steps[stepIndex].fields[fieldIndex] = updatedField;
   });
 
@@ -135,64 +136,78 @@ export default component$<FormBuilderCompleteProps>((props) => {
             </div>
             <div class="flex gap-3">
               {props.onCancel$ && (
-                <button
+                <Btn
                   onClick$={props.onCancel$}
-                  class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  variant="secondary"
+                  class="rounded"
                 >
                   Cancel
-                </button>
+                </Btn>
               )}
-              <button
+              <Btn
                 onClick$={handleSave}
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                class="rounded"
               >
-                💾 Save Form
-              </button>
+                <i class="i-heroicons-bookmark-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Save Form
+              </Btn>
             </div>
           </div>
 
           {/* Tabs */}
           <div class="flex gap-4 mt-6 border-b border-gray-200">
-            <button
-              class={`px-4 py-2 font-medium transition-colors ${
+            <Btn
+              variant={activeTab.value === 'basic' ? 'primary' : 'ghost'}
+              size="sm"
+              class={`rounded-b-none ${
                 activeTab.value === 'basic'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'border-b-2 border-blue-600'
+                  : ''
               }`}
               onClick$={() => (activeTab.value = 'basic')}
             >
-              📝 Basic Info
-            </button>
-            <button
-              class={`px-4 py-2 font-medium transition-colors ${
+              <i class="i-heroicons-document-text-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Basic Info
+            </Btn>
+            <Btn
+              variant={activeTab.value === 'steps' ? 'primary' : 'ghost'}
+              size="sm"
+              class={`rounded-b-none ${
                 activeTab.value === 'steps'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'border-b-2 border-blue-600'
+                  : ''
               }`}
               onClick$={() => (activeTab.value = 'steps')}
             >
-              📋 Steps & Fields ({form.steps.reduce((acc, step) => acc + step.fields.length, 0)})
-            </button>
-            <button
-              class={`px-4 py-2 font-medium transition-colors ${
+              <i class="i-heroicons-clipboard-document-list-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Steps & Fields ({form.steps.reduce((acc, step) => acc + step.fields.length, 0)})
+            </Btn>
+            <Btn
+              variant={activeTab.value === 'workflow' ? 'primary' : 'ghost'}
+              size="sm"
+              class={`rounded-b-none ${
                 activeTab.value === 'workflow'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'border-b-2 border-blue-600'
+                  : ''
               }`}
               onClick$={() => (activeTab.value = 'workflow')}
             >
-              🔄 Workflow {selectedWorkflow.value && `(${selectedWorkflow.value.name})`}
-            </button>
-            <button
-              class={`px-4 py-2 font-medium transition-colors ${
+              <i class="i-heroicons-arrow-path-rounded-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Workflow {selectedWorkflow.value && `(${selectedWorkflow.value.name})`}
+            </Btn>
+            <Btn
+              variant={activeTab.value === 'preview' ? 'primary' : 'ghost'}
+              size="sm"
+              class={`rounded-b-none ${
                 activeTab.value === 'preview'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'border-b-2 border-blue-600'
+                  : ''
               }`}
               onClick$={() => (activeTab.value = 'preview')}
             >
-              👁️ Preview & Export
-            </button>
+              <i class="i-heroicons-eye-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Preview & Export
+            </Btn>
           </div>
         </div>
 
@@ -203,91 +218,91 @@ export default component$<FormBuilderCompleteProps>((props) => {
 
             <div class="grid grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Form Code *
-                </label>
-                <input
-                  type="text"
-                  value={form.form_code}
-                  onInput$={(e) => (form.form_code = (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., project_registration"
-                  required
-                />
+                <FormField id="complete-form-code" label="Form Code" required>
+                  <input
+                    id="complete-form-code"
+                    type="text"
+                    value={form.form_code}
+                    onInput$={(e) => (form.form_code = (e.target as HTMLInputElement).value)}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., project_registration"
+                    required
+                  />
+                </FormField>
                 <p class="text-xs text-gray-500 mt-1">Unique identifier (lowercase, underscores only)</p>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Version
-                </label>
-                <input
-                  type="text"
-                  value={form.version}
-                  onInput$={(e) => (form.version = (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="1.0.0"
-                />
+                <FormField id="complete-form-version" label="Version">
+                  <input
+                    id="complete-form-version"
+                    type="text"
+                    value={form.version}
+                    onInput$={(e) => (form.version = (e.target as HTMLInputElement).value)}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="1.0.0"
+                  />
+                </FormField>
               </div>
 
               <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onInput$={(e) => (form.title = (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Project Registration Form"
-                  required
-                />
+                <FormField id="complete-form-title" label="Title" required>
+                  <input
+                    id="complete-form-title"
+                    type="text"
+                    value={form.title}
+                    onInput$={(e) => (form.title = (e.target as HTMLInputElement).value)}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Project Registration Form"
+                    required
+                  />
+                </FormField>
               </div>
 
               <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onInput$={(e) => (form.description = (e.target as HTMLTextAreaElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Brief description of the form"
-                />
+                <FormField id="complete-form-description" label="Description">
+                  <textarea
+                    id="complete-form-description"
+                    value={form.description}
+                    onInput$={(e) => (form.description = (e.target as HTMLTextAreaElement).value)}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                    placeholder="Brief description of the form"
+                  />
+                </FormField>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Module *
-                </label>
-                <select
-                  value={form.module}
-                  onChange$={(e) => (form.module = (e.target as HTMLSelectElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select module</option>
-                  {props.modules.map((module) => (
-                    <option key={module.code} value={module.code}>
-                      {module.name}
-                    </option>
-                  ))}
-                </select>
+                <FormField id="complete-form-module" label="Module" required>
+                  <select
+                    id="complete-form-module"
+                    value={form.module}
+                    onChange$={(e) => (form.module = (e.target as HTMLSelectElement).value)}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select module</option>
+                    {props.modules.map((module) => (
+                      <option key={module.code} value={module.code}>
+                        {module.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Form Type
-                </label>
-                <select
-                  value={form.type}
-                  onChange$={(e) => (form.type = (e.target as HTMLSelectElement).value as any)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="single_page">Single Page</option>
-                  <option value="multi_step">Multi-Step</option>
-                </select>
+                <FormField id="complete-form-type" label="Form Type">
+                  <select
+                    id="complete-form-type"
+                    value={form.type}
+                    onChange$={(e) => (form.type = (e.target as HTMLSelectElement).value as any)}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="single_page">Single Page</option>
+                    <option value="multi_step">Multi-Step</option>
+                  </select>
+                </FormField>
               </div>
             </div>
 
@@ -332,12 +347,13 @@ export default component$<FormBuilderCompleteProps>((props) => {
             <div class="bg-white rounded-lg shadow-sm p-4">
               <div class="flex justify-between items-center mb-4">
                 <h3 class="font-semibold text-gray-900">Steps</h3>
-                <button
+                <Btn
                   onClick$={addStep}
-                  class="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                  size="sm"
+                  class="rounded"
                 >
                   + Add
-                </button>
+                </Btn>
               </div>
 
               <div class="space-y-2">
@@ -360,15 +376,17 @@ export default component$<FormBuilderCompleteProps>((props) => {
                         <div class="text-xs text-gray-500 mt-1">{step.fields.length} field{step.fields.length !== 1 ? 's' : ''}</div>
                       </div>
                       {form.steps.length > 1 && (
-                        <button
+                        <Btn
                           onClick$={(e) => {
                             e.stopPropagation();
                             deleteStep(index);
                           }}
-                          class="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 text-sm"
+                          variant="danger"
+                          size="sm"
+                          class="opacity-0 group-hover:opacity-100 min-w-0 px-2"
                         >
                           ✕
-                        </button>
+                        </Btn>
                       )}
                     </div>
                   </div>
@@ -383,40 +401,46 @@ export default component$<FormBuilderCompleteProps>((props) => {
                 <h3 class="font-semibold text-gray-900 mb-4">Step Information</h3>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Step Title</label>
-                    <input
-                      type="text"
-                      value={form.steps[currentStepIndex.value].title}
-                      onInput$={(e) => {
-                        form.steps[currentStepIndex.value].title = (e.target as HTMLInputElement).value;
-                      }}
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Step title"
-                    />
+                    <FormField id="complete-step-title" label="Step Title">
+                      <input
+                        id="complete-step-title"
+                        type="text"
+                        value={form.steps[currentStepIndex.value].title}
+                        onInput$={(e) => {
+                          form.steps[currentStepIndex.value].title = (e.target as HTMLInputElement).value;
+                        }}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Step title"
+                      />
+                    </FormField>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Step ID</label>
-                    <input
-                      type="text"
-                      value={form.steps[currentStepIndex.value].id}
-                      onInput$={(e) => {
-                        form.steps[currentStepIndex.value].id = (e.target as HTMLInputElement).value;
-                      }}
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm"
-                      placeholder="step_id"
-                    />
+                    <FormField id="complete-step-id" label="Step ID">
+                      <input
+                        id="complete-step-id"
+                        type="text"
+                        value={form.steps[currentStepIndex.value].id}
+                        onInput$={(e) => {
+                          form.steps[currentStepIndex.value].id = (e.target as HTMLInputElement).value;
+                        }}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm"
+                        placeholder="step_id"
+                      />
+                    </FormField>
                   </div>
                   <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <input
-                      type="text"
-                      value={form.steps[currentStepIndex.value].description}
-                      onInput$={(e) => {
-                        form.steps[currentStepIndex.value].description = (e.target as HTMLInputElement).value;
-                      }}
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Step description"
-                    />
+                    <FormField id="complete-step-description" label="Description">
+                      <input
+                        id="complete-step-description"
+                        type="text"
+                        value={form.steps[currentStepIndex.value].description}
+                        onInput$={(e) => {
+                          form.steps[currentStepIndex.value].description = (e.target as HTMLInputElement).value;
+                        }}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Step description"
+                      />
+                    </FormField>
                   </div>
                 </div>
               </div>
@@ -425,12 +449,13 @@ export default component$<FormBuilderCompleteProps>((props) => {
               <div class="bg-white rounded-lg shadow-sm p-6">
                 <div class="flex justify-between items-center mb-4">
                   <h3 class="font-semibold text-gray-900">Fields</h3>
-                  <button
+                  <Btn
                     onClick$={addField}
-                    class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                    size="sm"
+                    class="rounded"
                   >
                     + Add Field
-                  </button>
+                  </Btn>
                 </div>
 
                 {form.steps[currentStepIndex.value].fields.length === 0 ? (
@@ -447,7 +472,7 @@ export default component$<FormBuilderCompleteProps>((props) => {
                         {selectedFieldIndex.value === fieldIndex ? (
                           <FieldEditorComplete
                             field={field}
-                            onUpdate$={$((updatedField: FormField) => updateField(currentStepIndex.value, fieldIndex, updatedField))}
+                            onUpdate$={$((updatedField: WorkflowFormField) => updateField(currentStepIndex.value, fieldIndex, updatedField))}
                             onDelete$={$(() => deleteField(currentStepIndex.value, fieldIndex))}
                           />
                         ) : (
@@ -462,43 +487,49 @@ export default component$<FormBuilderCompleteProps>((props) => {
                                   <code class="text-xs bg-gray-200 px-2 py-0.5 rounded">{field.id}</code>
                                   <span class="text-xs text-gray-500">{field.type}</span>
                                   {field.required && (
-                                    <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Required</span>
+                                    <Badge variant="error" class="text-xs px-2 py-0.5">Required</Badge>
                                   )}
                                 </div>
                               </div>
                               <div class="flex gap-1 opacity-0 group-hover:opacity-100">
-                                <button
+                                <Btn
                                   onClick$={(e) => {
                                     e.stopPropagation();
                                     moveField(currentStepIndex.value, fieldIndex, 'up');
                                   }}
                                   disabled={fieldIndex === 0}
-                                  class="px-2 py-1 text-sm border rounded disabled:opacity-50 hover:bg-white"
+                                  variant="secondary"
+                                  size="sm"
+                                  class="px-2 disabled:opacity-50"
                                   title="Move up"
                                 >
                                   ↑
-                                </button>
-                                <button
+                                </Btn>
+                                <Btn
                                   onClick$={(e) => {
                                     e.stopPropagation();
                                     moveField(currentStepIndex.value, fieldIndex, 'down');
                                   }}
                                   disabled={fieldIndex === form.steps[currentStepIndex.value].fields.length - 1}
-                                  class="px-2 py-1 text-sm border rounded disabled:opacity-50 hover:bg-white"
+                                  variant="secondary"
+                                  size="sm"
+                                  class="px-2 disabled:opacity-50"
                                   title="Move down"
                                 >
                                   ↓
-                                </button>
-                                <button
+                                </Btn>
+                                <Btn
                                   onClick$={(e) => {
                                     e.stopPropagation();
                                     deleteField(currentStepIndex.value, fieldIndex);
                                   }}
-                                  class="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                                  variant="danger"
+                                  size="sm"
+                                  class="px-2"
                                   title="Delete"
                                 >
                                   🗑️
-                                </button>
+                                </Btn>
                               </div>
                             </div>
                           </div>
@@ -562,16 +593,15 @@ export default component$<FormBuilderCompleteProps>((props) => {
                     <div class="space-y-2">
                       {selectedWorkflow.value.states.map((state) => (
                         <div key={state.code} class="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                          <span class={`px-2 py-1 rounded text-xs font-medium ${
-                            state.color === 'gray' ? 'bg-gray-100 text-gray-700' :
-                            state.color === 'blue' ? 'bg-blue-100 text-blue-700' :
-                            state.color === 'green' ? 'bg-green-100 text-green-700' :
-                            state.color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
-                            state.color === 'red' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
+                          <Badge variant={
+                            state.color === 'blue' ? 'info' :
+                            state.color === 'green' ? 'success' :
+                            state.color === 'yellow' ? 'warning' :
+                            state.color === 'red' ? 'error' :
+                            'neutral'
+                          } class="text-xs font-medium px-2 py-1">
                             {state.name}
-                          </span>
+                          </Badge>
                           <code class="text-xs text-gray-500">{state.code}</code>
                           {state.code === selectedWorkflow.value?.initial_state && (
                             <span class="text-xs text-blue-600">Initial</span>
@@ -590,9 +620,9 @@ export default component$<FormBuilderCompleteProps>((props) => {
                       {selectedWorkflow.value.transitions.map((transition, idx) => (
                         <div key={idx} class="p-2 bg-gray-50 rounded text-xs">
                           <div class="flex items-center gap-2">
-                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{transition.from}</span>
-                            <span>→</span>
-                            <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded">{transition.to}</span>
+                            <Badge variant="info" class="px-2 py-0.5">{transition.from}</Badge>
+                            <i class="i-heroicons-arrow-right-solid h-3.5 w-3.5 inline-block text-gray-500" aria-hidden="true"></i>
+                            <Badge variant="success" class="px-2 py-0.5">{transition.to}</Badge>
                           </div>
                           <div class="mt-1 text-gray-600">Action: {transition.label || transition.action}</div>
                         </div>
@@ -638,16 +668,18 @@ export default component$<FormBuilderCompleteProps>((props) => {
             <div>
               <div class="flex justify-between items-center mb-4">
                 <h3 class="font-medium">JSON Definition</h3>
-                <button
+                <Btn
                   onClick$={async () => {
                     const json = await exportJSON();
                     navigator.clipboard.writeText(json);
                     alert('JSON copied to clipboard!');
                   }}
-                  class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                  size="sm"
+                  class="rounded"
                 >
-                  📋 Copy JSON
-                </button>
+                  <i class="i-heroicons-clipboard-document-list-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Copy JSON
+                </Btn>
               </div>
               <textarea
                 value={JSON.stringify(form, null, 2)}

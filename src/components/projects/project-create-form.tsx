@@ -4,6 +4,7 @@
  */
 
 import { component$, useStore, useSignal, $, type QRL, noSerialize, type NoSerialize } from '@builder.io/qwik';
+import { Alert, Btn } from '~/components/ds';
 import type { CreateProjectRequest } from '../../types/project';
 
 export interface ProjectCreateFormProps {
@@ -178,10 +179,10 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
     <form preventdefault:submit onSubmit$={handleSubmit} class="space-y-5">
       {/* API Error */}
       {state.apiError && (
-        <div class="alert-error p-3 rounded-md text-sm">
+        <Alert variant="error" class="px-3 py-3 text-sm">
           <i class="i-heroicons-exclamation-circle-solid w-4 h-4 inline-block mr-2"></i>
           {state.apiError}
-        </div>
+        </Alert>
       )}
 
       {/* Project Code */}
@@ -380,18 +381,19 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
       {/* Form Actions */}
       <div class="flex gap-3 pt-4 border-t border-gray-200">
         {onCancel$ && (
-          <button
+          <Btn
+            variant="secondary"
             type="button"
             onClick$={onCancel$}
-            class="btn btn-secondary flex-1"
+            class="flex-1"
             disabled={state.submitting}
           >
             Cancel
-          </button>
+          </Btn>
         )}
-        <button
+        <Btn
           type="submit"
-          class="btn btn-primary flex-1"
+          class="flex-1"
           disabled={state.submitting}
         >
           {state.submitting ? (
@@ -405,7 +407,7 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
               Create Project
             </>
           )}
-        </button>
+        </Btn>
       </div>
     </form>
   );

@@ -1,6 +1,8 @@
 // src/components/form-builder/workflow/FieldEditorComplete.tsx
 import { component$, useStore, useSignal, $, type PropFunction } from '@builder.io/qwik';
 import type { FormField, FieldType, FieldOption } from '~/types/workflow';
+import { FormField as DSFormField } from '~/components/ds';
+import { Btn } from '~/components/ds';
 
 interface FieldEditorCompleteProps {
   field: FormField;
@@ -10,21 +12,21 @@ interface FieldEditorCompleteProps {
 }
 
 const FIELD_TYPES: { value: FieldType; label: string; icon: string }[] = [
-  { value: 'text', label: 'Text Input', icon: '📝' },
-  { value: 'textarea', label: 'Text Area', icon: '📄' },
-  { value: 'number', label: 'Number', icon: '🔢' },
-  { value: 'email', label: 'Email', icon: '📧' },
-  { value: 'phone', label: 'Phone', icon: '📱' },
-  { value: 'date', label: 'Date', icon: '📅' },
-  { value: 'datetime', label: 'Date & Time', icon: '🕐' },
-  { value: 'time', label: 'Time', icon: '⏰' },
-  { value: 'radio', label: 'Radio Buttons', icon: '🔘' },
-  { value: 'checkbox', label: 'Checkboxes', icon: '☑️' },
-  { value: 'dropdown', label: 'Dropdown', icon: '▼' },
-  { value: 'select', label: 'Select', icon: '📋' },
-  { value: 'file_upload', label: 'File Upload', icon: '📎' },
-  { value: 'signature', label: 'Signature', icon: '✍️' },
-  { value: 'location', label: 'Location', icon: '📍' },
+  { value: 'text', label: 'Text Input', icon: 'i-heroicons-pencil-square-solid' },
+  { value: 'textarea', label: 'Text Area', icon: 'i-heroicons-document-text-solid' },
+  { value: 'number', label: 'Number', icon: 'i-heroicons-calculator-solid' },
+  { value: 'email', label: 'Email', icon: 'i-heroicons-envelope-solid' },
+  { value: 'phone', label: 'Phone', icon: 'i-heroicons-device-phone-mobile-solid' },
+  { value: 'date', label: 'Date', icon: 'i-heroicons-calendar-days-solid' },
+  { value: 'datetime', label: 'Date & Time', icon: 'i-heroicons-calendar-days-solid' },
+  { value: 'time', label: 'Time', icon: 'i-heroicons-clock-solid' },
+  { value: 'radio', label: 'Radio Buttons', icon: 'i-heroicons-dot-solid' },
+  { value: 'checkbox', label: 'Checkboxes', icon: 'i-heroicons-check-circle-solid' },
+  { value: 'dropdown', label: 'Dropdown', icon: 'i-heroicons-chevron-down-solid' },
+  { value: 'select', label: 'Select', icon: 'i-heroicons-clipboard-document-list-solid' },
+  { value: 'file_upload', label: 'File Upload', icon: 'i-heroicons-paper-clip-solid' },
+  { value: 'signature', label: 'Signature', icon: 'i-heroicons-pencil-solid' },
+  { value: 'location', label: 'Location', icon: 'i-heroicons-map-pin-solid' },
 ];
 
 export default component$<FieldEditorCompleteProps>((props) => {
@@ -57,6 +59,7 @@ export default component$<FieldEditorCompleteProps>((props) => {
   });
 
   const needsOptions = ['radio', 'checkbox', 'dropdown', 'select'].includes(editingField.type);
+  const selectedFieldType = FIELD_TYPES.find((t) => t.value === editingField.type);
 
   return (
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -67,21 +70,26 @@ export default component$<FieldEditorCompleteProps>((props) => {
             <h3 class="text-lg font-semibold text-gray-900">Field Configuration</h3>
             <div class="flex items-center gap-2 mt-1">
               <code class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{editingField.id}</code>
-              <span class="text-xs text-gray-500">
-                {FIELD_TYPES.find(t => t.value === editingField.type)?.icon} {FIELD_TYPES.find(t => t.value === editingField.type)?.label}
-              </span>
+              {selectedFieldType && (
+                <span class="text-xs text-gray-500 flex items-center gap-1.5">
+                  <i class={`${selectedFieldType.icon} h-4 w-4 inline-block`} aria-hidden="true"></i>
+                  {selectedFieldType.label}
+                </span>
+              )}
               {editingField.required && (
                 <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Required</span>
               )}
             </div>
           </div>
           {props.canDelete !== false && (
-            <button
+            <Btn
+              size="sm"
+              variant="danger"
               onClick$={props.onDelete$}
-              class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
+              class="text-red-600 hover:bg-red-50 border border-red-200"
             >
               Delete Field
-            </button>
+            </Btn>
           )}
         </div>
       </div>
@@ -92,77 +100,75 @@ export default component$<FieldEditorCompleteProps>((props) => {
           <h4 class="font-medium text-gray-900 text-sm uppercase tracking-wide">Basic Information</h4>
 
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Field ID *
-              </label>
+            <DSFormField
+              id="workflow-field-editor-id"
+              label="Field ID"
+              required
+              hint="Unique identifier (lowercase, underscores only)"
+            >
               <input
+                id="workflow-field-editor-id"
                 type="text"
                 value={editingField.id}
                 onInput$={(e) => handleUpdate({ id: (e.target as HTMLInputElement).value })}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="field_name"
                 required
+                aria-required="true"
+                aria-describedby="workflow-field-editor-id-hint"
               />
-              <p class="text-xs text-gray-500 mt-1">Unique identifier (lowercase, underscores only)</p>
-            </div>
+            </DSFormField>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Field Type *
-              </label>
+            <DSFormField id="workflow-field-editor-type" label="Field Type" required>
               <select
+                id="workflow-field-editor-type"
                 value={editingField.type}
                 onChange$={(e) => handleUpdate({ type: (e.target as HTMLSelectElement).value as FieldType })}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-required="true"
               >
                 {FIELD_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
-                    {`${type.icon} ${type.label}`}
+                    {type.label}
                   </option>
                 ))}
               </select>
-            </div>
+            </DSFormField>
 
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Label *
-              </label>
+            <DSFormField id="workflow-field-editor-label" label="Label" required class="col-span-2">
               <input
+                id="workflow-field-editor-label"
                 type="text"
                 value={editingField.label}
                 onInput$={(e) => handleUpdate({ label: (e.target as HTMLInputElement).value })}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Field Label"
                 required
+                aria-required="true"
               />
-            </div>
+            </DSFormField>
 
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Placeholder
-              </label>
+            <DSFormField id="workflow-field-editor-placeholder" label="Placeholder" class="col-span-2">
               <input
+                id="workflow-field-editor-placeholder"
                 type="text"
                 value={editingField.placeholder || ''}
                 onInput$={(e) => handleUpdate({ placeholder: (e.target as HTMLInputElement).value })}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter placeholder text..."
               />
-            </div>
+            </DSFormField>
 
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Hint Text
-              </label>
+            <DSFormField id="workflow-field-editor-hint" label="Hint Text" class="col-span-2">
               <input
+                id="workflow-field-editor-hint"
                 type="text"
                 value={editingField.hint || ''}
                 onInput$={(e) => handleUpdate({ hint: (e.target as HTMLInputElement).value })}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Helper text shown below the field"
               />
-            </div>
+            </DSFormField>
 
             <div class="col-span-2">
               <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
@@ -183,38 +189,37 @@ export default component$<FieldEditorCompleteProps>((props) => {
           <div class="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 class="font-medium text-gray-900 text-sm">Number Field Settings</h4>
             <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Min Value</label>
+              <DSFormField id="workflow-field-editor-min-value" label="Min Value">
                 <input
+                  id="workflow-field-editor-min-value"
                   type="number"
                   value={editingField.min ?? ''}
                   onInput$={(e) => handleUpdate({ min: parseFloat((e.target as HTMLInputElement).value) || undefined })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="Minimum"
                 />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Max Value</label>
+              </DSFormField>
+              <DSFormField id="workflow-field-editor-max-value" label="Max Value">
                 <input
+                  id="workflow-field-editor-max-value"
                   type="number"
                   value={editingField.max ?? ''}
                   onInput$={(e) => handleUpdate({ max: parseFloat((e.target as HTMLInputElement).value) || undefined })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="Maximum"
                 />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Step</label>
+              </DSFormField>
+              <DSFormField id="workflow-field-editor-step" label="Step">
                 <input
+                  id="workflow-field-editor-step"
                   type="number"
                   value={editingField.step ?? ''}
                   onInput$={(e) => handleUpdate({ step: parseFloat((e.target as HTMLInputElement).value) || undefined })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="1"
                 />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Prefix/Suffix</label>
+              </DSFormField>
+              <DSFormField id="workflow-field-editor-prefix-suffix" label="Prefix/Suffix">
                 <div class="flex gap-2">
                   <input
                     type="text"
@@ -231,7 +236,7 @@ export default component$<FieldEditorCompleteProps>((props) => {
                     placeholder="Suffix (kg, L)"
                   />
                 </div>
-              </div>
+              </DSFormField>
             </div>
           </div>
         )}
@@ -240,9 +245,9 @@ export default component$<FieldEditorCompleteProps>((props) => {
           <div class="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 class="font-medium text-gray-900 text-sm">Text Area Settings</h4>
             <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Rows</label>
+              <DSFormField id="workflow-field-editor-rows" label="Rows">
                 <input
+                  id="workflow-field-editor-rows"
                   type="number"
                   value={editingField.rows || 4}
                   onInput$={(e) => handleUpdate({ rows: parseInt((e.target as HTMLInputElement).value) || 4 })}
@@ -250,17 +255,17 @@ export default component$<FieldEditorCompleteProps>((props) => {
                   min="1"
                   max="20"
                 />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Max Length</label>
+              </DSFormField>
+              <DSFormField id="workflow-field-editor-max-length" label="Max Length">
                 <input
+                  id="workflow-field-editor-max-length"
                   type="number"
                   value={editingField.maxLength ?? ''}
                   onInput$={(e) => handleUpdate({ maxLength: parseInt((e.target as HTMLInputElement).value) || undefined })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="Character limit"
                 />
-              </div>
+              </DSFormField>
             </div>
           </div>
         )}
@@ -269,20 +274,19 @@ export default component$<FieldEditorCompleteProps>((props) => {
           <div class="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 class="font-medium text-gray-900 text-sm">File Upload Settings</h4>
             <div class="grid grid-cols-2 gap-4">
-              <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Accepted File Types</label>
+              <DSFormField id="workflow-field-editor-accept" label="Accepted File Types" hint="MIME types or file extensions separated by commas" class="col-span-2">
                 <input
+                  id="workflow-field-editor-accept"
                   type="text"
                   value={editingField.accept || ''}
                   onInput$={(e) => handleUpdate({ accept: (e.target as HTMLInputElement).value })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="e.g., image/*, .pdf, .doc, .docx"
                 />
-                <p class="text-xs text-gray-500 mt-1">MIME types or file extensions separated by commas</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Max Files</label>
+              </DSFormField>
+              <DSFormField id="workflow-field-editor-max-files" label="Max Files">
                 <input
+                  id="workflow-field-editor-max-files"
                   type="number"
                   value={editingField.maxFiles ?? ''}
                   onInput$={(e) => handleUpdate({ maxFiles: parseInt((e.target as HTMLInputElement).value) || undefined })}
@@ -290,17 +294,17 @@ export default component$<FieldEditorCompleteProps>((props) => {
                   min="1"
                   placeholder="No limit"
                 />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Max Size per File (MB)</label>
+              </DSFormField>
+              <DSFormField id="workflow-field-editor-max-size" label="Max Size per File (MB)">
                 <input
+                  id="workflow-field-editor-max-size"
                   type="number"
                   value={editingField.maxSizePerFile ?? ''}
                   onInput$={(e) => handleUpdate({ maxSizePerFile: parseInt((e.target as HTMLInputElement).value) || undefined })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="5"
                 />
-              </div>
+              </DSFormField>
               <div class="col-span-2">
                 <label class="flex items-center">
                   <input
@@ -321,12 +325,13 @@ export default component$<FieldEditorCompleteProps>((props) => {
           <div class="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
             <div class="flex justify-between items-center">
               <h4 class="font-medium text-gray-900 text-sm">Options Configuration</h4>
-              <button
+              <Btn
+                size="sm"
+                variant="primary"
                 onClick$={addOption}
-                class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 + Add Option
-              </button>
+              </Btn>
             </div>
 
             {editingField.options && editingField.options.length > 0 ? (
@@ -348,13 +353,15 @@ export default component$<FieldEditorCompleteProps>((props) => {
                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
                       placeholder="Value (stored)"
                     />
-                    <button
+                    <Btn
+                      size="sm"
+                      variant="ghost"
                       onClick$={() => removeOption(index)}
-                      class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      class="text-red-600 hover:bg-red-50"
                       title="Remove option"
                     >
                       ✕
-                    </button>
+                    </Btn>
                   </div>
                 ))}
               </div>
@@ -420,13 +427,15 @@ export default component$<FieldEditorCompleteProps>((props) => {
 
         {/* Advanced Settings */}
         <div class="border-t pt-4">
-          <button
+          <Btn
+            size="sm"
+            variant="ghost"
             onClick$={() => (showAdvanced.value = !showAdvanced.value)}
             class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
           >
             <span class={`transition-transform ${showAdvanced.value ? 'rotate-90' : ''}`}>▶</span>
             Advanced Settings
-          </button>
+          </Btn>
 
           {showAdvanced.value && (
             <div class="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -434,9 +443,9 @@ export default component$<FieldEditorCompleteProps>((props) => {
               <div>
                 <h5 class="font-medium text-sm mb-3">Validation Rules</h5>
                 <div class="space-y-3">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Custom Error Message</label>
+                  <DSFormField id="workflow-field-editor-validation-message" label="Custom Error Message">
                     <input
+                      id="workflow-field-editor-validation-message"
                       type="text"
                       value={editingField.validation?.message || ''}
                       onInput$={(e) => handleUpdate({
@@ -448,14 +457,14 @@ export default component$<FieldEditorCompleteProps>((props) => {
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                       placeholder="This field is invalid"
                     />
-                  </div>
+                  </DSFormField>
 
                   {(editingField.type === 'text' || editingField.type === 'textarea') && (
                     <>
                       <div class="grid grid-cols-2 gap-2">
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Min Length</label>
+                        <DSFormField id="workflow-field-editor-validation-min-length" label="Min Length">
                           <input
+                            id="workflow-field-editor-validation-min-length"
                             type="number"
                             value={editingField.validation?.minLength ?? ''}
                             onInput$={(e) => handleUpdate({
@@ -466,10 +475,10 @@ export default component$<FieldEditorCompleteProps>((props) => {
                             })}
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                           />
-                        </div>
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Max Length</label>
+                        </DSFormField>
+                        <DSFormField id="workflow-field-editor-validation-max-length" label="Max Length">
                           <input
+                            id="workflow-field-editor-validation-max-length"
                             type="number"
                             value={editingField.validation?.maxLength ?? ''}
                             onInput$={(e) => handleUpdate({
@@ -480,12 +489,12 @@ export default component$<FieldEditorCompleteProps>((props) => {
                             })}
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                           />
-                        </div>
+                        </DSFormField>
                       </div>
 
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Pattern (Regex)</label>
+                      <DSFormField id="workflow-field-editor-validation-pattern" label="Pattern (Regex)">
                         <input
+                          id="workflow-field-editor-validation-pattern"
                           type="text"
                           value={editingField.validation?.pattern || ''}
                           onInput$={(e) => handleUpdate({
@@ -497,15 +506,15 @@ export default component$<FieldEditorCompleteProps>((props) => {
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
                           placeholder="^[A-Za-z0-9]+$"
                         />
-                      </div>
+                      </DSFormField>
                     </>
                   )}
 
                   {editingField.type === 'date' && (
                     <div class="grid grid-cols-2 gap-2">
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Min Date</label>
+                      <DSFormField id="workflow-field-editor-validation-min-date" label="Min Date">
                         <input
+                          id="workflow-field-editor-validation-min-date"
                           type="date"
                           value={editingField.validation?.minDate || ''}
                           onInput$={(e) => handleUpdate({
@@ -516,10 +525,10 @@ export default component$<FieldEditorCompleteProps>((props) => {
                           })}
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                         />
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Date</label>
+                      </DSFormField>
+                      <DSFormField id="workflow-field-editor-validation-max-date" label="Max Date">
                         <input
+                          id="workflow-field-editor-validation-max-date"
                           type="date"
                           value={editingField.validation?.maxDate || ''}
                           onInput$={(e) => handleUpdate({
@@ -530,23 +539,23 @@ export default component$<FieldEditorCompleteProps>((props) => {
                           })}
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                         />
-                      </div>
+                      </DSFormField>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Default Value */}
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Default Value</label>
+              <DSFormField id="workflow-field-editor-default-value" label="Default Value">
                 <input
+                  id="workflow-field-editor-default-value"
                   type="text"
                   value={editingField.defaultValue ?? ''}
                   onInput$={(e) => handleUpdate({ defaultValue: (e.target as HTMLInputElement).value })}
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   placeholder="Default value when field is first shown"
                 />
-              </div>
+              </DSFormField>
             </div>
           )}
         </div>
@@ -555,10 +564,10 @@ export default component$<FieldEditorCompleteProps>((props) => {
         <div class="border-t pt-4">
           <h4 class="font-medium text-gray-900 text-sm mb-3">Field Preview</h4>
           <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <div class="block text-sm font-medium text-gray-700 mb-1">
               {editingField.label}
               {editingField.required && <span class="text-red-500 ml-1">*</span>}
-            </label>
+            </div>
 
             {editingField.type === 'textarea' ? (
               <textarea

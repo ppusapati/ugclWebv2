@@ -1,5 +1,6 @@
 // src/components/auth/permission-management.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
+import { Badge, Btn, FormField } from '~/components/ds';
 import { authService } from '~/services/auth.service';
 import { buildApiUrl } from '~/config/api';
 
@@ -194,19 +195,18 @@ export const PermissionManagement = component$(() => {
     <div class="permission-management p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">Permission Management</h2>
-        <button
-          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        <Btn
           onClick$={() => { state.showCreateModal = true; }}
         >
           Create New Permission
-        </button>
+        </Btn>
       </div>
 
       {/* Filters */}
       <div class="flex items-center space-x-4 mb-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <FormField id="permission-filter-category" label="Category">
           <select
+            id="permission-filter-category"
             class="border border-gray-300 rounded-md px-3 py-2"
             value={state.selectedCategory}
             onChange$={(e) => {
@@ -218,11 +218,11 @@ export const PermissionManagement = component$(() => {
               <option key={category} value={category}>{category}</option>
             ))}
           </select>
-        </div>
+        </FormField>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Business Scope</label>
+        <FormField id="permission-filter-scope" label="Business Scope">
           <select
+            id="permission-filter-scope"
             class="border border-gray-300 rounded-md px-3 py-2"
             value={state.selectedBusiness}
             onChange$={(e) => {
@@ -237,7 +237,7 @@ export const PermissionManagement = component$(() => {
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
       </div>
 
       {/* Success/Error Messages */}
@@ -308,28 +308,22 @@ export const PermissionManagement = component$(() => {
                             <div class="text-sm text-gray-500">{permission.description}</div>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap">
-                            <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              permission.business_vertical_id 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
+                            <Badge variant={permission.business_vertical_id ? 'info' : 'neutral'}>
                               {permission.business_vertical_id 
                                 ? state.businesses.find(b => b.id === permission.business_vertical_id)?.name || 'Business'
                                 : 'Global'
                               }
-                            </span>
+                            </Badge>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap">
-                            <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              permission.is_system_permission 
-                                ? 'bg-red-100 text-red-800' 
-                                : 'bg-green-100 text-green-800'
-                            }`}>
+                            <Badge variant={permission.is_system_permission ? 'error' : 'success'}>
                               {permission.is_system_permission ? 'System' : 'Custom'}
-                            </span>
+                            </Badge>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
+                            <Btn
+                              size="sm"
+                              variant="ghost"
                               class="text-indigo-600 hover:text-indigo-900 mr-4"
                               onClick$={() => {
                                 state.editingPermission = { ...permission };
@@ -337,14 +331,16 @@ export const PermissionManagement = component$(() => {
                               }}
                             >
                               Edit
-                            </button>
+                            </Btn>
                             {!permission.is_system_permission && (
-                              <button
+                              <Btn
+                                size="sm"
+                                variant="danger"
                                 class="text-red-600 hover:text-red-900"
                                 onClick$={() => handleDeletePermission(permission.id)}
                               >
                                 Delete
-                              </button>
+                              </Btn>
                             )}
                           </td>
                         </tr>
@@ -449,8 +445,8 @@ export const PermissionManagement = component$(() => {
               </div>
 
               <div class="flex justify-end space-x-3 mt-6">
-                <button
-                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                <Btn
+                  variant="secondary"
                   onClick$={() => {
                     state.showCreateModal = false;
                     state.editingPermission = null;
@@ -458,13 +454,12 @@ export const PermissionManagement = component$(() => {
                   }}
                 >
                   Cancel
-                </button>
-                <button
-                  class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                </Btn>
+                <Btn
                   onClick$={handleCreatePermission}
                 >
                   {state.editingPermission ? 'Update Permission' : 'Create Permission'}
-                </button>
+                </Btn>
               </div>
             </div>
           </div>

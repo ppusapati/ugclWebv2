@@ -1,6 +1,7 @@
 import { component$,  useTask$ } from "@builder.io/qwik";
 import { useMediaRecorder } from "../hooks/useMediaRecorder";
 import { DynamicIcon } from "../dynamic/DynamicIcon";
+import { Btn } from "~/components/ds";
 // import { useSound } from "../hooks/useSound";
 // import { MediaButton } from "../button";
 
@@ -52,11 +53,11 @@ export const Recorder = component$(() => {
 
 
       {statusRecording.value === "ready" ? (
-        <button class="border-none rounded-2xl bg-transparent" onClick$={startRecording}><div class="text-xl text-info-700  i-tabler-microphone-filled"/></button>
+        <Btn size="sm" variant="ghost" class="border-none rounded-2xl bg-transparent" onClick$={startRecording}><div class="text-xl text-info-700  i-tabler-microphone-filled"/></Btn>
       ) : statusRecording.value === "paused" ? (
-        <button class="border-none rounded-2xl bg-transparent" onClick$={resumeRecording}><div class="text-xl text-info-600 i-tabler-player-stop-filled"/></button>
+        <Btn size="sm" variant="ghost" class="border-none rounded-2xl bg-transparent" onClick$={resumeRecording}><div class="text-xl text-info-600 i-tabler-player-stop-filled"/></Btn>
       ) : (
-        <button class="border-none rounded-2xl bg-transparent" onClick$={pauseRecording}><div class="text-xl text-info-600 i-tabler-player-pause-filled"/></button>
+        <Btn size="sm" variant="ghost" class="border-none rounded-2xl bg-transparent" onClick$={pauseRecording}><div class="text-xl text-info-600 i-tabler-player-pause-filled"/></Btn>
       )}
 
       {/* <div>
@@ -67,11 +68,11 @@ export const Recorder = component$(() => {
       </div> */}
 
       {statusRecording.value === "ready" && audioUrl.value ? (
-        <button onClick$={clearRecording}>Reset</button>
+        <Btn size="sm" variant="secondary" onClick$={clearRecording}>Reset</Btn>
       ) : (
-        <button class="border-none rounded-2xl bg-transparent" onClick$={stopRecording} disabled={statusRecording.value === "ready"}>
+        <Btn size="sm" variant="ghost" class="border-none rounded-2xl bg-transparent" onClick$={stopRecording} disabled={statusRecording.value === "ready"}>
           <div class="text-xl text-info-700 i-tabler-player-stop-filled"/>
-        </button>
+        </Btn>
       )}
     </div>
     

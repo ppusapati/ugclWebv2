@@ -2,6 +2,7 @@ import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
 import { useLocation, useNavigate, routeLoader$ } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
 import { apiClient, createSSRApiClient } from "~/services";
+import { Badge, Btn, FormField } from '~/components/ds';
 
 interface Role {
   id: string;
@@ -204,7 +205,8 @@ export default component$(() => {
               class="text-blue-600 hover:text-blue-800 mb-2 flex items-center"
               onClick$={() => nav("/admin/users")}
             >
-              ← Back to Users
+              <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+              Back to Users
             </button>
             <h1 class="text-2xl font-bold">Role Assignment</h1>
             <p class="text-gray-600 text-sm mt-1">
@@ -212,12 +214,13 @@ export default component$(() => {
               {state.user.email})
             </p>
           </div>
-          <button
-            class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+          <Btn
+            variant="secondary"
+            class="rounded"
             onClick$={() => nav(`/admin/users/${userId}/sites`)}
           >
             Manage Sites
-          </button>
+          </Btn>
         </div>
 
         {/* Success/Error Messages */}
@@ -236,24 +239,24 @@ export default component$(() => {
         <div class="bg-white border rounded-lg p-6 shadow">
           <h2 class="text-lg font-semibold mb-4">Global Role</h2>
           <div class="max-w-md">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Assign Global Role
-            </label>
-            <select
-              class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={state.user.role_id || ""}
-              onChange$={(e) => {
-                const roleId = (e.target as HTMLSelectElement).value;
-                handleUpdateGlobalRole(roleId);
-              }}
-            >
-              <option value="">No Global Role</option>
-              {state.globalRoles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {`${role.name}${role.level ? ` (Level ${role.level})` : ''}`}
-                </option>
-              ))}
-            </select>
+            <FormField id="user-global-role" label="Assign Global Role">
+              <select
+                id="user-global-role"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={state.user.role_id || ""}
+                onChange$={(e) => {
+                  const roleId = (e.target as HTMLSelectElement).value;
+                  handleUpdateGlobalRole(roleId);
+                }}
+              >
+                <option value="">No Global Role</option>
+                {state.globalRoles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {`${role.name}${role.level ? ` (Level ${role.level})` : ''}`}
+                  </option>
+                ))}
+              </select>
+            </FormField>
             {state.user.global_role && (
               <p class="text-sm text-gray-600 mt-2">
                 Current: <strong>{state.user.global_role}</strong>
@@ -271,14 +274,14 @@ export default component$(() => {
                 Vertical-specific roles for this user
               </p>
             </div>
-            <button
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            <Btn
+              class="rounded"
               onClick$={() => {
                 state.showAssignModal = true;
               }}
             >
               + Assign Business Role
-            </button>
+            </Btn>
           </div>
 
           {state.userBusinessRoles.length > 0 ? (
@@ -306,13 +309,13 @@ export default component$(() => {
                 {state.userBusinessRoles.map((assignment) => (
                   <tr key={assignment.id} class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">
+                      <Badge variant="info">
                         {assignment.vertical_name ||
                           state.businessVerticals.find(
                             (v) => v.id === assignment.business_vertical_id
                           )?.name ||
                           "Unknown"}
-                      </span>
+                      </Badge>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="text-sm font-medium text-gray-900">
@@ -325,9 +328,9 @@ export default component$(() => {
                       )}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                      <Badge variant="info">
                         Level {assignment.business_role?.level || "N/A"}
-                      </span>
+                      </Badge>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="text-sm text-gray-600">
@@ -363,11 +366,9 @@ export default component$(() => {
                 </h3>
 
                 <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Business Vertical *
-                    </label>
+                  <FormField id="user-business-vertical" label="Business Vertical" required>
                     <select
+                      id="user-business-vertical"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={state.selectedVertical}
                       onChange$={(e) => {
@@ -384,14 +385,12 @@ export default component$(() => {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </FormField>
 
                   {state.selectedVertical && (
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Business Role *
-                      </label>
+                    <FormField id="user-business-role" label="Business Role" required>
                       <select
+                        id="user-business-role"
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         value={state.selectedBusinessRole}
                         onChange$={(e) => {
@@ -412,13 +411,14 @@ export default component$(() => {
                           No roles available for this vertical
                         </p>
                       )}
-                    </div>
+                    </FormField>
                   )}
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
-                  <button
-                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                  <Btn
+                    variant="secondary"
+                    class="rounded"
                     onClick$={() => {
                       state.showAssignModal = false;
                       state.selectedVertical = "";
@@ -426,16 +426,16 @@ export default component$(() => {
                     }}
                   >
                     Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  </Btn>
+                  <Btn
+                    class="rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                     disabled={
                       !state.selectedVertical || !state.selectedBusinessRole
                     }
                     onClick$={handleAssignBusinessRole}
                   >
                     Assign Role
-                  </button>
+                  </Btn>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 // src/components/form-builder/submissions/CommentModal.tsx
 import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
+import { Btn, FormField } from '~/components/ds';
 
 interface CommentModalProps {
   title: string;
@@ -39,25 +40,21 @@ export default component$<CommentModalProps>((props) => {
 
         {/* Body */}
         <div class="px-6 py-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Comment
-            {props.required && <span class="text-red-500 ml-1">*</span>}
-          </label>
-          <textarea
-            value={comment.value}
-            onInput$={(e) => {
-              comment.value = (e.target as HTMLTextAreaElement).value;
-              error.value = '';
-            }}
-            placeholder="Enter your comment..."
-            rows={4}
-            class={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              error.value ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {error.value && (
-            <p class="mt-1 text-sm text-red-500">{error.value}</p>
-          )}
+          <FormField id="submission-comment" label="Comment" required={props.required} error={error.value || undefined}>
+            <textarea
+              id="submission-comment"
+              value={comment.value}
+              onInput$={(e) => {
+                comment.value = (e.target as HTMLTextAreaElement).value;
+                error.value = '';
+              }}
+              placeholder="Enter your comment..."
+              rows={4}
+              class={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                error.value ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+          </FormField>
           {props.required && (
             <p class="mt-1 text-xs text-gray-500">
               A comment is required for this action
@@ -67,20 +64,21 @@ export default component$<CommentModalProps>((props) => {
 
         {/* Footer */}
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-lg">
-          <button
+          <Btn
             type="button"
             onClick$={handleCancel}
-            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium"
+            variant="secondary"
+            class="rounded"
           >
             Cancel
-          </button>
-          <button
+          </Btn>
+          <Btn
             type="button"
             onClick$={handleSubmit}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            class="rounded"
           >
             Submit
-          </button>
+          </Btn>
         </div>
       </div>
     </div>

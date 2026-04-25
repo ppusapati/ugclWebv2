@@ -1,5 +1,6 @@
 // src/components/form-builder/submissions/SubmissionDetail.tsx
 import { component$, useSignal, useStore, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
+import { Badge, Btn } from '~/components/ds';
 import { workflowService } from '~/services';
 import type { FormSubmission, WorkflowTransition } from '~/types/workflow';
 import WorkflowHistory from './WorkflowHistory';
@@ -48,15 +49,15 @@ export default component$<SubmissionDetailProps>((props) => {
     await loadSubmission();
   });
 
-  const getStateBadgeClass = $((state: string) => {
-    const classes: Record<string, string> = {
-      draft: 'bg-gray-100 text-gray-700',
-      submitted: 'bg-blue-100 text-blue-700',
-      approved: 'bg-green-100 text-green-700',
-      rejected: 'bg-red-100 text-red-700',
+  const getStateBadgeVariant = (state: string) => {
+    const variants: Record<string, 'neutral' | 'info' | 'success' | 'error'> = {
+      draft: 'neutral',
+      submitted: 'info',
+      approved: 'success',
+      rejected: 'error',
     };
-    return classes[state] || 'bg-gray-100 text-gray-700';
-  });
+    return variants[state] || 'neutral';
+  };
 
   if (loading.value) {
     return (
@@ -72,12 +73,13 @@ export default component$<SubmissionDetailProps>((props) => {
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
           <h2 class="text-red-800 font-medium">Error</h2>
           <p class="text-red-600 mt-2">{error.value}</p>
-          <button
+          <Btn
             onClick$={loadSubmission}
-            class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            variant="danger"
+            class="mt-4 rounded"
           >
             Retry
-          </button>
+          </Btn>
         </div>
       </div>
     );
@@ -94,9 +96,10 @@ export default component$<SubmissionDetailProps>((props) => {
                 {props.onBack$ && (
                   <button
                     onClick$={props.onBack$}
-                    class="text-gray-600 hover:text-gray-900"
+                    class="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900"
                   >
-                    ← Back
+                    <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                    Back
                   </button>
                 )}
                 <h1 class="text-2xl font-bold text-gray-900">
@@ -106,13 +109,12 @@ export default component$<SubmissionDetailProps>((props) => {
 
               <div class="flex items-center gap-4 text-sm text-gray-600">
                 <span class="font-mono">{submission.id}</span>
-                <span
-                  class={`px-3 py-1 text-sm font-medium rounded-full ${getStateBadgeClass(
-                    submission.current_state || ''
-                  )}`}
+                <Badge
+                  variant={getStateBadgeVariant(submission.current_state || '')}
+                  class="px-3 py-1 text-sm font-medium"
                 >
                   {submission.current_state}
-                </span>
+                </Badge>
               </div>
 
               <div class="mt-3 text-sm text-gray-600">
@@ -154,9 +156,9 @@ export default component$<SubmissionDetailProps>((props) => {
                 <div class="space-y-4">
                   {Object.entries(submission.form_data).map(([key, value]) => (
                     <div key={key} class="border-b border-gray-200 pb-3">
-                      <label class="block text-sm font-medium text-gray-700 mb-1">
+                      <div class="block text-sm font-medium text-gray-700 mb-1">
                         {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </label>
+                      </div>
                       <div class="text-gray-900">
                         {typeof value === 'object' ? (
                           <pre class="text-sm bg-gray-50 p-2 rounded overflow-x-auto">
@@ -191,13 +193,15 @@ export default component$<SubmissionDetailProps>((props) => {
 
               {/* Action Buttons */}
               <div class="mt-6 flex gap-3">
-                <button
+                <Btn
                   onClick$={() => window.print()}
-                  class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  variant="secondary"
+                  class="rounded"
                 >
-                  🖨️ Print
-                </button>
-                <button
+                  <i class="i-heroicons-printer-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Print
+                </Btn>
+                <Btn
                   onClick$={() => {
                     const json = JSON.stringify(submission.form_data, null, 2);
                     const blob = new Blob([json], { type: 'application/json' });
@@ -207,10 +211,12 @@ export default component$<SubmissionDetailProps>((props) => {
                     a.download = `submission-${submission.id}.json`;
                     a.click();
                   }}
-                  class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  variant="secondary"
+                  class="rounded"
                 >
-                  💾 Export JSON
-                </button>
+                  <i class="i-heroicons-arrow-down-tray-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Export JSON
+                </Btn>
               </div>
             </div>
           </div>

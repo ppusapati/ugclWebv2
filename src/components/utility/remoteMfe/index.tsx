@@ -26,7 +26,7 @@ export const RemoteMfe = component$(({ remote, fetchOnScroll }: Props) => {
 	return (
 		<div
 			class='remote-component'
-		style={{ '--seams-color': '#000000' }}
+		style={{ '--seams-color': 'var(--color-neutral-black)' }}
 		>
 			{!hideLabel && (
 				<a target="blank" href={url.href} class="remote-label">

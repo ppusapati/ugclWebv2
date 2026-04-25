@@ -1,4 +1,5 @@
 import { component$, isServer, useStore, useTask$, $, type PropFunction } from '@builder.io/qwik';
+import { Badge, Btn, FormField } from '~/components/ds';
 import { documentService } from '~/services/document.service';
 import type { DocumentCategory } from '~/types/document';
 
@@ -6,6 +7,41 @@ interface CategoryManagerProps {
   businessVerticalId?: string;
   onCategoryChange$?: PropFunction<() => void>;
 }
+
+const DEFAULT_CATEGORY_ICON = 'i-heroicons-folder-solid';
+
+const LEGACY_ICON_MAP: Record<string, string> = {
+  '📁': 'i-heroicons-folder-solid',
+  '📄': 'i-heroicons-document-text-solid',
+  '📋': 'i-heroicons-clipboard-document-list-solid',
+  '📊': 'i-heroicons-chart-bar-solid',
+  '📈': 'i-heroicons-presentation-chart-line-solid',
+  '📉': 'i-heroicons-chart-bar-square-solid',
+  '📦': 'i-heroicons-archive-box-solid',
+  '🗂️': 'i-heroicons-folder-open-solid',
+  '📚': 'i-heroicons-book-open-solid',
+  '📝': 'i-heroicons-pencil-square-solid',
+  '🔒': 'i-heroicons-lock-closed-solid',
+  '🌟': 'i-heroicons-star-solid',
+  '⚙️': 'i-heroicons-cog-6-tooth-solid',
+  '💼': 'i-heroicons-briefcase-solid',
+  '🏢': 'i-heroicons-building-office-solid',
+  '📱': 'i-heroicons-device-phone-mobile-solid',
+  '💻': 'i-heroicons-computer-desktop-solid',
+  '🎨': 'i-heroicons-swatch-solid',
+  '🔧': 'i-heroicons-wrench-screwdriver-solid',
+  '📷': 'i-heroicons-camera-solid',
+};
+
+const resolveCategoryIcon = (icon?: string): string => {
+  if (!icon) {
+    return DEFAULT_CATEGORY_ICON;
+  }
+  if (icon.startsWith('i-')) {
+    return icon;
+  }
+  return LEGACY_ICON_MAP[icon] || DEFAULT_CATEGORY_ICON;
+};
 
 export const CategoryManager = component$<CategoryManagerProps>((props) => {
   const { businessVerticalId, onCategoryChange$ } = props;
@@ -22,7 +58,7 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
     name: '',
     description: '',
     color: '#3B82F6',
-    icon: '📁',
+    icon: DEFAULT_CATEGORY_ICON,
     parentId: '',
     isActive: true,
   });
@@ -56,7 +92,7 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
       formState.name = category.name;
       formState.description = category.description || '';
       formState.color = category.color || '#3B82F6';
-      formState.icon = category.icon || '📁';
+      formState.icon = resolveCategoryIcon(category.icon);
       formState.parentId = category.parent_id || '';
       formState.isActive = category.is_active;
     } else {
@@ -64,7 +100,7 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
       formState.name = '';
       formState.description = '';
       formState.color = '#3B82F6';
-      formState.icon = '📁';
+      formState.icon = DEFAULT_CATEGORY_ICON;
       formState.parentId = '';
       formState.isActive = true;
     }
@@ -144,24 +180,24 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
     return categories.map((category) => (
       <div key={category.id}>
         <div
-          class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 mb-2"
-          style={{ marginLeft: `${level * 24}px` }}
+          class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 mb-2 ml-[var(--category-indent)]"
+          style={{ '--category-indent': `${level * 24}px` }}
         >
           <div class="flex items-center gap-3 flex-1">
-            <span class="text-2xl">{category.icon || '📁'}</span>
+            <i class={`${resolveCategoryIcon(category.icon)} h-6 w-6 inline-block text-gray-600`} aria-hidden="true"></i>
             <div class="flex-1">
               <div class="flex items-center gap-2">
                 <span class="font-medium text-gray-900">{category.name}</span>
                 {category.color && (
                   <span
-                    class="w-4 h-4 rounded-full border border-gray-300"
-                    style={{ backgroundColor: category.color }}
+                    class="w-4 h-4 rounded-full border border-gray-300 bg-[var(--category-color)]"
+                    style={{ '--category-color': category.color }}
                   />
                 )}
                 {!category.is_active && (
-                  <span class="px-2 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                  <Badge variant="neutral">
                     Inactive
-                  </span>
+                  </Badge>
                 )}
               </div>
               {category.description && (
@@ -171,18 +207,12 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
           </div>
 
           <div class="flex gap-2">
-            <button
-              class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
-              onClick$={() => handleShowForm(category)}
-            >
+            <Btn size="sm" variant="ghost" class="text-blue-600 hover:bg-blue-50" onClick$={() => handleShowForm(category)}>
               Edit
-            </button>
-            <button
-              class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
-              onClick$={() => handleDelete(category)}
-            >
+            </Btn>
+            <Btn size="sm" variant="danger" class="text-red-600 hover:bg-red-50" onClick$={() => handleDelete(category)}>
               Delete
-            </button>
+            </Btn>
           </div>
         </div>
         {renderCategoryTree(category.id, level + 1)}
@@ -190,22 +220,43 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
     ));
   };
 
-  const iconOptions = ['📁', '📄', '📋', '📊', '📈', '📉', '📦', '🗂️', '📚', '📝', '🔒', '🌟', '⚙️', '💼', '🏢', '📱', '💻', '🎨', '🔧', '📷'];
+  const iconOptions = [
+    'i-heroicons-folder-solid',
+    'i-heroicons-document-text-solid',
+    'i-heroicons-clipboard-document-list-solid',
+    'i-heroicons-chart-bar-solid',
+    'i-heroicons-presentation-chart-line-solid',
+    'i-heroicons-chart-bar-square-solid',
+    'i-heroicons-archive-box-solid',
+    'i-heroicons-folder-open-solid',
+    'i-heroicons-book-open-solid',
+    'i-heroicons-pencil-square-solid',
+    'i-heroicons-lock-closed-solid',
+    'i-heroicons-star-solid',
+    'i-heroicons-cog-6-tooth-solid',
+    'i-heroicons-briefcase-solid',
+    'i-heroicons-building-office-solid',
+    'i-heroicons-device-phone-mobile-solid',
+    'i-heroicons-computer-desktop-solid',
+    'i-heroicons-swatch-solid',
+    'i-heroicons-wrench-screwdriver-solid',
+    'i-heroicons-camera-solid',
+  ];
 
   return (
     <div class="category-manager">
       {/* Header */}
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-gray-900">Category Management</h2>
-        <button
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        <Btn
+          class="flex items-center gap-2"
           onClick$={() => handleShowForm()}
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           New Category
-        </button>
+        </Btn>
       </div>
 
       {/* Loading State */}
@@ -249,57 +300,56 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
 
             <div class="space-y-4">
               {/* Name */}
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Name <span class="text-red-500">*</span>
-                </label>
+              <FormField id="document-category-name" label="Name" required>
                 <input
+                  id="document-category-name"
                   type="text"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   value={formState.name}
                   onInput$={(e) => (formState.name = (e.target as HTMLInputElement).value)}
                   placeholder="Enter category name"
                 />
-              </div>
+              </FormField>
 
               {/* Description */}
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <FormField id="document-category-description" label="Description">
                 <textarea
+                  id="document-category-description"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   rows={3}
                   value={formState.description}
                   onInput$={(e) => (formState.description = (e.target as HTMLTextAreaElement).value)}
                   placeholder="Enter description (optional)"
                 />
-              </div>
+              </FormField>
 
               {/* Icon */}
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+              <FormField id="document-category-icon" label="Icon">
                 <div class="flex flex-wrap gap-2">
                   {iconOptions.map((icon) => (
-                    <button
+                    <Btn
                       key={icon}
                       type="button"
-                      class={`text-2xl p-2 rounded border-2 ${
+                      size="sm"
+                      variant="ghost"
+                      class={`p-2 rounded border-2 ${
                         formState.icon === icon
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick$={() => (formState.icon = icon)}
                     >
-                      {icon}
-                    </button>
+                      <i class={`${icon} h-6 w-6 inline-block text-gray-700`} aria-hidden="true"></i>
+                    </Btn>
                   ))}
                 </div>
-              </div>
+              </FormField>
 
               {/* Color */}
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+              <FormField id="document-category-color" label="Color">
                 <div class="flex items-center gap-3">
                   <input
+                    id="document-category-color"
                     type="color"
                     class="h-10 w-20 border border-gray-300 rounded cursor-pointer"
                     value={formState.color}
@@ -313,12 +363,12 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
                     placeholder="#3B82F6"
                   />
                 </div>
-              </div>
+              </FormField>
 
               {/* Parent Category */}
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
+              <FormField id="document-category-parent" label="Parent Category">
                 <select
+                  id="document-category-parent"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   value={formState.parentId}
                   onChange$={(e) => (formState.parentId = (e.target as HTMLSelectElement).value)}
@@ -332,7 +382,7 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
                       </option>
                     ))}
                 </select>
-              </div>
+              </FormField>
 
               {/* Active Status */}
               {state.editingCategory && (
@@ -353,20 +403,20 @@ export const CategoryManager = component$<CategoryManagerProps>((props) => {
 
             {/* Form Actions */}
             <div class="flex gap-3 mt-6 pt-4 border-t">
-              <button
+              <Btn
                 type="button"
-                class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                class="flex-1"
                 onClick$={handleSubmit}
               >
                 {state.editingCategory ? 'Update' : 'Create'}
-              </button>
-              <button
+              </Btn>
+              <Btn
                 type="button"
-                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                variant="secondary"
                 onClick$={handleCancelForm}
               >
                 Cancel
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

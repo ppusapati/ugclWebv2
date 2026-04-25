@@ -6,6 +6,7 @@
 import { component$, useStore, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import { ProjectCard } from '../../../components/projects/project-card';
+import { Alert, Btn, FormField, PageHeader } from '../../../components/ds';
 import { createSSRApiClient, apiClient } from '../../../services/api-client';
 import type { Project, ProjectListResponse } from '../../../types/project';
 
@@ -23,23 +24,23 @@ export const useProjectsData = routeLoader$(async (requestEvent) => {
 
   try {
     // Load projects and business verticals separately for better error tracking
-    console.log('📡 [PROJECTS LOADER] Fetching from /admin/projects endpoint');
+    console.log('[PROJECTS LOADER] Fetching from /admin/projects endpoint');
 
     let projectsResponse: any = { projects: [] };
     try {
       projectsResponse = await ssrApiClient.get<ProjectListResponse>('/admin/projects');
-      console.log('✅ [PROJECTS LOADER] Projects fetched successfully');
+      console.log('[PROJECTS LOADER] Projects fetched successfully');
     } catch (projError: any) {
-      console.error('❌ [PROJECTS LOADER] Failed to fetch projects:', projError);
+      console.error('[PROJECTS LOADER] Failed to fetch projects:', projError);
       // Don't throw - continue to load other data
     }
 
     let businessesData: any = {};
     try {
       businessesData = await ssrApiClient.get<any>('/admin/businesses');
-      console.log('✅ [PROJECTS LOADER] Businesses fetched successfully');
+      console.log('[PROJECTS LOADER] Businesses fetched successfully');
     } catch (bizError: any) {
-      console.error('❌ [PROJECTS LOADER] Failed to fetch businesses:', bizError);
+      console.error('[PROJECTS LOADER] Failed to fetch businesses:', bizError);
       // Don't throw - continue with empty businesses
     }
 
@@ -130,27 +131,21 @@ export default component$(() => {
   return (
     <div class="py-4">
       {/* Debug Info */}
-      {/* Header */}
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 mb-1">Projects</h1>
-          <p class="text-sm text-gray-600">Manage your construction projects</p>
-        </div>
-        <button
+      <PageHeader title="Projects" subtitle="Manage your construction projects">
+        <Btn
+          q:slot="actions"
           onClick$={handleCreateProject}
-          class="btn btn-primary"
         >
           <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
           New Project
-        </button>
-      </div>
+        </Btn>
+      </PageHeader>
 
       {/* Filters */}
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
-          <div class="md:col-span-2">
-            <label class="form-label text-xs mb-1">Search</label>
+          <FormField class="md:col-span-2" label="Search">
             <input
               type="text"
               class="form-input w-full"
@@ -160,12 +155,12 @@ export default component$(() => {
                 state.filters.search = (e.target as HTMLInputElement).value;
               }}
             />
-          </div>
+          </FormField>
 
           {/* Business Vertical Filter */}
-          <div>
-            <label class="form-label text-xs mb-1">Business Vertical</label>
+          <FormField id="project-business-vertical" label="Business Vertical">
             <select
+              id="project-business-vertical"
               class="form-input w-full"
               value={state.filters.business_vertical_id}
               onChange$={(e) => {
@@ -178,12 +173,12 @@ export default component$(() => {
                 <option key={bv.id} value={bv.id}>{bv.name}</option>
               ))}
             </select>
-          </div>
+          </FormField>
 
           {/* Status Filter */}
-          <div>
-            <label class="form-label text-xs mb-1">Status</label>
+          <FormField id="project-status-filter" label="Status">
             <select
+              id="project-status-filter"
               class="form-input w-full"
               value={state.filters.status}
               onChange$={(e) => {
@@ -198,16 +193,16 @@ export default component$(() => {
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
-          </div>
+          </FormField>
         </div>
       </div>
 
       {/* Error Message */}
       {state.error && (
-        <div class="alert-error mb-6 p-4 rounded-md">
+        <Alert variant="error" class="mb-6">
           <i class="i-heroicons-exclamation-circle-solid w-4 h-4 inline-block mr-2"></i>
           {state.error}
-        </div>
+        </Alert>
       )}
 
       {/* Loading State */}
@@ -259,13 +254,12 @@ export default component$(() => {
             }
           </p>
           {state.projects.length === 0 && (
-            <button
+            <Btn
               onClick$={handleCreateProject}
-              class="btn btn-primary"
             >
               <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
               Create First Project
-            </button>
+            </Btn>
           )}
         </div>
       )}

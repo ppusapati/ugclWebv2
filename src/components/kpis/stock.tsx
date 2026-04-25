@@ -1,6 +1,7 @@
 import { Resource, component$, isServer, useResource$, useSignal, useTask$ } from '@builder.io/qwik';
 import type { EChartProps } from '~/components/echarts';
 import { buildApiUrl } from '~/config/api';
+import { Btn } from '~/components/ds';
 
 const EChart = component$<EChartProps>((props) => {
   const chartResource = useResource$(async () => {
@@ -13,7 +14,7 @@ const EChart = component$<EChartProps>((props) => {
       value={chartResource}
       onPending={() => <div class="h-64 rounded-lg bg-gray-100 animate-pulse" />}
       onResolved={(ChartComponent) => (
-        <ChartComponent option={props.option} style={props.style} onClick={props.onClick} />
+        <ChartComponent option={props.option} class={props.class} onClick={props.onClick} />
       )}
     />
   );
@@ -106,7 +107,7 @@ export const StockKpi = component$(() => {
                 <p class="text-green-100 text-sm">Items Received</p>
               </div>
               <div class="bg-green-400 bg-opacity-30 rounded-full p-3">
-                📦
+                <i class="i-heroicons-archive-box-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -119,7 +120,7 @@ export const StockKpi = component$(() => {
                 <p class="text-red-100 text-sm">Items Issued</p>
               </div>
               <div class="bg-red-400 bg-opacity-30 rounded-full p-3">
-                📤
+                <i class="i-heroicons-arrow-up-tray-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -132,7 +133,7 @@ export const StockKpi = component$(() => {
                 <p class="text-primary-100 text-sm">On Hand</p>
               </div>
               <div class="bg-primary-400 bg-opacity-30 rounded-full p-3">
-                🏪
+                <i class="i-heroicons-building-storefront-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -145,7 +146,7 @@ export const StockKpi = component$(() => {
                 <p class="text-purple-100 text-sm">Efficiency</p>
               </div>
               <div class="bg-purple-400 bg-opacity-30 rounded-full p-3">
-                ⚡
+                <i class="i-heroicons-bolt-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -153,7 +154,10 @@ export const StockKpi = component$(() => {
 
         {/* Key Insights */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">📊 Stock Health Overview</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-chart-bar-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Stock Health Overview
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class={`rounded-lg p-4 ${
               status === 'excellent' ? 'bg-green-50' :
@@ -238,7 +242,7 @@ export const StockKpi = component$(() => {
                 <div class="text-sm text-gray-500">Stock Utilization</div>
                 <div class="text-2xl font-bold text-primary-600">{health.stockUtilization.toFixed(1)}%</div>
               </div>
-              <div class="text-2xl">📈</div>
+              <i class="i-heroicons-presentation-chart-line-solid h-7 w-7 inline-block text-primary-600" aria-hidden="true"></i>
             </div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -247,7 +251,7 @@ export const StockKpi = component$(() => {
                 <div class="text-sm text-gray-500">Defect Rate</div>
                 <div class="text-2xl font-bold text-red-600">{kpis.value.defectiveMaterialPct.toFixed(1)}%</div>
               </div>
-              <div class="text-2xl">⚠️</div>
+              <i class="i-heroicons-exclamation-triangle-solid h-7 w-7 inline-block text-red-600" aria-hidden="true"></i>
             </div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -256,7 +260,7 @@ export const StockKpi = component$(() => {
                 <div class="text-sm text-gray-500">Documentation</div>
                 <div class="text-2xl font-bold text-green-600">{kpis.value.documentationCompliancePct.toFixed(1)}%</div>
               </div>
-              <div class="text-2xl">📋</div>
+              <i class="i-heroicons-clipboard-document-list-solid h-7 w-7 inline-block text-green-600" aria-hidden="true"></i>
             </div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -265,7 +269,7 @@ export const StockKpi = component$(() => {
                 <div class="text-sm text-gray-500">Entry Delay</div>
                 <div class="text-2xl font-bold text-yellow-600">{kpis.value.avgDataEntryDelayDays}</div>
               </div>
-              <div class="text-2xl">⏱️</div>
+              <i class="i-heroicons-clock-solid h-7 w-7 inline-block text-yellow-600" aria-hidden="true"></i>
             </div>
           </div>
         </div>
@@ -330,7 +334,10 @@ export const StockKpi = component$(() => {
 
         {/* Detailed Analytics Table */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">📊 Contractor Performance Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-chart-bar-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Contractor Performance Analysis
+          </h3>
           <div class="overflow-x-auto">
             <table class="min-w-full">
               <thead>
@@ -354,8 +361,8 @@ export const StockKpi = component$(() => {
                       <td class="py-3 px-4 text-center">
                         <div class="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            class="bg-primary-500 h-2 rounded-full" 
-                            style={`width: ${Math.min(marketShare * 5, 100)}%`}
+                            class="bg-primary-500 h-2 rounded-full w-[var(--bar-width)]" 
+                            style={{ '--bar-width': `${Math.min(marketShare * 5, 100)}%` }}
                           ></div>
                         </div>
                       </td>
@@ -407,7 +414,10 @@ export const StockKpi = component$(() => {
 
         {/* Inventory Analysis */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">📦 Inventory Health Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-archive-box-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Inventory Health Analysis
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 class="font-medium mb-2">Stock Movement Efficiency</h4>
@@ -448,7 +458,10 @@ export const StockKpi = component$(() => {
 
         {/* Top Items Analysis */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">🔧 Most Used Items/Pipe Diameters</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-wrench-screwdriver-solid h-5 w-5 inline-block text-primary-600" aria-hidden="true"></i>
+            Most Used Items/Pipe Diameters
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpis.value.topItemsPipeDiaUsed.slice(0, 9).map((item, index) => (
               <div key={index} class="border rounded-lg p-3">
@@ -456,8 +469,8 @@ export const StockKpi = component$(() => {
                 <div class="text-lg font-bold text-primary-600">{item.value}</div>
                 <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
                   <div 
-                    class="bg-primary-500 h-1 rounded-full" 
-                    style={`width: ${(item.value / Math.max(...kpis.value!.topItemsPipeDiaUsed.map(i => i.value))) * 100}%`}
+                    class="bg-primary-500 h-1 rounded-full w-[var(--bar-width)]" 
+                    style={{ '--bar-width': `${(item.value / Math.max(...kpis.value!.topItemsPipeDiaUsed.map(i => i.value))) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -473,7 +486,10 @@ export const StockKpi = component$(() => {
       <div class="mx-auto">
         {/* Header */}
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">📦 Stock Management Dashboard</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <i class="i-heroicons-archive-box-solid h-8 w-8 inline-block text-primary-600" aria-hidden="true"></i>
+            Stock Management Dashboard
+          </h1>
           <p class="text-gray-600">Comprehensive inventory analytics and performance insights</p>
         </div>
 
@@ -486,7 +502,10 @@ export const StockKpi = component$(() => {
 
         {error.value && (
           <div class="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div class="text-red-800 font-medium">⚠️ Error loading dashboard</div>
+            <div class="text-red-800 font-medium flex items-center gap-2">
+              <i class="i-heroicons-exclamation-triangle-solid h-5 w-5 inline-block" aria-hidden="true"></i>
+              Error loading dashboard
+            </div>
             <div class="text-red-600 text-sm mt-1">{error.value}</div>
           </div>
         )}
@@ -496,7 +515,9 @@ export const StockKpi = component$(() => {
             {/* Tab Navigation */}
             <div class="bg-white rounded-lg border border-gray-200 mb-6">
               <div class="flex space-x-1 p-1">
-                <button
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'overview'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'overview' 
@@ -504,9 +525,12 @@ export const StockKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  📊 Overview
-                </button>
-                <button
+                  <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Overview
+                </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'analytics'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'analytics' 
@@ -514,9 +538,12 @@ export const StockKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  🔍 Analytics
-                </button>
-                <button
+                  <i class="i-heroicons-magnifying-glass-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Analytics
+                </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'inventory'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'inventory' 
@@ -524,8 +551,9 @@ export const StockKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  📦 Inventory
-                </button>
+                  <i class="i-heroicons-archive-box-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Inventory
+                </Btn>
               </div>
             </div>
 

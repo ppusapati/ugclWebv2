@@ -1,5 +1,6 @@
 // src/components/auth/role-management.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
+import { Btn } from '~/components/ds/btn';
 import { authService } from '~/services/auth.service';
 import { buildApiUrl } from '~/config/api';
 
@@ -164,12 +165,11 @@ export const RoleManagement = component$(() => {
         <div class="role-management p-6">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-2xl font-bold">Role Management</h2>
-                <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                <Btn
                     onClick$={() => { state.showCreateModal = true; }}
                 >
                     Create New Role
-                </button>
+                </Btn>
             </div>
 
             {/* Success/Error Messages */}
@@ -238,7 +238,9 @@ export const RoleManagement = component$(() => {
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button
+                                    <Btn
+                                        size="sm"
+                                        variant="ghost"
                                         class="text-indigo-600 hover:text-indigo-900 mr-4"
                                         onClick$={() => {
                                             state.editingRole = { ...role };
@@ -246,14 +248,16 @@ export const RoleManagement = component$(() => {
                                         }}
                                     >
                                         Edit
-                                    </button>
+                                    </Btn>
                                     {!role.is_system_role && (
-                                        <button
+                                        <Btn
+                                            size="sm"
+                                            variant="danger"
                                             class="text-red-600 hover:text-red-900"
                                             onClick$={() => handleDeleteRole(role.id)}
                                         >
                                             Delete
-                                        </button>
+                                        </Btn>
                                     )}
                                 </td>
                             </tr>
@@ -339,8 +343,8 @@ export const RoleManagement = component$(() => {
                             </div>
 
                             <div class="flex justify-end space-x-3 mt-6">
-                                <button
-                                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                                <Btn
+                                    variant="secondary"
                                     onClick$={() => {
                                         state.showCreateModal = false;
                                         state.editingRole = null;
@@ -348,13 +352,12 @@ export const RoleManagement = component$(() => {
                                     }}
                                 >
                                     Cancel
-                                </button>
-                                <button
-                                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                </Btn>
+                                <Btn
                                     onClick$={handleCreateRole}
                                 >
                                     {state.editingRole ? 'Update Role' : 'Create Role'}
-                                </button>
+                                </Btn>
                             </div>
                         </div>
                     </div>

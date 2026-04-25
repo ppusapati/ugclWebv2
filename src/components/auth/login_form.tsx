@@ -1,4 +1,5 @@
 import { $, component$, useStore } from "@builder.io/qwik";
+import { Btn } from '~/components/ds/btn';
 import { isValidPhone } from "~/utils/validations";
 import { useNavigate } from '@builder.io/qwik-city';
 import ImgLogo from '~/media/logo.png?jsx';
@@ -94,7 +95,7 @@ export const LoginForm = component$(() => {
     <div class="flex items-center justify-center mb-4 ">
       <ImgLogo class="w-36 h-auto" />
     </div>
-    <div class="w-full shadow-xl rounded-2xl animate-fade-in overflow-hidden border border-light-200">
+    <div class="w-full shadow-xl rounded-2xl animate-fade-in overflow-hidden border border-neutral-200">
       <div class="bg-primary-600 p-6 text-center rounded-t-2xl">
         <h2 class="h-2-bold text-white tracking-wide  drop-shadow">
            Welcome to Sree UGCL
@@ -148,13 +149,13 @@ export const LoginForm = component$(() => {
             <span class="form-error">{state.passwordError}</span>
           )}
         </div>
-        <button
+        <Btn
           type="submit"
-          class="btn btn-primary w-full shadow-md hover:scale-105 active:scale-98 transition-transform font-semibold"
+          class="w-full shadow-md hover:scale-105 active:scale-98 transition-transform font-semibold"
           disabled={!!state.phoneError || !!state.passwordError || !state.phone}
         >
           Sign In
-        </button>
+        </Btn>
       </form>
       <div class="px-8 py-4 text-center  rounded-b-2xl">
         <span class="text-primary-100 font-sans text-sm hover:text-primary-50 transition-colors cursor-pointer">

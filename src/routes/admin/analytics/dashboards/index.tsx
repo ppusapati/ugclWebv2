@@ -5,6 +5,7 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../services/api-client';
 import { analyticsService } from '../../../../services/analytics.service';
 import type { Dashboard, DashboardListResponse } from '../../../../types/analytics';
+import { Btn, Badge } from '../../../../components/ds';
 
 // Load dashboards with SSR support
 export const useDashboardsData = routeLoader$(async (requestEvent) => {
@@ -137,27 +138,31 @@ export default component$(() => {
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header with Gradient */}
       <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-2xl">
-        <div class="max-w-screen-2xl mx-auto px-6 py-8">
+        <div class="container mx-auto px-4 py-8">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
             <div>
               <h1 class="text-4xl font-bold flex items-center gap-3 mb-2">
-                📊 Dashboards
+                <i class="i-heroicons-chart-bar-solid h-9 w-9 inline-block" aria-hidden="true"></i>
+                Dashboards
               </h1>
               <p class="text-purple-100">Create and manage interactive analytics dashboards</p>
             </div>
             <div class="flex gap-3">
-              <button
+              <Btn
                 onClick$={() => nav('/admin/analytics/reports')}
-                class="btn bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
+                variant="ghost"
+                class="border border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
               >
-                📋 Reports
-              </button>
-              <button
+                <i class="i-heroicons-clipboard-document-list-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Reports
+              </Btn>
+              <Btn
                 onClick$={() => nav('/admin/analytics/dashboards/builder')}
-                class="btn bg-white text-purple-600 hover:bg-purple-50 shadow-lg"
+                class="bg-white text-purple-600 hover:bg-purple-50 shadow-lg"
               >
-                ➕ Create Dashboard
-              </button>
+                <i class="i-heroicons-plus-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Create Dashboard
+              </Btn>
             </div>
           </div>
 
@@ -190,56 +195,66 @@ export default component$(() => {
       </div>
 
       {/* Search and Filters */}
-      <div class="max-w-screen-2xl mx-auto px-6 py-6">
-        <div class="card bg-white dark:bg-gray-800 shadow-xl mb-6">
-          <div class="card-body">
+      <div class="container mx-auto px-4 py-6">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg mb-6">
+          <div class="p-6">
             <div class="flex flex-col lg:flex-row gap-4">
               {/* Search */}
               <div class="flex-1">
                 <div class="relative">
                   <input
                     type="text"
-                    placeholder="🔍 Search dashboards by name, description, or tags..."
+                    placeholder="Search dashboards by name, description, or tags..."
                     value={state.searchQuery}
                     onInput$={(e) => state.searchQuery = (e.target as HTMLInputElement).value}
-                    class="input input-bordered w-full pl-10 bg-gray-50 dark:bg-gray-700"
+                    class="w-full rounded-lg border border-color-border-primary bg-color-surface-secondary py-3 pl-10 pr-4 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
                   />
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xl">🔍</span>
+                  <i class="i-heroicons-magnifying-glass-solid absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" aria-hidden="true"></i>
                 </div>
               </div>
 
               {/* View Toggle */}
-              <div class="btn-group">
-                <button
-                  class={`btn ${state.viewMode === 'grid' ? 'btn-active btn-primary' : 'btn-ghost'}`}
+              <div class="flex gap-2">
+                <Btn
+                  variant={state.viewMode === 'grid' ? 'primary' : 'ghost'}
+                  size="sm"
                   onClick$={() => state.viewMode = 'grid'}
                 >
-                  ▦ Grid
-                </button>
-                <button
-                  class={`btn ${state.viewMode === 'list' ? 'btn-active btn-primary' : 'btn-ghost'}`}
+                  <i class="i-heroicons-squares-2x2-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Grid
+                </Btn>
+                <Btn
+                  variant={state.viewMode === 'list' ? 'primary' : 'ghost'}
+                  size="sm"
                   onClick$={() => state.viewMode = 'list'}
                 >
-                  ☰ List
-                </button>
+                  <i class="i-heroicons-list-bullet-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  List
+                </Btn>
               </div>
             </div>
 
             {/* Filter Pills */}
             <div class="flex flex-wrap gap-2 mt-4">
               {(['all', 'default'] as const).map((filter) => (
-                <button
+                <Btn
                   key={filter}
                   onClick$={() => state.selectedFilter = filter}
-                  class={`btn btn-sm ${
-                    state.selectedFilter === filter
-                      ? 'btn-primary'
-                      : 'btn-ghost'
-                  }`}
+                  size="sm"
+                  variant={state.selectedFilter === filter ? 'primary' : 'ghost'}
                 >
-                  {filter === 'all' ? '📊 All Dashboards' :
-                   '⭐ Default'}
-                </button>
+                  {filter === 'all' ? (
+                    <>
+                      <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                      All Dashboards
+                    </>
+                  ) : (
+                    <>
+                      <i class="i-heroicons-star-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                      Default
+                    </>
+                  )}
+                </Btn>
               ))}
             </div>
           </div>
@@ -247,8 +262,11 @@ export default component$(() => {
 
         {/* Error Alert */}
         {state.error && (
-          <div class="alert alert-error shadow-lg mb-6">
-            <span>⚠️ {state.error}</span>
+          <Alert variant="error" class="mb-6 shadow-lg">
+            <span class="flex items-center gap-2">
+              <i class="i-heroicons-exclamation-triangle-solid h-5 w-5 inline-block" aria-hidden="true"></i>
+              {state.error}
+            </span>
           </div>
         )}
 
@@ -264,9 +282,9 @@ export default component$(() => {
         {!state.loading && (
           <>
             {filteredDashboards.length === 0 ? (
-              <div class="card bg-white dark:bg-gray-800 shadow-xl">
-                <div class="card-body items-center text-center py-20">
-                  <div class="text-8xl mb-6 animate-bounce">📊</div>
+              <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                <div class="p-8 flex flex-col items-center text-center py-20">
+                  <i class="i-heroicons-chart-bar-solid mb-6 inline-block h-20 w-20 animate-bounce text-purple-500" aria-hidden="true"></i>
                   <h3 class="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-3">
                     {state.searchQuery || state.selectedFilter !== 'all'
                       ? 'No dashboards found'
@@ -278,13 +296,14 @@ export default component$(() => {
                       : 'Create your first dashboard to visualize and monitor your data'}
                   </p>
                   {!state.searchQuery && state.selectedFilter === 'all' && (
-                    <button
+                    <Btn
                       onClick$={() => nav('/admin/analytics/dashboards/builder')}
-                      class="btn btn-primary btn-lg gap-2 shadow-lg hover:shadow-xl transition-all"
+                      size="lg"
+                      class="gap-2 shadow-lg hover:shadow-xl transition-all"
                     >
-                      <span class="text-xl">➕</span>
+                      <i class="i-heroicons-plus-circle-solid h-5 w-5 inline-block" aria-hidden="true"></i>
                       Create Your First Dashboard
-                    </button>
+                    </Btn>
                   )}
                 </div>
               </div>
@@ -301,19 +320,19 @@ export default component$(() => {
                     onDragOver$={handleDragOver}
                     onDrop$={(e) => handleDrop(e, dashboard.id)}
                     onDragEnd$={handleDragEnd}
-                    class={`card bg-white dark:bg-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-move group ${
+                    class={`rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-move group ${
                       draggedItem.value === dashboard.id ? 'opacity-50 scale-95' : 'hover:scale-102'
                     }`}
                     onClick$={() => nav(`/admin/analytics/dashboards/view/${dashboard.id}`)}
                   >
                     {/* Card Header with Gradient */}
-                    <div class="h-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-t-2xl"></div>
+                    <div class="h-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-t-lg"></div>
 
-                    <div class="card-body">
+                    <div class="p-6">
                       <div class="flex items-start justify-between gap-3 mb-3">
                         <div class="flex-1">
-                          <h3 class="card-title text-lg flex items-center gap-2 group-hover:text-purple-600 transition-colors">
-                            <span class="text-2xl">📊</span>
+                          <h3 class="text-lg font-semibold flex items-center gap-2 group-hover:text-purple-600 transition-colors">
+                            <i class="i-heroicons-chart-bar-solid h-6 w-6 inline-block text-indigo-600" aria-hidden="true"></i>
                             <span class="line-clamp-1">{dashboard.name}</span>
                           </h3>
                           {dashboard.description && (
@@ -322,21 +341,27 @@ export default component$(() => {
                             </p>
                           )}
                         </div>
-                        <button
+                        <Btn
                           onClick$={(e) => toggleFavorite(dashboard.id, e)}
-                          class="btn btn-circle btn-ghost btn-sm text-xl hover:scale-110 transition-transform"
+                          variant="ghost"
+                          size="sm"
+                          class="rounded-full !p-2 text-xl hover:scale-110 transition-transform"
                         >
-                          {state.favorites.includes(dashboard.id) ? '⭐' : '☆'}
-                        </button>
+                          {state.favorites.includes(dashboard.id) ? (
+                            <i class="i-heroicons-star-solid h-5 w-5 inline-block text-amber-500" aria-hidden="true"></i>
+                          ) : (
+                            <i class="i-heroicons-star h-5 w-5 inline-block text-gray-500" aria-hidden="true"></i>
+                          )}
+                        </Btn>
                       </div>
 
                       {/* Widgets Info */}
                       {dashboard.widgets && dashboard.widgets.length > 0 && (
                         <div class="flex items-center gap-2 mb-3">
-                          <div class="badge badge-lg gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0">
-                            <span>🧩</span>
+                          <Badge variant="info" class="gap-2 px-3 py-1">
+                            <i class="i-heroicons-squares-plus-solid h-4 w-4 inline-block" aria-hidden="true"></i>
                             <span>{dashboard.widgets.length} widgets</span>
-                          </div>
+                          </Badge>
                         </div>
                       )}
 
@@ -344,10 +369,10 @@ export default component$(() => {
                       {dashboard.tags && dashboard.tags.length > 0 && (
                         <div class="flex flex-wrap gap-2 mb-3">
                           {dashboard.tags.slice(0, 3).map((tag) => (
-                            <span key={tag} class="badge badge-sm badge-outline">{tag}</span>
+                            <Badge key={tag} variant="neutral">{tag}</Badge>
                           ))}
                           {dashboard.tags.length > 3 && (
-                            <span class="badge badge-sm badge-ghost">+{dashboard.tags.length - 3} more</span>
+                            <Badge variant="neutral">+{dashboard.tags.length - 3} more</Badge>
                           )}
                         </div>
                       )}
@@ -355,32 +380,34 @@ export default component$(() => {
                       {/* Badges */}
                       <div class="flex flex-wrap gap-2 mb-3">
                         {dashboard.is_default && (
-                          <span class="badge badge-primary gap-1">
-                            <span>⭐</span>
+                          <Badge variant="info" class="gap-1">
+                            <i class="i-heroicons-star-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
                             <span>Default</span>
-                          </span>
+                          </Badge>
                         )}
                         {dashboard.is_public && (
-                          <span class="badge badge-success gap-1">
-                            <span>🌐</span>
+                          <Badge variant="success" class="gap-1">
+                            <i class="i-heroicons-globe-alt-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
                             <span>Public</span>
-                          </span>
+                          </Badge>
                         )}
                         {!dashboard.is_public && (
-                          <span class="badge badge-ghost gap-1">
-                            <span>🔒</span>
+                          <Badge variant="neutral" class="gap-1">
+                            <i class="i-heroicons-lock-closed-solid h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
                             <span>Private</span>
-                          </span>
+                          </Badge>
                         )}
                       </div>
 
                       {/* Footer */}
                       <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <span>
-                          📅 {new Date(dashboard.updated_at).toLocaleDateString()}
+                        <span class="flex items-center gap-1.5">
+                          <i class="i-heroicons-calendar-days-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                          {new Date(dashboard.updated_at).toLocaleDateString()}
                         </span>
                         <span class="text-purple-600 dark:text-purple-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                          View →
+                          View
+                          <i class="i-heroicons-arrow-right-solid ml-1 h-3.5 w-3.5 inline-block" aria-hidden="true"></i>
                         </span>
                       </div>
                     </div>

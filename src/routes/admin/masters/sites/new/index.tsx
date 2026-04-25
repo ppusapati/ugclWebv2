@@ -5,6 +5,7 @@ import { apiClient } from '~/services';
 import GeofenceMap from '~/components/geofence/GeofenceMap';
 import type { Geofence } from '~/utils/geofence';
 import { stringifyGeofence } from '~/utils/geofence';
+import { Alert, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 
 interface BusinessVertical {
   id: string;
@@ -109,62 +110,59 @@ export default component$(() => {
   });
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container mx-auto">
+    <div class="space-y-6 py-2">
         <div class="mb-6">
-          <button
-            onClick$={() => nav('/admin/masters/sites')}
-            class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
-          >
-            <span>←</span> Back to Sites
-          </button>
-          <h1 class="text-3xl font-bold text-dark-800">Create Site</h1>
-          <p class="text-dark-600 mt-2">Add a new site to the system</p>
+          <Btn variant="ghost" class="mb-4" onClick$={() => nav('/admin/masters/sites')}>
+            <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to Sites
+          </Btn>
+          <PageHeader title="Create Site" subtitle="Add a new site to the system" />
         </div>
 
-        <div class="card bg-white shadow-lg rounded-xl p-8">
+        <SectionCard class="p-8">
           <form onSubmit$={handleSubmit} preventdefault:submit>
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">
-                Site Name <span class="text-danger-500">*</span>
-              </label>
+            <FormField id="site-name" label="Site Name" required error={errors.value.name} class="mb-6">
               <input
+                id="site-name"
                 type="text"
                 value={formData.value.name}
                 onInput$={(e) => { formData.value = { ...formData.value, name: (e.target as HTMLInputElement).value }; }}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                required
+                aria-required="true"
+                aria-describedby={errors.value.name ? 'site-name-error' : ''}
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                 placeholder="e.g., Main Office"
               />
-              {errors.value.name && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.name}</p>}
-            </div>
+            </FormField>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">
-                Site Code <span class="text-danger-500">*</span>
-              </label>
+            <FormField id="site-code" label="Site Code" required error={errors.value.code} class="mb-6">
               <input
+                id="site-code"
                 type="text"
                 value={formData.value.code}
                 onInput$={(e) => { formData.value = { ...formData.value, code: (e.target as HTMLInputElement).value.toUpperCase() }; }}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg font-mono"
+                required
+                aria-required="true"
+                aria-describedby={errors.value.code ? 'site-code-error' : ''}
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg font-mono"
                 placeholder="e.g., main-office"
               />
-              {errors.value.code && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.code}</p>}
-            </div>
+            </FormField>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">
-                Business Vertical <span class="text-danger-500">*</span>
-              </label>
+            <FormField id="site-business-vertical" label="Business Vertical" required error={errors.value.businessVerticalId} class="mb-6">
               <select
+                id="site-business-vertical"
                 value={formData.value.businessVerticalId}
+                required
+                aria-required="true"
+                aria-describedby={errors.value.businessVerticalId ? 'site-business-vertical-error' : ''}
                 onChange$={(e) => {
                   formData.value = {
                     ...formData.value,
                     businessVerticalId: (e.target as HTMLSelectElement).value
                   };
                 }}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
               >
                 <option value="">Select Business Vertical</option>
                 {businessVerticals.value.map((bv) => (
@@ -173,60 +171,55 @@ export default component$(() => {
                   </option>
                 ))}
               </select>
-              {errors.value.business_vertical_id && (
-                <p class="form-error text-danger-600 text-sm mt-1">
-                  {errors.value.business_vertical_id}
-                </p>
-              )}
-            </div>
+            </FormField>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">Description</label>
+            <FormField id="site-description" label="Description" class="mb-6">
               <textarea
+                id="site-description"
                 value={formData.value.description}
                 onInput$={(e) => { formData.value = { ...formData.value, description: (e.target as HTMLTextAreaElement).value }; }}
                 rows={4}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                 placeholder="Brief description of this site"
               ></textarea>
-            </div>
+            </FormField>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div class="form-group">
-                <label class="form-label text-dark-700 font-semibold mb-2">Latitude</label>
+              <FormField id="site-latitude" label="Latitude" error={errors.value.latitude}>
                 <input
+                  id="site-latitude"
                   type="text"
                   value={formData.value.latitude}
                   onInput$={(e) => { formData.value = { ...formData.value, latitude: (e.target as HTMLInputElement).value }; }}
-                  class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                  aria-describedby={errors.value.latitude ? 'site-latitude-error' : ''}
+                  class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   placeholder="e.g., 28.6139"
                 />
-                {errors.value.latitude && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.latitude}</p>}
-              </div>
+              </FormField>
 
-              <div class="form-group">
-                <label class="form-label text-dark-700 font-semibold mb-2">Longitude</label>
+              <FormField id="site-longitude" label="Longitude" error={errors.value.longitude}>
                 <input
+                  id="site-longitude"
                   type="text"
                   value={formData.value.longitude}
                   onInput$={(e) => { formData.value = { ...formData.value, longitude: (e.target as HTMLInputElement).value }; }}
-                  class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                  aria-describedby={errors.value.longitude ? 'site-longitude-error' : ''}
+                  class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   placeholder="e.g., 77.2090"
                 />
-                {errors.value.longitude && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.longitude}</p>}
-              </div>
+              </FormField>
             </div>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">Address</label>
+            <FormField id="site-address" label="Address" class="mb-6">
               <textarea
+                id="site-address"
                 value={formData.value.address}
                 onInput$={(e) => { formData.value = { ...formData.value, address: (e.target as HTMLTextAreaElement).value }; }}
                 rows={3}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                 placeholder="Full address of the site"
               ></textarea>
-            </div>
+            </FormField>
 
             <div class="form-group mb-6">
               <label class="flex items-center cursor-pointer">
@@ -236,26 +229,26 @@ export default component$(() => {
                   onChange$={(e) => { formData.value = { ...formData.value, is_active: (e.target as HTMLInputElement).checked }; }}
                   class="form-checkbox mr-3"
                 />
-                <span class="text-dark-700 font-medium">Active</span>
+                <span class="text-neutral-700 font-medium">Active</span>
               </label>
             </div>
 
             {/* Geofencing Section */}
-            <div class="form-group mb-6 border-t border-light-300 pt-6">
+            <div class="form-group mb-6 border-t border-neutral-300 pt-6">
               <div class="flex items-center justify-between mb-4">
                 <div>
-                  <label class="form-label text-dark-700 font-semibold mb-1">
+                  <label class="form-label text-neutral-700 font-semibold mb-1">
                     Geofencing (Optional)
                   </label>
-                  <p class="text-sm text-dark-600">Define the geographical boundary for this site</p>
+                  <p class="text-sm text-neutral-600">Define the geographical boundary for this site</p>
                 </div>
-                <button
+                <Btn
                   type="button"
                   onClick$={() => { showGeofenceSection.value = !showGeofenceSection.value; }}
-                  class="btn btn-secondary px-4 py-2"
+                  variant="secondary"
                 >
                   {showGeofenceSection.value ? 'Hide Map' : 'Show Map'}
-                </button>
+                </Btn>
               </div>
 
               {showGeofenceSection.value && (
@@ -274,8 +267,9 @@ export default component$(() => {
                   />
                   {geofence.value && geofence.value.coordinates.length > 0 && (
                     <div class="mt-3 bg-success-50 border border-success-200 rounded-lg p-3">
-                      <p class="text-success-800 text-sm">
-                        ✓ Geofence defined with {geofence.value.coordinates.length} points
+                      <p class="text-success-800 text-sm inline-flex items-center gap-1">
+                        <i class="i-heroicons-check-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                        Geofence defined with {geofence.value.coordinates.length} points
                       </p>
                     </div>
                   )}
@@ -284,22 +278,21 @@ export default component$(() => {
             </div>
 
             {errors.value.submit && (
-              <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-                <p class="text-danger-800">{errors.value.submit}</p>
-              </div>
+              <Alert variant="error" class="mb-6 border-l-4">
+                <p class="text-error-800">{errors.value.submit}</p>
+              </Alert>
             )}
 
             <div class="flex gap-4 flex-col sm:flex-row">
-              <button type="submit" disabled={loading.value} class="btn btn-primary flex-1 py-3 text-lg rounded-lg disabled:opacity-50">
+              <Btn type="submit" disabled={loading.value} class="flex-1 py-3 text-lg rounded-lg">
                 {loading.value ? 'Creating...' : 'Create Site'}
-              </button>
-              <button type="button" onClick$={() => nav('/admin/masters/sites')} class="btn btn-secondary flex-1 py-3 text-lg rounded-lg">
+              </Btn>
+              <Btn type="button" variant="secondary" onClick$={() => nav('/admin/masters/sites')} class="flex-1 py-3 text-lg rounded-lg">
                 Cancel
-              </button>
+              </Btn>
             </div>
           </form>
-        </div>
-      </div>
+        </SectionCard>
     </div>
   );
 });

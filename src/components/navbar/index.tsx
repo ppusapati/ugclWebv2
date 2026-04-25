@@ -41,7 +41,7 @@ export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() =
   });
 
   return (
-    <header class="sticky top-0 z-30 w-full bg-white dark:bg-dark-900 shadow-sm h-16 flex items-center gap-4 border-b border-light-200 dark:border-dark-700">
+    <header class="sticky top-0 z-30 w-full bg-white dark:bg-neutral-900 shadow-sm h-16 flex items-center gap-4 border-b border-neutral-200 dark:border-neutral-700">
       {/* Collapse button */}
       <span
         title="Toggle Sidebar"
@@ -49,7 +49,7 @@ export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() =
           props.collapsed
             ? 'i-tabler-layout-sidebar-right-collapse-filled'
             : 'i-tabler-layout-sidebar-left-collapse-filled',
-          'w-8 h-8 ml-2 mt-2 p-2 hover:bg-dark-500 dark:text-white cursor-pointer transition-colors'
+          'w-8 h-8 ml-2 mt-2 p-2 hover:bg-neutral-500 dark:text-white cursor-pointer transition-colors'
         ].join(' ')}
         onClick$={props.onToggle$}
       />
@@ -63,7 +63,7 @@ export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() =
               id="search-input"
               type="text"
               placeholder="Search or type command..."
-              class="h-11 w-full rounded-lg border border-gray-200 bg-transparent pl-11 pr-14 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:outline-none dark:border-gray-800 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/40"
+              class="h-11 w-full rounded-lg border border-gray-200 bg-transparent pl-11 pr-14 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:outline-none dark:border-gray-800 dark:bg-neutral-900 dark:text-white dark:placeholder:text-white/40"
               style="line-height: 1.25;"
             />
             <button
@@ -85,7 +85,7 @@ export const DashboardNavbar = component$((props: { onToggle$: PropFunction<() =
         ]} />
 
       {/* Logout and user */}
-      <span class="i-tabler-logout w-6 h-6 relative hover:bg-dark-500 dark:hover:bg-dark-700 p-2 rounded-full transition"
+      <span class="i-tabler-logout w-6 h-6 relative hover:bg-neutral-500 dark:hover:bg-neutral-700 p-2 rounded-full transition"
         onClick$={handleLogout}>
         Logout
       </span>

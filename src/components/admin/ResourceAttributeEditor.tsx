@@ -1,4 +1,5 @@
 import { component$, useSignal, useStore, $, PropFunction } from '@builder.io/qwik';
+import { Badge, Btn, FormField } from '~/components/ds';
 import { apiClient, resourceAttributeService } from '~/services';
 
 interface Attribute {
@@ -123,18 +124,18 @@ export const ResourceAttributeEditor = component$<ResourceAttributeEditorProps>(
         {/* Header */}
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">Resource Attributes</h3>
-          <button
+          <Btn
             type="button"
             onClick$={() => {
               loadData();
               showAssignModal.value = true;
             }}
-            class="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+            size="sm"
             disabled={loading.value}
           >
             <span class="i-heroicons-plus mr-1"></span>
             Add Attribute
-          </button>
+          </Btn>
         </div>
 
         {/* Alerts */}
@@ -172,19 +173,21 @@ export const ResourceAttributeEditor = component$<ResourceAttributeEditorProps>(
                       <div class="text-xs text-gray-500 mt-0.5">
                         <span class="font-mono">{name}</span>
                         <span class="mx-2">•</span>
-                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                        <Badge variant="info">
                           {value}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
-                    <button
+                      <Btn
                       type="button"
+                        size="sm"
+                        variant="danger"
                       onClick$={() => attribute && handleRemoveAttribute(attribute.id)}
-                      class="text-red-600 hover:text-red-800 transition-colors ml-2"
+                        class="text-red-600 hover:text-red-800 transition-colors ml-2"
                       disabled={loading.value}
                     >
                       <span class="i-heroicons-trash text-sm"></span>
-                    </button>
+                      </Btn>
                   </div>
                 );
               })}
@@ -204,21 +207,20 @@ export const ResourceAttributeEditor = component$<ResourceAttributeEditorProps>(
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
               <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900">Assign Attribute</h3>
-                <button
+                <Btn
                   type="button"
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => showAssignModal.value = false}
                   class="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <span class="i-heroicons-x-mark text-xl"></span>
-                </button>
+                </Btn>
               </div>
 
               <form preventdefault:submit onSubmit$={handleAssignAttribute} class="p-4 space-y-3">
                 {/* Attribute Selection */}
-                <div>
-                  <label for={`attr-${resourceId}`} class="block text-sm font-medium text-gray-700 mb-1">
-                    Attribute *
-                  </label>
+                <FormField id={`attr-${resourceId}`} label="Attribute" required>
                   <select
                     id={`attr-${resourceId}`}
                     value={assignForm.attribute_id}
@@ -238,13 +240,10 @@ export const ResourceAttributeEditor = component$<ResourceAttributeEditorProps>(
                         </option>
                       ))}
                   </select>
-                </div>
+                </FormField>
 
                 {/* Value Input */}
-                <div>
-                  <label for={`value-${resourceId}`} class="block text-sm font-medium text-gray-700 mb-1">
-                    Value *
-                  </label>
+                <FormField id={`value-${resourceId}`} label="Value" required>
                   <input
                     id={`value-${resourceId}`}
                     type="text"
@@ -254,13 +253,10 @@ export const ResourceAttributeEditor = component$<ResourceAttributeEditorProps>(
                     placeholder="Enter value..."
                     required
                   />
-                </div>
+                </FormField>
 
                 {/* Valid Until */}
-                <div>
-                  <label for={`valid-${resourceId}`} class="block text-sm font-medium text-gray-700 mb-1">
-                    Valid Until (Optional)
-                  </label>
+                <FormField id={`valid-${resourceId}`} label="Valid Until (Optional)">
                   <input
                     id={`valid-${resourceId}`}
                     type="datetime-local"
@@ -268,24 +264,25 @@ export const ResourceAttributeEditor = component$<ResourceAttributeEditorProps>(
                     onInput$={(e) => assignForm.valid_until = (e.target as HTMLInputElement).value}
                     class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
-                </div>
+                </FormField>
 
                 {/* Actions */}
                 <div class="flex justify-end space-x-2 pt-2">
-                  <button
+                  <Btn
                     type="button"
                     onClick$={() => showAssignModal.value = false}
-                    class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                    variant="secondary"
+                    size="sm"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Btn>
+                  <Btn
                     type="submit"
-                    class="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+                    size="sm"
                     disabled={loading.value}
                   >
                     {loading.value ? 'Assigning...' : 'Assign'}
-                  </button>
+                  </Btn>
                 </div>
               </form>
             </div>

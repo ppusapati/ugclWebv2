@@ -2,6 +2,7 @@
 import { component$, useStore, useSignal, useTask$, $, isServer } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { apiClient } from '~/services';
+import { Badge, Btn, FormField } from '~/components/ds';
 
 interface Policy {
   id: string;
@@ -208,22 +209,22 @@ export default component$(() => {
     return (
       <div class="min-h-screen flex items-center justify-center">
         <div class="text-center">
-          <div class="text-6xl text-red-500 mb-4">⚠️</div>
+          <i class="i-heroicons-exclamation-triangle-solid h-16 w-16 inline-block text-red-500 mb-4" aria-hidden="true"></i>
           <h2 class="text-2xl font-bold text-gray-900 mb-2">Error</h2>
           <p class="text-gray-600 mb-6">{error.value}</p>
-          <button
+          <Btn
             onClick$={() => nav('/admin/policies')}
-            class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            class="rounded-lg"
           >
             Back to Policies
-          </button>
+          </Btn>
         </div>
       </div>
     );
   }
 
   return (
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div class="space-y-6">
       {/* Header */}
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -261,16 +262,14 @@ export default component$(() => {
       {/* Policy Info */}
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div class="flex items-start gap-3">
-          <div class="text-blue-600 text-2xl">ℹ️</div>
+          <i class="i-heroicons-information-circle-solid h-6 w-6 inline-block text-blue-600" aria-hidden="true"></i>
           <div class="flex-1">
             <h3 class="font-semibold text-blue-900">About This Policy</h3>
             <p class="text-sm text-blue-800 mt-1">{policy.value?.description}</p>
             <div class="flex gap-4 mt-2 text-sm">
-              <span class={`px-2 py-1 rounded-full font-semibold ${
-                policy.value?.effect === 'ALLOW' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
+              <Badge variant={policy.value?.effect === 'ALLOW' ? 'success' : 'error'}>
                 {policy.value?.effect}
-              </span>
+              </Badge>
               <span class="text-blue-700">Status: <strong>{policy.value?.status}</strong></span>
             </div>
           </div>
@@ -294,20 +293,20 @@ export default component$(() => {
             <div class="space-y-3">
               <h3 class="text-sm font-semibold text-gray-700 uppercase">Subject</h3>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Subject ID</label>
+              <FormField id="policy-test-subject-id" label="Subject ID">
                 <input
+                  id="policy-test-subject-id"
                   type="text"
                   value={testRequest.subject.id}
                   onInput$={(e) => testRequest.subject.id = (e.target as HTMLInputElement).value}
                   placeholder="e.g., user-123"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Subject Type</label>
+              <FormField id="policy-test-subject-type" label="Subject Type">
                 <select
+                  id="policy-test-subject-type"
                   value={testRequest.subject.type}
                   onChange$={(e) => testRequest.subject.type = (e.target as HTMLSelectElement).value}
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -317,73 +316,77 @@ export default component$(() => {
                   <option value="group">Group</option>
                   <option value="role">Role</option>
                 </select>
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Subject Attributes (JSON)</label>
+              <FormField id="policy-test-subject-attributes" label="Subject Attributes (JSON)" hint="Optional: Add custom attributes as JSON">
                 <textarea
+                  id="policy-test-subject-attributes"
                   value={subjectAttributesJson.value}
                   onInput$={(e) => subjectAttributesJson.value = (e.target as HTMLTextAreaElement).value}
                   rows={4}
                   placeholder='{"department": "engineering", "role": "developer"}'
+                  aria-describedby="policy-test-subject-attributes-hint"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500"
                 ></textarea>
-                <p class="text-xs text-gray-500 mt-1">Optional: Add custom attributes as JSON</p>
-              </div>
+              </FormField>
             </div>
 
             {/* Action & Resource */}
             <div class="space-y-3 pt-4 border-t border-gray-200">
               <h3 class="text-sm font-semibold text-gray-700 uppercase">Action & Resource</h3>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Action *</label>
+              <FormField id="policy-test-action" label="Action" required>
                 <input
+                  id="policy-test-action"
                   type="text"
                   value={testRequest.action}
                   onInput$={(e) => testRequest.action = (e.target as HTMLInputElement).value}
                   placeholder="e.g., read, write, delete, approve"
+                  required
+                  aria-required="true"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Resource *</label>
+              <FormField id="policy-test-resource" label="Resource" required>
                 <input
+                  id="policy-test-resource"
                   type="text"
                   value={testRequest.resource}
                   onInput$={(e) => testRequest.resource = (e.target as HTMLInputElement).value}
                   placeholder="e.g., project:123, report:*, expense:456"
+                  required
+                  aria-required="true"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
-              </div>
+              </FormField>
             </div>
 
             {/* Context */}
             <div class="space-y-3 pt-4 border-t border-gray-200">
               <h3 class="text-sm font-semibold text-gray-700 uppercase">Context (Optional)</h3>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Context (JSON)</label>
+              <FormField id="policy-test-context" label="Context (JSON)" hint="Optional: Add environmental context as JSON">
                 <textarea
+                  id="policy-test-context"
                   value={contextJson.value}
                   onInput$={(e) => contextJson.value = (e.target as HTMLTextAreaElement).value}
                   rows={5}
                   placeholder='{"time": {"hour": 14}, "ip_address": "192.168.1.1"}'
+                  aria-describedby="policy-test-context-hint"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500"
                 ></textarea>
-                <p class="text-xs text-gray-500 mt-1">Optional: Add environmental context as JSON</p>
-              </div>
+              </FormField>
             </div>
 
             {/* Run Test Button */}
-            <button
+            <Btn
               onClick$={runTest}
               disabled={testing.value}
-              class="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg font-semibold"
             >
               {testing.value ? 'Running Test...' : 'Run Test'}
-            </button>
+            </Btn>
           </div>
         </div>
 
@@ -394,7 +397,7 @@ export default component$(() => {
 
             {!testResult.value ? (
               <div class="text-center py-12 text-gray-500">
-                <div class="text-6xl mb-4">🧪</div>
+                <i class="i-heroicons-beaker-solid h-16 w-16 inline-block mb-4" aria-hidden="true"></i>
                 <p>No test results yet</p>
                 <p class="text-sm mt-2">Fill in the test configuration and click "Run Test"</p>
               </div>
@@ -406,8 +409,11 @@ export default component$(() => {
                     ? 'bg-green-50 border-2 border-green-500'
                     : 'bg-red-50 border-2 border-red-500'
                 }`}>
-                  <div class="text-6xl mb-2">
-                    {testResult.value.result === 'ALLOW' ? '✅' : '❌'}
+                  <div class="mb-2">
+                    <i
+                      class={`${testResult.value.result === 'ALLOW' ? 'i-heroicons-check-circle-solid text-green-600' : 'i-heroicons-x-circle-solid text-red-600'} h-16 w-16 inline-block`}
+                      aria-hidden="true"
+                    ></i>
                   </div>
                   <div class={`text-3xl font-bold ${
                     testResult.value.result === 'ALLOW' ? 'text-green-800' : 'text-red-800'
@@ -450,13 +456,9 @@ export default component$(() => {
                           <div class="text-sm font-medium text-gray-900">{matchedPolicy.name}</div>
                           <div class="text-xs text-gray-600">Priority: {matchedPolicy.priority}</div>
                         </div>
-                        <span class={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          matchedPolicy.effect === 'ALLOW'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <Badge variant={matchedPolicy.effect === 'ALLOW' ? 'success' : 'error'}>
                           {matchedPolicy.effect}
-                        </span>
+                        </Badge>
                       </div>
                     ))}
                   </div>

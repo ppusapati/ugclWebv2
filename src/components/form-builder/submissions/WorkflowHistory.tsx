@@ -62,7 +62,7 @@ export default component$<WorkflowHistoryProps>((props) => {
                       <span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
                         {transition.from_state}
                       </span>
-                      <span class="text-gray-400">→</span>
+                      <i class="i-heroicons-arrow-right-solid h-3.5 w-3.5 inline-block text-gray-400" aria-hidden="true"></i>
                       <span
                         class={`px-2 py-1 text-xs rounded text-white ${
                           transition.to_state === 'approved'

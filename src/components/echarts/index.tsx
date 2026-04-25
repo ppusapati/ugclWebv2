@@ -3,7 +3,7 @@ import { component$, useVisibleTask$, useSignal, type PropFunction } from '@buil
 
 export interface EChartProps {
   option: any;
-  style?: string;
+  class?: string;
   onClick?: PropFunction<() => void>;
 }
 
@@ -26,6 +26,6 @@ export const EChart = component$((props: EChartProps) => {
   });
 
   return (
-    <div ref={chartRef} style={props.style ?? "width:100%;height:320px;"} />
+    <div ref={chartRef} class={props.class || 'w-full h-80'} />
   );
 });

@@ -3,6 +3,7 @@ import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { reportService, getReportConfig } from '~/services';
 import type { ReportKey, ReportType } from '~/services';
+import { Alert, Btn, SectionCard, StatCard } from '~/components/ds';
 
 interface ReportListProps {
   reportType: ReportKey;
@@ -70,140 +71,146 @@ export const ReportList = component$<ReportListProps>(({ reportType, businessCod
 
   if (loading.value) {
     return (
-      <div class="min-h-screen bg-light-50 flex items-center justify-center">
+      <div class="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div class="text-center">
-          <div class="animate-spin text-4xl text-primary-500 mb-4">⏳</div>
-          <p class="text-dark-600">Loading {config.displayName.toLowerCase()}...</p>
+          <i class="i-heroicons-arrow-path-solid animate-spin mb-4 inline-block h-10 w-10 text-primary-500" aria-hidden="true"></i>
+          <p class="text-neutral-600">Loading {config.displayName.toLowerCase()}...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
+    <div class="min-h-screen bg-neutral-50 py-8 px-4">
       <div class="container-lg mx-auto">
         {/* Header */}
         <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
           <div>
-            <h1 class="text-3xl font-bold text-dark-800 flex items-center gap-3">
-              <span class="text-4xl">{config.icon}</span>
+            <h1 class="text-3xl font-bold text-neutral-800 flex items-center gap-3">
+              <i class={`${config.icon} h-10 w-10 inline-block text-primary-600`} aria-hidden="true"></i>
               {config.displayName}
             </h1>
-            <p class="text-dark-600 mt-2">{config.description}</p>
+            <p class="text-neutral-600 mt-2">{config.description}</p>
           </div>
           <div class="flex gap-3">
-            <button onClick$={handleExport} class="btn-success px-6 py-3 rounded-lg font-semibold">
+            <Btn onClick$={handleExport} variant="secondary">
               Export CSV
-            </button>
-            <button
+            </Btn>
+            <Btn
               onClick$={() => nav(`/reports/${reportType}/new`)}
-              class="btn-primary px-6 py-3 rounded-lg font-semibold"
+              variant="primary"
             >
               + Create Report
-            </button>
+            </Btn>
           </div>
         </div>
 
         {/* Error Alert */}
         {error.value && (
-          <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-            <p class="text-danger-800">{error.value}</p>
-          </div>
+          <Alert variant="error" class="mb-6 border-l-4">
+            <p class="text-error-800">{error.value}</p>
+          </Alert>
         )}
 
         {/* Search Bar */}
-        <div class="card bg-white shadow rounded-xl p-6 mb-6">
+        <SectionCard class="mb-6">
           <div class="flex gap-4">
             <input
               type="text"
               value={searchQuery.value}
               onInput$={(e) => { searchQuery.value = (e.target as HTMLInputElement).value; }}
               onKeyPress$={async (e) => { if (e.key === 'Enter') await loadReports(); }}
-              class="form-input flex-1 px-4 py-3 border border-light-300 rounded-lg"
+              class="form-input flex-1 px-4 py-3 border border-neutral-300 rounded-lg"
               placeholder="Search reports..."
             />
-            <button onClick$={loadReports} class="btn-primary px-6 py-3 rounded-lg">
+            <Btn onClick$={loadReports} variant="primary">
               Search
-            </button>
+            </Btn>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Stats */}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="card bg-white shadow rounded-lg p-6">
-            <div class="text-sm text-dark-600">Total Reports</div>
+          <StatCard class="p-6">
+            <div class="text-sm text-neutral-600">Total Reports</div>
             <div class="text-3xl font-bold text-primary-600 mt-2">{reports.value.length}</div>
-          </div>
+          </StatCard>
         </div>
 
         {/* Reports Table */}
-        <div class="card bg-white shadow-lg rounded-xl p-6">
+        <SectionCard>
           {reports.value.length === 0 ? (
             <div class="text-center py-12">
-              <div class="text-6xl text-light-300 mb-4">{config.icon}</div>
-              <h3 class="text-xl font-semibold text-dark-800 mb-2">No Reports Yet</h3>
-              <p class="text-dark-600 mb-6">Create your first {config.displayName.toLowerCase()}</p>
-              <button
+              <i class={`${config.icon} mb-4 inline-block h-16 w-16 text-neutral-300`} aria-hidden="true"></i>
+              <h3 class="text-xl font-semibold text-neutral-800 mb-2">No Reports Yet</h3>
+              <p class="text-neutral-600 mb-6">Create your first {config.displayName.toLowerCase()}</p>
+              <Btn
                 onClick$={() => nav(`/reports/${reportType}/new`)}
-                class="btn-primary px-6 py-3 rounded-lg"
+                variant="primary"
               >
                 Create Report
-              </button>
+              </Btn>
             </div>
           ) : (
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-light-200">
-                <thead class="bg-light-50">
+                <thead class="bg-neutral-50">
                   <tr>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">ID</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">ID</th>
                     {config.fields.slice(0, 4).map((field: any) => (
-                      <th key={field.name} class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">
+                      <th key={field.name} class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">
                         {field.label}
                       </th>
                     ))}
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Created</th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-dark-700 uppercase">Actions</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Created</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-neutral-700 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-light-200">
                   {reports.value.map((report: any) => (
-                    <tr key={report.id} class="hover:bg-light-50 transition">
-                      <td class="px-6 py-4 text-sm font-mono text-dark-600">
+                    <tr key={report.id} class="hover:bg-neutral-50 transition">
+                      <td class="px-6 py-4 text-sm font-mono text-neutral-600">
                         {report.id.slice(0, 8)}...
                       </td>
                       {config.fields.slice(0, 4).map((field: any) => (
-                        <td key={field.name} class="px-6 py-4 text-sm text-dark-800">
+                        <td key={field.name} class="px-6 py-4 text-sm text-neutral-800">
                           {field.type === 'date' && report[field.name]
                             ? new Date(report[field.name]).toLocaleDateString()
                             : String(report[field.name] || '-')}
                         </td>
                       ))}
-                      <td class="px-6 py-4 text-sm text-dark-600">
+                      <td class="px-6 py-4 text-sm text-neutral-600">
                         {report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}
                       </td>
                       <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                          <button
+                          <Btn
+                            size="sm"
+                            variant="ghost"
                             onClick$={() => nav(`/reports/${reportType}/${report.id}`)}
-                            class="text-info-600 hover:text-info-700 px-3 py-1 text-sm"
+                            class="text-info-600 hover:text-info-700"
                             title="View"
                           >
                             View
-                          </button>
-                          <button
+                          </Btn>
+                          <Btn
+                            size="sm"
+                            variant="secondary"
                             onClick$={() => nav(`/reports/${reportType}/${report.id}/edit`)}
-                            class="text-primary-600 hover:text-primary-700 px-3 py-1 text-sm"
+                            class="text-primary-600 hover:text-primary-700"
                             title="Edit"
                           >
                             Edit
-                          </button>
-                          <button
+                          </Btn>
+                          <Btn
+                            size="sm"
+                            variant="danger"
                             onClick$={() => handleDelete(report.id)}
-                            class="text-danger-600 hover:text-danger-700 px-3 py-1 text-sm"
+                            class="text-error-600 hover:text-error-700"
                             title="Delete"
                           >
                             Delete
-                          </button>
+                          </Btn>
                         </div>
                       </td>
                     </tr>
@@ -212,7 +219,7 @@ export const ReportList = component$<ReportListProps>(({ reportType, businessCod
               </table>
             </div>
           )}
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

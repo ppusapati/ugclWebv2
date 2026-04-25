@@ -1,5 +1,6 @@
 // src/components/auth/user-role-assignment.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
+import { Btn } from '~/components/ds/btn';
 import { authService, type User, type BusinessVertical } from '~/services/auth.service';
 import { buildApiUrl } from '~/config/api';
 
@@ -186,12 +187,11 @@ export const UserRoleAssignment = component$(() => {
               state.searchTerm = (e.target as HTMLInputElement).value;
             }}
           />
-          <button
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          <Btn
             onClick$={() => { state.showAssignModal = true; }}
           >
             Assign Roles
-          </button>
+          </Btn>
         </div>
       </div>
 
@@ -390,8 +390,8 @@ export const UserRoleAssignment = component$(() => {
               </div>
 
               <div class="flex justify-end space-x-3 mt-6">
-                <button
-                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                <Btn
+                  variant="secondary"
                   onClick$={() => {
                     state.showAssignModal = false;
                     state.selectedUser = null;
@@ -400,13 +400,12 @@ export const UserRoleAssignment = component$(() => {
                   }}
                 >
                   Cancel
-                </button>
-                <button
-                  class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                </Btn>
+                <Btn
                   onClick$={handleAssignRoles}
                 >
                   Assign Roles
-                </button>
+                </Btn>
               </div>
             </div>
           </div>

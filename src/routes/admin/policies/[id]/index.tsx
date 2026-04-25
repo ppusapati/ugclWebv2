@@ -2,6 +2,7 @@
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
 import { apiClient, createSSRApiClient } from '~/services';
+import { Badge, Btn, TabBar } from '~/components/ds';
 
 interface Policy {
   id: string;
@@ -153,15 +154,15 @@ export default component$(() => {
     return (
       <div class="min-h-screen flex items-center justify-center">
         <div class="text-center">
-          <div class="text-6xl text-red-500 mb-4">⚠️</div>
+          <i class="i-heroicons-exclamation-triangle-solid h-16 w-16 inline-block text-red-500 mb-4" aria-hidden="true"></i>
           <h2 class="text-2xl font-bold text-gray-900 mb-2">Error</h2>
           <p class="text-gray-600 mb-6">{error.value || 'Policy not found'}</p>
-          <button
+          <Btn
             onClick$={() => nav('/admin/policies')}
-            class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            class="rounded-lg"
           >
             Back to Policies
-          </button>
+          </Btn>
         </div>
       </div>
     );
@@ -182,21 +183,18 @@ export default component$(() => {
               </svg>
             </button>
             <h1 class="text-3xl font-bold text-gray-900">{policy.value.display_name}</h1>
-            <span class={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-              policy.value.status === 'active' ? 'bg-green-100 text-green-800' :
-              policy.value.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-              policy.value.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <Badge variant={
+              policy.value.status === 'active'
+                ? 'success'
+                : policy.value.status === 'draft'
+                  ? 'warning'
+                  : 'neutral'
+            } class="px-3 py-1 text-sm">
               {policy.value.status.toUpperCase()}
-            </span>
-            <span class={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-              policy.value.effect === 'ALLOW'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
+            </Badge>
+            <Badge variant={policy.value.effect === 'ALLOW' ? 'success' : 'error'} class="px-3 py-1 text-sm">
               {policy.value.effect}
-            </span>
+            </Badge>
           </div>
           <p class="text-gray-600">{policy.value.description}</p>
           <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
@@ -210,66 +208,58 @@ export default component$(() => {
 
         {/* Actions */}
         <div class="flex gap-2">
-          <button
+          <Btn
             onClick$={() => nav(`/admin/policies/${policyId}/test`)}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            class="rounded-lg"
           >
             Test Policy
-          </button>
-          <button
+          </Btn>
+          <Btn
             onClick$={() => nav(`/admin/policies/${policyId}/edit`)}
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            variant="secondary"
+            class="rounded-lg"
           >
             Edit
-          </button>
+          </Btn>
           {policy.value.status === 'active' ? (
-            <button
+            <Btn
               onClick$={deactivatePolicy}
-              class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              variant="secondary"
+              class="rounded-lg"
             >
               Deactivate
-            </button>
+            </Btn>
           ) : (
-            <button
+            <Btn
               onClick$={activatePolicy}
-              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              class="rounded-lg"
             >
               Activate
-            </button>
+            </Btn>
           )}
-          <button
+          <Btn
             onClick$={deletePolicy}
-            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            variant="danger"
+            class="rounded-lg"
           >
             Delete
-          </button>
+          </Btn>
         </div>
       </div>
 
       {/* Tabs */}
-      <div class="border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8">
-          {[
-            { id: 'details', label: 'Details', icon: '📋' },
-            { id: 'conditions', label: 'Conditions & Rules', icon: '🔧' },
-            { id: 'evaluations', label: 'Recent Evaluations', icon: '📊' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick$={() => activeTab.value = tab.id as any}
-              class={`
-                py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${activeTab.value === tab.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
-            >
-              <span class="mr-2">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      <div class="border-b border-gray-200 pb-4">
+        <TabBar
+          items={[
+            { key: 'details', label: 'Details' },
+            { key: 'conditions', label: 'Conditions & Rules' },
+            { key: 'evaluations', label: 'Recent Evaluations' },
+          ]}
+          activeKey={activeTab.value}
+          onTabChange$={(key) => {
+            activeTab.value = key as 'details' | 'conditions' | 'evaluations';
+          }}
+        />
       </div>
 
       {/* Tab Content */}
@@ -312,13 +302,9 @@ export default component$(() => {
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Effect</label>
                   <p class="mt-1">
-                    <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      policy.value.effect === 'ALLOW'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <Badge variant={policy.value.effect === 'ALLOW' ? 'success' : 'error'}>
                       {policy.value.effect}
-                    </span>
+                    </Badge>
                   </p>
                 </div>
 
@@ -330,14 +316,15 @@ export default component$(() => {
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Status</label>
                   <p class="mt-1">
-                    <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      policy.value.status === 'active' ? 'bg-green-100 text-green-800' :
-                      policy.value.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                      policy.value.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <Badge variant={
+                      policy.value.status === 'active'
+                        ? 'success'
+                        : policy.value.status === 'draft'
+                          ? 'warning'
+                          : 'neutral'
+                    }>
                       {policy.value.status.toUpperCase()}
-                    </span>
+                    </Badge>
                   </p>
                 </div>
 
@@ -354,9 +341,9 @@ export default component$(() => {
               <div class="flex flex-wrap gap-2">
                 {policy.value.resources && policy.value.resources.length > 0 ? (
                   policy.value.resources.map((resource, idx) => (
-                    <span key={idx} class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    <Badge key={idx} variant="info" class="px-3 py-1 text-sm">
                       {resource}
-                    </span>
+                    </Badge>
                   ))
                 ) : (
                   <p class="text-sm text-gray-500">No resources defined</p>
@@ -370,9 +357,9 @@ export default component$(() => {
               <div class="flex flex-wrap gap-2">
                 {policy.value.actions && policy.value.actions.length > 0 ? (
                   policy.value.actions.map((action, idx) => (
-                    <span key={idx} class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                    <Badge key={idx} variant="info" class="px-3 py-1 text-sm">
                       {action}
-                    </span>
+                    </Badge>
                   ))
                 ) : (
                   <p class="text-sm text-gray-500">No actions defined</p>
@@ -514,12 +501,12 @@ export default component$(() => {
               <div class="text-center py-8 text-gray-500">
                 <p>No evaluations recorded yet</p>
                 <p class="text-sm mt-2">Test this policy to see evaluation results</p>
-                <button
+                <Btn
                   onClick$={() => nav(`/admin/policies/${policyId}/test`)}
-                  class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  class="mt-4 rounded-lg"
                 >
                   Test Policy
-                </button>
+                </Btn>
               </div>
             )}
           </div>

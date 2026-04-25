@@ -4,6 +4,7 @@
  */
 
 import { component$, type QRL } from '@builder.io/qwik';
+import { Badge, Btn, SectionCard } from '~/components/ds';
 import type { Task } from '../../types/project';
 
 export interface TaskCardProps {
@@ -46,7 +47,7 @@ export const TaskCard = component$<TaskCardProps>(({
     : 0;
 
   return (
-    <div class="card bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4">
+    <SectionCard class="p-4 hover:shadow-md transition-shadow">
       {/* Header */}
       <div class="flex items-start justify-between mb-3">
         <div class="flex-1">
@@ -96,8 +97,8 @@ export const TaskCard = component$<TaskCardProps>(({
               task.progress === 100 ? 'bg-green-600' :
               task.progress >= 50 ? 'bg-blue-600' :
               'bg-orange-500'
-            }`}
-            style={{ width: `${task.progress}%` }}
+            } w-[var(--progress-width)]`}
+            style={{ '--progress-width': `${task.progress}%` }}
           ></div>
         </div>
       </div>
@@ -108,15 +109,15 @@ export const TaskCard = component$<TaskCardProps>(({
           <div class="text-xs text-gray-500 mb-1">Assigned to:</div>
           <div class="flex flex-wrap gap-1">
             {task.assignments.slice(0, 3).map(assignment => (
-              <div key={assignment.id} class="badge-primary-600 text-xs px-2 py-0.5">
+              <Badge key={assignment.id} variant="info" class="px-2 py-0.5 text-xs">
                 {assignment.user_name || assignment.user_id}
                 <span class="ml-1 text-xs opacity-70">({assignment.role})</span>
-              </div>
+              </Badge>
             ))}
             {task.assignments.length > 3 && (
-              <div class="badge-gray-600 text-xs px-2 py-0.5">
+              <Badge variant="neutral" class="px-2 py-0.5 text-xs">
                 +{task.assignments.length - 3} more
-              </div>
+              </Badge>
             )}
           </div>
         </div>
@@ -139,8 +140,8 @@ export const TaskCard = component$<TaskCardProps>(({
                     budgetUtilization > 100 ? 'bg-red-500' :
                     budgetUtilization > 80 ? 'bg-orange-500' :
                     'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
+                  } w-[var(--budget-width)]`}
+                  style={{ '--budget-width': `${Math.min(budgetUtilization, 100)}%` }}
                 ></div>
               </div>
               <span class="text-gray-500 mt-0.5 inline-block">
@@ -170,33 +171,37 @@ export const TaskCard = component$<TaskCardProps>(({
       {/* Actions */}
       <div class="flex gap-2 pt-3 border-t border-gray-200">
         {onView$ && (
-          <button
+          <Btn
             onClick$={() => onView$(task)}
-            class="flex-1 btn btn-primary text-xs py-1.5"
+            class="flex-1"
+            size="sm"
           >
             <i class="i-heroicons-eye-solid w-4 h-4 inline-block text-white mr-1"></i>
             View
-          </button>
+          </Btn>
         )}
         {onAssign$ && task.status === 'pending' && (
-          <button
+          <Btn
             onClick$={() => onAssign$(task)}
-            class="flex-1 btn btn-success text-xs py-1.5"
+            class="flex-1"
+            size="sm"
           >
             <i class="i-heroicons-user-plus-solid w-4 h-4 inline-block text-white mr-1"></i>
             Assign
-          </button>
+          </Btn>
         )}
         {onUpdateStatus$ && task.status !== 'completed' && (
-          <button
+          <Btn
+            variant="secondary"
             onClick$={() => onUpdateStatus$(task)}
-            class="flex-1 btn btn-secondary text-xs py-1.5"
+            class="flex-1"
+            size="sm"
           >
             <i class="i-heroicons-arrow-path-solid w-4 h-4 inline-block text-white mr-1"></i>
             Update
-          </button>
+          </Btn>
         )}
       </div>
-    </div>
+    </SectionCard>
   );
 });

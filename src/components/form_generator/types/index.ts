@@ -34,7 +34,6 @@ export type P9EIconProps = {
   iconSize?: number;
   iconColor?: string;
   iconClick$?: () => void;
-  style?: string;
   class?: string;
 };
 

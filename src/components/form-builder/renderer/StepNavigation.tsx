@@ -1,5 +1,6 @@
 // src/components/form-builder/renderer/StepNavigation.tsx
 import { component$, type PropFunction } from '@builder.io/qwik';
+import { Btn } from '~/components/ds';
 
 interface StepNavigationProps {
   currentStep: number;
@@ -20,49 +21,56 @@ export default component$<StepNavigationProps>((props) => {
         <div>
           {props.currentStep === 0 ? (
             props.onCancel$ && (
-              <button
+              <Btn
+                size="sm"
+                variant="secondary"
                 onClick$={props.onCancel$}
-                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
-              </button>
+              </Btn>
             )
           ) : (
-            <button
+            <Btn
+              size="sm"
+              variant="secondary"
               onClick$={props.onPrevious$}
-              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              ← Previous
-            </button>
+              <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+              Previous
+            </Btn>
           )}
         </div>
 
         {/* Center: Save Draft */}
         {props.onSaveDraft$ && (
-          <button
+          <Btn
+            size="sm"
+            variant="secondary"
             onClick$={props.onSaveDraft$}
-            class="px-4 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50"
+            class="text-blue-600"
           >
-            💾 Save Draft
-          </button>
+            <i class="i-heroicons-bookmark-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            Save Draft
+          </Btn>
         )}
 
         {/* Right: Next / Submit */}
         <div>
           {props.isLastStep ? (
-            <button
+            <Btn
               onClick$={props.onSubmit$}
-              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              variant="primary"
             >
               Submit Form
-            </button>
+            </Btn>
           ) : (
-            <button
+            <Btn
               onClick$={props.onNext$}
-              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              variant="primary"
             >
-              Next →
-            </button>
+              Next
+              <i class="i-heroicons-arrow-right-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            </Btn>
           )}
         </div>
       </div>

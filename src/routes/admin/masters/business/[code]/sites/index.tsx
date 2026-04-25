@@ -3,6 +3,7 @@ import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { siteService } from '~/services';
 import type { Site } from '~/services';
+import { Alert, Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, PageHeader, SectionCard } from '~/components/ds';
 
 export default component$(() => {
   const loc = useLocation();
@@ -61,206 +62,186 @@ export default component$(() => {
   });
   if (loading.value) {
     return (
-      <div class="min-h-screen bg-light-50 flex items-center justify-center">
+      <div class="flex items-center justify-center py-16">
         <div class="text-center">
           <div class="animate-spin text-4xl text-primary-500 mb-4">⏳</div>
-          <p class="text-dark-600">Loading sites...</p>
+          <p class="text-neutral-600">Loading sites...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container-lg mx-auto">
-        <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <div>
-            <h1 class="text-3xl font-bold text-dark-800">Sites</h1>
-            <p class="text-dark-600 mt-2">Manage sites for {businessCode}</p>
-          </div>
-          <div class="flex gap-3">
-            <button
-              onClick$={() => nav(`/admin/masters/business/${businessCode}/attendance`)}
-              class="btn-light-300 px-4 py-3 rounded-lg font-semibold"
-            >
-              Attendance Monitor
-            </button>
-            <button
-              onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/new`)}
-              class="btn-primary px-6 py-3 rounded-lg font-semibold"
-            >
-              + Add Site
-            </button>
-          </div>
-        </div>
+    <div class="space-y-6 py-2">
+        <PageHeader title="Sites" subtitle={`Manage sites for ${businessCode}`}>
+          <Btn q:slot="actions" variant="secondary" onClick$={() => nav(`/admin/masters/business/${businessCode}/attendance`)}>
+            Attendance Monitor
+          </Btn>
+          <Btn q:slot="actions" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/new`)}>
+            + Add Site
+          </Btn>
+        </PageHeader>
 
         {error.value && (
-          <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-            <p class="text-danger-800">{error.value}</p>
-          </div>
+          <Alert variant="error" class="mb-6 border-l-4">
+            <p class="text-error-800">{error.value}</p>
+          </Alert>
         )}
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="card bg-white shadow rounded-lg p-6">
-            <div class="text-sm text-dark-600">Total Sites</div>
+          <SectionCard>
+            <div class="text-sm text-neutral-600">Total Sites</div>
             <div class="text-3xl font-bold text-primary-600 mt-2">{sites.value.length}</div>
-          </div>
-          <div class="card bg-white shadow rounded-lg p-6">
-            <div class="text-sm text-dark-600">Active</div>
+          </SectionCard>
+          <SectionCard>
+            <div class="text-sm text-neutral-600">Active</div>
             <div class="text-3xl font-bold text-success-600 mt-2">
               {sites.value.filter(s => s.is_active !== false).length}
             </div>
-          </div>
-          <div class="card bg-white shadow rounded-lg p-6">
-            <div class="text-sm text-dark-600">Inactive</div>
+          </SectionCard>
+          <SectionCard>
+            <div class="text-sm text-neutral-600">Inactive</div>
             <div class="text-3xl font-bold text-warning-600 mt-2">
               {sites.value.filter(s => s.is_active === false).length}
             </div>
-          </div>
-          <div class="card bg-white shadow rounded-lg p-6">
-            <div class="text-sm text-dark-600">With Location</div>
+          </SectionCard>
+          <SectionCard>
+            <div class="text-sm text-neutral-600">With Location</div>
             <div class="text-3xl font-bold text-info-600 mt-2">
               {sites.value.filter(s => s.location).length}
             </div>
-          </div>
+          </SectionCard>
         </div>
 
-        <div class="card bg-white shadow-lg rounded-xl p-6">
+        <SectionCard>
           {sites.value.length === 0 ? (
             <div class="text-center py-12">
-              <div class="text-6xl text-light-300 mb-4">📍</div>
-              <h3 class="text-xl font-semibold text-dark-800 mb-2">No Sites Yet</h3>
-              <p class="text-dark-600 mb-6">Create your first site to get started</p>
-              <button
+              <i class="i-heroicons-map-pin-solid h-16 w-16 inline-block text-light-300 mb-4" aria-hidden="true"></i>
+              <h3 class="text-xl font-semibold text-neutral-800 mb-2">No Sites Yet</h3>
+              <p class="text-neutral-600 mb-6">Create your first site to get started</p>
+              <Btn
                 onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/new`)}
-                class="btn-primary px-6 py-3 rounded-lg"
               >
                 Add Site
-              </button>
+              </Btn>
             </div>
           ) : (
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-light-200">
-                <thead class="bg-light-50">
-                  <tr>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">
-                      Site Name
-                    </th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">
-                      Code
-                    </th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">
-                      Location
-                    </th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">
-                      Status
-                    </th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-dark-700 uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-light-200">
+              <DataTable>
+                <DataTableHead>
+                  <DataTableRow>
+                    <DataTableHeaderCell>Site Name</DataTableHeaderCell>
+                    <DataTableHeaderCell>Code</DataTableHeaderCell>
+                    <DataTableHeaderCell>Location</DataTableHeaderCell>
+                    <DataTableHeaderCell>Status</DataTableHeaderCell>
+                    <DataTableHeaderCell class="text-right">Actions</DataTableHeaderCell>
+                  </DataTableRow>
+                </DataTableHead>
+                <DataTableBody>
                   {sites.value.map((site) => (
-                    <tr key={site.id} class="hover:bg-light-50 transition">
-                      <td class="px-6 py-4">
+                    <DataTableRow key={site.id} class="hover:bg-neutral-50 transition">
+                      <DataTableCell>
                         <div class="flex flex-col">
-                          <div class="text-sm font-medium text-dark-800">{site.name}</div>
+                          <div class="text-sm font-medium text-neutral-800">{site.name}</div>
                           {site.description && (
-                            <div class="text-xs text-dark-500 mt-1">
+                            <div class="text-xs text-neutral-500 mt-1">
                               {site.description.slice(0, 60)}
                               {site.description.length > 60 ? '...' : ''}
                             </div>
                           )}
                         </div>
-                      </td>
-                      <td class="px-6 py-4">
-                        <span class="badge-light-300 text-xs font-mono">{site.code}</span>
-                      </td>
-                      <td class="px-6 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
+                        <span class="text-xs font-mono text-neutral-700">{site.code}</span>
+                      </DataTableCell>
+                      <DataTableCell>
                         {site.location ? (
-                          <div class="text-xs text-dark-600">
+                          <div class="text-xs text-neutral-600">
                             <div>{site.location.lat}, {site.location.lng}</div>
                             {site.location.address && (
-                              <div class="text-dark-500">{site.location.address.slice(0, 30)}...</div>
+                              <div class="text-neutral-500">{site.location.address.slice(0, 30)}...</div>
                             )}
                           </div>
                         ) : (
-                          <span class="text-xs text-dark-400">No location</span>
+                          <span class="text-xs text-neutral-400">No location</span>
                         )}
-                      </td>
-                      <td class="px-6 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         {site.is_active !== false ? (
-                          <span class="badge-success">Active</span>
+                          <Badge variant="success">Active</Badge>
                         ) : (
-                          <span class="badge-danger">Inactive</span>
+                          <Badge variant="error">Inactive</Badge>
                         )}
-                      </td>
-                      <td class="px-6 py-4 text-right">
+                      </DataTableCell>
+                      <DataTableCell class="text-right">
                         <div class="flex justify-end gap-2">
-                          <button
+                          <Btn
                             onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/${site.id}/access`)}
-                            class="text-info-600 hover:text-info-700 px-3 py-1 text-sm"
+                            variant="ghost"
+                            size="sm"
                             title="Manage Access"
                           >
-                            🔐
-                          </button>
-                          <button
+                            <i class="i-heroicons-lock-closed-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                          </Btn>
+                          <Btn
                             onClick$={() => nav(`/admin/masters/business/${businessCode}/sites/${site.id}/edit`)}
-                            class="text-primary-600 hover:text-primary-700 px-3 py-1 text-sm"
+                            variant="ghost"
+                            size="sm"
                             title="Edit"
                           >
-                            ✏️
-                          </button>
-                          <button
+                            <i class="i-heroicons-pencil-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                          </Btn>
+                          <Btn
                             onClick$={() => confirmDelete(site)}
-                            class="text-danger-600 hover:text-danger-700 px-3 py-1 text-sm"
+                            variant="danger"
+                            size="sm"
                             title="Delete"
                           >
-                            🗑️
-                          </button>
+                            <i class="i-heroicons-trash-solid h-4 w-4 inline-block text-white" aria-hidden="true"></i>
+                          </Btn>
                         </div>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
+                </DataTableBody>
+              </DataTable>
             </div>
           )}
-        </div>
+        </SectionCard>
 
         {showDeleteModal.value && (
-          <div class="fixed inset-0 bg-dark-950/50 z-50 flex items-center justify-center p-4">
+          <div class="fixed inset-0 bg-neutral-950/50 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl p-8 max-w-md w-full">
-              <h3 class="text-2xl font-bold text-dark-800 mb-4">Confirm Delete</h3>
-              <p class="text-dark-600 mb-2">Are you sure you want to delete this site:</p>
-              <p class="font-semibold text-dark-800 mb-6">"{siteToDelete.value?.name}"?</p>
-              <p class="text-sm text-danger-600 mb-6">
+              <h3 class="text-2xl font-bold text-neutral-800 mb-4">Confirm Delete</h3>
+              <p class="text-neutral-600 mb-2">Are you sure you want to delete this site:</p>
+              <p class="font-semibold text-neutral-800 mb-6">"{siteToDelete.value?.name}"?</p>
+              <p class="text-sm text-error-600 mb-6">
                 This action cannot be undone. All associated data will be removed.
               </p>
               <div class="flex gap-4">
-                <button
+                <Btn
                   onClick$={handleDelete}
                   disabled={deleting.value}
-                  class="btn-danger flex-1 py-3 rounded-lg font-semibold disabled:opacity-50"
+                  variant="danger"
+                  class="flex-1 py-3 font-semibold"
                 >
                   {deleting.value ? 'Deleting...' : 'Delete'}
-                </button>
-                <button
+                </Btn>
+                <Btn
                   onClick$={() => {
                     showDeleteModal.value = false;
                     siteToDelete.value = null;
                   }}
                   disabled={deleting.value}
-                  class="btn-light-300 flex-1 py-3 rounded-lg font-semibold"
+                  variant="secondary"
+                  class="flex-1 py-3 font-semibold"
                 >
                   Cancel
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 });

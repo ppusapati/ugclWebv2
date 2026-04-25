@@ -1,10 +1,11 @@
 // src/components/form-builder/FieldEditor.tsx
 import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
-import type { FormField, FieldType } from '~/types/workflow';
+import { Badge, Btn, FormField } from '~/components/ds';
+import type { FormField as WorkflowFormField, FieldOption, FieldType } from '~/types/workflow';
 
 interface FieldEditorProps {
-  field: FormField;
-  onUpdate$: PropFunction<(field: FormField) => void>;
+  field: WorkflowFormField;
+  onUpdate$: PropFunction<(field: WorkflowFormField) => void>;
   onDelete$: PropFunction<() => void>;
 }
 
@@ -33,7 +34,7 @@ export default component$<FieldEditorProps>((props) => {
 
   const field = props.field;
 
-  const updateField = $(async (updates: Partial<FormField>) => {
+  const updateField = $(async (updates: Partial<WorkflowFormField>) => {
     await props.onUpdate$({ ...field, ...updates });
   });
 
@@ -69,7 +70,7 @@ export default component$<FieldEditorProps>((props) => {
           <div class="flex items-center gap-3">
             <span class="font-medium">{field.label || 'Untitled Field'}</span>
             {field.required && (
-              <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Required</span>
+              <Badge variant="error" class="text-xs px-2 py-0.5">Required</Badge>
             )}
           </div>
           <div class="text-sm text-gray-500 mt-1">
@@ -77,16 +78,21 @@ export default component$<FieldEditorProps>((props) => {
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button
+          <Btn
             onClick$={async (e) => {
               e.stopPropagation();
               await props.onDelete$();
             }}
-            class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+            variant="danger"
+            size="sm"
+            class="rounded"
           >
             Delete
-          </button>
-          <span class="text-gray-400">{expanded.value ? '▼' : '▶'}</span>
+          </Btn>
+          <i
+            class={`${expanded.value ? 'i-heroicons-chevron-down-solid' : 'i-heroicons-chevron-right-solid'} h-4 w-4 inline-block text-gray-400`}
+            aria-hidden="true"
+          ></i>
         </div>
       </div>
 
@@ -96,72 +102,72 @@ export default component$<FieldEditorProps>((props) => {
           {/* Basic Settings */}
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Field ID *
-              </label>
-              <input
-                type="text"
-                value={field.id}
-                onInput$={(e) => updateField({ id: (e.target as HTMLInputElement).value })}
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="field_name"
-              />
+              <FormField id="editor-field-id" label="Field ID" required>
+                <input
+                  id="editor-field-id"
+                  type="text"
+                  value={field.id}
+                  onInput$={(e) => updateField({ id: (e.target as HTMLInputElement).value })}
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  placeholder="field_name"
+                />
+              </FormField>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Field Type *
-              </label>
-              <select
-                value={field.type}
-                onChange$={(e) => updateField({ type: (e.target as HTMLSelectElement).value as FieldType })}
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-              >
-                {FIELD_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+              <FormField id="editor-field-type" label="Field Type" required>
+                <select
+                  id="editor-field-type"
+                  value={field.type}
+                  onChange$={(e) => updateField({ type: (e.target as HTMLSelectElement).value as FieldType })}
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                >
+                  {FIELD_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Label *
-              </label>
-              <input
-                type="text"
-                value={field.label}
-                onInput$={(e) => updateField({ label: (e.target as HTMLInputElement).value })}
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="Field label"
-              />
+              <FormField id="editor-label" label="Label" required>
+                <input
+                  id="editor-label"
+                  type="text"
+                  value={field.label}
+                  onInput$={(e) => updateField({ label: (e.target as HTMLInputElement).value })}
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  placeholder="Field label"
+                />
+              </FormField>
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Placeholder
-              </label>
-              <input
-                type="text"
-                value={field.placeholder || ''}
-                onInput$={(e) => updateField({ placeholder: (e.target as HTMLInputElement).value })}
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="Placeholder text"
-              />
+              <FormField id="editor-placeholder" label="Placeholder">
+                <input
+                  id="editor-placeholder"
+                  type="text"
+                  value={field.placeholder || ''}
+                  onInput$={(e) => updateField({ placeholder: (e.target as HTMLInputElement).value })}
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  placeholder="Placeholder text"
+                />
+              </FormField>
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Hint Text
-              </label>
-              <input
-                type="text"
-                value={field.hint || ''}
-                onInput$={(e) => updateField({ hint: (e.target as HTMLInputElement).value })}
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="Help text for the user"
-              />
+              <FormField id="editor-hint" label="Hint Text">
+                <input
+                  id="editor-hint"
+                  type="text"
+                  value={field.hint || ''}
+                  onInput$={(e) => updateField({ hint: (e.target as HTMLInputElement).value })}
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  placeholder="Help text for the user"
+                />
+              </FormField>
             </div>
 
             <div class="col-span-2">
@@ -181,76 +187,77 @@ export default component$<FieldEditorProps>((props) => {
           {needsOptions && (
             <div class="border-t pt-4">
               <div class="flex justify-between items-center mb-3">
-                <label class="block text-sm font-medium text-gray-700">
+                <div class="block text-sm font-medium text-gray-700">
                   Options
-                </label>
-                <button
+                </div>
+                <Btn
                   onClick$={addOption}
-                  class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                  size="sm"
+                  class="rounded"
                 >
                   + Add Option
-                </button>
+                </Btn>
               </div>
 
               {/* Data Source Selection */}
               <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Data Source
-                </label>
-                <select
-                  value={field.dataSource || 'static'}
-                  onChange$={(e) => updateField({ dataSource: (e.target as HTMLSelectElement).value as 'static' | 'api' })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                >
-                  <option value="static">Static Options</option>
-                  <option value="api">API Endpoint</option>
-                </select>
+                <FormField id={`editor-${field.id}-datasource`} label="Data Source">
+                  <select
+                    id={`editor-${field.id}-datasource`}
+                    value={field.dataSource || 'static'}
+                    onChange$={(e) => updateField({ dataSource: (e.target as HTMLSelectElement).value as 'static' | 'api' })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                  >
+                    <option value="static">Static Options</option>
+                    <option value="api">API Endpoint</option>
+                  </select>
+                </FormField>
               </div>
 
               {field.dataSource === 'api' ? (
                 <div class="space-y-3 bg-blue-50 p-3 rounded">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">
-                      API Endpoint
-                    </label>
-                    <input
-                      type="text"
-                      value={field.apiEndpoint || ''}
-                      onInput$={(e) => updateField({ apiEndpoint: (e.target as HTMLInputElement).value })}
-                      class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                      placeholder="/api/options"
-                    />
+                    <FormField id={`editor-${field.id}-api-endpoint`} label="API Endpoint">
+                      <input
+                        id={`editor-${field.id}-api-endpoint`}
+                        type="text"
+                        value={field.apiEndpoint || ''}
+                        onInput$={(e) => updateField({ apiEndpoint: (e.target as HTMLInputElement).value })}
+                        class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                        placeholder="/api/options"
+                      />
+                    </FormField>
                   </div>
                   <div class="grid grid-cols-2 gap-2">
                     <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1">
-                        Display Field
-                      </label>
-                      <input
-                        type="text"
-                        value={field.displayField || ''}
-                        onInput$={(e) => updateField({ displayField: (e.target as HTMLInputElement).value })}
-                        class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                        placeholder="name"
-                      />
+                      <FormField id={`editor-${field.id}-display-field`} label="Display Field">
+                        <input
+                          id={`editor-${field.id}-display-field`}
+                          type="text"
+                          value={field.displayField || ''}
+                          onInput$={(e) => updateField({ displayField: (e.target as HTMLInputElement).value })}
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          placeholder="name"
+                        />
+                      </FormField>
                     </div>
                     <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1">
-                        Value Field
-                      </label>
-                      <input
-                        type="text"
-                        value={field.valueField || ''}
-                        onInput$={(e) => updateField({ valueField: (e.target as HTMLInputElement).value })}
-                        class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                        placeholder="id"
-                      />
+                      <FormField id={`editor-${field.id}-value-field`} label="Value Field">
+                        <input
+                          id={`editor-${field.id}-value-field`}
+                          type="text"
+                          value={field.valueField || ''}
+                          onInput$={(e) => updateField({ valueField: (e.target as HTMLInputElement).value })}
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          placeholder="id"
+                        />
+                      </FormField>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div class="space-y-2">
-                  {(field.options || []).map((option, index) => (
+                  {(field.options || []).map((option: FieldOption, index: number) => (
                     <div key={index} class="flex gap-2">
                       <input
                         type="text"
@@ -266,12 +273,14 @@ export default component$<FieldEditorProps>((props) => {
                         class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
                         placeholder="Value"
                       />
-                      <button
+                      <Btn
                         onClick$={() => deleteOption(index)}
-                        class="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                        variant="danger"
+                        size="sm"
+                        class="px-2"
                       >
                         ×
-                      </button>
+                      </Btn>
                     </div>
                   ))}
                   {(!field.options || field.options.length === 0) && (
@@ -288,29 +297,29 @@ export default component$<FieldEditorProps>((props) => {
           {field.type === 'textarea' && (
             <div class="border-t pt-4 grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Rows
-                </label>
-                <input
-                  type="number"
-                  value={field.rows || 3}
-                  onInput$={(e) => updateField({ rows: parseInt((e.target as HTMLInputElement).value) })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                  min="1"
-                  max="20"
-                />
+                <FormField id={`editor-${field.id}-rows`} label="Rows">
+                  <input
+                    id={`editor-${field.id}-rows`}
+                    type="number"
+                    value={field.rows || 3}
+                    onInput$={(e) => updateField({ rows: parseInt((e.target as HTMLInputElement).value) })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                    min="1"
+                    max="20"
+                  />
+                </FormField>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Max Length
-                </label>
-                <input
-                  type="number"
-                  value={field.maxLength || ''}
-                  onInput$={(e) => updateField({ maxLength: parseInt((e.target as HTMLInputElement).value) })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                  min="1"
-                />
+                <FormField id={`editor-${field.id}-max-length`} label="Max Length">
+                  <input
+                    id={`editor-${field.id}-max-length`}
+                    type="number"
+                    value={field.maxLength || ''}
+                    onInput$={(e) => updateField({ maxLength: parseInt((e.target as HTMLInputElement).value) })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                    min="1"
+                  />
+                </FormField>
               </div>
             </div>
           )}
@@ -319,59 +328,58 @@ export default component$<FieldEditorProps>((props) => {
           {field.type === 'number' && (
             <div class="border-t pt-4 grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Min Value
-                </label>
-                <input
-                  type="number"
-                  value={field.min !== undefined ? field.min : ''}
-                  onInput$={(e) => updateField({ min: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Max Value
-                </label>
-                <input
-                  type="number"
-                  value={field.max !== undefined ? field.max : ''}
-                  onInput$={(e) => updateField({ max: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Step
-                </label>
-                <input
-                  type="number"
-                  value={field.step !== undefined ? field.step : ''}
-                  onInput$={(e) => updateField({ step: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                  placeholder="1"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Prefix/Suffix
-                </label>
-                <div class="flex gap-2">
+                <FormField id={`editor-${field.id}-min`} label="Min Value">
                   <input
-                    type="text"
-                    value={field.prefix || ''}
-                    onInput$={(e) => updateField({ prefix: (e.target as HTMLInputElement).value })}
-                    class="flex-1 px-2 py-2 text-sm border border-gray-300 rounded"
-                    placeholder="Prefix"
+                    id={`editor-${field.id}-min`}
+                    type="number"
+                    value={field.min !== undefined ? field.min : ''}
+                    onInput$={(e) => updateField({ min: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
                   />
+                </FormField>
+              </div>
+              <div>
+                <FormField id={`editor-${field.id}-max`} label="Max Value">
                   <input
-                    type="text"
-                    value={field.suffix || ''}
-                    onInput$={(e) => updateField({ suffix: (e.target as HTMLInputElement).value })}
-                    class="flex-1 px-2 py-2 text-sm border border-gray-300 rounded"
-                    placeholder="Suffix"
+                    id={`editor-${field.id}-max`}
+                    type="number"
+                    value={field.max !== undefined ? field.max : ''}
+                    onInput$={(e) => updateField({ max: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
                   />
-                </div>
+                </FormField>
+              </div>
+              <div>
+                <FormField id={`editor-${field.id}-step`} label="Step">
+                  <input
+                    id={`editor-${field.id}-step`}
+                    type="number"
+                    value={field.step !== undefined ? field.step : ''}
+                    onInput$={(e) => updateField({ step: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                    placeholder="1"
+                  />
+                </FormField>
+              </div>
+              <div>
+                <FormField id={`editor-${field.id}-prefix-suffix`} label="Prefix/Suffix">
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      value={field.prefix || ''}
+                      onInput$={(e) => updateField({ prefix: (e.target as HTMLInputElement).value })}
+                      class="flex-1 px-2 py-2 text-sm border border-gray-300 rounded"
+                      placeholder="Prefix"
+                    />
+                    <input
+                      type="text"
+                      value={field.suffix || ''}
+                      onInput$={(e) => updateField({ suffix: (e.target as HTMLInputElement).value })}
+                      class="flex-1 px-2 py-2 text-sm border border-gray-300 rounded"
+                      placeholder="Suffix"
+                    />
+                  </div>
+                </FormField>
               </div>
             </div>
           )}
@@ -380,41 +388,41 @@ export default component$<FieldEditorProps>((props) => {
           {field.type === 'file_upload' && (
             <div class="border-t pt-4 space-y-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Accepted File Types
-                </label>
-                <input
-                  type="text"
-                  value={field.accept || ''}
-                  onInput$={(e) => updateField({ accept: (e.target as HTMLInputElement).value })}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                  placeholder=".pdf,.jpg,.png"
-                />
+                <FormField id={`editor-${field.id}-accept`} label="Accepted File Types">
+                  <input
+                    id={`editor-${field.id}-accept`}
+                    type="text"
+                    value={field.accept || ''}
+                    onInput$={(e) => updateField({ accept: (e.target as HTMLInputElement).value })}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                    placeholder=".pdf,.jpg,.png"
+                  />
+                </FormField>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Max Files
-                  </label>
-                  <input
-                    type="number"
-                    value={field.maxFiles || 1}
-                    onInput$={(e) => updateField({ maxFiles: parseInt((e.target as HTMLInputElement).value) })}
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                    min="1"
-                  />
+                  <FormField id={`editor-${field.id}-max-files`} label="Max Files">
+                    <input
+                      id={`editor-${field.id}-max-files`}
+                      type="number"
+                      value={field.maxFiles || 1}
+                      onInput$={(e) => updateField({ maxFiles: parseInt((e.target as HTMLInputElement).value) })}
+                      class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                      min="1"
+                    />
+                  </FormField>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Max Size (MB)
-                  </label>
-                  <input
-                    type="number"
-                    value={field.maxSizePerFile || 5}
-                    onInput$={(e) => updateField({ maxSizePerFile: parseInt((e.target as HTMLInputElement).value) })}
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                    min="1"
-                  />
+                  <FormField id={`editor-${field.id}-max-size`} label="Max Size (MB)">
+                    <input
+                      id={`editor-${field.id}-max-size`}
+                      type="number"
+                      value={field.maxSizePerFile || 5}
+                      onInput$={(e) => updateField({ maxSizePerFile: parseInt((e.target as HTMLInputElement).value) })}
+                      class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                      min="1"
+                    />
+                  </FormField>
                 </div>
               </div>
               <label class="flex items-center">
@@ -431,13 +439,14 @@ export default component$<FieldEditorProps>((props) => {
 
           {/* Advanced Settings Toggle */}
           <div class="border-t pt-4">
-            <button
+            <Btn
               onClick$={() => (showAdvanced.value = !showAdvanced.value)}
-              class="flex items-center justify-between w-full text-sm font-medium text-gray-700 hover:text-gray-900"
+              variant="ghost"
+              class="flex items-center justify-between w-full"
             >
               <span>Advanced Settings</span>
               <span class="text-xl">{showAdvanced.value ? '−' : '+'}</span>
-            </button>
+            </Btn>
 
             {showAdvanced.value && (
               <div class="mt-4 space-y-4">
@@ -448,55 +457,55 @@ export default component$<FieldEditorProps>((props) => {
                     {(field.type === 'text' || field.type === 'textarea') && (
                       <>
                         <div>
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Min Length
-                          </label>
-                          <input
-                            type="number"
-                            value={field.validation?.minLength || ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                minLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                            min="0"
-                          />
+                          <FormField id={`editor-${field.id}-validation-min-length`} label="Min Length">
+                            <input
+                              id={`editor-${field.id}-validation-min-length`}
+                              type="number"
+                              value={field.validation?.minLength || ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  minLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              min="0"
+                            />
+                          </FormField>
                         </div>
                         <div>
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Max Length
-                          </label>
-                          <input
-                            type="number"
-                            value={field.validation?.maxLength || ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                maxLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                            min="1"
-                          />
+                          <FormField id={`editor-${field.id}-validation-max-length`} label="Max Length">
+                            <input
+                              id={`editor-${field.id}-validation-max-length`}
+                              type="number"
+                              value={field.validation?.maxLength || ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  maxLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              min="1"
+                            />
+                          </FormField>
                         </div>
                         <div class="col-span-2">
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Pattern (Regex)
-                          </label>
-                          <input
-                            type="text"
-                            value={field.validation?.pattern || ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                pattern: (e.target as HTMLInputElement).value
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                            placeholder="^[A-Za-z]+$"
-                          />
+                          <FormField id={`editor-${field.id}-validation-pattern`} label="Pattern (Regex)">
+                            <input
+                              id={`editor-${field.id}-validation-pattern`}
+                              type="text"
+                              value={field.validation?.pattern || ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  pattern: (e.target as HTMLInputElement).value
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              placeholder="^[A-Za-z]+$"
+                            />
+                          </FormField>
                         </div>
                       </>
                     )}
@@ -504,36 +513,36 @@ export default component$<FieldEditorProps>((props) => {
                     {field.type === 'number' && (
                       <>
                         <div>
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Min Value
-                          </label>
-                          <input
-                            type="number"
-                            value={field.validation?.min !== undefined ? field.validation.min : ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                min: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                          />
+                          <FormField id={`editor-${field.id}-validation-min`} label="Min Value">
+                            <input
+                              id={`editor-${field.id}-validation-min`}
+                              type="number"
+                              value={field.validation?.min !== undefined ? field.validation.min : ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  min: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            />
+                          </FormField>
                         </div>
                         <div>
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Max Value
-                          </label>
-                          <input
-                            type="number"
-                            value={field.validation?.max !== undefined ? field.validation.max : ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                max: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                          />
+                          <FormField id={`editor-${field.id}-validation-max`} label="Max Value">
+                            <input
+                              id={`editor-${field.id}-validation-max`}
+                              type="number"
+                              value={field.validation?.max !== undefined ? field.validation.max : ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  max: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            />
+                          </FormField>
                         </div>
                       </>
                     )}
@@ -541,72 +550,72 @@ export default component$<FieldEditorProps>((props) => {
                     {(field.type === 'date' || field.type === 'datetime') && (
                       <>
                         <div>
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Min Date
-                          </label>
-                          <input
-                            type="date"
-                            value={field.validation?.minDate || ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                minDate: (e.target as HTMLInputElement).value
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                          />
+                          <FormField id={`editor-${field.id}-validation-min-date`} label="Min Date">
+                            <input
+                              id={`editor-${field.id}-validation-min-date`}
+                              type="date"
+                              value={field.validation?.minDate || ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  minDate: (e.target as HTMLInputElement).value
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            />
+                          </FormField>
                         </div>
                         <div>
-                          <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Max Date
-                          </label>
-                          <input
-                            type="date"
-                            value={field.validation?.maxDate || ''}
-                            onInput$={(e) => updateField({
-                              validation: {
-                                ...field.validation,
-                                maxDate: (e.target as HTMLInputElement).value
-                              }
-                            })}
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                          />
+                          <FormField id={`editor-${field.id}-validation-max-date`} label="Max Date">
+                            <input
+                              id={`editor-${field.id}-validation-max-date`}
+                              type="date"
+                              value={field.validation?.maxDate || ''}
+                              onInput$={(e) => updateField({
+                                validation: {
+                                  ...field.validation,
+                                  maxDate: (e.target as HTMLInputElement).value
+                                }
+                              })}
+                              class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            />
+                          </FormField>
                         </div>
                       </>
                     )}
 
                     <div class="col-span-2">
-                      <label class="block text-xs font-medium text-gray-700 mb-1">
-                        Custom Validation Message
-                      </label>
-                      <input
-                        type="text"
-                        value={field.validation?.message || ''}
-                        onInput$={(e) => updateField({
-                          validation: {
-                            ...field.validation,
-                            message: (e.target as HTMLInputElement).value
-                          }
-                        })}
-                        class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                        placeholder="This field is invalid"
-                      />
+                      <FormField id={`editor-${field.id}-validation-message`} label="Custom Validation Message">
+                        <input
+                          id={`editor-${field.id}-validation-message`}
+                          type="text"
+                          value={field.validation?.message || ''}
+                          onInput$={(e) => updateField({
+                            validation: {
+                              ...field.validation,
+                              message: (e.target as HTMLInputElement).value
+                            }
+                          })}
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          placeholder="This field is invalid"
+                        />
+                      </FormField>
                     </div>
                   </div>
                 </div>
 
                 {/* Default Value */}
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Default Value
-                  </label>
-                  <input
-                    type="text"
-                    value={field.defaultValue || ''}
-                    onInput$={(e) => updateField({ defaultValue: (e.target as HTMLInputElement).value })}
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
-                    placeholder="Default value"
-                  />
+                  <FormField id={`editor-${field.id}-default-value`} label="Default Value">
+                    <input
+                      id={`editor-${field.id}-default-value`}
+                      type="text"
+                      value={field.defaultValue || ''}
+                      onInput$={(e) => updateField({ defaultValue: (e.target as HTMLInputElement).value })}
+                      class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                      placeholder="Default value"
+                    />
+                  </FormField>
                 </div>
               </div>
             )}
@@ -614,84 +623,87 @@ export default component$<FieldEditorProps>((props) => {
 
           {/* Conditional Visibility */}
           <div class="border-t pt-4">
-            <button
+            <Btn
               onClick$={() => (showConditions.value = !showConditions.value)}
-              class="flex items-center justify-between w-full text-sm font-medium text-gray-700 hover:text-gray-900"
+              variant="ghost"
+              class="flex items-center justify-between w-full"
             >
               <span>Conditional Visibility</span>
               <span class="text-xl">{showConditions.value ? '−' : '+'}</span>
-            </button>
+            </Btn>
 
             {showConditions.value && (
               <div class="mt-4 bg-blue-50 p-4 rounded space-y-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
-                    Show when field
-                  </label>
-                  <input
-                    type="text"
-                    value={field.visible?.field || ''}
-                    onInput$={(e) => updateField({
-                      visible: {
-                        ...field.visible!,
-                        field: (e.target as HTMLInputElement).value,
-                        operator: field.visible?.operator || 'equals',
-                        value: field.visible?.value || ''
-                      }
-                    })}
-                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                    placeholder="field_id"
-                  />
+                  <FormField id={`editor-${field.id}-condition-field`} label="Show when field">
+                    <input
+                      id={`editor-${field.id}-condition-field`}
+                      type="text"
+                      value={field.visible?.field || ''}
+                      onInput$={(e) => updateField({
+                        visible: {
+                          ...field.visible!,
+                          field: (e.target as HTMLInputElement).value,
+                          operator: field.visible?.operator || 'equals',
+                          value: field.visible?.value || ''
+                        }
+                      })}
+                      class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      placeholder="field_id"
+                    />
+                  </FormField>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
-                    Operator
-                  </label>
-                  <select
-                    value={field.visible?.operator || 'equals'}
-                    onChange$={(e) => updateField({
-                      visible: {
-                        ...field.visible!,
-                        field: field.visible?.field || '',
-                        operator: (e.target as HTMLSelectElement).value as any,
-                        value: field.visible?.value || ''
-                      }
-                    })}
-                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                  >
-                    <option value="equals">Equals</option>
-                    <option value="not_equals">Not Equals</option>
-                    <option value="contains">Contains</option>
-                    <option value="greater_than">Greater Than</option>
-                    <option value="less_than">Less Than</option>
-                  </select>
+                  <FormField id={`editor-${field.id}-condition-operator`} label="Operator">
+                    <select
+                      id={`editor-${field.id}-condition-operator`}
+                      value={field.visible?.operator || 'equals'}
+                      onChange$={(e) => updateField({
+                        visible: {
+                          ...field.visible!,
+                          field: field.visible?.field || '',
+                          operator: (e.target as HTMLSelectElement).value as any,
+                          value: field.visible?.value || ''
+                        }
+                      })}
+                      class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                    >
+                      <option value="equals">Equals</option>
+                      <option value="not_equals">Not Equals</option>
+                      <option value="contains">Contains</option>
+                      <option value="greater_than">Greater Than</option>
+                      <option value="less_than">Less Than</option>
+                    </select>
+                  </FormField>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
-                    Value
-                  </label>
-                  <input
-                    type="text"
-                    value={field.visible?.value || ''}
-                    onInput$={(e) => updateField({
-                      visible: {
-                        ...field.visible!,
-                        field: field.visible?.field || '',
-                        operator: field.visible?.operator || 'equals',
-                        value: (e.target as HTMLInputElement).value
-                      }
-                    })}
-                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                    placeholder="comparison value"
-                  />
+                  <FormField id={`editor-${field.id}-condition-value`} label="Value">
+                    <input
+                      id={`editor-${field.id}-condition-value`}
+                      type="text"
+                      value={field.visible?.value || ''}
+                      onInput$={(e) => updateField({
+                        visible: {
+                          ...field.visible!,
+                          field: field.visible?.field || '',
+                          operator: field.visible?.operator || 'equals',
+                          value: (e.target as HTMLInputElement).value
+                        }
+                      })}
+                      class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      placeholder="comparison value"
+                    />
+                  </FormField>
                 </div>
                 {field.visible?.field && (
-                  <button
+                  <Btn
                     onClick$={() => updateField({ visible: undefined })}
-                    class="text-xs text-red-600 hover:text-red-800"
+                    variant="danger"
+                    size="sm"
+                    class="rounded"
                   >
                     Remove Condition
-                  </button>
+                  </Btn>
                 )}
               </div>
             )}
@@ -701,9 +713,9 @@ export default component$<FieldEditorProps>((props) => {
           <div class="border-t pt-4">
             <h4 class="text-sm font-medium text-gray-700 mb-3">Preview</h4>
             <div class="bg-gray-50 p-4 rounded border border-gray-200">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <div class="block text-sm font-medium text-gray-700 mb-2">
                 {field.label} {field.required && <span class="text-red-500">*</span>}
-              </label>
+              </div>
               
               {field.type === 'text' && (
                 <input
@@ -739,7 +751,7 @@ export default component$<FieldEditorProps>((props) => {
               {(field.type === 'dropdown' || field.type === 'select') && (
                 <select class="w-full px-3 py-2 border border-gray-300 rounded" disabled>
                   <option>{field.placeholder || 'Select an option'}</option>
-                  {(field.options || []).map((opt) => (
+                  {(field.options || []).map((opt: FieldOption) => (
                     <option key={opt.value}>{opt.label}</option>
                   ))}
                 </select>
@@ -747,7 +759,7 @@ export default component$<FieldEditorProps>((props) => {
               
               {field.type === 'radio' && (
                 <div class="space-y-2">
-                  {(field.options || []).map((opt) => (
+                  {(field.options || []).map((opt: FieldOption) => (
                     <label key={opt.value} class="flex items-center">
                       <input type="radio" name={field.id} class="mr-2" disabled />
                       <span class="text-sm">{opt.label}</span>
@@ -758,7 +770,7 @@ export default component$<FieldEditorProps>((props) => {
               
               {field.type === 'checkbox' && (
                 <div class="space-y-2">
-                  {(field.options || []).map((opt) => (
+                  {(field.options || []).map((opt: FieldOption) => (
                     <label key={opt.value} class="flex items-center">
                       <input type="checkbox" class="mr-2" disabled />
                       <span class="text-sm">{opt.label}</span>
@@ -830,8 +842,9 @@ export default component$<FieldEditorProps>((props) => {
 
               {field.type === 'location' && (
                 <div class="border border-gray-300 rounded p-4 bg-white">
-                  <div class="text-sm text-gray-500">
-                    📍 Location Picker
+                  <div class="text-sm text-gray-500 flex items-center gap-1.5">
+                    <i class="i-heroicons-map-pin-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                    Location Picker
                   </div>
                 </div>
               )}

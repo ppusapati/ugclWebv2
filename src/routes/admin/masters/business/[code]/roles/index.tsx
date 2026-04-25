@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { roleService } from '~/services/role.service';
 import { businessService } from '~/services/business.service';
 import type { Role, Permission, BusinessVertical } from '~/services/types';
+import { Badge, Btn, FormField, PageHeader } from '~/components/ds';
 
 export default component$(() => {
   const loc = useLocation();
@@ -166,60 +167,41 @@ export default component$(() => {
   }
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-8 px-4">
-      <div class="max-w-7xl mx-auto">
-        {/* Header */}
-        <div class="mb-6">
-          <button
-            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
-            class="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4"
-          >
-            <span>←</span> Back to {state.business?.name || 'Business'}
-          </button>
-
-          <div class="flex justify-between items-center flex-wrap gap-4">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-                Business Roles
-              </h1>
-              <p class="text-gray-600 dark:text-gray-400 mt-2">
-                Manage roles for {state.business?.name}
-              </p>
-            </div>
-            <button
-              onClick$={openCreateModal}
-              class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-            >
-              + Create Role
-            </button>
-          </div>
-        </div>
+    <div class="space-y-6">
+        <PageHeader title="Business Roles" subtitle={`Manage roles for ${state.business?.name || 'Business'}`}>
+          <Btn q:slot="actions" variant="ghost" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}>
+            <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to {state.business?.name || 'Business'}
+          </Btn>
+          <Btn q:slot="actions" onClick$={openCreateModal}>
+            + Create Role
+          </Btn>
+        </PageHeader>
 
         {/* Error */}
         {state.error && (
-          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          <div class="rounded-lg border border-color-semantic-error-300 bg-color-semantic-error-100 px-4 py-3 text-sm text-color-semantic-error-700">
             {state.error}
           </div>
         )}
 
         {/* Roles List */}
-        <div class="bg-white dark:bg-dark-800 rounded-lg shadow-md overflow-hidden">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
           {state.roles.length === 0 ? (
             <div class="text-center py-12">
-              <div class="text-6xl mb-4">👥</div>
+              <i class="i-heroicons-users-solid h-16 w-16 inline-block mb-4" aria-hidden="true"></i>
               <h3 class="text-xl font-semibold mb-2">No Roles Yet</h3>
               <p class="text-gray-600 mb-6">Create your first business role</p>
-              <button
+              <Btn
                 onClick$={openCreateModal}
-                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Create Role
-              </button>
+              </Btn>
             </div>
           ) : (
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50 dark:bg-dark-700">
+                <thead class="bg-gray-50 dark:bg-neutral-700">
                   <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
                       Role Name
@@ -235,9 +217,9 @@ export default component$(() => {
                     </th>
                   </tr>
                 </thead>
-                <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody class="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {state.roles.map((role) => (
-                    <tr key={role.id} class="hover:bg-gray-50 dark:hover:bg-dark-700">
+                    <tr key={role.id} class="hover:bg-gray-50 dark:hover:bg-neutral-700">
                       <td class="px-6 py-4">
                         <div>
                           <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -249,27 +231,29 @@ export default component$(() => {
                         </div>
                       </td>
                       <td class="px-6 py-4">
-                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                        <Badge variant="info" class="text-xs font-semibold">
                           Level {role.level}
-                        </span>
+                        </Badge>
                       </td>
                       <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                         {role.permissions?.length || 0} permissions
                       </td>
                       <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                          <button
+                          <Btn
                             onClick$={() => openEditModal(role)}
-                            class="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+                            variant="primary"
+                            size="sm"
                           >
                             Edit
-                          </button>
-                          <button
+                          </Btn>
+                          <Btn
                             onClick$={() => handleDelete(role.id)}
-                            class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                            variant="danger"
+                            size="sm"
                           >
                             Delete
-                          </button>
+                          </Btn>
                         </div>
                       </td>
                     </tr>
@@ -283,28 +267,30 @@ export default component$(() => {
         {/* Role Modal */}
         {state.showModal && (
           <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-dark-800 rounded-xl shadow-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <h3 class="text-2xl font-bold mb-6">
                 {state.editingRole ? 'Edit Role' : 'Create Role'}
               </h3>
 
               <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium mb-2">Role Name *</label>
+                <FormField id="biz-role-name" label="Role Name" required>
                   <input
+                    id="biz-role-name"
                     type="text"
                     value={state.roleForm.name}
+                    required
+                    aria-required="true"
                     onInput$={(e) => {
                       state.roleForm.name = (e.target as HTMLInputElement).value;
                     }}
                     class="w-full px-4 py-2 border rounded-lg"
                     placeholder="e.g., manager"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium mb-2">Display Name</label>
+                <FormField id="biz-role-display-name" label="Display Name">
                   <input
+                    id="biz-role-display-name"
                     type="text"
                     value={state.roleForm.display_name}
                     onInput$={(e) => {
@@ -313,11 +299,11 @@ export default component$(() => {
                     class="w-full px-4 py-2 border rounded-lg"
                     placeholder="e.g., Business Manager"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium mb-2">Description</label>
+                <FormField id="biz-role-description" label="Description">
                   <textarea
+                    id="biz-role-description"
                     value={state.roleForm.description}
                     onInput$={(e) => {
                       state.roleForm.description = (e.target as HTMLTextAreaElement).value;
@@ -326,12 +312,14 @@ export default component$(() => {
                     class="w-full px-4 py-2 border rounded-lg"
                     placeholder="Role description"
                   ></textarea>
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium mb-2">Level *</label>
+                <FormField id="biz-role-level" label="Level" required>
                   <select
+                    id="biz-role-level"
                     value={state.roleForm.level}
+                    required
+                    aria-required="true"
                     onChange$={(e) => {
                       state.roleForm.level = parseInt((e.target as HTMLSelectElement).value);
                     }}
@@ -343,10 +331,9 @@ export default component$(() => {
                     <option value={4}>Level 4 - Operator</option>
                     <option value={5}>Level 5 - User</option>
                   </select>
-                </div>
+                </FormField>
 
-                <div>
-                  <label class="block text-sm font-medium mb-3">Permissions</label>
+                <FormField id="biz-role-permissions" label="Permissions">
                   <div class="max-h-64 overflow-y-auto border rounded-lg p-4">
                     {Object.entries(groupedPermissions()).map(([resource, perms]: [string, any[]]) => (
                       <div key={resource} class="mb-4">
@@ -378,29 +365,29 @@ export default component$(() => {
                       </div>
                     ))}
                   </div>
-                </div>
+                </FormField>
               </div>
 
               <div class="flex gap-4 mt-6">
-                <button
+                <Btn
                   onClick$={handleSave}
                   disabled={state.saving}
-                  class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  class="flex-1"
                 >
                   {state.saving ? 'Saving...' : 'Save Role'}
-                </button>
-                <button
+                </Btn>
+                <Btn
                   onClick$={() => { state.showModal = false; }}
                   disabled={state.saving}
-                  class="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                  variant="secondary"
+                  class="flex-1"
                 >
                   Cancel
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 });

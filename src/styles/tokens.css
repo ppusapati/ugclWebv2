@@ -173,10 +173,10 @@
   --typography-fontSize-8xl: 6rem;
   --typography-fontSize-9xl: 8rem;
 
-  /* --typography-fontFamily-primary: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --typography-fontFamily-secondary: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --typography-fontFamily-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --typography-fontFamily-display: var(--typography-fontFamily-primary); */
+  --typography-fontFamily-primary: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --typography-fontFamily-secondary: "Merriweather", Georgia, Cambria, "Times New Roman", Times, serif;
+  --typography-fontFamily-mono: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --typography-fontFamily-display: var(--typography-fontFamily-primary);
 
   /* ===== BORDER RADIUS ===== */
   --BorderRadiusNone: 0px;

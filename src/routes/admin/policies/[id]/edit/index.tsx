@@ -2,6 +2,7 @@
 import { component$, useStore, useSignal, $ } from '@builder.io/qwik';
 import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
 import { apiClient, createSSRApiClient } from '~/services';
+import { Badge, Btn, FormField, PageHeader } from '~/components/ds';
 
 interface BusinessVertical {
   id: string;
@@ -172,20 +173,18 @@ export default component$(() => {
   }
 
   return (
-    <div class="max-w-4xl mx-auto space-y-6">
+    <div class="space-y-6">
       {/* Header */}
-      <div class="flex items-center gap-4">
-        <button
+      <PageHeader title="Edit Policy" subtitle={form.name ? `Updating ${form.name}` : 'Update policy configuration'}>
+        <Btn
+          q:slot="actions"
+          variant="ghost"
           onClick$={() => nav(`/admin/policies/${policyId}`)}
-          class="text-gray-600 hover:text-gray-900"
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </button>
-        <h1 class="text-3xl font-bold text-gray-900">Edit Policy</h1>
-        <span class="text-sm text-gray-500">({form.name})</span>
-      </div>
+          <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+          Back to Policy
+        </Btn>
+      </PageHeader>
 
       {/* Error Message */}
       {error.value && (
@@ -201,47 +200,45 @@ export default component$(() => {
           <h2 class="text-xl font-semibold text-gray-900">Basic Information</h2>
 
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Policy Name *
-              </label>
+            <FormField id="policy-name" label="Policy Name" required hint="Unique identifier (lowercase, underscores)">
               <input
+                id="policy-name"
                 type="text"
                 value={form.name}
                 onInput$={(e) => form.name = (e.target as HTMLInputElement).value}
                 placeholder="e.g., allow_project_view"
+                required
+                aria-required="true"
+                aria-describedby="policy-name-hint"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
-              <p class="text-xs text-gray-500 mt-1">Unique identifier (lowercase, underscores)</p>
-            </div>
+            </FormField>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Display Name *
-              </label>
+            <FormField id="policy-display-name" label="Display Name" required hint="Human-readable name">
               <input
+                id="policy-display-name"
                 type="text"
                 value={form.display_name}
                 onInput$={(e) => form.display_name = (e.target as HTMLInputElement).value}
                 placeholder="e.g., Allow Project View"
+                required
+                aria-required="true"
+                aria-describedby="policy-display-name-hint"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
-              <p class="text-xs text-gray-500 mt-1">Human-readable name</p>
-            </div>
+            </FormField>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
+          <FormField id="policy-description" label="Description">
             <textarea
+              id="policy-description"
               value={form.description}
               onInput$={(e) => form.description = (e.target as HTMLTextAreaElement).value}
               rows={3}
               placeholder="Describe what this policy does..."
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             ></textarea>
-          </div>
+          </FormField>
         </div>
 
         {/* Configuration */}
@@ -249,45 +246,44 @@ export default component$(() => {
           <h2 class="text-xl font-semibold text-gray-900">Configuration</h2>
 
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Effect *
-              </label>
+            <FormField id="policy-effect" label="Effect" required hint="Whether this policy allows or denies access">
               <select
+                id="policy-effect"
                 value={form.effect}
                 onChange$={(e) => form.effect = (e.target as HTMLSelectElement).value as 'ALLOW' | 'DENY'}
+                required
+                aria-required="true"
+                aria-describedby="policy-effect-hint"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="ALLOW">ALLOW</option>
                 <option value="DENY">DENY</option>
               </select>
-              <p class="text-xs text-gray-500 mt-1">Whether this policy allows or denies access</p>
-            </div>
+            </FormField>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Priority *
-              </label>
+            <FormField id="policy-priority" label="Priority" required hint="Lower numbers = higher priority (0-1000)">
               <input
+                id="policy-priority"
                 type="number"
                 value={form.priority}
                 onInput$={(e) => form.priority = parseInt((e.target as HTMLInputElement).value) || 100}
                 min="0"
                 max="1000"
+                required
+                aria-required="true"
+                aria-describedby="policy-priority-hint"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
-              <p class="text-xs text-gray-500 mt-1">Lower numbers = higher priority (0-1000)</p>
-            </div>
+            </FormField>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+            <FormField id="policy-status" label="Status" hint="Policy will only be enforced if Active">
               <select
+                id="policy-status"
                 value={form.status}
                 onChange$={(e) => form.status = (e.target as HTMLSelectElement).value as any}
+                aria-describedby="policy-status-hint"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="draft">Draft</option>
@@ -295,16 +291,14 @@ export default component$(() => {
                 <option value="inactive">Inactive</option>
                 <option value="archived">Archived</option>
               </select>
-              <p class="text-xs text-gray-500 mt-1">Policy will only be enforced if Active</p>
-            </div>
+            </FormField>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Business Vertical
-              </label>
+            <FormField id="policy-business-vertical" label="Business Vertical" hint="Leave empty for global policy">
               <select
+                id="policy-business-vertical"
                 value={form.business_vertical_id}
                 onChange$={(e) => form.business_vertical_id = (e.target as HTMLSelectElement).value}
+                aria-describedby="policy-business-vertical-hint"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">Global (All Verticals)</option>
@@ -314,8 +308,7 @@ export default component$(() => {
                   </option>
                 ))}
               </select>
-              <p class="text-xs text-gray-500 mt-1">Leave empty for global policy</p>
-            </div>
+            </FormField>
           </div>
         </div>
 
@@ -340,20 +333,21 @@ export default component$(() => {
               placeholder="e.g., project:*, user:123"
               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
-            <button
+            <Btn
               onClick$={addResource}
               type="button"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              class="rounded-lg"
             >
               Add
-            </button>
+            </Btn>
           </div>
 
           <div class="flex flex-wrap gap-2">
             {form.resources.map((resource, idx) => (
-              <span
+              <Badge
                 key={idx}
-                class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                variant="info"
+                class="inline-flex items-center gap-2 px-3 py-1 text-sm"
               >
                 {resource}
                 <button
@@ -363,7 +357,7 @@ export default component$(() => {
                 >
                   ×
                 </button>
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
@@ -389,20 +383,21 @@ export default component$(() => {
               placeholder="e.g., read, write, delete"
               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
-            <button
+            <Btn
               onClick$={addAction}
               type="button"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              class="rounded-lg"
             >
               Add
-            </button>
+            </Btn>
           </div>
 
           <div class="flex flex-wrap gap-2">
             {form.actions.map((action, idx) => (
-              <span
+              <Badge
                 key={idx}
-                class="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                variant="info"
+                class="inline-flex items-center gap-2 px-3 py-1 text-sm"
               >
                 {action}
                 <button
@@ -412,7 +407,7 @@ export default component$(() => {
                 >
                   ×
                 </button>
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
@@ -445,14 +440,14 @@ export default component$(() => {
         >
           Cancel
         </button>
-        <button
+        <Btn
           onClick$={handleSubmit}
           disabled={saving.value}
           type="button"
-          class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          class="rounded-lg"
         >
           {saving.value ? 'Saving...' : 'Save Changes'}
-        </button>
+        </Btn>
       </div>
     </div>
   );

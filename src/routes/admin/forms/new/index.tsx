@@ -1,6 +1,7 @@
 // src/routes/admin/forms/new/index.tsx
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { routeLoader$, useNavigate, type DocumentHead } from '@builder.io/qwik-city';
+import { Btn, PageHeader, SectionCard } from '~/components/ds';
 import FormBuilderComplete from '~/components/form-builder/FormBuilder';
 import { formBuilderService, createSSRApiClient } from '~/services';
 import type { FormDefinition, WorkflowDefinition, Module } from '~/types/workflow';
@@ -128,60 +129,48 @@ export default component$(() => {
     <div class="bg-gray-50">
       {/* Header */}
       <div class="bg-white border-b border-gray-200 p-6">
-        <div class="mx-auto flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <button
-              onClick$={handleCancel}
-              class="text-gray-600 hover:text-gray-900"
-              title="Back to forms"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900">Create New Form</h1>
-              <p class="text-sm text-gray-600 mt-1">Design a new dynamic form with workflow</p>
-            </div>
+        <PageHeader title="Create New Form" subtitle="Design a new dynamic form with workflow" class="mb-0">
+          <Btn q:slot="actions" variant="secondary" onClick$={handleCancel} title="Back to forms" class="flex items-center gap-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Forms
+          </Btn>
+        </PageHeader>
+        {saving.value && (
+          <div class="mt-4 flex items-center gap-2 text-color-text-secondary">
+            <div class="animate-spin h-5 w-5 border-2 border-color-interactive-primary border-t-transparent rounded-full"></div>
+            <span class="text-sm font-medium">Saving...</span>
           </div>
-          {saving.value && (
-            <div class="flex items-center gap-2 text-blue-600">
-              <div class="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-              <span class="text-sm font-medium">Saving...</span>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Content */}
       <div class="mx-auto">
         {/* Loading State */}
         {loading.value && (
-          <div class="bg-white rounded-lg shadow-sm">
+          <SectionCard>
             <div class="flex flex-col items-center justify-center">
               <div class="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
               <p class="mt-4 text-gray-600">Loading form builder...</p>
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Error State */}
         {error.value && (
-          <div class="bg-white rounded-lg shadow-sm p-12">
+          <SectionCard class="p-12">
             <div class="text-center">
               <svg class="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h3 class="mt-4 text-lg font-medium text-gray-900">Error Loading</h3>
               <p class="mt-2 text-sm text-gray-600">{error.value}</p>
-              <button
-                onClick$={handleCancel}
-                class="mt-6 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
+              <Btn onClick$={handleCancel} class="mt-6" variant="secondary">
                 Go Back
-              </button>
+              </Btn>
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Form Builder */}

@@ -3,6 +3,7 @@ import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
 import { useLocation, useNavigate } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
 import { resolveApiBaseUrl } from '~/config/api';
+import { Btn, FormField } from '~/components/ds';
 
 interface BusinessVertical {
   id: string;
@@ -342,7 +343,8 @@ export default component$(() => {
               class="text-blue-600 hover:text-blue-800 mb-2 flex items-center"
               onClick$={() => nav("/admin/users")}
             >
-              ← Back to Users
+              <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+              Back to Users
             </button>
             <h1 class="text-2xl font-bold">Site Assignment</h1>
             <p class="text-gray-600 text-sm mt-1">
@@ -366,25 +368,25 @@ export default component$(() => {
 
         {/* Vertical Filter */}
         <div class="bg-white border rounded-lg p-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Business Vertical
-          </label>
-          <select
-            class="w-full md:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            value={state.selectedVertical}
-            onChange$={(e) => {
-              state.selectedVertical = (e.target as HTMLSelectElement).value;
-              state.selectedAvailable = [];
-              state.selectedAssigned = [];
-            }}
-          >
-            <option value="">Select a vertical</option>
-            {state.businessVerticals.map((vertical) => (
-              <option key={vertical.id} value={vertical.code}>
-                {vertical.name}
-              </option>
-            ))}
-          </select>
+          <FormField id="user-sites-vertical" label="Business Vertical">
+            <select
+              id="user-sites-vertical"
+              class="w-full md:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={state.selectedVertical}
+              onChange$={(e) => {
+                state.selectedVertical = (e.target as HTMLSelectElement).value;
+                state.selectedAvailable = [];
+                state.selectedAssigned = [];
+              }}
+            >
+              <option value="">Select a vertical</option>
+              {state.businessVerticals.map((vertical) => (
+                <option key={vertical.id} value={vertical.code}>
+                  {vertical.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
         </div>
 
         {state.selectedVertical && (
@@ -413,18 +415,22 @@ export default component$(() => {
                     }}
                   />
                   <div class="flex gap-2 mb-3">
-                    <button
-                      class="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                    <Btn
+                      size="sm"
+                      variant="secondary"
+                      class="rounded"
                       onClick$={selectAllAvailable}
                     >
                       Select All
-                    </button>
-                    <button
-                      class="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                    </Btn>
+                    <Btn
+                      size="sm"
+                      variant="secondary"
+                      class="rounded"
                       onClick$={selectNoneAvailable}
                     >
                       Select None
-                    </button>
+                    </Btn>
                   </div>
                   <div class="border rounded max-h-96 overflow-y-auto">
                     {filteredAvailable.length > 0 ? (
@@ -484,18 +490,22 @@ export default component$(() => {
                     }}
                   />
                   <div class="flex gap-2 mb-3">
-                    <button
-                      class="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                    <Btn
+                      size="sm"
+                      variant="secondary"
+                      class="rounded"
                       onClick$={selectAllAssigned}
                     >
                       Select All
-                    </button>
-                    <button
-                      class="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                    </Btn>
+                    <Btn
+                      size="sm"
+                      variant="secondary"
+                      class="rounded"
                       onClick$={selectNoneAssigned}
                     >
                       Select None
-                    </button>
+                    </Btn>
                   </div>
                   <div class="border rounded max-h-96 overflow-y-auto">
                     {filteredAssigned.length > 0 ? (
@@ -548,22 +558,23 @@ export default component$(() => {
 
             {/* Action Buttons */}
             <div class="flex justify-center gap-4 mt-6">
-              <button
-                class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              <Btn
+                class="rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                 disabled={state.selectedAvailable.length === 0}
                 onClick$={handleAssignSites}
               >
-                <span>→</span>
+                <i class="i-heroicons-arrow-right-solid h-4 w-4 inline-block" aria-hidden="true"></i>
                 Assign Selected ({state.selectedAvailable.length})
-              </button>
-              <button
-                class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              </Btn>
+              <Btn
+                variant="danger"
+                class="rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                 disabled={state.selectedAssigned.length === 0}
                 onClick$={handleRevokeSites}
               >
-                <span>←</span>
+                <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block" aria-hidden="true"></i>
                 Revoke Selected ({state.selectedAssigned.length})
-              </button>
+              </Btn>
             </div>
           </div>
         )}

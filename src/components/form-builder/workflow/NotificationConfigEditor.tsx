@@ -1,6 +1,8 @@
 // src/components/form-builder/workflow/NotificationConfigEditor.tsx
 import { component$, $, type PropFunction } from '@builder.io/qwik';
 import type { TransitionNotification, NotificationRecipientDef } from '~/types/notification';
+import { FormField } from '~/components/ds';
+import { Btn } from '~/components/ds';
 
 interface NotificationConfigEditorProps {
   notification: TransitionNotification;
@@ -70,57 +72,61 @@ export default component$<NotificationConfigEditorProps>((props) => {
     <div class="border border-gray-300 rounded-lg p-4 bg-white">
       <div class="flex justify-between items-start mb-4">
         <h4 class="font-medium text-lg">Notification Configuration</h4>
-        <button
+        <Btn
+          size="sm"
+          variant="danger"
           onClick$={props.onDelete$}
-          class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+          class="text-red-600 hover:bg-red-50"
         >
           Delete
-        </button>
+        </Btn>
       </div>
 
       <div class="space-y-4">
         {/* Title Template */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Title Template *
-          </label>
+        <FormField
+          id="workflow-notification-title-template"
+          label="Title Template"
+          required
+          hint="Use {{variable_name}} for dynamic values"
+        >
           <input
+            id="workflow-notification-title-template"
             type="text"
             value={props.notification.title_template}
             onInput$={(e) => handleUpdate('title_template', (e.target as HTMLInputElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., New {{form_title}} submission"
             required
+            aria-required="true"
+            aria-describedby="workflow-notification-title-template-hint"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            Use {`{{variable_name}}`} for dynamic values
-          </p>
-        </div>
+        </FormField>
 
         {/* Body Template */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Body Template *
-          </label>
+        <FormField
+          id="workflow-notification-body-template"
+          label="Body Template"
+          required
+          hint="Available variables: {{submitter_name}}, {{approver_name}}, {{form_title}}, {{current_state}}, {{form_data.field_name}}"
+        >
           <textarea
+            id="workflow-notification-body-template"
             value={props.notification.body_template}
             onInput$={(e) => handleUpdate('body_template', (e.target as HTMLTextAreaElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             rows={3}
             placeholder="e.g., {{submitter_name}} submitted a form for your review"
             required
+            aria-required="true"
+            aria-describedby="workflow-notification-body-template-hint"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            Available variables: {`{{submitter_name}}, {{approver_name}}, {{form_title}}, {{current_state}}, {{form_data.field_name}}`}
-          </p>
-        </div>
+        </FormField>
 
         {/* Priority */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Priority
-          </label>
+        <FormField id="workflow-notification-priority" label="Priority">
           <select
+            id="workflow-notification-priority"
             value={props.notification.priority || 'normal'}
             onChange$={(e) => handleUpdate('priority', (e.target as HTMLSelectElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -131,13 +137,10 @@ export default component$<NotificationConfigEditorProps>((props) => {
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
 
         {/* Delivery Channels */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Delivery Channels
-          </label>
+        <FormField id="workflow-notification-channels" label="Delivery Channels">
           <div class="space-y-2">
             {CHANNELS.map((channel) => (
               <label key={channel.value} class="flex items-center gap-2 cursor-pointer">
@@ -151,7 +154,7 @@ export default component$<NotificationConfigEditorProps>((props) => {
               </label>
             ))}
           </div>
-        </div>
+        </FormField>
 
         {/* Recipients */}
         <div>
@@ -159,12 +162,14 @@ export default component$<NotificationConfigEditorProps>((props) => {
             <label class="block text-sm font-medium text-gray-700">
               Recipients *
             </label>
-            <button
+            <Btn
+              size="sm"
+              variant="secondary"
               onClick$={handleAddRecipient}
-              class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+              class="text-blue-600 hover:bg-blue-50"
             >
               + Add Recipient
-            </button>
+            </Btn>
           </div>
 
           <div class="space-y-3">
@@ -182,12 +187,14 @@ export default component$<NotificationConfigEditorProps>((props) => {
                       </option>
                     ))}
                   </select>
-                  <button
+                  <Btn
+                    size="sm"
+                    variant="danger"
                     onClick$={() => handleDeleteRecipient(index)}
-                    class="px-3 py-2 text-red-600 hover:bg-red-50 rounded text-sm"
+                    class="text-red-600 hover:bg-red-50"
                   >
                     Delete
-                  </button>
+                  </Btn>
                 </div>
 
                 {/* Dynamic fields based on recipient type */}
@@ -259,9 +266,7 @@ export default component$<NotificationConfigEditorProps>((props) => {
 
         {/* Preview */}
         <div class="border-t pt-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Preview
-          </label>
+          <h5 class="text-sm font-medium text-gray-700 mb-2">Preview</h5>
           <div class="bg-gray-50 rounded-lg p-3 space-y-2">
             <div class="text-sm">
               <span class="font-medium">Priority:</span>{' '}

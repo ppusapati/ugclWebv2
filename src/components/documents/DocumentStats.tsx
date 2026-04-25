@@ -58,6 +58,10 @@ export const DocumentStats = component$<DocumentStatsProps>((props) => {
   }
 
   const stats = state.stats;
+  const getDocumentIconClass = (fileName: string) =>
+    documentService.isImage(fileName)
+      ? 'i-heroicons-photo-solid text-indigo-500'
+      : 'i-heroicons-document-text-solid text-gray-500';
 
   return (
     <div class="space-y-6">
@@ -155,7 +159,7 @@ export const DocumentStats = component$<DocumentStatsProps>((props) => {
             stats.recent_uploads.map((doc) => (
               <div key={doc.id} class="flex items-start gap-3 pb-3 border-b border-gray-100 last:border-0">
                 <div class="flex-shrink-0 w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-                  <span class="text-xl">{documentService.isImage(doc.file_name) ? '🖼️' : '📄'}</span>
+                  <i class={`${getDocumentIconClass(doc.file_name)} h-5 w-5 inline-block`} aria-hidden="true"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-900 truncate">{doc.title}</p>

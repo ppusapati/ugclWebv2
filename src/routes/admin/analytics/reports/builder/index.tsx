@@ -5,6 +5,7 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '../../../../../services/api-client';
 import { analyticsService } from '../../../../../services/analytics.service';
 import type { ReportDefinition, FormTablesResponse, FilterOperator, LogicalOperator, ChartType } from '../../../../../types/analytics';
+import { Badge, Btn, FormField, PageHeader } from '../../../../../components/ds';
 
 interface RoleOption {
   id: string;
@@ -400,113 +401,86 @@ export default component$(() => {
 
   const fieldTypeIcon = (type: string) => {
     const icons: Record<string, string> = {
-      text: '📝',
-      string: '📝',
-      number: '🔢',
-      integer: '🔢',
-      float: '🔢',
-      date: '📅',
-      datetime: '📅',
-      boolean: '✓',
-      json: '{}',
+      text: 'i-heroicons-document-text-solid',
+      string: 'i-heroicons-document-text-solid',
+      number: 'i-heroicons-calculator-solid',
+      integer: 'i-heroicons-calculator-solid',
+      float: 'i-heroicons-calculator-solid',
+      date: 'i-heroicons-calendar-days-solid',
+      datetime: 'i-heroicons-calendar-days-solid',
+      boolean: 'i-heroicons-check-circle-solid',
+      json: 'i-heroicons-code-bracket-solid',
     };
-    return icons[type.toLowerCase()] || '📋';
+    return icons[type.toLowerCase()] || 'i-heroicons-clipboard-document-list-solid';
   };
 
   return (
-    <div class="min-h-screen bg-white">
-      {/* Modern Header */}
-      <div class="bg-white shadow-md border-b border-gray-200">
-        <div class="max-w-screen-2xl mx-auto px-6 py-6">
-          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex items-center gap-4">
-              <button
-                onClick$={() => nav('/admin/analytics/reports')}
-                class="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-gray-700"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-              </button>
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Page Header with DS PageHeader */}
+      <PageHeader
+        title="Report Builder"
+        subtitle="Design and build custom analytics reports"
+      >
+        <div q:slot="actions" class="flex items-center gap-3">
+          <Btn
+            onClick$={handlePreview}
+            disabled={loading.value || (reportConfig.fields || []).length === 0}
+            variant="secondary"
+            size="sm"
+          >
+            <i class="i-heroicons-eye-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            Preview
+          </Btn>
+          <Btn
+            onClick$={async () => {
+              await loadModalData();
+              showSaveModal.value = true;
+            }}
+            disabled={loading.value || (reportConfig.fields || []).length === 0}
+            variant="primary"
+            size="sm"
+          >
+            <i class="i-heroicons-bookmark-square-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            Save
+          </Btn>
+        </div>
+      </PageHeader>
 
-              <div class="flex items-center gap-4">
-                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                  <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
-                  </svg>
+      {/* Progress Steps */}
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-center gap-2">
+          {[
+            { num: 1, label: 'Data Source' },
+            { num: 2, label: 'Fields' },
+            { num: 3, label: 'Configuration' },
+            { num: 4, label: 'Preview' }
+          ].map((step) => (
+            <div key={step.num} class="flex items-center">
+              <div class={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                currentStep.value >= step.num
+                  ? 'bg-interactive-primary text-white font-semibold'
+                  : 'bg-color-neutral-100 text-color-neutral-700'
+              }`}>
+                <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  currentStep.value >= step.num ? 'bg-white text-interactive-primary' : 'bg-color-neutral-300 text-color-neutral-600'
+                }`}>
+                  {step.num}
                 </div>
-                <div>
-                  <h1 class="text-3xl font-bold text-gray-900 mb-1">Report Builder</h1>
-                  <p class="text-gray-600 text-sm">Design and build custom analytics reports</p>
-                </div>
+                <span class="text-sm font-medium hidden md:inline">{step.label}</span>
               </div>
-            </div>
-
-            <div class="flex gap-3">
-              <button
-                onClick$={handlePreview}
-                disabled={loading.value || (reportConfig.fields || []).length === 0}
-                class="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              {step.num < 4 && (
+                <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="text-color-neutral-400"></path>
                 </svg>
-                {loading.value ? 'Loading...' : 'Preview'}
-              </button>
-              <button
-                onClick$={async () => {
-                  await loadModalData();
-                  showSaveModal.value = true;
-                }}
-                disabled={loading.value || (reportConfig.fields || []).length === 0}
-                class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                </svg>
-                Save Report
-              </button>
+              )}
             </div>
-          </div>
-
-          {/* Progress Steps */}
-          <div class="mt-6">
-            <div class="flex items-center justify-center gap-2">
-              {[
-                { num: 1, label: 'Data Source' },
-                { num: 2, label: 'Fields' },
-                { num: 3, label: 'Configuration' },
-                { num: 4, label: 'Preview' }
-              ].map((step) => (
-                <div key={step.num} class="flex items-center">
-                  <div class={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                    currentStep.value >= step.num
-                      ? 'bg-blue-50 border border-blue-200 text-gray-900'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      currentStep.value >= step.num ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}>
-                      {step.num}
-                    </div>
-                    <span class="text-sm font-medium hidden md:inline">{step.label}</span>
-                  </div>
-                  {step.num < 4 && (
-                    <svg class="w-4 h-4 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Error Alert */}
       {error.value && (
-        <div class="max-w-screen-2xl mx-auto px-6 py-4 animate-fade-in">
+        <div class="container mx-auto px-4 py-4 animate-fade-in">
           <div class="bg-red-50 border-l-4 border-red-500 rounded-xl p-5 flex items-start gap-4 shadow-lg">
             <div class="bg-red-100 rounded-full p-2">
               <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -517,17 +491,17 @@ export default component$(() => {
               <h4 class="font-semibold text-red-800 text-lg">Error</h4>
               <p class="text-red-700 mt-1">{error.value}</p>
             </div>
-            <button onClick$={() => error.value = ''} class="text-red-500 hover:text-red-700">
+            <Btn size="sm" variant="ghost" onClick$={() => error.value = ''} class="text-red-500 hover:text-red-700">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
-            </button>
+            </Btn>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <div class="max-w-screen-2xl mx-auto px-6 py-8">
+      <div class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-12 gap-6">
           {/* Left Sidebar - Configuration Panel */}
           <div class="col-span-4 space-y-6">
@@ -535,7 +509,7 @@ export default component$(() => {
             <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
               <div class="p-6 bg-blue-50 border-b border-blue-200">
                 <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                  <div class="bg-blue-600 p-2 rounded-xl">
+                  <div class="bg-interactive-primary p-2 rounded-xl">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
                     </svg>
@@ -601,27 +575,29 @@ export default component$(() => {
                       const fieldType = field.dataType || field.data_type || field.type;
                       const fieldSource = field.source || 'form';
                       return (
-                      <button
+                      <Btn
+                        size="sm"
+                        variant="ghost"
                         key={fieldKey}
                         onClick$={() => addField(field)}
                         class="w-full text-left p-3 transition-all hover:bg-purple-50 rounded-lg"
                       >
                         <div class="flex items-center gap-3">
-                          <span class="">{fieldTypeIcon(fieldType)}</span>
+                          <i class={`${fieldTypeIcon(fieldType)} h-5 w-5 inline-block text-purple-600`} aria-hidden="true"></i>
                           <div class="flex-1 min-w-0">
                             <div class="text-gray-900 truncate transition-colors font-medium">
                               {fieldLabel}
                             </div>
                             <div class="text-xs mt-0.5 flex items-center gap-1">
                               <span>{fieldType}</span>
-                              {fieldSource === 'form' && <span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">Form Field</span>}
+                              {fieldSource === 'form' && <Badge variant="info">Form Field</Badge>}
                             </div>
                           </div>
                           <svg class="w-5 h-5 text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                           </svg>
                         </div>
-                      </button>
+                      </Btn>
                     );
                     })
                   )}
@@ -633,7 +609,7 @@ export default component$(() => {
             <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
               <div class="p-6 bg-green-50 border-b border-green-200">
                 <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                  <div class="bg-green-600 p-2 rounded-xl">
+                  <div class="bg-success-600 p-2 rounded-xl">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
@@ -642,9 +618,9 @@ export default component$(() => {
                 </h3>
               </div>
               <div class="p-6 space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                <FormField id="report-builder-type" label="Report Type">
                   <select
+                    id="report-builder-type"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
                     value={reportConfig.report_type}
                     onChange$={(e: any) => {
@@ -652,39 +628,35 @@ export default component$(() => {
                       currentStep.value = 3;
                     }}
                   >
-                    <option value="table">📊 Table Report</option>
-                    <option value="chart">📈 Chart Visualization</option>
-                    <option value="kpi">🎯 KPI Dashboard</option>
+                    <option value="table">Table Report</option>
+                    <option value="chart">Chart Visualization</option>
+                    <option value="kpi">KPI Dashboard</option>
                   </select>
-                </div>
+                </FormField>
 
                 {reportConfig.report_type === 'chart' && (
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Chart Type</label>
+                  <FormField id="report-builder-chart-type" label="Chart Type">
                     <div class="grid grid-cols-2 gap-2">
                       {[
-                        { value: 'bar', label: 'Bar', icon: '📊' },
-                        { value: 'line', label: 'Line', icon: '📈' },
-                        { value: 'pie', label: 'Pie', icon: '🥧' },
-                        { value: 'doughnut', label: 'Doughnut', icon: '🍩' },
-                        { value: 'area', label: 'Area', icon: '📉' },
-                        { value: 'scatter', label: 'Scatter', icon: '⚡' },
+                        { value: 'bar', label: 'Bar', icon: 'i-heroicons-chart-bar-solid' },
+                        { value: 'line', label: 'Line', icon: 'i-heroicons-presentation-chart-line-solid' },
+                        { value: 'pie', label: 'Pie', icon: 'i-heroicons-chart-pie-solid' },
+                        { value: 'doughnut', label: 'Doughnut', icon: 'i-heroicons-circle-stack-solid' },
+                        { value: 'area', label: 'Area', icon: 'i-heroicons-chart-bar-square-solid' },
+                        { value: 'scatter', label: 'Scatter', icon: 'i-heroicons-sparkles-solid' },
                       ].map((chart) => (
-                        <button
+                        <Btn
+                          size="sm"
+                          variant={reportConfig.chart_type === chart.value ? 'primary' : 'secondary'}
                           key={chart.value}
                           onClick$={() => reportConfig.chart_type = chart.value as ChartType}
-                          class={`px-3 py-2 rounded-lg border-2 transition-all ${
-                            reportConfig.chart_type === chart.value
-                              ? 'bg-green-100 border-green-500 text-gray-900'
-                              : 'bg-white border-gray-200 hover:border-green-300 text-gray-700'
-                          }`}
                         >
-                          <span class="text-lg">{chart.icon}</span>
+                          <i class={`${chart.icon} h-5 w-5 inline-block`} aria-hidden="true"></i>
                           <div class="text-xs font-medium mt-1">{chart.label}</div>
-                        </button>
+                        </Btn>
                       ))}
                     </div>
-                  </div>
+                  </FormField>
                 )}
               </div>
             </div>
@@ -704,9 +676,9 @@ export default component$(() => {
                     </div>
                     Selected Fields
                   </h3>
-                  <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold">
+                  <Badge variant="info" class="px-3 py-1 text-sm">
                     {(reportConfig.fields || []).length} fields
-                  </span>
+                  </Badge>
                 </div>
               </div>
               <div class="p-6">
@@ -751,9 +723,9 @@ export default component$(() => {
                         </svg>
 
                         <div class="flex-1 grid grid-cols-2 gap-4">
-                          <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Display Name</label>
+                          <FormField id={`report-builder-field-alias-${index}`} label="Display Name">
                             <input
+                              id={`report-builder-field-alias-${index}`}
                               type="text"
                               value={field.alias}
                               onInput$={(e: any) => {
@@ -762,7 +734,7 @@ export default component$(() => {
                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                               placeholder="Field alias"
                             />
-                          </div>
+                          </FormField>
                           <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Field Name</label>
                             <div class="px-3 py-2 text-sm bg-gray-100 rounded-lg text-gray-700 flex items-center gap-2">
@@ -772,15 +744,16 @@ export default component$(() => {
                           </div>
                         </div>
 
-                        <button
+                        <Btn
+                          size="sm"
+                          variant="danger"
                           onClick$={() => removeField(index)}
-                          class="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600"
                           title="Remove field"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                           </svg>
-                        </button>
+                        </Btn>
                       </div>
                     ))}
                   </div>
@@ -808,36 +781,45 @@ export default component$(() => {
                       <span class="text-sm font-medium text-gray-900">
                         {filter.field_name} <span class="text-cyan-600 dark:text-cyan-400">{filter.operator}</span> {filter.value}
                       </span>
-                      <button
+                      <Btn
+                        size="sm"
+                        variant="danger"
                         onClick$={() => removeFilter(index)}
-                        class="ml-auto p-1 hover:bg-red-100 rounded-lg text-red-600"
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
-                      </button>
+                      </Btn>
                     </div>
                   ))}
 
-                  <div class="flex gap-2">
-                    <select class="flex-1 px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-field">
-                      <option value="">Select field...</option>
-                      {(reportConfig.fields || []).map((field: any) => (
-                        <option key={field.field_name} value={field.field_name}>
-                          {field.alias}
-                        </option>
-                      ))}
-                    </select>
-                    <select class="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-operator">
-                      <option value="eq">Equals</option>
-                      <option value="gt">Greater Than</option>
-                      <option value="lt">Less Than</option>
-                      <option value="like">Contains</option>
-                      <option value="this_month">This Month</option>
-                      <option value="this_week">This Week</option>
-                    </select>
-                    <input type="text" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-value" placeholder="Value" />
-                    <button
+                  <div class="grid grid-cols-12 gap-2 items-end">
+                    <FormField id="filter-field" label="Field" class="col-span-4 mb-0">
+                      <select class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-field">
+                        <option value="">Select field...</option>
+                        {(reportConfig.fields || []).map((field: any) => (
+                          <option key={field.field_name} value={field.field_name}>
+                            {field.alias}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField id="filter-operator" label="Operator" class="col-span-3 mb-0">
+                      <select class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-operator">
+                        <option value="eq">Equals</option>
+                        <option value="gt">Greater Than</option>
+                        <option value="lt">Less Than</option>
+                        <option value="like">Contains</option>
+                        <option value="this_month">This Month</option>
+                        <option value="this_week">This Week</option>
+                      </select>
+                    </FormField>
+                    <FormField id="filter-value" label="Value" class="col-span-4 mb-0">
+                      <input type="text" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-value" placeholder="Value" />
+                    </FormField>
+                    <Btn
+                      size="sm"
+                      variant="primary"
                       onClick$={() => {
                         const field = (document.getElementById('filter-field') as HTMLSelectElement)?.value;
                         const operator = (document.getElementById('filter-operator') as HTMLSelectElement)?.value as FilterOperator;
@@ -846,10 +828,10 @@ export default component$(() => {
                           addFilter(field, operator, value);
                         }
                       }}
-                      class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium text-sm transition-colors"
+                      class="col-span-1"
                     >
                       Add
-                    </button>
+                    </Btn>
                   </div>
                 </div>
               </div>
@@ -926,21 +908,22 @@ export default component$(() => {
           <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 animate-scale-in">
             <div class="flex items-center justify-between mb-6">
               <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-xl">
+                <div class="bg-interactive-primary p-2 rounded-xl">
                   <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
                   </svg>
                 </div>
                 Save Report
               </h3>
-              <button
+              <Btn
+                size="sm"
+                variant="ghost"
                 onClick$={() => showSaveModal.value = false}
-                class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
-              </button>
+              </Btn>
             </div>
 
             <div class="space-y-4">
@@ -950,38 +933,39 @@ export default component$(() => {
                 </div>
               )}
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Report Name *</label>
+              <FormField id="save-report-name" label="Report Name" required>
                 <input
+                  id="save-report-name"
                   type="text"
                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   value={reportConfig.name}
                   onInput$={(e: any) => reportConfig.name = e.target.value}
                   placeholder="Enter a descriptive report name"
+                  aria-required="true"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <FormField id="save-report-description" label="Description">
                 <textarea
+                  id="save-report-description"
                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
                   value={reportConfig.description}
                   onInput$={(e: any) => reportConfig.description = e.target.value}
                   placeholder="Add a description to help others understand this report"
                   rows={3}
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <FormField id="save-report-category" label="Category">
                 <input
+                  id="save-report-category"
                   type="text"
                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   value={reportConfig.category}
                   onInput$={(e: any) => reportConfig.category = e.target.value}
                   placeholder="e.g., Analytics, Operations, Finance"
                 />
-              </div>
+              </FormField>
 
               {/* Visibility */}
               <div class="rounded-xl border border-gray-200 p-4 space-y-3">
@@ -989,7 +973,7 @@ export default component$(() => {
 
                 <label class="flex items-center gap-3 cursor-pointer select-none">
                   <div
-                    class={`relative w-11 h-6 rounded-full transition-colors ${isPublic.value ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    class={`relative w-11 h-6 rounded-full transition-colors ${isPublic.value ? 'bg-interactive-primary' : 'bg-gray-300'}`}
                     onClick$={() => {
                       isPublic.value = !isPublic.value;
                       if (isPublic.value) allowedRoles.value = [];
@@ -1006,8 +990,9 @@ export default component$(() => {
 
                 {!isPublic.value && (
                   <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Role Scope</label>
+                    <FormField id="save-report-role-scope" label="Role Scope">
                     <select
+                      id="save-report-role-scope"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 mb-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       value={roleScope.value}
                       onChange$={async (e: any) => {
@@ -1018,6 +1003,7 @@ export default component$(() => {
                       <option value="selected_vertical">Roles from selected business vertical</option>
                       <option value="all_verticals">Roles from all business verticals</option>
                     </select>
+                    </FormField>
 
                     {roleScope.value === 'selected_vertical' && !selectedVertical.value && (
                       <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
@@ -1036,22 +1022,19 @@ export default component$(() => {
                         {getScopedRoleOptions().map((role) => {
                           const selected = allowedRoles.value.includes(role.name);
                           return (
-                            <button
+                            <Btn
                               key={role.id}
                               type="button"
+                              size="sm"
+                              variant={selected ? 'primary' : 'secondary'}
                               onClick$={() => {
                                 allowedRoles.value = selected
                                   ? allowedRoles.value.filter((r) => r !== role.name)
                                   : [...allowedRoles.value, role.name];
                               }}
-                              class={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                                selected
-                                  ? 'bg-blue-600 text-white border-blue-600'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                              }`}
                             >
                               {role.name}
-                            </button>
+                            </Btn>
                           );
                         })}
                       </div>
@@ -1061,9 +1044,9 @@ export default component$(() => {
               </div>
 
               <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Business Vertical</label>
+                <FormField id="save-report-business-vertical" label="Business Vertical">
                   <select
+                    id="save-report-business-vertical"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                     value={selectedVertical.value}
                     onChange$={async (e: any) => {
@@ -1086,10 +1069,10 @@ export default component$(() => {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Module</label>
+                </FormField>
+                <FormField id="save-report-module" label="Module">
                   <select
+                    id="save-report-module"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                     value={selectedModule.value}
                     onChange$={(e: any) => {
@@ -1104,7 +1087,7 @@ export default component$(() => {
                       </option>
                     ))}
                   </select>
-                </div>
+                </FormField>
               </div>
 
               <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl">
@@ -1125,16 +1108,17 @@ export default component$(() => {
             </div>
 
             <div class="flex gap-3 mt-8">
-              <button
+              <Btn
                 onClick$={() => showSaveModal.value = false}
-                class="flex-1 px-6 py-3 border-2 border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-all"
+                variant="secondary"
+                class="flex-1 rounded-xl"
               >
                 Cancel
-              </button>
-              <button
+              </Btn>
+              <Btn
                 onClick$={handleSave}
                 disabled={loading.value || !reportConfig.name}
-                class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                class="flex-1 rounded-xl"
               >
                 {loading.value ? (
                   <>
@@ -1151,7 +1135,7 @@ export default component$(() => {
                     Save Report
                   </>
                 )}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

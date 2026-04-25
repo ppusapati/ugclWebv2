@@ -41,10 +41,26 @@ table {
 	border-spacing: 0;
 }
 
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	min-height: 100%;
+	background-color: var(--color-surface-primary);
+	color: var(--color-text-primary);
+	font-family: var(--typography-fontFamily-primary);
+	font-size: var(--typography-fontSize-base);
+	color-scheme: light;
+	scroll-behavior: smooth;
+}
+
 /* ===== GLOBAL FONT SETTINGS ===== */
 /* Ensure consistent font across ALL elements */
 * {
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+	font-family: var(--typography-fontFamily-primary);
 }
 
 /* Explicitly set font for form elements (browsers often override these) */
@@ -60,9 +76,19 @@ optgroup {
 
 /* Improve text rendering */
 body {
+	min-height: 100vh;
+	background-color: var(--color-surface-secondary);
+	color: var(--color-text-primary);
+	font-size: var(--typography-fontSize-base);
+	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
+}
+
+#qwik-inspector-info-popup,
+#qwik-inspector-overlay {
+	font-family: var(--typography-fontFamily-primary);
 }
 
 /* Ensure monospace for code elements only */
@@ -70,5 +96,273 @@ code,
 kbd,
 pre,
 samp {
-	font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, 'Courier New', monospace;
+	font-family: var(--typography-fontFamily-mono);
+}
+
+img,
+picture,
+svg,
+video,
+canvas {
+	display: block;
+	max-width: 100%;
+}
+
+a {
+	color: inherit;
+}
+
+::selection {
+	background-color: var(--color-brand-primary-200);
+	color: var(--color-brand-primary-900);
+}
+
+:focus-visible {
+	outline: 2px solid var(--color-border-focus);
+	outline-offset: 2px;
+}
+
+/* ===== FORM STANDARDIZATION LAYER ===== */
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+) {
+	background-color: var(--color-surface-primary);
+	color: var(--color-text-primary);
+	border: 1px solid var(--color-border-primary);
+	border-radius: 0.5rem;
+	padding: 0.625rem 0.875rem;
+	font-size: var(--typography-fontSize-sm);
+	line-height: 1.5;
+	transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	.input,
+	.select,
+	.form-input,
+	.form-select
+) {
+	min-height: 2.5rem;
+}
+
+:where(textarea, .textarea) {
+	min-height: 5rem;
+	resize: vertical;
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+)::placeholder {
+	color: var(--color-text-placeholder);
+	opacity: 1;
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+):focus {
+	border-color: var(--color-interactive-primary);
+	box-shadow: 0 0 0 3px var(--color-brand-primary-100);
+	outline: none;
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+):is(.is-success, [data-state='success']) {
+	border-color: var(--color-semantic-success-500);
+	box-shadow: 0 0 0 3px var(--color-semantic-success-100);
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+):is(.is-error, [data-state='error'], [aria-invalid='true']) {
+	border-color: var(--color-semantic-error-500);
+	box-shadow: 0 0 0 3px var(--color-semantic-error-100);
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+):is(.is-warning, [data-state='warning']) {
+	border-color: var(--color-semantic-warning-500);
+	box-shadow: 0 0 0 3px var(--color-semantic-warning-100);
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+):is([readonly], .is-readonly, [data-readonly='true']) {
+	background-color: var(--color-surface-secondary);
+	border-color: var(--color-border-secondary);
+	color: var(--color-text-secondary);
+	cursor: default;
+}
+
+:where(
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='search'],
+	input[type='date'],
+	input[type='datetime-local'],
+	input[type='time'],
+	input:not([type]),
+	select,
+	textarea,
+	.input,
+	.select,
+	.textarea,
+	.form-input,
+	.form-select
+):disabled {
+	background-color: var(--color-surface-secondary);
+	color: var(--color-text-disabled);
+	cursor: not-allowed;
+	opacity: 0.8;
+}
+
+:where(input[type='checkbox'], input[type='radio'], .form-checkbox) {
+	accent-color: var(--color-interactive-primary);
+	width: 1rem;
+	height: 1rem;
+	border: 1px solid var(--color-border-primary);
+}
+
+:where(label, .form-label) {
+	color: var(--color-text-secondary);
+	font-size: var(--typography-fontSize-sm);
+	font-weight: 600;
+	line-height: 1.4;
 }

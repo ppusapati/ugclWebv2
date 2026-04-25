@@ -1,6 +1,8 @@
 // src/components/form-builder/workflow/StateEditor.tsx
 import { component$, $, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowState } from '~/types/workflow';
+import { FormField } from '~/components/ds';
+import { Btn } from '~/components/ds';
 
 interface StateEditorProps {
   state: WorkflowState;
@@ -33,94 +35,93 @@ export default component$<StateEditorProps>((props) => {
       <div class="flex justify-between items-start mb-4">
         <h3 class="font-medium text-lg">State Configuration</h3>
         {props.canDelete && (
-          <button
+          <Btn
+            size="sm"
+            variant="danger"
             onClick$={props.onDelete$}
-            class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+            class="text-red-600 hover:bg-red-50"
           >
             Delete State
-          </button>
+          </Btn>
         )}
       </div>
 
       <div class="space-y-4">
         {/* State Code */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            State Code *
-          </label>
+        <FormField
+          id={`state-code-${props.state.code || 'new'}`}
+          label="State Code"
+          required
+          hint="Lowercase, no spaces. Used in API and database."
+        >
           <input
+            id={`state-code-${props.state.code || 'new'}`}
             type="text"
             value={props.state.code}
             onInput$={(e) => handleUpdate('code', (e.target as HTMLInputElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., draft, submitted, approved"
             required
+            aria-required="true"
+            aria-describedby={`state-code-${props.state.code || 'new'}-hint`}
           />
-          <p class="text-xs text-gray-500 mt-1">
-            Lowercase, no spaces. Used in API and database.
-          </p>
-        </div>
+        </FormField>
 
         {/* State Name */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Display Name *
-          </label>
+        <FormField id={`state-name-${props.state.code || 'new'}`} label="Display Name" required>
           <input
+            id={`state-name-${props.state.code || 'new'}`}
             type="text"
             value={props.state.name}
             onInput$={(e) => handleUpdate('name', (e.target as HTMLInputElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Draft, Submitted, Approved"
             required
+            aria-required="true"
           />
-        </div>
+        </FormField>
 
         {/* Description */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
+        <FormField id={`state-description-${props.state.code || 'new'}`} label="Description">
           <textarea
+            id={`state-description-${props.state.code || 'new'}`}
             value={props.state.description}
             onInput$={(e) => handleUpdate('description', (e.target as HTMLTextAreaElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             rows={2}
             placeholder="Brief description of this state"
           />
-        </div>
+        </FormField>
 
         {/* Color */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Badge Color
-          </label>
+        <FormField id={`state-color-${props.state.code || 'new'}`} label="Badge Color">
           <div class="grid grid-cols-4 gap-2">
             {STATE_COLORS.map((color) => (
-              <button
+              <Btn
                 key={color.value}
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick$={() => handleUpdate('color', color.value)}
                 class={`px-3 py-2 rounded text-sm font-medium ${color.class} ${
                   props.state.color === color.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
                 }`}
               >
                 {color.label}
-              </button>
+              </Btn>
             ))}
           </div>
-        </div>
+        </FormField>
 
         {/* Icon */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Icon
-          </label>
+        <FormField id={`state-icon-${props.state.code || 'new'}`} label="Icon">
           <div class="grid grid-cols-4 gap-2">
             {STATE_ICONS.map((icon) => (
-              <button
+              <Btn
                 key={icon}
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick$={() => handleUpdate('icon', icon)}
                 class={`px-3 py-2 border rounded text-sm capitalize ${
                   props.state.icon === icon
@@ -129,10 +130,10 @@ export default component$<StateEditorProps>((props) => {
                 }`}
               >
                 {icon}
-              </button>
+              </Btn>
             ))}
           </div>
-        </div>
+        </FormField>
 
         {/* Is Final State */}
         <div class="flex items-center p-3 bg-gray-50 rounded-lg">
@@ -155,9 +156,7 @@ export default component$<StateEditorProps>((props) => {
 
         {/* Preview */}
         <div class="border-t pt-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Preview
-          </label>
+          <h5 class="text-sm font-medium text-gray-700 mb-2">Preview</h5>
           <div class="flex items-center gap-3">
             <span
               class={`px-3 py-1 rounded-full text-sm font-medium ${

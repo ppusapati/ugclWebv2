@@ -175,7 +175,7 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
     }
 
     if (props.hideIfDenied) {
-      return <div style={{ display: 'none' }}><Slot /></div>;
+      return <div class="hidden"><Slot /></div>;
     }
 
     return null;

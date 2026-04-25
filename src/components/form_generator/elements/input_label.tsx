@@ -11,7 +11,7 @@ export const P9EInputLabel = component$(
         <label
           class={['labelbase',
             !margin && "mb-4",
-            error ? "text-danger-500" :'', 
+            error ? "text-error-500" :'', 
           ]}
           for={name}
         >

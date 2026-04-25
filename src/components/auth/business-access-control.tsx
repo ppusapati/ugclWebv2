@@ -1,5 +1,6 @@
 // src/components/auth/business-access-control.tsx
 import { component$, isServer, useStore, useTask$, $ } from '@builder.io/qwik';
+import { Badge, Btn } from '~/components/ds';
 import { authService } from '~/services/auth.service';
 import { buildApiUrl } from '~/config/api';
 
@@ -239,31 +240,32 @@ export const BusinessAccessControl = component$(() => {
               <h4 class="text-sm font-medium text-gray-700 mb-2">Active Roles:</h4>
               <div class="flex flex-wrap gap-1">
                 {business.roles.slice(0, 3).map((role) => (
-                  <span key={role.id} class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                  <Badge key={role.id} variant="info">
                     {role.name} ({role.user_count})
-                  </span>
+                  </Badge>
                 ))}
                 {business.roles.length > 3 && (
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                  <Badge variant="neutral">
                     +{business.roles.length - 3} more
-                  </span>
+                  </Badge>
                 )}
               </div>
             </div>
 
             {/* Actions */}
             <div class="flex space-x-2">
-              <button
-                class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+              <Btn
+                class="flex-1"
                 onClick$={() => {
                   state.selectedBusiness = business;
                   state.showUserModal = true;
                 }}
               >
                 Grant Access
-              </button>
-              <button
-                class="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
+              </Btn>
+              <Btn
+                variant="secondary"
+                class="flex-1"
                 onClick$={() => {
                   state.selectedBusiness = business;
                   // Navigate to detailed business management
@@ -271,7 +273,7 @@ export const BusinessAccessControl = component$(() => {
                 }}
               >
                 Manage
-              </button>
+              </Btn>
             </div>
           </div>
         ))}
@@ -340,8 +342,8 @@ export const BusinessAccessControl = component$(() => {
               </div>
 
               <div class="flex justify-end space-x-3 mt-6">
-                <button
-                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                <Btn
+                  variant="secondary"
                   onClick$={() => {
                     state.showUserModal = false;
                     state.selectedBusiness = null;
@@ -349,13 +351,12 @@ export const BusinessAccessControl = component$(() => {
                   }}
                 >
                   Cancel
-                </button>
-                <button
-                  class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                </Btn>
+                <Btn
                   onClick$={handleGrantUserAccess}
                 >
                   Grant Access
-                </button>
+                </Btn>
               </div>
             </div>
           </div>

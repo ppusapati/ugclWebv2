@@ -3,6 +3,8 @@ import { component$, $, type PropFunction } from '@builder.io/qwik';
 import type { WorkflowTransitionDef, WorkflowState } from '~/types/workflow';
 import type { TransitionNotification } from '~/types/notification';
 import NotificationConfigEditor from './NotificationConfigEditor';
+import { FormField } from '~/components/ds';
+import { Btn } from '~/components/ds';
 
 interface TransitionEditorProps {
   transition: WorkflowTransitionDef;
@@ -54,25 +56,26 @@ export default component$<TransitionEditorProps>((props) => {
     <div class="border border-gray-300 rounded-lg p-4 bg-white">
       <div class="flex justify-between items-start mb-4">
         <h3 class="font-medium text-lg">Transition Configuration</h3>
-        <button
+        <Btn
+          size="sm"
+          variant="danger"
           onClick$={props.onDelete$}
-          class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+          class="text-red-600 hover:bg-red-50"
         >
           Delete
-        </button>
+        </Btn>
       </div>
 
       <div class="space-y-4">
         {/* From State */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            From State *
-          </label>
+        <FormField id={`transition-from-${props.transition.action || 'new'}`} label="From State" required>
           <select
+            id={`transition-from-${props.transition.action || 'new'}`}
             value={props.transition.from}
             onChange$={(e) => handleUpdate('from', (e.target as HTMLSelectElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
+            aria-required="true"
           >
             <option value="">Select state...</option>
             {props.states.map((state) => (
@@ -81,18 +84,17 @@ export default component$<TransitionEditorProps>((props) => {
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
 
         {/* To State */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            To State *
-          </label>
+        <FormField id={`transition-to-${props.transition.action || 'new'}`} label="To State" required>
           <select
+            id={`transition-to-${props.transition.action || 'new'}`}
             value={props.transition.to}
             onChange$={(e) => handleUpdate('to', (e.target as HTMLSelectElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
+            aria-required="true"
           >
             <option value="">Select state...</option>
             {props.states.map((state) => (
@@ -101,18 +103,22 @@ export default component$<TransitionEditorProps>((props) => {
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
 
         {/* Action */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Action *
-          </label>
+        <FormField
+          id={`transition-action-${props.transition.action || 'new'}`}
+          label="Action"
+          required
+          hint="The action verb used in the API (e.g., submit, approve)."
+        >
           <div class="flex gap-2">
             <select
+              id={`transition-action-${props.transition.action || 'new'}`}
               value={props.transition.action}
               onChange$={(e) => handleUpdate('action', (e.target as HTMLSelectElement).value)}
               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              aria-required="true"
             >
               <option value="">Select action...</option>
               {COMMON_ACTIONS.map((action) => (
@@ -132,35 +138,33 @@ export default component$<TransitionEditorProps>((props) => {
               />
             )}
           </div>
-          <p class="text-xs text-gray-500 mt-1">
-            The action verb used in the API (e.g., "submit", "approve")
-          </p>
-        </div>
+        </FormField>
 
         {/* Label */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Button Label
-          </label>
+        <FormField
+          id={`transition-label-${props.transition.action || 'new'}`}
+          label="Button Label"
+          hint="Displayed on the action button. If empty, uses the action name."
+        >
           <input
+            id={`transition-label-${props.transition.action || 'new'}`}
             type="text"
             value={props.transition.label}
             onInput$={(e) => handleUpdate('label', (e.target as HTMLInputElement).value)}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Submit for Approval, Approve, Reject"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            Displayed on the action button. If empty, uses the action name.
-          </p>
-        </div>
+        </FormField>
 
         {/* Permission */}
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Required Permission
-          </label>
+        <FormField
+          id={`transition-permission-${props.transition.action || 'new'}`}
+          label="Required Permission"
+          hint="Only users with this permission can perform this transition."
+        >
           <div class="flex gap-2">
             <select
+              id={`transition-permission-${props.transition.action || 'new'}`}
               value={props.transition.permission || ''}
               onChange$={(e) => handleUpdate('permission', (e.target as HTMLSelectElement).value || undefined)}
               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -183,10 +187,7 @@ export default component$<TransitionEditorProps>((props) => {
               />
             )}
           </div>
-          <p class="text-xs text-gray-500 mt-1">
-            Only users with this permission can perform this transition
-          </p>
-        </div>
+        </FormField>
 
         {/* Requires Comment */}
         <div class="flex items-center p-3 bg-gray-50 rounded-lg">
@@ -209,26 +210,25 @@ export default component$<TransitionEditorProps>((props) => {
 
         {/* Preview */}
         <div class="border-t pt-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Transition Preview
-          </label>
+          <h5 class="text-sm font-medium text-gray-700 mb-2">Transition Preview</h5>
           <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center gap-2">
               <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
                 {props.states.find(s => s.code === props.transition.from)?.name || props.transition.from || '?'}
               </span>
-              <span class="text-gray-400">→</span>
+              <i class="i-heroicons-arrow-right-solid h-3.5 w-3.5 inline-block text-gray-400" aria-hidden="true"></i>
               <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
                 {props.states.find(s => s.code === props.transition.to)?.name || props.transition.to || '?'}
               </span>
             </div>
             <div class="border-l pl-3 ml-auto">
-              <button
+              <Btn
                 type="button"
-                class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                size="sm"
+                variant="primary"
               >
                 {props.transition.label || props.transition.action || 'Action'}
-              </button>
+              </Btn>
               {props.transition.requires_comment && (
                 <span class="ml-2 text-xs text-gray-500">* comment required</span>
               )}
@@ -247,12 +247,14 @@ export default component$<TransitionEditorProps>((props) => {
                 Send notifications when this transition occurs
               </p>
             </div>
-            <button
+            <Btn
+              size="sm"
+              variant="secondary"
               onClick$={handleAddNotification}
-              class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+              class="text-blue-600 hover:bg-blue-50"
             >
               + Add Notification
-            </button>
+            </Btn>
           </div>
 
           <div class="space-y-3">

@@ -4,6 +4,7 @@ import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services';
 import { notificationService } from '~/services/notification.service';
 import type { NotificationPreference, NotificationType } from '~/types/notification';
+import { Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 
 export const useNotificationPreferencesData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -89,19 +90,20 @@ export default component$(() => {
   });
 
   return (
-    <div class="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div class="mb-6">
-        <div class="flex items-center gap-2 mb-2">
-          <a href="/admin/notifications" class="text-blue-600 hover:text-blue-800">
-            ← Back to Notifications
-          </a>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-900">Notification Preferences</h1>
-        <p class="text-gray-600 mt-1">
-          Customize how and when you receive notifications
-        </p>
-      </div>
+    <div class="space-y-6">
+      <PageHeader
+        title="Notification Preferences"
+        subtitle="Customize how and when you receive notifications"
+      >
+        <a
+          q:slot="actions"
+          href="/admin/notifications"
+          class="inline-flex items-center justify-center rounded-lg border border-color-border-primary bg-color-surface-primary px-4 py-2 text-sm font-medium text-color-text-secondary transition-colors duration-200 hover:bg-color-surface-secondary"
+        >
+          <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+          Back to Notifications
+        </a>
+      </PageHeader>
 
       {/* Loading State */}
       {loading.value && (
@@ -112,14 +114,14 @@ export default component$(() => {
 
       {/* Error State */}
       {error.value && (
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 mb-6">
+        <div class="rounded-lg border border-color-semantic-error-300 bg-color-semantic-error-100 p-4 text-sm text-color-semantic-error-700">
           {error.value}
         </div>
       )}
 
       {/* Success State */}
       {success.value && (
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 mb-6">
+        <div class="rounded-lg border border-color-semantic-success-300 bg-color-semantic-success-100 p-4 text-sm text-color-semantic-success-700">
           {success.value}
         </div>
       )}
@@ -128,13 +130,7 @@ export default component$(() => {
       {!loading.value && (
         <div class="space-y-6">
           {/* Delivery Channels */}
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-              Delivery Channels
-            </h2>
-            <p class="text-sm text-gray-600 mb-4">
-              Choose how you want to receive notifications
-            </p>
+          <SectionCard title="Delivery Channels" subtitle="Choose how you want to receive notifications.">
 
             <div class="space-y-4">
               <label class="flex items-center gap-3 cursor-pointer">
@@ -144,7 +140,7 @@ export default component$(() => {
                   onChange$={(e) =>
                     (preferences.enable_in_app = (e.target as HTMLInputElement).checked)
                   }
-                  class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
                   <div class="font-medium text-gray-900">In-App Notifications</div>
@@ -161,7 +157,7 @@ export default component$(() => {
                   onChange$={(e) =>
                     (preferences.enable_email = (e.target as HTMLInputElement).checked)
                   }
-                  class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
                   <div class="font-medium text-gray-900">Email Notifications</div>
@@ -178,7 +174,7 @@ export default component$(() => {
                   onChange$={(e) =>
                     (preferences.enable_sms = (e.target as HTMLInputElement).checked)
                   }
-                  class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
                   <div class="font-medium text-gray-900">SMS Notifications</div>
@@ -195,7 +191,7 @@ export default component$(() => {
                   onChange$={(e) =>
                     (preferences.enable_web_push = (e.target as HTMLInputElement).checked)
                   }
-                  class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
                   <div class="font-medium text-gray-900">Browser Push Notifications</div>
@@ -205,16 +201,10 @@ export default component$(() => {
                 </div>
               </label>
             </div>
-          </div>
+          </SectionCard>
 
           {/* Notification Types */}
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-              Notification Types
-            </h2>
-            <p class="text-sm text-gray-600 mb-4">
-              Select which types of notifications you want to receive
-            </p>
+          <SectionCard title="Notification Types" subtitle="Select which types of notifications you want to receive.">
 
             <div class="space-y-3">
               {([
@@ -231,20 +221,16 @@ export default component$(() => {
                     type="checkbox"
                     checked={!preferences.disabled_types.includes(type.value)}
                     onChange$={() => toggleDisabledType(type.value)}
-                    class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span class="text-gray-900">{type.label}</span>
                 </label>
               ))}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Quiet Hours */}
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Quiet Hours</h2>
-            <p class="text-sm text-gray-600 mb-4">
-              Pause notifications during specific hours
-            </p>
+          <SectionCard title="Quiet Hours" subtitle="Pause notifications during specific hours.">
 
             <label class="flex items-center gap-3 cursor-pointer mb-4">
               <input
@@ -255,18 +241,16 @@ export default component$(() => {
                     e.target as HTMLInputElement
                   ).checked)
                 }
-                class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span class="text-gray-900">Enable Quiet Hours</span>
             </label>
 
             {preferences.quiet_hours_enabled && (
               <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Start Time
-                  </label>
+                <FormField id="notif-pref-start-time" label="Start Time">
                   <input
+                    id="notif-pref-start-time"
                     type="time"
                     value={preferences.quiet_hours_start}
                     onInput$={(e) =>
@@ -274,34 +258,26 @@ export default component$(() => {
                         e.target as HTMLInputElement
                       ).value)
                     }
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
                   />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    End Time
-                  </label>
+                </FormField>
+                <FormField id="notif-pref-end-time" label="End Time">
                   <input
+                    id="notif-pref-end-time"
                     type="time"
                     value={preferences.quiet_hours_end}
                     onInput$={(e) =>
                       (preferences.quiet_hours_end = (e.target as HTMLInputElement).value)
                     }
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
                   />
-                </div>
+                </FormField>
               </div>
             )}
-          </div>
+          </SectionCard>
 
           {/* Digest Settings */}
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-              Notification Digest
-            </h2>
-            <p class="text-sm text-gray-600 mb-4">
-              Receive a summary of notifications at regular intervals
-            </p>
+          <SectionCard title="Notification Digest" subtitle="Receive a summary of notifications at regular intervals.">
 
             <label class="flex items-center gap-3 cursor-pointer mb-4">
               <input
@@ -310,47 +286,44 @@ export default component$(() => {
                 onChange$={(e) =>
                   (preferences.digest_enabled = (e.target as HTMLInputElement).checked)
                 }
-                class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span class="text-gray-900">Enable Notification Digest</span>
             </label>
 
             {preferences.digest_enabled && (
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Frequency
-                </label>
+              <FormField id="notif-pref-frequency" label="Frequency">
                 <select
+                  id="notif-pref-frequency"
                   value={preferences.digest_frequency || ''}
                   onChange$={(e) => {
                     const val = (e.target as HTMLSelectElement).value;
                     preferences.digest_frequency = val === '' ? undefined : val as 'daily' | 'weekly';
                   }}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
                 >
                   <option value="">Select frequency</option>
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
                 </select>
-              </div>
+              </FormField>
             )}
-          </div>
+          </SectionCard>
 
           {/* Save Button */}
           <div class="flex justify-end gap-3">
             <a
               href="/admin/notifications"
-              class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
+              class="inline-flex items-center justify-center rounded-lg border border-color-border-primary bg-color-surface-secondary px-6 py-2 text-sm font-medium text-color-text-secondary transition-colors duration-200 hover:bg-color-surface-tertiary"
             >
               Cancel
             </a>
-            <button
+            <Btn
               onClick$={handleSave}
               disabled={saving.value}
-              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving.value ? 'Saving...' : 'Save Preferences'}
-            </button>
+            </Btn>
           </div>
         </div>
       )}

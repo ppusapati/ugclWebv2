@@ -1,5 +1,18 @@
 import { component$, useStore, $ } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
+import {
+  Badge,
+  Btn,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+  FormField,
+  PageHeader,
+  SectionCard,
+} from "~/components/ds";
 import { apiClient, createSSRApiClient } from "~/services";
 
 interface Permission {
@@ -142,46 +155,40 @@ export default component$(() => {
 
   return (
     <div class="space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-xl font-semibold text-dark-800">Manage Permissions</h2>
-          <p class="text-dark-600 text-sm mt-1">
-            Define granular access controls for the system
-          </p>
-        </div>
-        <button
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            onClick$={() => {
-              state.showCreateModal = true;
-              state.editingPermission = null;
-            }}
-          >
-            + Create Permission
-          </button>
-        </div>
+      <PageHeader title="Manage Permissions" subtitle="Define granular access controls for the system">
+        <Btn
+          q:slot="actions"
+          onClick$={() => {
+            state.showCreateModal = true;
+            state.editingPermission = null;
+          }}
+        >
+          + Create Permission
+        </Btn>
+      </PageHeader>
 
         {/* Success/Error Messages */}
         {state.success && (
-          <div class="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          <div class="rounded-lg border border-color-semantic-success-300 bg-color-semantic-success-100 px-4 py-3 text-sm text-color-semantic-success-700">
             {state.success}
           </div>
         )}
         {state.error && (
-          <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div class="rounded-lg border border-color-semantic-error-300 bg-color-semantic-error-100 px-4 py-3 text-sm text-color-semantic-error-700">
             {state.error}
           </div>
         )}
 
         {/* Filters */}
-        <div class="bg-white border rounded-lg p-4">
+        <SectionCard title="Filters" subtitle="Search permissions by name, description, or resource.">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-medium text-color-text-secondary">
                 Search
               </label>
               <input
                 type="text"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
                 placeholder="Search by name or description..."
                 value={state.searchTerm}
                 onInput$={(e) => {
@@ -190,11 +197,11 @@ export default component$(() => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-medium text-color-text-secondary">
                 Filter by Resource
               </label>
               <select
-                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full rounded-lg border border-color-border-primary bg-color-surface-primary px-3 py-2 text-sm text-color-text-primary focus:border-color-interactive-primary focus:outline-none"
                 value={state.selectedResource}
                 onChange$={(e) => {
                   state.selectedResource = (e.target as HTMLSelectElement).value;
@@ -209,81 +216,77 @@ export default component$(() => {
               </select>
             </div>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Permissions Grouped by Resource */}
         <div class="space-y-6">
           {Object.entries(groupedPermissions).map(([resource, permissions]) => (
-            <div key={resource} class="bg-white border rounded-lg overflow-hidden shadow">
-              <div class="px-6 py-3 bg-gray-50 border-b">
-                <h3 class="text-lg font-semibold capitalize">{resource}</h3>
-                <p class="text-sm text-gray-600">
+            <SectionCard key={resource} title={resource} subtitle={`${permissions.length} permission${permissions.length !== 1 ? "s" : ""}`} class="overflow-hidden">
+              <div class="mb-4 flex items-center justify-between gap-3 border-b border-color-border-primary px-6 py-4">
+                <div>
+                  <h3 class="text-lg font-semibold capitalize text-color-text-primary">{resource}</h3>
+                  <p class="text-sm text-color-text-secondary">
                   {permissions.length} permission{permissions.length !== 1 ? "s" : ""}
-                </p>
+                  </p>
+                </div>
               </div>
-              <table class="w-full">
-                <thead class="bg-gray-50 border-b">
+              <DataTable class="rounded-none border-0 bg-transparent">
+                <DataTableHead>
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <DataTableHeaderCell>Name</DataTableHeaderCell>
+                    <DataTableHeaderCell>Action</DataTableHeaderCell>
+                    <DataTableHeaderCell>Description</DataTableHeaderCell>
+                    <DataTableHeaderCell>Actions</DataTableHeaderCell>
                   </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                </DataTableHead>
+                <DataTableBody>
                   {permissions.map((permission) => (
-                    <tr key={permission.id} class="hover:bg-gray-50">
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <code class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                    <DataTableRow key={permission.id}>
+                      <DataTableCell class="whitespace-nowrap">
+                        <code class="rounded bg-color-surface-secondary px-2 py-1 text-sm font-mono text-color-text-primary">
                           {permission.name}
                         </code>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">
-                          {permission.action}
-                        </span>
-                      </td>
-                      <td class="px-6 py-4">
-                        <div class="text-sm text-gray-600">
+                      </DataTableCell>
+                      <DataTableCell class="whitespace-nowrap">
+                        <Badge variant="info">{permission.action}</Badge>
+                      </DataTableCell>
+                      <DataTableCell>
+                        <div class="text-sm text-color-text-secondary">
                           {permission.description}
                         </div>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          class="text-blue-600 hover:text-blue-900 mr-4"
-                          onClick$={() => {
-                            state.editingPermission = { ...permission };
-                            state.showCreateModal = true;
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          class="text-red-600 hover:text-red-900"
-                          onClick$={() =>
-                            handleDelete(permission.id, permission.name)
-                          }
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                      <DataTableCell class="whitespace-nowrap">
+                        <div class="flex gap-2">
+                          <Btn
+                            size="sm"
+                            variant="primary"
+                            onClick$={() => {
+                              state.editingPermission = { ...permission };
+                              state.showCreateModal = true;
+                            }}
+                          >
+                            Edit
+                          </Btn>
+                          <Btn
+                            size="sm"
+                            variant="danger"
+                            onClick$={() =>
+                              handleDelete(permission.id, permission.name)
+                            }
+                          >
+                            Delete
+                          </Btn>
+                        </div>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </DataTableBody>
+              </DataTable>
+            </SectionCard>
           ))}
 
           {Object.keys(groupedPermissions).length === 0 && (
-            <div class="bg-white border rounded-lg p-12 text-center text-gray-500">
+            <div class="rounded-xl border border-color-border-primary bg-color-surface-primary p-12 text-center text-color-text-tertiary">
               No permissions found.
             </div>
           )}
@@ -301,11 +304,9 @@ export default component$(() => {
                 </h3>
 
                 <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Resource *
-                    </label>
+                  <FormField id="perm-resource" label="Resource" required hint="The resource this permission applies to. Use '*' for all resources (wildcard)">
                     <input
+                      id="perm-resource"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={
@@ -313,6 +314,9 @@ export default component$(() => {
                           ? state.editingPermission.resource
                           : state.newPermission.resource
                       }
+                      required
+                      aria-required="true"
+                      aria-describedby="perm-resource-hint"
                       onInput$={(e) => {
                         const value = (e.target as HTMLInputElement).value;
                         if (state.editingPermission) {
@@ -324,17 +328,15 @@ export default component$(() => {
                       }}
                       placeholder="e.g., project, user, report, or * for all"
                     />
-                    <p class="text-xs text-gray-500 mt-1">
-                      The resource this permission applies to. Use '*' for all resources (wildcard)
-                    </p>
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Action *
-                    </label>
+                  <FormField id="perm-action" label="Action" required hint="The action allowed. Use '*' for all actions (wildcard)">
                     <select
+                      id="perm-action"
                       value={state.editingPermission ? state.editingPermission.action : state.newPermission.action}
+                      required
+                      aria-required="true"
+                      aria-describedby="perm-action-hint"
                       onChange$={(e) => {
                         const value = (e.target as HTMLSelectElement).value;
                         if (state.editingPermission) {
@@ -354,15 +356,10 @@ export default component$(() => {
                       <option value="delete">Delete</option>
                       <option value="manage">Manage</option>
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">
-                      The action allowed. Use '*' for all actions (wildcard)
-                    </p>
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Permission Name (auto-generated)
-                    </label>
+                  </FormField>
+                  <FormField id="perm-name" label="Permission Name (auto-generated)" hint="Format: resource:action">
                     <input
+                      id="perm-name"
                       type="text"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
                       value={
@@ -370,18 +367,14 @@ export default component$(() => {
                           ? state.editingPermission.name
                           : `${state.newPermission.resource}:${state.newPermission.action}`
                       }
+                      aria-describedby="perm-name-hint"
                       disabled
                     />
-                    <p class="text-xs text-gray-500 mt-1">
-                      Format: resource:action
-                    </p>
-                  </div>
+                  </FormField>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
+                  <FormField id="perm-description" label="Description">
                     <textarea
+                      id="perm-description"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={3}
                       value={
@@ -399,12 +392,12 @@ export default component$(() => {
                       }}
                       placeholder="Describe what this permission allows..."
                     />
-                  </div>
+                  </FormField>
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
-                  <button
-                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                  <Btn
+                    variant="secondary"
                     onClick$={() => {
                       state.showCreateModal = false;
                       state.editingPermission = null;
@@ -417,15 +410,14 @@ export default component$(() => {
                     }}
                   >
                     Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  </Btn>
+                  <Btn
                     onClick$={
                       state.editingPermission ? handleUpdate : handleCreate
                     }
                   >
                     {state.editingPermission ? "Update" : "Create"}
-                  </button>
+                  </Btn>
                 </div>
               </div>
             </div>

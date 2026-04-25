@@ -1,6 +1,7 @@
 import { Resource, component$, isServer, useResource$, useSignal, useTask$ } from '@builder.io/qwik';
 import type { EChartProps } from '~/components/echarts';
 import { buildApiUrl } from '~/config/api';
+import { Btn } from '~/components/ds';
 
 const EChart = component$<EChartProps>((props) => {
   const chartResource = useResource$(async () => {
@@ -13,7 +14,7 @@ const EChart = component$<EChartProps>((props) => {
       value={chartResource}
       onPending={() => <div class="h-64 rounded-lg bg-gray-100 animate-pulse" />}
       onResolved={(ChartComponent) => (
-        <ChartComponent option={props.option} style={props.style} onClick={props.onClick} />
+        <ChartComponent option={props.option} class={props.class} onClick={props.onClick} />
       )}
     />
   );
@@ -130,7 +131,7 @@ export const ContractKpi = component$(() => {
                 <p class="text-green-100 text-sm">Liters</p>
               </div>
               <div class="bg-green-400 bg-opacity-30 rounded-full p-3">
-                ⛽
+                <i class="i-heroicons-beaker-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -143,7 +144,7 @@ export const ContractKpi = component$(() => {
                 <p class="text-purple-100 text-sm">Meters/Day</p>
               </div>
               <div class="bg-purple-400 bg-opacity-30 rounded-full p-3">
-                📈
+                <i class="i-heroicons-presentation-chart-line-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -156,7 +157,7 @@ export const ContractKpi = component$(() => {
                 <p class="text-orange-100 text-sm">L/Meter</p>
               </div>
               <div class="bg-orange-400 bg-opacity-30 rounded-full p-3">
-                ⚡
+                <i class="i-heroicons-bolt-solid h-6 w-6 inline-block" aria-hidden="true"></i>
               </div>
             </div>
           </div>
@@ -164,7 +165,10 @@ export const ContractKpi = component$(() => {
 
         {/* Key Insights */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">🎯 Performance Insights</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-cursor-arrow-rays-solid h-5 w-5 inline-block text-blue-600" aria-hidden="true"></i>
+            Performance Insights
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class={`rounded-lg p-4 ${
               status === 'excellent' ? 'bg-green-50' :
@@ -264,7 +268,7 @@ export const ContractKpi = component$(() => {
                 <div class="text-sm text-gray-500">Photo Compliance</div>
                 <div class="text-2xl font-bold text-green-600">{contractorKpis.value.reportsWithPhotosPct.toFixed(1)}%</div>
               </div>
-              <div class="text-2xl">📸</div>
+              <i class="i-heroicons-camera-solid h-7 w-7 inline-block text-green-600" aria-hidden="true"></i>
             </div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -273,7 +277,7 @@ export const ContractKpi = component$(() => {
                 <div class="text-sm text-gray-500">Working Hours</div>
                 <div class="text-2xl font-bold text-blue-600">{contractorKpis.value.averageWorkingHours.toFixed(1)}h</div>
               </div>
-              <div class="text-2xl">⏰</div>
+              <i class="i-heroicons-clock-solid h-7 w-7 inline-block text-blue-600" aria-hidden="true"></i>
             </div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -282,7 +286,7 @@ export const ContractKpi = component$(() => {
                 <div class="text-sm text-gray-500">Active Vehicles</div>
                 <div class="text-2xl font-bold text-purple-600">{metrics.totalVehicles}</div>
               </div>
-              <div class="text-2xl">🚛</div>
+              <i class="i-heroicons-truck-solid h-7 w-7 inline-block text-purple-600" aria-hidden="true"></i>
             </div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -291,7 +295,7 @@ export const ContractKpi = component$(() => {
                 <div class="text-sm text-gray-500">Work Locations</div>
                 <div class="text-2xl font-bold text-orange-600">{contractorKpis.value.geoLocations.length}</div>
               </div>
-              <div class="text-2xl">📍</div>
+              <i class="i-heroicons-map-pin-solid h-7 w-7 inline-block text-orange-600" aria-hidden="true"></i>
             </div>
           </div>
         </div>
@@ -354,7 +358,10 @@ export const ContractKpi = component$(() => {
 
         {/* Detailed Fuel Card Table */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">⛽ Fuel Card Usage Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-beaker-solid h-5 w-5 inline-block text-blue-600" aria-hidden="true"></i>
+            Fuel Card Usage Analysis
+          </h3>
           <div class="overflow-x-auto">
             <table class="min-w-full">
               <thead>
@@ -378,8 +385,8 @@ export const ContractKpi = component$(() => {
                       <td class="py-3 px-4 text-center">
                         <div class="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            class="bg-orange-500 h-2 rounded-full" 
-                            style={`width: ${Math.min(percentage * 3, 100)}%`}
+                            class="bg-orange-500 h-2 rounded-full w-[var(--bar-width)]" 
+                            style={{ '--bar-width': `${Math.min(percentage * 3, 100)}%` }}
                           ></div>
                         </div>
                       </td>
@@ -402,7 +409,10 @@ export const ContractKpi = component$(() => {
 
         {/* Vehicle Performance Grid */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">🚛 Vehicle Performance Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-truck-solid h-5 w-5 inline-block text-blue-600" aria-hidden="true"></i>
+            Vehicle Performance Analysis
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {contractorKpis.value.vehicleUtilization.map((vehicle, index) => (
               <div key={index} class="border rounded-lg p-3">
@@ -413,8 +423,8 @@ export const ContractKpi = component$(() => {
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
                   <div 
-                    class="bg-blue-500 h-1 rounded-full" 
-                    style={`width: ${(vehicle.value / Math.max(...contractorKpis.value!.vehicleUtilization.map(v => v.value))) * 100}%`}
+                    class="bg-blue-500 h-1 rounded-full w-[var(--bar-width)]" 
+                    style={{ '--bar-width': `${(vehicle.value / Math.max(...contractorKpis.value!.vehicleUtilization.map(v => v.value))) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -455,7 +465,10 @@ export const ContractKpi = component$(() => {
 
         {/* Interactive Map */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">🗺️ Contractor Work Locations</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-map-solid h-5 w-5 inline-block text-blue-600" aria-hidden="true"></i>
+            Contractor Work Locations
+          </h3>
           <div class="w-full h-96 bg-gray-100 rounded-lg overflow-hidden">
             <iframe
               src={`data:text/html;charset=utf-8,${encodeURIComponent(`
@@ -485,9 +498,9 @@ export const ContractKpi = component$(() => {
                 <body>
                   <div id="map"></div>
                   <div class="info-panel">
-                    <strong>🚧 ${totalLocations} Work Points</strong><br>
-                    <span style="color: #666;">📍 ${uniqueLocations} Unique Sites</span><br>
-                    <span style="color: #666;">📏 ${contractorKpis.value.totalMetersCompleted.toLocaleString()}m Completed</span>
+                    <strong>${totalLocations} Work Points</strong><br>
+                    <span style="color: #666;">${uniqueLocations} Unique Sites</span><br>
+                    <span style="color: #666;">${contractorKpis.value.totalMetersCompleted.toLocaleString()}m Completed</span>
                   </div>
                   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
                   <script>
@@ -537,7 +550,7 @@ export const ContractKpi = component$(() => {
                           
                           marker.bindPopup(\`
                             <div style="text-align: center;">
-                              <strong>🚧 Work Site</strong><br>
+                              <strong>Work Site</strong><br>
                               <span style="color: #666;">Lat: \${lat.toFixed(6)}</span><br>
                               <span style="color: #666;">Lng: \${lng.toFixed(6)}</span><br>
                               <strong style="color: \${color};">\${count} work sessions</strong>
@@ -582,7 +595,10 @@ export const ContractKpi = component$(() => {
 
         {/* Work Site Analysis */}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold mb-4">📊 Work Site Analysis</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="i-heroicons-chart-bar-solid h-5 w-5 inline-block text-blue-600" aria-hidden="true"></i>
+            Work Site Analysis
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 class="font-medium mb-2">Site Activity Distribution</h4>
@@ -593,8 +609,8 @@ export const ContractKpi = component$(() => {
                     <div class="flex items-center space-x-2">
                       <div class="w-24 bg-gray-200 rounded-full h-2">
                         <div 
-                          class="bg-purple-500 h-2 rounded-full" 
-                          style={`width: ${(site.value / Math.max(...contractorKpis.value!.reportsByDateSite.map(s => s.value))) * 100}%`}
+                          class="bg-purple-500 h-2 rounded-full w-[var(--bar-width)]" 
+                          style={{ '--bar-width': `${(site.value / Math.max(...contractorKpis.value!.reportsByDateSite.map(s => s.value))) * 100}%` }}
                         ></div>
                       </div>
                       <span class="text-sm font-medium w-8">{site.value}</span>
@@ -636,7 +652,10 @@ export const ContractKpi = component$(() => {
           
           {/* Site Performance Summary */}
           <div class="mt-6 pt-6 border-t">
-            <h4 class="font-medium mb-3">📈 Site Performance Summary</h4>
+            <h4 class="font-medium mb-3 flex items-center gap-2">
+              <i class="i-heroicons-presentation-chart-line-solid h-4 w-4 inline-block text-blue-600" aria-hidden="true"></i>
+              Site Performance Summary
+            </h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="text-center p-3 bg-gray-50 rounded-lg">
                 <div class="text-2xl font-bold text-blue-600">{contractorKpis.value.reportsByDateSite.length}</div>
@@ -662,7 +681,10 @@ export const ContractKpi = component$(() => {
       <div class="mx-auto">
         {/* Header */}
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">🚧 Contractor Performance Dashboard</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <i class="i-heroicons-wrench-screwdriver-solid h-8 w-8 inline-block text-blue-600" aria-hidden="true"></i>
+            Contractor Performance Dashboard
+          </h1>
           <p class="text-gray-600">Comprehensive contractor analytics and operational insights</p>
         </div>
 
@@ -675,7 +697,10 @@ export const ContractKpi = component$(() => {
 
         {error.value && (
           <div class="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div class="text-red-800 font-medium">⚠️ Error loading dashboard</div>
+            <div class="text-red-800 font-medium flex items-center gap-2">
+              <i class="i-heroicons-exclamation-triangle-solid h-5 w-5 inline-block" aria-hidden="true"></i>
+              Error loading dashboard
+            </div>
             <div class="text-red-600 text-sm mt-1">{error.value}</div>
           </div>
         )}
@@ -685,7 +710,9 @@ export const ContractKpi = component$(() => {
             {/* Tab Navigation */}
             <div class="bg-white rounded-lg border border-gray-200 mb-6">
               <div class="flex space-x-1 p-1">
-                <button
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'overview'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'overview' 
@@ -693,9 +720,12 @@ export const ContractKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  📊 Overview
-                </button>
-                <button
+                  <i class="i-heroicons-chart-bar-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Overview
+                </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'analytics'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'analytics' 
@@ -703,9 +733,12 @@ export const ContractKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  🔍 Analytics
-                </button>
-                <button
+                  <i class="i-heroicons-magnifying-glass-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Analytics
+                </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
                   onClick$={() => selectedTab.value = 'map'}
                   class={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                     selectedTab.value === 'map' 
@@ -713,8 +746,9 @@ export const ContractKpi = component$(() => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  🗺️ Locations
-                </button>
+                  <i class="i-heroicons-map-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                  Locations
+                </Btn>
               </div>
             </div>
 

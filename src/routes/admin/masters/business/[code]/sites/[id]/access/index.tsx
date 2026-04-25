@@ -3,6 +3,7 @@ import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { siteService, userService } from '~/services';
 import type { UserSiteAccess, User } from '~/services';
+import { Alert, Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, FormField, PageHeader, SectionCard } from '~/components/ds';
 
 export default component$(() => {
   const loc = useLocation();
@@ -94,56 +95,44 @@ export default component$(() => {
 
   if (loading.value) {
     return (
-      <div class="min-h-screen bg-light-50 flex items-center justify-center">
+      <div class="flex items-center justify-center py-16">
         <div class="text-center">
           <div class="animate-spin text-4xl text-primary-500 mb-4">⏳</div>
-          <p class="text-dark-600">Loading site access...</p>
+          <p class="text-neutral-600">Loading site access...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container-lg mx-auto">
-        <div class="mb-6">
-          <button
-            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
-            class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
-          >
-            <span>←</span> Back to Sites
-          </button>
-          <div class="flex justify-between items-start flex-wrap gap-4">
-            <div>
-              <h1 class="text-3xl font-bold text-dark-800">Site Access Management</h1>
-              <p class="text-dark-600 mt-2">Manage user access to this site</p>
-            </div>
-            <button
-              onClick$={() => { showAssignForm.value = !showAssignForm.value; }}
-              class="btn-primary px-6 py-3 rounded-lg font-semibold"
-            >
-              + Assign Access
-            </button>
-          </div>
-        </div>
+    <div class="space-y-6 py-2">
+        <PageHeader title="Site Access Management" subtitle="Manage user access to this site">
+          <Btn q:slot="actions" variant="ghost" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}>
+            <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to Sites
+          </Btn>
+          <Btn q:slot="actions" onClick$={() => { showAssignForm.value = !showAssignForm.value; }}>
+            + Assign Access
+          </Btn>
+        </PageHeader>
 
         {error.value && (
-          <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-            <p class="text-danger-800">{error.value}</p>
-          </div>
+          <Alert variant="error" class="mb-6 border-l-4">
+            <p class="text-error-800">{error.value}</p>
+          </Alert>
         )}
 
         {/* Assign Access Form */}
         {showAssignForm.value && (
-          <div class="card bg-white shadow-lg rounded-xl p-6 mb-6">
-            <h3 class="text-xl font-bold text-dark-800 mb-4">Assign User Access</h3>
+          <SectionCard class="mb-6">
+            <h3 class="text-xl font-bold text-neutral-800 mb-4">Assign User Access</h3>
 
-            <div class="form-group mb-4">
-              <label class="form-label text-dark-700 font-semibold mb-2">Select User</label>
+            <FormField id="access-user-select" label="Select User" class="mb-4">
               <select
+                id="access-user-select"
                 value={selectedUserId.value}
                 onChange$={(e) => { selectedUserId.value = (e.target as HTMLSelectElement).value; }}
-                class="form-select w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-select w-full px-4 py-3 border border-neutral-300 rounded-lg"
               >
                 <option value="">-- Select User --</option>
                 {users.value.map((user: any) => (
@@ -152,10 +141,10 @@ export default component$(() => {
                   </option>
                 ))}
               </select>
-            </div>
+            </FormField>
 
             <div class="mb-4">
-              <label class="form-label text-dark-700 font-semibold mb-3 block">Permissions</label>
+              <FormField id="access-permissions" label="Permissions">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <label class="flex items-center cursor-pointer">
                   <input
@@ -164,7 +153,7 @@ export default component$(() => {
                     onChange$={(e) => { permissions.value = { ...permissions.value, read: (e.target as HTMLInputElement).checked }; }}
                     class="form-checkbox mr-2"
                   />
-                  <span class="text-dark-700">Read</span>
+                  <span class="text-neutral-700">Read</span>
                 </label>
                 <label class="flex items-center cursor-pointer">
                   <input
@@ -173,7 +162,7 @@ export default component$(() => {
                     onChange$={(e) => { permissions.value = { ...permissions.value, create: (e.target as HTMLInputElement).checked }; }}
                     class="form-checkbox mr-2"
                   />
-                  <span class="text-dark-700">Create</span>
+                  <span class="text-neutral-700">Create</span>
                 </label>
                 <label class="flex items-center cursor-pointer">
                   <input
@@ -182,7 +171,7 @@ export default component$(() => {
                     onChange$={(e) => { permissions.value = { ...permissions.value, update: (e.target as HTMLInputElement).checked }; }}
                     class="form-checkbox mr-2"
                   />
-                  <span class="text-dark-700">Update</span>
+                  <span class="text-neutral-700">Update</span>
                 </label>
                 <label class="flex items-center cursor-pointer">
                   <input
@@ -191,98 +180,97 @@ export default component$(() => {
                     onChange$={(e) => { permissions.value = { ...permissions.value, delete: (e.target as HTMLInputElement).checked }; }}
                     class="form-checkbox mr-2"
                   />
-                  <span class="text-dark-700">Delete</span>
+                  <span class="text-neutral-700">Delete</span>
                 </label>
               </div>
+              </FormField>
             </div>
 
             <div class="flex gap-4">
-              <button
+              <Btn
                 onClick$={handleAssignAccess}
                 disabled={assigning.value}
-                class="btn-primary px-6 py-2 rounded-lg disabled:opacity-50"
               >
                 {assigning.value ? 'Assigning...' : 'Assign Access'}
-              </button>
-              <button
+              </Btn>
+              <Btn
                 onClick$={() => { showAssignForm.value = false; }}
-                class="btn-light-300 px-6 py-2 rounded-lg"
+                variant="secondary"
               >
                 Cancel
-              </button>
+              </Btn>
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Access Table */}
-        <div class="card bg-white shadow-lg rounded-xl p-6">
+        <SectionCard>
           {siteAccess.value.length === 0 ? (
             <div class="text-center py-12">
-              <div class="text-6xl text-light-300 mb-4">🔐</div>
-              <h3 class="text-xl font-semibold text-dark-800 mb-2">No Access Assigned</h3>
-              <p class="text-dark-600 mb-6">Assign users access to this site to get started</p>
-              <button
+              <i class="i-heroicons-lock-closed-solid h-16 w-16 inline-block text-light-300 mb-4" aria-hidden="true"></i>
+              <h3 class="text-xl font-semibold text-neutral-800 mb-2">No Access Assigned</h3>
+              <p class="text-neutral-600 mb-6">Assign users access to this site to get started</p>
+              <Btn
                 onClick$={() => { showAssignForm.value = true; }}
-                class="btn-primary px-6 py-3 rounded-lg"
               >
                 Assign Access
-              </button>
+              </Btn>
             </div>
           ) : (
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-light-200">
-                <thead class="bg-light-50">
-                  <tr>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">User</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-dark-700 uppercase">Read</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-dark-700 uppercase">Create</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-dark-700 uppercase">Update</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-dark-700 uppercase">Delete</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 uppercase">Granted</th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-dark-700 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-light-200">
+              <DataTable>
+                <DataTableHead>
+                  <DataTableRow>
+                    <DataTableHeaderCell>User</DataTableHeaderCell>
+                    <DataTableHeaderCell class="text-center">Read</DataTableHeaderCell>
+                    <DataTableHeaderCell class="text-center">Create</DataTableHeaderCell>
+                    <DataTableHeaderCell class="text-center">Update</DataTableHeaderCell>
+                    <DataTableHeaderCell class="text-center">Delete</DataTableHeaderCell>
+                    <DataTableHeaderCell>Granted</DataTableHeaderCell>
+                    <DataTableHeaderCell class="text-right">Actions</DataTableHeaderCell>
+                  </DataTableRow>
+                </DataTableHead>
+                <DataTableBody>
                   {siteAccess.value.map((access) => (
-                    <tr key={access.id} class="hover:bg-light-50 transition">
-                      <td class="px-6 py-4">
+                    <DataTableRow key={access.id} class="hover:bg-neutral-50 transition">
+                      <DataTableCell>
                         <div>
-                          <div class="text-sm font-medium text-dark-800">{access.user?.name}</div>
-                          <div class="text-xs text-dark-500">{access.user?.email}</div>
+                          <div class="text-sm font-medium text-neutral-800">{access.user?.name}</div>
+                          <div class="text-xs text-neutral-500">{access.user?.email}</div>
                         </div>
-                      </td>
-                      <td class="px-6 py-4 text-center">
-                        {access.permissions.read ? <span class="text-success-600">✓</span> : <span class="text-danger-600">✗</span>}
-                      </td>
-                      <td class="px-6 py-4 text-center">
-                        {access.permissions.create ? <span class="text-success-600">✓</span> : <span class="text-danger-600">✗</span>}
-                      </td>
-                      <td class="px-6 py-4 text-center">
-                        {access.permissions.update ? <span class="text-success-600">✓</span> : <span class="text-danger-600">✗</span>}
-                      </td>
-                      <td class="px-6 py-4 text-center">
-                        {access.permissions.delete ? <span class="text-success-600">✓</span> : <span class="text-danger-600">✗</span>}
-                      </td>
-                      <td class="px-6 py-4 text-xs text-dark-600">
+                      </DataTableCell>
+                      <DataTableCell class="text-center">
+                        <Badge variant={access.permissions.read ? 'success' : 'error'}>{access.permissions.read ? 'Yes' : 'No'}</Badge>
+                      </DataTableCell>
+                      <DataTableCell class="text-center">
+                        <Badge variant={access.permissions.create ? 'success' : 'error'}>{access.permissions.create ? 'Yes' : 'No'}</Badge>
+                      </DataTableCell>
+                      <DataTableCell class="text-center">
+                        <Badge variant={access.permissions.update ? 'success' : 'error'}>{access.permissions.update ? 'Yes' : 'No'}</Badge>
+                      </DataTableCell>
+                      <DataTableCell class="text-center">
+                        <Badge variant={access.permissions.delete ? 'success' : 'error'}>{access.permissions.delete ? 'Yes' : 'No'}</Badge>
+                      </DataTableCell>
+                      <DataTableCell class="text-xs text-neutral-600">
                         {access.granted_at ? new Date(access.granted_at).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td class="px-6 py-4 text-right">
-                        <button
+                      </DataTableCell>
+                      <DataTableCell class="text-right">
+                        <Btn
                           onClick$={() => handleRevokeAccess(access.id)}
-                          class="text-danger-600 hover:text-danger-700 px-3 py-1 text-sm"
+                          variant="danger"
+                          size="sm"
                           title="Revoke Access"
                         >
                           Revoke
-                        </button>
-                      </td>
-                    </tr>
+                        </Btn>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
+                </DataTableBody>
+              </DataTable>
             </div>
           )}
-        </div>
-      </div>
+        </SectionCard>
     </div>
   );
 });

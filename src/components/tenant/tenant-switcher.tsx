@@ -1,5 +1,6 @@
 import { component$, $, useSignal } from '@builder.io/qwik';
 import { useAuthContext } from '~/contexts/auth-context';
+import { Btn } from '~/components/ds';
 
 export const TenantSwitcher = component$(() => {
   const auth = useAuthContext();
@@ -34,7 +35,9 @@ export const TenantSwitcher = component$(() => {
 
   return (
     <div class="relative">
-      <button
+      <Btn
+        size="sm"
+        variant="ghost"
         class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
         onClick$={toggleDropdown}
       >
@@ -76,7 +79,7 @@ export const TenantSwitcher = component$(() => {
         >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </Btn>
 
       {/* Dropdown Menu */}
       {isOpen.value && (
@@ -102,8 +105,10 @@ export const TenantSwitcher = component$(() => {
                 const isCurrent = tenant.id === auth.currentTenant?.id;
 
                 return (
-                  <button
+                  <Btn
                     key={tenant.id}
+                    size="sm"
+                    variant="ghost"
                     class={`w-full text-left p-3 hover:bg-gray-50 flex items-center gap-3 ${
                       isCurrent ? 'bg-primary-50 border-r-2 border-primary-500' : ''
                     }`}
@@ -152,13 +157,15 @@ export const TenantSwitcher = component$(() => {
                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                       </svg>
                     )}
-                  </button>
+                  </Btn>
                 );
               })}
             </div>
 
             <div class="p-3 border-t border-gray-200">
-              <button
+              <Btn
+                size="sm"
+                variant="ghost"
                 class="w-full text-left p-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center gap-2"
                 onClick$={openTenantSettings}
               >
@@ -167,7 +174,7 @@ export const TenantSwitcher = component$(() => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 Tenant Settings
-              </button>
+              </Btn>
             </div>
           </div>
         </>

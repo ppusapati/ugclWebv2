@@ -2,6 +2,7 @@
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { siteService } from '~/services';
+import { Alert, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 
 export default component$(() => {
   const loc = useLocation();
@@ -76,96 +77,91 @@ export default component$(() => {
   });
 
   return (
-    <div class="min-h-screen bg-light-50 py-8 px-4">
-      <div class="container-md mx-auto">
-        <div class="mb-6">
-          <button
-            onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}
-            class="text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-4"
-          >
-            <span>←</span> Back to Sites
-          </button>
-          <h1 class="text-3xl font-bold text-dark-800">Create Site</h1>
-          <p class="text-dark-600 mt-2">Add a new site to {businessCode}</p>
-        </div>
+    <div class="space-y-6 py-2">
+        <PageHeader title="Create Site" subtitle={`Add a new site to ${businessCode}`}>
+          <Btn q:slot="actions" variant="ghost" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)}>
+            <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+            Back to Sites
+          </Btn>
+        </PageHeader>
 
-        <div class="card bg-white shadow-lg rounded-xl p-8">
+        <SectionCard class="p-8">
           <form onSubmit$={handleSubmit} preventdefault:submit>
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">
-                Site Name <span class="text-danger-500">*</span>
-              </label>
+            <FormField id="biz-site-name" label="Site Name" required error={errors.value.name} class="mb-6">
               <input
+                id="biz-site-name"
                 type="text"
                 value={formData.value.name}
+                required
+                aria-required="true"
+                aria-describedby={errors.value.name ? 'biz-site-name-error' : ''}
                 onInput$={(e) => { formData.value = { ...formData.value, name: (e.target as HTMLInputElement).value }; }}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                 placeholder="e.g., Main Office"
               />
-              {errors.value.name && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.name}</p>}
-            </div>
+            </FormField>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">
-                Site Code <span class="text-danger-500">*</span>
-              </label>
+            <FormField id="biz-site-code" label="Site Code" required error={errors.value.code} class="mb-6">
               <input
+                id="biz-site-code"
                 type="text"
                 value={formData.value.code}
+                required
+                aria-required="true"
+                aria-describedby={errors.value.code ? 'biz-site-code-error' : ''}
                 onInput$={(e) => { formData.value = { ...formData.value, code: (e.target as HTMLInputElement).value.toLowerCase() }; }}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg font-mono"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg font-mono"
                 placeholder="e.g., main-office"
               />
-              {errors.value.code && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.code}</p>}
-            </div>
+            </FormField>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">Description</label>
+            <FormField id="biz-site-description" label="Description" class="mb-6">
               <textarea
+                id="biz-site-description"
                 value={formData.value.description}
                 onInput$={(e) => { formData.value = { ...formData.value, description: (e.target as HTMLTextAreaElement).value }; }}
                 rows={4}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                 placeholder="Brief description of this site"
               ></textarea>
-            </div>
+            </FormField>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div class="form-group">
-                <label class="form-label text-dark-700 font-semibold mb-2">Latitude</label>
+              <FormField id="biz-site-latitude" label="Latitude" error={errors.value.latitude}>
                 <input
+                  id="biz-site-latitude"
                   type="text"
                   value={formData.value.latitude}
+                  aria-describedby={errors.value.latitude ? 'biz-site-latitude-error' : ''}
                   onInput$={(e) => { formData.value = { ...formData.value, latitude: (e.target as HTMLInputElement).value }; }}
-                  class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                  class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   placeholder="e.g., 28.6139"
                 />
-                {errors.value.latitude && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.latitude}</p>}
-              </div>
+              </FormField>
 
-              <div class="form-group">
-                <label class="form-label text-dark-700 font-semibold mb-2">Longitude</label>
+              <FormField id="biz-site-longitude" label="Longitude" error={errors.value.longitude}>
                 <input
+                  id="biz-site-longitude"
                   type="text"
                   value={formData.value.longitude}
+                  aria-describedby={errors.value.longitude ? 'biz-site-longitude-error' : ''}
                   onInput$={(e) => { formData.value = { ...formData.value, longitude: (e.target as HTMLInputElement).value }; }}
-                  class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                  class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                   placeholder="e.g., 77.2090"
                 />
-                {errors.value.longitude && <p class="form-error text-danger-600 text-sm mt-1">{errors.value.longitude}</p>}
-              </div>
+              </FormField>
             </div>
 
-            <div class="form-group mb-6">
-              <label class="form-label text-dark-700 font-semibold mb-2">Address</label>
+            <FormField id="biz-site-address" label="Address" class="mb-6">
               <textarea
+                id="biz-site-address"
                 value={formData.value.address}
                 onInput$={(e) => { formData.value = { ...formData.value, address: (e.target as HTMLTextAreaElement).value }; }}
                 rows={3}
-                class="form-input w-full px-4 py-3 border border-light-300 rounded-lg"
+                class="form-input w-full px-4 py-3 border border-neutral-300 rounded-lg"
                 placeholder="Full address of the site"
               ></textarea>
-            </div>
+            </FormField>
 
             <div class="form-group mb-6">
               <label class="flex items-center cursor-pointer">
@@ -175,27 +171,26 @@ export default component$(() => {
                   onChange$={(e) => { formData.value = { ...formData.value, is_active: (e.target as HTMLInputElement).checked }; }}
                   class="form-checkbox mr-3"
                 />
-                <span class="text-dark-700 font-medium">Active</span>
+                <span class="text-neutral-700 font-medium">Active</span>
               </label>
             </div>
 
             {errors.value.submit && (
-              <div class="alert-danger rounded-lg p-4 mb-6 bg-danger-50 border-l-4 border-danger-500">
-                <p class="text-danger-800">{errors.value.submit}</p>
-              </div>
+              <Alert variant="error" class="mb-6 border-l-4">
+                <p class="text-error-800">{errors.value.submit}</p>
+              </Alert>
             )}
 
             <div class="flex gap-4 flex-col sm:flex-row">
-              <button type="submit" disabled={loading.value} class="btn-primary flex-1 py-3 text-lg font-semibold rounded-lg disabled:opacity-50">
+              <Btn type="submit" disabled={loading.value} class="flex-1 py-3 text-lg font-semibold">
                 {loading.value ? 'Creating...' : 'Create Site'}
-              </button>
-              <button type="button" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)} class="btn-light-300 flex-1 py-3 text-lg font-semibold rounded-lg">
+              </Btn>
+              <Btn type="button" variant="secondary" onClick$={() => nav(`/admin/masters/business/${businessCode}/sites`)} class="flex-1 py-3 text-lg font-semibold">
                 Cancel
-              </button>
+              </Btn>
             </div>
           </form>
-        </div>
-      </div>
+        </SectionCard>
     </div>
   );
 });

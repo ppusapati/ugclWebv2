@@ -1,6 +1,7 @@
 import { component$, useStore, $ } from "@builder.io/qwik";
 import { routeLoader$, useNavigate } from "@builder.io/qwik-city";
 import PermissionGuard from "~/components/auth/PermissionGuard";
+import { Btn, FormField, PageHeader } from "~/components/ds";
 import { apiClient, createSSRApiClient } from "~/services";
 import { P9ETable, type ActionButton } from "~/components/table";
 
@@ -420,21 +421,17 @@ export default component$(() => {
       }
     >
       <div class="space-y-6 py-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold">User Management</h1>
-            <p class="text-gray-600 text-sm mt-1">Manage system users, roles, and access</p>
-          </div>
-          <button
-            class="btn btn-primary"
+        <PageHeader title="User Management" subtitle="Manage system users, roles, and access">
+          <Btn
+            q:slot="actions"
             onClick$={() => {
               state.showCreateModal = true;
               state.editingUser = null;
             }}
           >
             + Create User
-          </button>
-        </div>
+          </Btn>
+        </PageHeader>
 
         {state.success && <div class="p-4 bg-green-100 border border-green-400 text-green-700 rounded">{state.success}</div>}
         {state.error && <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">{state.error}</div>}
@@ -517,79 +514,103 @@ export default component$(() => {
             <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
               <h3 class="text-lg font-semibold mb-4">{state.editingUser ? "Edit User" : "Create User"}</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  class="w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Full Name"
-                  value={state.editingUser ? state.editingUser.name : state.newUser.name}
-                  onInput$={(e) => {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (state.editingUser) state.editingUser.name = value;
-                    else state.newUser.name = value;
-                  }}
-                />
-                <input
-                  class="w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Email"
-                  value={state.editingUser ? state.editingUser.email : state.newUser.email}
-                  onInput$={(e) => {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (state.editingUser) state.editingUser.email = value;
-                    else state.newUser.email = value;
-                  }}
-                />
-                <input
-                  class="w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Phone"
-                  value={state.editingUser ? state.editingUser.phone : state.newUser.phone}
-                  onInput$={(e) => {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (state.editingUser) state.editingUser.phone = value;
-                    else state.newUser.phone = value;
-                  }}
-                />
-                {!state.editingUser && (
+                <FormField id="user-full-name" label="Full Name" required>
                   <input
-                    type="password"
+                    id="user-full-name"
                     class="w-full border border-gray-300 rounded-md px-3 py-2"
-                    placeholder="Password"
-                    value={state.newUser.password}
-                    onInput$={(e) => (state.newUser.password = (e.target as HTMLInputElement).value)}
+                    placeholder="Full Name"
+                    value={state.editingUser ? state.editingUser.name : state.newUser.name}
+                    required
+                    aria-required="true"
+                    onInput$={(e) => {
+                      const value = (e.target as HTMLInputElement).value;
+                      if (state.editingUser) state.editingUser.name = value;
+                      else state.newUser.name = value;
+                    }}
                   />
+                </FormField>
+                <FormField id="user-email" label="Email" required>
+                  <input
+                    id="user-email"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2"
+                    placeholder="Email"
+                    value={state.editingUser ? state.editingUser.email : state.newUser.email}
+                    required
+                    aria-required="true"
+                    onInput$={(e) => {
+                      const value = (e.target as HTMLInputElement).value;
+                      if (state.editingUser) state.editingUser.email = value;
+                      else state.newUser.email = value;
+                    }}
+                  />
+                </FormField>
+                <FormField id="user-phone" label="Phone">
+                  <input
+                    id="user-phone"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2"
+                    placeholder="Phone"
+                    value={state.editingUser ? state.editingUser.phone : state.newUser.phone}
+                    onInput$={(e) => {
+                      const value = (e.target as HTMLInputElement).value;
+                      if (state.editingUser) state.editingUser.phone = value;
+                      else state.newUser.phone = value;
+                    }}
+                  />
+                </FormField>
+                {!state.editingUser && (
+                  <FormField id="user-password" label="Password" required>
+                    <input
+                      id="user-password"
+                      type="password"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2"
+                      placeholder="Password"
+                      value={state.newUser.password}
+                      required
+                      aria-required="true"
+                      onInput$={(e) => (state.newUser.password = (e.target as HTMLInputElement).value)}
+                    />
+                  </FormField>
                 )}
-                <select
-                  class="w-full border border-gray-300 rounded-md px-3 py-2"
-                  value={state.editingUser ? state.editingUser.role_id || "" : state.newUser.role_id}
-                  onChange$={(e) => {
-                    const value = (e.target as HTMLSelectElement).value;
-                    if (state.editingUser) state.editingUser.role_id = value;
-                    else state.newUser.role_id = value;
-                  }}
-                >
-                  <option value="">Select a role</option>
-                  {getRolesForVertical(state.editingUser ? state.editingUser.business_vertical_id : state.newUser.business_vertical_id).map((role) => (
-                    <option key={role.id} value={role.id}>{getRoleOptionLabel(role)}</option>
-                  ))}
-                </select>
-                <select
-                  class="w-full border border-gray-300 rounded-md px-3 py-2"
-                  value={state.editingUser ? state.editingUser.business_vertical_id || "" : state.newUser.business_vertical_id}
-                  onChange$={(e) => {
-                    const value = (e.target as HTMLSelectElement).value;
-                    if (state.editingUser) state.editingUser.business_vertical_id = value;
-                    else state.newUser.business_vertical_id = value;
-                  }}
-                >
-                  <option value="">None</option>
-                  {state.verticals.map((vertical) => (
-                    <option key={vertical.id} value={vertical.id}>{vertical.name}</option>
-                  ))}
-                </select>
+                <FormField id="user-role" label="Role">
+                  <select
+                    id="user-role"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={state.editingUser ? state.editingUser.role_id || "" : state.newUser.role_id}
+                    onChange$={(e) => {
+                      const value = (e.target as HTMLSelectElement).value;
+                      if (state.editingUser) state.editingUser.role_id = value;
+                      else state.newUser.role_id = value;
+                    }}
+                  >
+                    <option value="">Select a role</option>
+                    {getRolesForVertical(state.editingUser ? state.editingUser.business_vertical_id : state.newUser.business_vertical_id).map((role) => (
+                      <option key={role.id} value={role.id}>{getRoleOptionLabel(role)}</option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField id="user-business-vertical" label="Business Vertical">
+                  <select
+                    id="user-business-vertical"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={state.editingUser ? state.editingUser.business_vertical_id || "" : state.newUser.business_vertical_id}
+                    onChange$={(e) => {
+                      const value = (e.target as HTMLSelectElement).value;
+                      if (state.editingUser) state.editingUser.business_vertical_id = value;
+                      else state.newUser.business_vertical_id = value;
+                    }}
+                  >
+                    <option value="">None</option>
+                    {state.verticals.map((vertical) => (
+                      <option key={vertical.id} value={vertical.id}>{vertical.name}</option>
+                    ))}
+                  </select>
+                </FormField>
               </div>
               <div class="flex justify-end gap-3 mt-6">
-                <button class="px-4 py-2 bg-gray-200 rounded" onClick$={resetForm}>Cancel</button>
-                <button class="px-4 py-2 bg-blue-600 text-white rounded" onClick$={state.editingUser ? handleUpdate : handleCreate}>
+                <Btn variant="secondary" onClick$={resetForm}>Cancel</Btn>
+                <Btn onClick$={state.editingUser ? handleUpdate : handleCreate}>
                   {state.editingUser ? "Update" : "Create"}
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
@@ -617,8 +638,7 @@ export default component$(() => {
                 >
                   Close
                 </button>
-                <button
-                  class="px-4 py-2 bg-blue-600 text-white rounded"
+                <Btn
                   onClick$={() => {
                     if (!state.viewingUser) return;
                     state.editingUser = { ...state.viewingUser };
@@ -628,7 +648,7 @@ export default component$(() => {
                   }}
                 >
                   Edit User
-                </button>
+                </Btn>
               </div>
             </div>
           </div>

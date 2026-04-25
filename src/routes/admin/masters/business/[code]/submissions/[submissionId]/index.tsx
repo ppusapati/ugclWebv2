@@ -2,6 +2,7 @@
 import { component$, isServer, useSignal, useTask$, $ } from '@builder.io/qwik';
 import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import SubmissionDetail from '~/components/form-builder/submissions/SubmissionDetail';
+import { Btn, PageHeader, SectionCard } from '~/components/ds';
 import { workflowService } from '~/services';
 
 export default component$(() => {
@@ -107,60 +108,40 @@ export default component$(() => {
   });
 
   return (
-    <div class="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div class="bg-white border-b border-gray-200 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <button
-              onClick$={handleBack}
-              class="text-gray-600 hover:text-gray-900"
-              title="Back to submissions"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900">Submission Detail</h1>
-              <p class="text-sm text-gray-600 mt-1">
-                Business: <span class="font-medium">{businessCode.toUpperCase()}</span> •
-                ID: <code class="font-mono">{submissionId.slice(0, 8)}...</code>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="space-y-6">
+      <PageHeader
+        title="Submission Detail"
+        subtitle={`Business: ${businessCode.toUpperCase()} • ID: ${submissionId.slice(0, 8)}...`}
+      >
+        <Btn q:slot="actions" variant="ghost" onClick$={handleBack}>
+          Back to Submissions
+        </Btn>
+      </PageHeader>
 
-      {/* Content */}
-      <div class="max-w-7xl mx-auto p-6">
         {/* Loading State */}
         {loading.value && (
-          <div class="bg-white rounded-lg shadow-sm p-12">
+          <SectionCard class="p-12">
             <div class="flex flex-col items-center justify-center">
               <div class="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
               <p class="mt-4 text-gray-600">Loading submission...</p>
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Error State */}
         {error.value && (
-          <div class="bg-white rounded-lg shadow-sm p-12">
+          <SectionCard class="p-12">
             <div class="text-center">
               <svg class="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h3 class="mt-4 text-lg font-medium text-gray-900">Submission Not Found</h3>
               <p class="mt-2 text-sm text-gray-600">{error.value}</p>
-              <button
-                onClick$={handleBack}
-                class="mt-6 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
+              <Btn onClick$={handleBack} variant="secondary" class="mt-6">
                 Go Back
-              </button>
+              </Btn>
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Submission Detail */}
@@ -171,7 +152,6 @@ export default component$(() => {
             submissionId={submissionId}
           />
         )}
-      </div>
     </div>
   );
 });

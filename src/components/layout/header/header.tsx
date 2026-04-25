@@ -5,6 +5,7 @@ import { TenantSwitcher } from '~/components/tenant/tenant-switcher';
 import { NotificationBell } from '~/components/notifications/notification-bell';
 import { useNavigate } from '@builder.io/qwik-city';
 import ImgLogo from '~/media/logo.png?jsx';
+import { Btn } from '~/components/ds';
 
 export interface MenuItem {
   id: string
@@ -42,11 +43,11 @@ export const Header = component$(() => {
       icon: 'i-heroicons-users-solid',
       subItems: [
         { id: 'employees', label: 'Employees', href: '/hr/employees', icon: 'i-heroicons-user-solid' },
-        { id: 'recruitment', label: 'Recruitment', href: '/hr/recruitment', icon: '📋' },
-        { id: 'payroll', label: 'Payroll', href: '/hr/payroll', icon: '💰' },
-        { id: 'performance', label: 'Performance', href: '/hr/performance', icon: '📊' },
-        { id: 'training', label: 'Training', href: '/hr/training', icon: '🎓' },
-        { id: 'policies', label: 'Policies', href: '/hr/policies', icon: '📄' }
+        { id: 'recruitment', label: 'Recruitment', href: '/hr/recruitment', icon: 'i-heroicons-clipboard-document-list-solid' },
+        { id: 'payroll', label: 'Payroll', href: '/hr/payroll', icon: 'i-heroicons-banknotes-solid' },
+        { id: 'performance', label: 'Performance', href: '/hr/performance', icon: 'i-heroicons-chart-bar-solid' },
+        { id: 'training', label: 'Training', href: '/hr/training', icon: 'i-heroicons-academic-cap-solid' },
+        { id: 'policies', label: 'Policies', href: '/hr/policies', icon: 'i-heroicons-document-text-solid' }
       ]
     },
     {
@@ -54,12 +55,12 @@ export const Header = component$(() => {
       label: 'Finance',
       icon: 'i-heroicons-currency-rupee-solid',
       subItems: [
-        { id: 'accounts', label: 'Accounts', href: '/finance/accounts', icon: '🏦' },
-        { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: '🧾' },
-        { id: 'expenses', label: 'Expenses', href: '/finance/expenses', icon: '💳' },
-        { id: 'budgets', label: 'Budgets', href: '/finance/budgets', icon: '📈' },
-        { id: 'reports', label: 'Reports', href: '/finance/reports', icon: '📋' },
-        { id: 'taxes', label: 'Taxes', href: '/finance/taxes', icon: '🧮' }
+        { id: 'accounts', label: 'Accounts', href: '/finance/accounts', icon: 'i-heroicons-building-library-solid' },
+        { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: 'i-heroicons-receipt-percent-solid' },
+        { id: 'expenses', label: 'Expenses', href: '/finance/expenses', icon: 'i-heroicons-credit-card-solid' },
+        { id: 'budgets', label: 'Budgets', href: '/finance/budgets', icon: 'i-heroicons-chart-bar-solid' },
+        { id: 'reports', label: 'Reports', href: '/finance/reports', icon: 'i-heroicons-clipboard-document-list-solid' },
+        { id: 'taxes', label: 'Taxes', href: '/finance/taxes', icon: 'i-heroicons-calculator-solid' }
       ]
     },
     {
@@ -67,11 +68,11 @@ export const Header = component$(() => {
       label: 'Operations',
       icon: 'i-heroicons-cog-solid',
       subItems: [
-        { id: 'projects', label: 'Projects', href: '/operations/projects', icon: '📁' },
-        { id: 'inventory', label: 'Inventory', href: '/operations/inventory', icon: '📦' },
-        { id: 'suppliers', label: 'Suppliers', href: '/operations/suppliers', icon: '🚚' },
-        { id: 'quality', label: 'Quality Control', href: '/operations/quality', icon: '✅' },
-        { id: 'maintenance', label: 'Maintenance', href: '/operations/maintenance', icon: '🔧' }
+        { id: 'projects', label: 'Projects', href: '/operations/projects', icon: 'i-heroicons-folder-solid' },
+        { id: 'inventory', label: 'Inventory', href: '/operations/inventory', icon: 'i-heroicons-archive-box-solid' },
+        { id: 'suppliers', label: 'Suppliers', href: '/operations/suppliers', icon: 'i-heroicons-truck-solid' },
+        { id: 'quality', label: 'Quality Control', href: '/operations/quality', icon: 'i-heroicons-check-badge-solid' },
+        { id: 'maintenance', label: 'Maintenance', href: '/operations/maintenance', icon: 'i-heroicons-wrench-screwdriver-solid' }
       ]
     },
     {
@@ -79,11 +80,11 @@ export const Header = component$(() => {
       label: 'Sales',
       icon: 'i-heroicons-currency-dollar-solid',
       subItems: [
-        { id: 'leads', label: 'Leads', href: '/sales/leads', icon: '🎯' },
-        { id: 'customers', label: 'Customers', href: '/sales/customers', icon: '👥' },
-        { id: 'orders', label: 'Orders', href: '/sales/orders', icon: '📋' },
-        { id: 'pipeline', label: 'Pipeline', href: '/sales/pipeline', icon: '🔄' },
-        { id: 'analytics', label: 'Analytics', href: '/sales/analytics', icon: '📊' }
+        { id: 'leads', label: 'Leads', href: '/sales/leads', icon: 'i-heroicons-cursor-arrow-rays-solid' },
+        { id: 'customers', label: 'Customers', href: '/sales/customers', icon: 'i-heroicons-user-group-solid' },
+        { id: 'orders', label: 'Orders', href: '/sales/orders', icon: 'i-heroicons-clipboard-document-list-solid' },
+        { id: 'pipeline', label: 'Pipeline', href: '/sales/pipeline', icon: 'i-heroicons-arrow-path-rounded-square-solid' },
+        { id: 'analytics', label: 'Analytics', href: '/sales/analytics', icon: 'i-heroicons-chart-bar-solid' }
       ]
     },
     {
@@ -91,12 +92,12 @@ export const Header = component$(() => {
       label: 'Admin',
       icon: 'i-heroicons-shield-check-solid',
       subItems: [
-        { id: 'modules', label: 'Modules', href: '/admin/masters/modules', icon: 'i-streamline-module-three-solid' },
-        { id: 'users', label: 'Users', href: '/admin/users', icon: '👤' },
-        { id: 'roles', label: 'Roles & Permissions', href: '/admin/roles', icon: '🔑' },
-        { id: 'settings', label: 'Settings', href: '/admin/settings', icon: '⚙️' },
-        { id: 'audit', label: 'Audit Logs', href: '/admin/audit', icon: '📝' },
-        { id: 'backup', label: 'Backup', href: '/admin/backup', icon: '💾' }
+        { id: 'modules', label: 'Modules', href: '/admin/masters/modules', icon: 'i-heroicons-squares-2x2-solid' },
+        { id: 'users', label: 'Users', href: '/admin/users', icon: 'i-heroicons-user-solid' },
+        { id: 'roles', label: 'Roles & Permissions', href: '/admin/roles', icon: 'i-heroicons-key-solid' },
+        { id: 'settings', label: 'Settings', href: '/admin/settings', icon: 'i-heroicons-cog-6-tooth-solid' },
+        { id: 'audit', label: 'Audit Logs', href: '/admin/audit', icon: 'i-heroicons-document-text-solid' },
+        { id: 'backup', label: 'Backup', href: '/admin/backup', icon: 'i-heroicons-circle-stack-solid' }
       ]
     }
   ];
@@ -131,7 +132,9 @@ export const Header = component$(() => {
             {/* Individual Header Icons */}
 
             <div class="relative">
-              <button
+              <Btn
+                size="sm"
+                variant="ghost"
                 class={`p-2 rounded-lg hover:bg-gray-100 bg-transparent border-0 transition-all duration-200 ${
                   isMenuOpen.value
                     ? 'bg-primary-500 shadow-md'
@@ -140,7 +143,7 @@ export const Header = component$(() => {
                 onClick$={toggleMenu}
               >
                 <div class="i-heroicons-squares-2x2-solid w-6 h-6"></div>
-              </button>
+              </Btn>
 
               {/* Popup Menu */}
               {/* Overlay first (lower z-index) so popup renders on top */}
@@ -158,26 +161,28 @@ export const Header = component$(() => {
                     <div class="grid grid-cols-3 gap-3 place-items-center">
                       {/* Main modules */}
                       {menuItems.map((item) => (
-                        <button
+                        <Btn
                           key={item.id}
+                          size="sm"
+                          variant="ghost"
                           class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors"
                           onClick$={() => handleMainMenuClick(item.id)}
                         >
                           <div class={`${item.icon} w-6 h-6 text-gray-600`}></div>
                           <span class="text-xs font-medium text-gray-700 text-center leading-none">{item.label}</span>
-                        </button>
+                        </Btn>
                       ))}
 
                       {/* Additional items */}
-                      <button class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Btn size="sm" variant="ghost" class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
                         <div class="i-heroicons-user-circle w-6 h-6 text-gray-600"></div>
                         <span class="text-xs font-medium text-gray-700 text-center leading-none">Profile</span>
-                      </button>
+                      </Btn>
 
-                      <button class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Btn size="sm" variant="ghost" class="flex flex-col bg-transparent border-0 items-center justify-center gap-2 p-3 w-16 h-16 rounded-lg hover:bg-gray-50 transition-colors">
                         <div class="i-heroicons-squares-plus w-6 h-6 text-gray-600"></div>
                         <span class="text-xs font-medium text-gray-700 text-center leading-none">Products</span>
-                      </button>
+                      </Btn>
                     </div>
                   </div>
                 </div>
@@ -185,33 +190,39 @@ export const Header = component$(() => {
             </div>
 
             {/* Dark mode toggle */}
-            <button
+            <Btn
+              size="sm"
+              variant="ghost"
               class="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 bg-transparent border-0 transition-all duration-200"
               title={theme.isDark ? 'Light Mode' : 'Dark Mode'}
               onClick$={() => theme.toggleTheme()}
             >
               <div class={theme.isDark ? 'i-tabler-sun w-5 h-5 text-yellow-400' : 'i-tabler-moon w-5 h-5'} />
-            </button>
+            </Btn>
 
             {/* Notifications */}
             <NotificationBell />
 
             {/* Logout */}
-            <button
+            <Btn
+              size="sm"
+              variant="ghost"
               class="p-2 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50 bg-transparent border-0 transition-all duration-200"
               onClick$={handleLogout}
               title="Logout"
             >
               <div class="i-tabler-logout w-5 h-5" />
-            </button>
+            </Btn>
 
             {/* Profile */}
-            <button
+            <Btn
+              size="sm"
+              variant="ghost"
               class="p-2 rounded-lg text-gray-600 hover:text-primary-600 hover:bg-gray-100 bg-transparent border-0 transition-all duration-200"
               title="Profile"
             >
               <div class="i-heroicons-user-solid w-5 h-5" />
-            </button>
+            </Btn>
           </div>
         </div>
       </div>

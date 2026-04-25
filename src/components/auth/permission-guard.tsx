@@ -116,7 +116,7 @@
     
 //     return (
 //       <div class="p-6 text-center">
-//         <div class="text-6xl mb-4">🔒</div>
+//         <div class="text-6xl mb-4">Access</div>
 //         <h3 class="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
 //         <p class="text-gray-600">
 //           You don't have the required permissions to view this content.
