@@ -152,6 +152,15 @@ const CHART_COLOR_PALETTES = [
   { id: 'pastel', name: 'Pastel', colors: ['#93c5fd', '#c4b5fd', '#6ee7b7', '#fde68a'] },
 ];
 
+const SYSTEM_MODULE_OPTION_ID = '__SYSTEM_DATA_SOURCES__';
+const SYSTEM_MODULE_OPTION = {
+  id: SYSTEM_MODULE_OPTION_ID,
+  module_id: SYSTEM_MODULE_OPTION_ID,
+  name: 'System Data Sources',
+  module_name: 'System Data Sources',
+  system: true,
+};
+
 const tableMatchesModuleHeuristic = (table: any, moduleId: string, moduleTokens: string[]): boolean => {
   const tableModuleId = getEntityId(
     table?.module_id ||
@@ -198,17 +207,26 @@ const resolveScopedTables = (
   moduleId: string,
   moduleOption?: any
 ): any[] => {
-  const strictMatches = filterTablesBySelection(tables, verticalId, moduleId);
+  const systemTables = tables.filter((table: any) => !!table?.system);
+
+  if (String(moduleId || '').trim() === SYSTEM_MODULE_OPTION_ID) {
+    return systemTables;
+  }
+
+  // For regular modules, exclude system data sources from the dropdown.
+  const regularTables = tables.filter((table: any) => !table?.system);
+
+  const strictMatches = filterTablesBySelection(regularTables, verticalId, moduleId);
   if (strictMatches.length > 0) {
     return strictMatches;
   }
 
-  const anyMetadataPresent = tables.some((table) => hasScopeMetadata(table));
+  const anyMetadataPresent = regularTables.some((table) => hasScopeMetadata(table));
   const moduleTokens = buildModuleTokens(moduleOption, moduleId);
 
   // If payload has partial metadata but strict matching still missed (e.g., module serialized inconsistently),
   // fall back to module token matching before giving up.
-  const moduleFallbackMatches = tables.filter((table) =>
+  const moduleFallbackMatches = regularTables.filter((table) =>
     tableMatchesModuleHeuristic(table, moduleId, moduleTokens)
   );
 
@@ -365,6 +383,18 @@ export default component$(() => {
   const selectedModule = useSignal('');
   const loadingModalData = useSignal(false);
 
+  const getModuleOptions = () => {
+    const modules = Array.isArray(availableModules.value) ? [...availableModules.value] : [];
+    const hasSystemOption = modules.some((module: any) => {
+      const moduleId = String(module?.id || module?.module_id || '').trim();
+      return moduleId === SYSTEM_MODULE_OPTION_ID;
+    });
+    if (!hasSystemOption) {
+      modules.push(SYSTEM_MODULE_OPTION);
+    }
+    return modules;
+  };
+
   const clearSelectedDataSource = $(() => {
     selectedTable.value = '';
     tableFields.value = [];
@@ -376,6 +406,7 @@ export default component$(() => {
   const loadScopedTables = $(async (verticalId?: string, moduleId?: string) => {
     const normalizedVerticalId = String(verticalId || '').trim();
     const normalizedModuleId = String(moduleId || '').trim();
+    const isSystemModuleSelection = normalizedModuleId === SYSTEM_MODULE_OPTION_ID;
 
     if (!normalizedVerticalId || !normalizedModuleId) {
       availableTables.value = [];
@@ -384,11 +415,15 @@ export default component$(() => {
     }
 
     try {
-      const response: any = await analyticsService.getFormTables({
+      const scopedParams: any = {
         business_vertical_id: normalizedVerticalId,
         vertical_id: normalizedVerticalId,
-        module_id: normalizedModuleId,
-      });
+      };
+      if (!isSystemModuleSelection) {
+        scopedParams.module_id = normalizedModuleId;
+      }
+
+      const response: any = await analyticsService.getFormTables(scopedParams);
 
       let tables = response?.tables || [];
       if (tables.length === 0) {
@@ -420,7 +455,6 @@ export default component$(() => {
   const isPublic = useSignal(false);
   const selectedPermissions = useSignal<string[]>([]);
   const availablePermissions = useSignal<PermissionOption[]>([]);
-  const permissionToAdd = useSignal('');
 
   // KPI configuration state (enterprise metric definition)
   const kpiMetricField = useSignal('');
@@ -446,11 +480,6 @@ export default component$(() => {
   const chartColorPalette = useSignal('default');
   const chartCustomColors = useSignal<string[]>(['#2563eb', '#f97316', '#22c55e', '#a855f7', '#ef4444']);
   const chartTitle = useSignal('');
-
-  const getAvailablePermissionOptions = () => {
-    const selected = new Set(selectedPermissions.value);
-    return availablePermissions.value.filter((permission) => !selected.has(permission.name));
-  };
 
   const getActiveBusinessId = $(() => {
     const keys = ['business_vertical_id', 'business_id', 'active_business_id', 'ugcl_current_business_vertical'];
@@ -546,61 +575,57 @@ export default component$(() => {
     currentStep.value = 2;
   });
 
-  const WORKFLOW_TIMELINE_FIELDS = new Set([
+  const WORKFLOW_TIMELINE_FIELDS = [
     'current_state',
     'wf_last_action',
     'wf_last_action_by',
     'wf_last_action_at',
     'wf_last_comment',
-  ]);
-
-  const buildSelectedField = (field: any, order: number) => {
-    const fieldName = field.column_name || field.id || field.name;
-    const fieldLabel = field.label || field.name || field.column_name;
-    const fieldType = field.dataType || field.data_type || field.type || 'text';
-
-    return {
-      field_name: fieldName,
-      alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-      data_source: 'data',
-      data_type: fieldType,
-      is_visible: true,
-      order,
-    };
-  };
-
-  const hasWorkflowTimelineSelection = () =>
-    (reportConfig.fields || []).some((field: any) => WORKFLOW_TIMELINE_FIELDS.has(String(field.field_name || '')));
-
-  const ensureSubmissionIdField = () => {
-    const alreadySelected = (reportConfig.fields || []).some((field: any) => field.field_name === 'submission_id');
-    if (alreadySelected) return;
-
-    const submissionField = (tableFields.value || []).find((field: any) =>
-      String(field.column_name || field.id || field.name || '') === 'submission_id'
-    );
-    if (!submissionField) return;
-
-    reportConfig.fields = [
-      ...(reportConfig.fields || []),
-      buildSelectedField(submissionField, (reportConfig.fields?.length || 0) + 1),
-    ];
-  };
+  ];
 
   const addField = $((field: any) => {
     // Always use column_name from form schema (backend ensures it's the actual database column)
     // Fall back to id/name only if column_name not available (for legacy db_fields)
     const fieldName = field.column_name || field.id || field.name;
+    const fieldLabel = field.label || field.name || field.column_name;
+    const fieldType = field.dataType || field.data_type || field.type || 'text';
 
     const exists = reportConfig.fields?.some(f => f.field_name === fieldName);
     if (!exists) {
       reportConfig.fields = [
         ...(reportConfig.fields || []),
-        buildSelectedField(field, (reportConfig.fields?.length || 0) + 1),
+        {
+          field_name: fieldName,
+          alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+          data_source: 'data',
+          data_type: fieldType,
+          is_visible: true,
+          order: (reportConfig.fields?.length || 0) + 1,
+        },
       ];
 
-      if (WORKFLOW_TIMELINE_FIELDS.has(String(fieldName || ''))) {
-        ensureSubmissionIdField();
+      if (WORKFLOW_TIMELINE_FIELDS.includes(String(fieldName || ''))) {
+        const alreadySelected = (reportConfig.fields || []).some((item: any) => item.field_name === 'submission_id');
+        if (!alreadySelected) {
+          const submissionField = (tableFields.value || []).find((item: any) =>
+            String(item.column_name || item.id || item.name || '') === 'submission_id'
+          );
+          if (submissionField) {
+            const submissionFieldLabel = submissionField.label || submissionField.name || submissionField.column_name;
+            const submissionFieldType = submissionField.dataType || submissionField.data_type || submissionField.type || 'text';
+            reportConfig.fields = [
+              ...(reportConfig.fields || []),
+              {
+                field_name: 'submission_id',
+                alias: String(submissionFieldLabel || 'Submission ID').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                data_source: 'data',
+                data_type: submissionFieldType,
+                is_visible: true,
+                order: (reportConfig.fields?.length || 0) + 1,
+              },
+            ];
+          }
+        }
       }
 
       if (reportConfig.report_type === 'kpi') {
@@ -615,7 +640,11 @@ export default component$(() => {
   const removeField = $((index: number) => {
     const removedField = (reportConfig.fields || [])[index] as any;
 
-    if (removedField?.field_name === 'submission_id' && hasWorkflowTimelineSelection()) {
+    const hasWorkflowTimelineSelection = (reportConfig.fields || []).some((field: any) =>
+      WORKFLOW_TIMELINE_FIELDS.includes(String(field.field_name || ''))
+    );
+
+    if (removedField?.field_name === 'submission_id' && hasWorkflowTimelineSelection) {
       error.value = 'Submission ID is required for workflow timeline drill-down. Remove workflow status fields first if you do not need the timeline.';
       return;
     }
@@ -1153,7 +1182,7 @@ export default component$(() => {
                   disabled={loadingModalData.value || !selectedVertical.value}
                 >
                   <option value="">Select module...</option>
-                  {availableModules.value.map((m: any) => (
+                  {getModuleOptions().map((m: any) => (
                     <option key={m.id || m.module_id} value={m.id || m.module_id}>
                       {m.name || m.module_name}
                     </option>
@@ -1181,7 +1210,7 @@ export default component$(() => {
                 </option>
                 {availableTables.value.map((table: any) => (
                   <option key={table.table_name} value={table.table_name}>
-                    {table.form_title}
+                    {table.system ? `[System] ${table.form_title}` : table.form_title}
                   </option>
                 ))}
               </select>
@@ -2405,63 +2434,38 @@ export default component$(() => {
 
                 {!isPublic.value && (
                   <div class="space-y-3">
-                    <div class="flex gap-2 items-end">
-                      <FormField id="save-report-permission" label="Permission" class="flex-1 mb-0">
-                        <select
-                          id="save-report-permission"
-                          value={permissionToAdd.value}
-                          onChange$={(e: any) => {
-                            permissionToAdd.value = e.target.value;
-                          }}
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                          disabled={loadingModalData.value}
-                        >
-                          <option value="">Select permission...</option>
-                          {getAvailablePermissionOptions().map((permission) => (
-                            <option key={permission.id} value={permission.name}>
-                              {permission.name}
-                            </option>
-                          ))}
-                        </select>
-                      </FormField>
-
-                      <Btn
-                        type="button"
-                        variant="secondary"
-                        disabled={!permissionToAdd.value}
-                        onClick$={() => {
-                          if (!permissionToAdd.value) return;
-                          if (!selectedPermissions.value.includes(permissionToAdd.value)) {
-                            selectedPermissions.value = [...selectedPermissions.value, permissionToAdd.value];
-                          }
-                          permissionToAdd.value = '';
+                    <FormField id="save-report-permissions" label="Permissions (multi-select)">
+                      <select
+                        id="save-report-permissions"
+                        multiple
+                        size={Math.min(Math.max(availablePermissions.value.length, 4), 10)}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        disabled={loadingModalData.value}
+                        onChange$={(e: any) => {
+                          const options = Array.from((e.target as HTMLSelectElement).selectedOptions || []);
+                          selectedPermissions.value = options
+                            .map((option: any) => String(option.value || '').trim())
+                            .filter((value: string) => !!value);
                         }}
                       >
-                        Add
-                      </Btn>
-                    </div>
+                        {availablePermissions.value.map((permission) => (
+                          <option
+                            key={permission.id}
+                            value={permission.name}
+                            selected={selectedPermissions.value.includes(permission.name)}
+                          >
+                            {permission.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
 
                     {loadingModalData.value ? (
                       <p class="text-xs text-gray-400 italic">Loading permissions…</p>
-                    ) : selectedPermissions.value.length > 0 ? (
-                      <div class="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
-                        {selectedPermissions.value.map((permissionName) => (
-                          <button
-                            key={permissionName}
-                            type="button"
-                            class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-200"
-                            onClick$={() => {
-                              selectedPermissions.value = selectedPermissions.value.filter((name) => name !== permissionName);
-                            }}
-                            title="Remove permission"
-                          >
-                            <span>{permissionName}</span>
-                            <span aria-hidden="true">x</span>
-                          </button>
-                        ))}
-                      </div>
                     ) : (
-                      <p class="text-xs text-gray-500">No permissions selected. Restricted reports will only be accessible when matching permissions are added.</p>
+                      <p class="text-xs text-gray-500">
+                        Hold Ctrl (Windows) or Cmd (Mac) to select multiple permissions. {selectedPermissions.value.length} selected.
+                      </p>
                     )}
                   </div>
                 )}
