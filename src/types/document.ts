@@ -301,6 +301,93 @@ export interface SharedDocumentAccessResponse {
   password_required?: boolean;
 }
 
+export type DocumentAITask = 'synopsis' | 'extract_fields' | 'answer_question';
+
+export interface DocumentAIIntegration {
+  id: string;
+  name: string;
+  description?: string;
+  provider: string;
+  model: string;
+  endpoint_url: string;
+}
+
+export interface DocumentAIIntegrationListResponse {
+  integrations: DocumentAIIntegration[];
+  total: number;
+}
+
+export interface DocumentAIRequest {
+  task: DocumentAITask;
+  integration_id: string;
+  question?: string;
+  fields?: string[];
+}
+
+export interface DocumentAIResponse {
+  document_id: string;
+  task: DocumentAITask;
+  integration_id: string;
+  provider: string;
+  model: string;
+  output: string;
+  metadata?: Record<string, any>;
+}
+
+export interface DocumentWorkflowAction {
+  action: string;
+  label: string;
+  to_state: string;
+  requires_comment: boolean;
+  permission?: string;
+}
+
+export interface DocumentWorkflowHistoryItem {
+  id: string;
+  from_state: string;
+  to_state: string;
+  action: string;
+  comment?: string;
+  actor_id?: string;
+  actor_name?: string;
+  transitioned_at: string;
+  metadata?: Record<string, any>;
+}
+
+export interface DocumentWorkflowResponse {
+  document_id: string;
+  workflow_id?: string;
+  current_state: string;
+  status: DocumentStatus;
+  available_actions: DocumentWorkflowAction[];
+  history: DocumentWorkflowHistoryItem[];
+}
+
+export interface DocumentWorkflowTransitionRequest {
+  action: string;
+  comment?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface DocumentWorkflowTransitionResponse {
+  message: string;
+  document: Document;
+  workflow: DocumentWorkflowResponse;
+}
+
+export interface DocumentWorkflowDefinition {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  initial_state: string;
+}
+
+export interface DocumentWorkflowListResponse {
+  workflows: DocumentWorkflowDefinition[];
+  total: number;
+}
+
 // Category operations
 export interface CreateCategoryRequest {
   name: string;

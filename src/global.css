@@ -63,6 +63,132 @@ html {
 	font-family: var(--typography-fontFamily-primary);
 }
 
+
+/* Document preview fullscreen layout */
+#document-preview-surface:fullscreen,
+#document-preview-surface:-webkit-full-screen {
+	width: 100vw;
+	height: 100vh;
+	max-width: 100vw;
+	max-height: 100vh;
+	overflow: auto;
+	padding: 1rem;
+	background: var(--color-surface-secondary);
+}
+
+#document-preview-surface:fullscreen .preview-frame,
+#document-preview-surface:-webkit-full-screen .preview-frame {
+	height: calc(100vh - 5rem);
+}
+
+#document-preview-surface:fullscreen .preview-image,
+#document-preview-surface:-webkit-full-screen .preview-image {
+	max-height: calc(100vh - 5rem);
+}
+
+#document-preview-surface:fullscreen .preview-table-wrap,
+#document-preview-surface:-webkit-full-screen .preview-table-wrap {
+	max-height: calc(100vh - 5rem);
+}
+
+/* Standard icon-only action controls */
+.icon-action-btn {
+	display: inline-flex;
+	height: 2rem;
+	width: 2rem;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.5rem;
+	border: 1px solid transparent;
+	transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.icon-action-btn:focus-visible {
+	outline: 2px solid var(--color-border-focus);
+	outline-offset: 2px;
+}
+
+.icon-action-btn-primary {
+	color: #1d4ed8;
+}
+
+.icon-action-btn-primary:hover {
+	background-color: #dbeafe;
+	color: #1e3a8a;
+	border-color: #93c5fd;
+}
+
+.icon-action-btn-secondary {
+	color: #4338ca;
+}
+
+.icon-action-btn-secondary:hover {
+	background-color: #e0e7ff;
+	color: #312e81;
+	border-color: #a5b4fc;
+}
+
+.icon-action-btn-danger {
+	color: #b91c1c;
+}
+
+.icon-action-btn-danger:hover {
+	background-color: #fee2e2;
+	color: #7f1d1d;
+	border-color: #fca5a5;
+}
+
+.icon-tab-btn {
+	display: inline-flex;
+	height: 2.5rem;
+	width: 2.5rem;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.625rem;
+	border: 1px solid transparent;
+	color: #6b7280;
+	transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.icon-tab-btn:hover {
+	background-color: #f3f4f6;
+	color: #374151;
+}
+
+.icon-tab-btn:focus-visible {
+	outline: 2px solid var(--color-border-focus);
+	outline-offset: 2px;
+}
+
+.icon-tab-btn-active-review {
+	border-color: #93c5fd;
+	background-color: #eff6ff;
+	color: #1d4ed8;
+}
+
+.icon-tab-btn-active-preview {
+	border-color: #a5b4fc;
+	background-color: #eef2ff;
+	color: #4338ca;
+}
+
+.icon-tab-btn-active-details {
+	border-color: #6ee7b7;
+	background-color: #ecfdf5;
+	color: #047857;
+}
+
+.icon-tab-btn-active-versions {
+	border-color: #fcd34d;
+	background-color: #fffbeb;
+	color: #b45309;
+}
+
+.icon-tab-btn-active-activity {
+	border-color: #f0abfc;
+	background-color: #fdf4ff;
+	color: #a21caf;
+}
 /* Explicitly set font for form elements (browsers often override these) */
 input,
 button,

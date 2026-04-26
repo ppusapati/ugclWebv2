@@ -4,7 +4,7 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
 import type { Dashboard, DashboardListResponse, ReportResult, ChartType } from '~/types/analytics';
-import { P9ETable } from '~/components/table/table';
+import { P9ETable } from '~/components/table';
 import { Alert, Badge, Btn } from '~/components/ds';
 
 const DASHBOARD_GRID_COLS = 12;
@@ -327,34 +327,31 @@ export default component$(() => {
                 {!dashboard.widgets || dashboard.widgets.length === 0 ? (
                   <p class="text-gray-500">No widgets configured for this dashboard.</p>
                 ) : (
-                  <div class="overflow-x-auto">
-                    <div
-                      class="grid grid-cols-12 gap-4 min-w-[var(--dashboard-canvas-min-width)] auto-rows-[var(--dashboard-grid-row-height)]"
-                      style={{
-                        '--dashboard-canvas-min-width': `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
-                        '--dashboard-grid-row-height': `${DASHBOARD_GRID_ROW_HEIGHT}px`,
-                      }}
-                    >
-                    {dashboard.widgets.map((widget) => {
+                  <div>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    {[...(dashboard.widgets || [])]
+                      .sort((a, b) => {
+                        const ay = a.position?.y ?? 0;
+                        const by = b.position?.y ?? 0;
+                        if (ay !== by) return ay - by;
+                        const ax = a.position?.x ?? 0;
+                        const bx = b.position?.x ?? 0;
+                        return ax - bx;
+                      })
+                      .map((widget) => {
                       const x = widget.position?.x ?? 0;
-                      const y = widget.position?.y ?? 0;
                       const w = widget.position?.w ?? 4;
-                      const h = widget.position?.h ?? 3;
 
                       const safeX = Math.max(0, Math.min(DASHBOARD_GRID_COLS - 1, x));
                       const safeW = Math.max(1, Math.min(DASHBOARD_GRID_COLS, w));
                       const clampedW = Math.min(safeW, DASHBOARD_GRID_COLS - safeX);
-                      const safeY = Math.max(0, y);
-                      const safeH = Math.max(1, h);
 
                       return (
                       <div
                         key={widget.id}
-                        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white overflow-hidden [grid-column:var(--widget-grid-column)] [grid-row:var(--widget-grid-row)] min-h-[var(--widget-min-height)]"
+                        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white overflow-hidden [grid-column:var(--widget-grid-column)]"
                         style={{
                           '--widget-grid-column': `${safeX + 1} / span ${clampedW}`,
-                          '--widget-grid-row': `${safeY + 1} / span ${safeH}`,
-                          '--widget-min-height': `${DASHBOARD_GRID_ROW_HEIGHT * safeH}px`,
                         }}
                       >
                         <div class="flex items-center justify-between mb-2">
@@ -391,7 +388,10 @@ export default component$(() => {
 
                             if (widget.type === 'chart') {
                               return (
-                                <div class="h-72 bg-gray-50 rounded-lg p-3">
+                                <div
+                                  class="bg-gray-50 rounded-lg p-3"
+                                  style={{ height: 'clamp(260px, 38vh, 420px)' }}
+                                >
                                   <Resource
                                     value={chartComponent}
                                     onPending={() => <div class="h-full rounded-lg bg-gray-100 animate-pulse" />}
@@ -434,41 +434,31 @@ export default component$(() => {
                             }
 
                             return (
-                              <div class="overflow-auto rounded-lg border border-gray-200">
-                                <table class="min-w-full text-xs">
-                                  <thead class="bg-gray-100">
-                                    <tr>
-                                      {(reportResult.headers || []).slice(0, 8).map((header) => (
-                                        <th key={header.key} class="px-2 py-1 text-left font-semibold text-gray-700 whitespace-nowrap">
-                                          {header.label || header.key}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(reportResult.data || []).slice(0, 8).map((row: any, rowIndex: number) => (
-                                      <tr key={`row-${rowIndex}`} class="border-t border-gray-100">
-                                        {(reportResult.headers || []).slice(0, 8).map((header) => (
-                                          <td key={`${rowIndex}-${header.key}`} class="px-2 py-1 text-gray-600 whitespace-nowrap">
-                                            {row?.[header.key] === null || row?.[header.key] === undefined
-                                              ? '-'
-                                              : String(row[header.key])}
-                                          </td>
-                                        ))}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                                {(reportResult.data || []).length > 8 && (
-                                  <div class="px-2 py-1 text-[11px] text-gray-500 bg-gray-50 border-t border-gray-200">
-                                    Showing first 8 rows of {reportResult.data.length}
-                                  </div>
-                                )}
-                              </div>
+                              <P9ETable
+                                title={widget.title || 'Widget Table'}
+                                header={(reportResult.headers || []).map((h: any) => ({
+                                  key: h.key.toLowerCase(),
+                                  label: h.label || h.key,
+                                  type: h.data_type,
+                                }))}
+                                data={(reportResult.data || []).map((row: any) => {
+                                  const normalizedRow: any = {};
+                                  Object.keys(row || {}).forEach((key) => {
+                                    normalizedRow[key.toLowerCase()] = row[key];
+                                  });
+                                  return normalizedRow;
+                                })}
+                                defaultLimit={8}
+                                enableSearch={false}
+                                enableSort={true}
+                              />
                             );
                           })()
                         ) : (
-                          <div class="text-xs text-gray-400">Widget has no live result yet.</div>
+                          <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <span class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500"></span>
+                            <span>{executionLoading.value ? 'Loading widget data...' : 'Waiting for live widget data...'}</span>
+                          </div>
                         )}
                       </div>
                     );

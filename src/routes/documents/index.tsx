@@ -1,6 +1,6 @@
 import { component$, useStore, useResource$, Resource, $ } from '@builder.io/qwik';
 import type { DocumentHead } from '@builder.io/qwik-city';
-import { Link, routeLoader$ } from '@builder.io/qwik-city';
+import { Link, routeLoader$, useNavigate } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentCategory, DocumentTag } from '~/types/document';
@@ -28,10 +28,10 @@ export const useDocumentsMetaData = routeLoader$(async (requestEvent) => {
 });
 
 export default component$(() => {
+  const navigate = useNavigate();
   const initialMeta = useDocumentsMetaData();
   const state = useStore({
     showUpload: false,
-    selectedDocument: null as Document | null,
     selectedDocumentIds: [] as string[],
     selectedCategoryId: undefined as string | undefined,
     refreshKey: 0,
@@ -58,13 +58,6 @@ export default component$(() => {
     return mod.DocumentUpload;
   });
 
-  const documentViewerComponent = useResource$(async ({ track }) => {
-    track(() => state.selectedDocument?.id);
-    if (!state.selectedDocument) return null;
-    const mod = await import('~/components/documents/DocumentViewer');
-    return mod.DocumentViewer;
-  });
-
   const handleUploadComplete = $(() => {
     state.showUpload = false;
     state.refreshKey++; // Trigger refresh of document list
@@ -72,15 +65,11 @@ export default component$(() => {
   });
 
   const handleDocumentClick = $((document: Document) => {
-    state.selectedDocument = document;
+    navigate(`/documents/view/${document.id}`);
   });
 
   const handleDocumentSelect = $((documentIds: string[]) => {
     state.selectedDocumentIds = documentIds;
-  });
-
-  const handleCloseViewer = $(() => {
-    state.selectedDocument = null;
   });
 
   const handleCategorySelect = $((categoryId: string | undefined) => {
@@ -98,11 +87,9 @@ export default component$(() => {
         <Link
           q:slot="actions"
           href="/documents/categories"
-          class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+          class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 px-4 py-2 text-sm btn-secondary"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-          </svg>
+          <i class="i-heroicons-folder-open-solid h-4 w-4" aria-hidden="true"></i>
           Manage Categories
         </Link>
       </PageHeader>
@@ -129,19 +116,17 @@ export default component$(() => {
           {/* Action Bar */}
           <div class="mb-6 flex gap-4">
             <Btn
-              class="rounded-lg"
+              variant={state.showUpload ? 'secondary' : 'primary'}
               onClick$={() => (state.showUpload = !state.showUpload)}
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
+              <i class="i-heroicons-arrow-up-tray-solid h-4 w-4" aria-hidden="true"></i>
               {state.showUpload ? 'Cancel Upload' : 'Upload Document'}
             </Btn>
 
             {state.selectedDocumentIds.length > 0 && (
               <>
-                <button
-                  class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                <Btn
+                  variant="danger"
                   onClick$={async () => {
                     if (confirm(`Delete ${state.selectedDocumentIds.length} documents?`)) {
                       try {
@@ -155,10 +140,11 @@ export default component$(() => {
                     }
                   }}
                 >
+                  <i class="i-heroicons-trash-solid h-4 w-4" aria-hidden="true"></i>
                   Delete Selected ({state.selectedDocumentIds.length})
-                </button>
-                <button
-                  class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                </Btn>
+                <Btn
+                  variant="secondary"
                   onClick$={async () => {
                     try {
                       await documentService.bulkDownload(state.selectedDocumentIds, 'documents.zip');
@@ -168,8 +154,9 @@ export default component$(() => {
                     }
                   }}
                 >
+                  <i class="i-heroicons-arrow-down-tray-solid h-4 w-4" aria-hidden="true"></i>
                   Download Selected ({state.selectedDocumentIds.length})
-                </button>
+                </Btn>
               </>
             )}
           </div>
@@ -194,43 +181,21 @@ export default component$(() => {
           )}
 
           {/* Document List */}
-          {!state.selectedDocument && (
-            <Resource
-              value={documentListComponent}
-              onPending={() => <div class="h-96 rounded-lg bg-gray-100 animate-pulse" />}
-              onResolved={(DocumentListComponent) => (
-                <DocumentListComponent
-                  key={state.refreshKey}
-                  categoryId={state.selectedCategoryId}
-                  onDocumentClick={handleDocumentClick}
-                  onDocumentSelect={handleDocumentSelect}
-                  allowSelection={true}
-                />
-              )}
-            />
-          )}
+          <Resource
+            value={documentListComponent}
+            onPending={() => <div class="h-96 rounded-lg bg-gray-100 animate-pulse" />}
+            onResolved={(DocumentListComponent) => (
+              <DocumentListComponent
+                key={state.refreshKey}
+                categoryId={state.selectedCategoryId}
+                onDocumentClick={handleDocumentClick}
+                onDocumentSelect={handleDocumentSelect}
+                allowSelection={true}
+              />
+            )}
+          />
         </div>
       </div>
-
-      {/* Document Viewer */}
-      {state.selectedDocument && (
-        <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div class="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <Resource
-              value={documentViewerComponent}
-              onPending={() => <div class="h-[70vh] rounded-lg bg-white" />}
-              onResolved={(DocumentViewerComponent) =>
-                DocumentViewerComponent ? (
-                  <DocumentViewerComponent
-                    documentId={state.selectedDocument!.id}
-                    onClose={handleCloseViewer}
-                  />
-                ) : null
-              }
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 });

@@ -30,6 +30,13 @@ import type {
   UpdateTagRequest,
   FileValidationOptions,
   FileValidationResult,
+  DocumentAIRequest,
+  DocumentAIResponse,
+  DocumentAIIntegrationListResponse,
+  DocumentWorkflowResponse,
+  DocumentWorkflowTransitionRequest,
+  DocumentWorkflowTransitionResponse,
+  DocumentWorkflowListResponse,
 } from '../types/document';
 
 class DocumentService {
@@ -328,6 +335,51 @@ class DocumentService {
     return apiClient.get<DocumentAuditLog[]>(`/documents/${documentId}/audit`);
   }
 
+  // ============ Document AI ============
+
+  /**
+   * Get active AI integrations available for document processing.
+   */
+  async getAIIntegrations(): Promise<DocumentAIIntegrationListResponse> {
+    return apiClient.get<DocumentAIIntegrationListResponse>('/documents/ai/integrations');
+  }
+
+  /**
+   * Run a restricted AI task against a document.
+   */
+  async processDocumentAI(documentId: string, request: DocumentAIRequest): Promise<DocumentAIResponse> {
+    return apiClient.post<DocumentAIResponse>(`/documents/${documentId}/ai/process`, request);
+  }
+
+  // ============ Document Workflow ============
+
+  /**
+   * Get workflow state, available actions and history for a document.
+   */
+  async getWorkflow(documentId: string): Promise<DocumentWorkflowResponse> {
+    return apiClient.get<DocumentWorkflowResponse>(`/documents/${documentId}/workflow`);
+  }
+
+  /**
+   * Transition the document workflow using one allowed action.
+   */
+  async transitionWorkflow(
+    documentId: string,
+    request: DocumentWorkflowTransitionRequest
+  ): Promise<DocumentWorkflowTransitionResponse> {
+    return apiClient.post<DocumentWorkflowTransitionResponse>(
+      `/documents/${documentId}/workflow/transition`,
+      request
+    );
+  }
+
+  /**
+   * Get active workflows that can be selected during document upload.
+   */
+  async getWorkflows(): Promise<DocumentWorkflowListResponse> {
+    return apiClient.get<DocumentWorkflowListResponse>('/documents/workflows');
+  }
+
   // ============ Bulk Operations ============
 
   /**
@@ -347,13 +399,15 @@ class DocumentService {
   /**
    * Bulk download documents as zip
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async bulkDownload(documentIds: string[], _filename?: string): Promise<Blob> {
-    const response = await apiClient.post<Blob>(
+  async bulkDownload(documentIds: string[], filename = 'documents.zip'): Promise<Blob> {
+    return apiClient.download(
       '/documents/bulk/download',
-      { document_ids: documentIds }
+      filename,
+      {
+        method: 'POST',
+        body: JSON.stringify({ document_ids: documentIds }),
+      }
     );
-    return response;
   }
 
   /**

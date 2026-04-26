@@ -1,7 +1,7 @@
-import { component$, useSignal, useStore, $, type QRL, noSerialize, type NoSerialize } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useVisibleTask$, $, type QRL, noSerialize, type NoSerialize } from '@builder.io/qwik';
 import { Btn, FormField } from '~/components/ds';
 import { documentService } from '~/services/document.service';
-import type { DocumentCategory, DocumentTag } from '~/types/document';
+import type { DocumentCategory, DocumentTag, DocumentWorkflowDefinition } from '~/types/document';
 
 interface DocumentUploadProps {
   onUploadComplete?: QRL<(documentId: string) => void>;
@@ -33,11 +33,30 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
     title: '',
     description: '',
     categoryId: '',
+    selectedWorkflowId: workflowId || '',
+    workflows: [] as DocumentWorkflowDefinition[],
+    loadingWorkflows: false,
     selectedTags: [] as string[],
     isPublic: false,
   });
 
   const fileInputRef = useSignal<HTMLInputElement>();
+
+  useVisibleTask$(async () => {
+    if (workflowId) {
+      return;
+    }
+
+    state.loadingWorkflows = true;
+    try {
+      const response = await documentService.getWorkflows();
+      state.workflows = response.workflows || [];
+    } catch {
+      state.workflows = [];
+    } finally {
+      state.loadingWorkflows = false;
+    }
+  });
 
   const handleDragOver = $((event: DragEvent) => {
     event.preventDefault();
@@ -119,7 +138,7 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
           category_id: state.categoryId || undefined,
           tags: state.selectedTags.length > 0 ? state.selectedTags : undefined,
           business_vertical_id: businessVerticalId,
-          workflow_id: workflowId,
+          workflow_id: state.selectedWorkflowId || workflowId,
           is_public: state.isPublic,
         },
         (progress) => {
@@ -132,6 +151,7 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
       state.title = '';
       state.description = '';
       state.categoryId = '';
+      state.selectedWorkflowId = workflowId || '';
       state.selectedTags = [];
       state.isPublic = false;
       state.uploadProgress = 0;
@@ -151,6 +171,7 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
     state.title = '';
     state.description = '';
     state.categoryId = '';
+    state.selectedWorkflowId = workflowId || '';
     state.selectedTags = [];
     state.error = '';
     state.uploadProgress = 0;
@@ -271,6 +292,36 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
               </select>
             </FormField>
           )}
+
+          {/* Workflow */}
+          <FormField id="document-upload-workflow" label="Workflow">
+            <div class="flex items-center gap-2">
+              <select
+                id="document-upload-workflow"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                value={state.selectedWorkflowId}
+                onChange$={(e) => (state.selectedWorkflowId = (e.target as HTMLSelectElement).value)}
+                disabled={state.isUploading || !!workflowId || state.loadingWorkflows}
+              >
+                <option value="">Use default workflow</option>
+                {state.workflows.map((workflow) => (
+                  <option key={workflow.id} value={workflow.id}>
+                    {workflow.name}
+                  </option>
+                ))}
+              </select>
+              <a
+                href="/workflows"
+                class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 px-3 py-2 text-sm btn-secondary whitespace-nowrap"
+                title="Create a new workflow"
+              >
+                New Workflow
+              </a>
+            </div>
+            {workflowId && (
+              <p class="mt-1 text-xs text-gray-500">Workflow is pre-assigned by context and cannot be changed here.</p>
+            )}
+          </FormField>
 
           {/* Tags */}
           {tags.length > 0 && (

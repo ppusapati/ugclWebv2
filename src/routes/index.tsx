@@ -247,13 +247,6 @@ export default component$(() => {
   return (
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div class="w-full px-2 md:px-4 py-6">
-        <div class="mb-4">
-          <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100">Home</h1>
-          <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Default Dashboard ID: {dashboard?.id || 'Not found'}
-          </p>
-        </div>
-
         <div class="flex items-center justify-end mb-6">
           {dashboard && (
             <Btn onClick$={executeDashboard} disabled={executionLoading.value}>
@@ -287,49 +280,40 @@ export default component$(() => {
         {dashboard && (
           <div class="space-y-6">
             <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-              <div class="p-6">
+              <div class="p-1">
                 {!dashboard.widgets || dashboard.widgets.length === 0 ? (
                   <p class="text-gray-500">No widgets configured for this dashboard.</p>
                 ) : (
-                  <div class="overflow-x-auto">
+                  <div>
                     {(() => {
                       const isSingleWidget = (dashboard.widgets?.length || 0) === 1;
+                      const sortedWidgets = [...(dashboard.widgets || [])].sort((a, b) => {
+                        const ay = a.position?.y ?? 0;
+                        const by = b.position?.y ?? 0;
+                        if (ay !== by) return ay - by;
+                        const ax = a.position?.x ?? 0;
+                        const bx = b.position?.x ?? 0;
+                        return ax - bx;
+                      });
                       return (
-                        <div
-                          class="grid grid-cols-12 gap-4 min-w-[var(--dashboard-canvas-min-width)] auto-rows-[var(--dashboard-grid-row-height)]"
-                          style={{
-                            '--dashboard-canvas-min-width': `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
-                            '--dashboard-grid-row-height': `${DASHBOARD_GRID_ROW_HEIGHT}px`,
-                          }}
-                        >
-                          {dashboard.widgets.map((widget) => {
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                          {sortedWidgets.map((widget) => {
                             const x = widget.position?.x ?? 0;
-                            const y = widget.position?.y ?? 0;
                             const w = widget.position?.w ?? 4;
-                            const h = widget.position?.h ?? 3;
 
                             const safeX = isSingleWidget ? 0 : Math.max(0, Math.min(DASHBOARD_GRID_COLS - 1, x));
                             const safeW = Math.max(1, Math.min(DASHBOARD_GRID_COLS, w));
                             const clampedW = isSingleWidget ? DASHBOARD_GRID_COLS : Math.min(safeW, DASHBOARD_GRID_COLS - safeX);
-                            const safeY = Math.max(0, y);
-                            const safeH = Math.max(1, h);
 
                             return (
                               <div
                                 key={widget.id}
-                                class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white overflow-hidden [grid-column:var(--widget-grid-column)] [grid-row:var(--widget-grid-row)] min-h-[var(--widget-min-height)]"
+                                class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white overflow-hidden [grid-column:var(--widget-grid-column)]"
                                 style={{
                                   '--widget-grid-column': `${safeX + 1} / span ${clampedW}`,
-                                  '--widget-grid-row': `${safeY + 1} / span ${safeH}`,
-                                  '--widget-min-height': `${DASHBOARD_GRID_ROW_HEIGHT * safeH}px`,
                                 }}
                               >
-                                <div class="flex items-center justify-between mb-2">
-                                  <h3 class="font-semibold">{widget.title}</h3>
-                                  <Badge variant="neutral" class="capitalize">
-                                    {widget.type}
-                                  </Badge>
-                                </div>
+                          
                                 {widget.description && <p class="text-sm text-gray-500 mb-3">{widget.description}</p>}
 
                                 {widgetResults.value[widget.id] ? (
@@ -355,7 +339,10 @@ export default component$(() => {
 
                                     if (widget.type === 'chart') {
                                       return (
-                                        <div class="h-72 bg-gray-50 rounded-lg p-3">
+                                        <div
+                                          class="bg-gray-50 rounded-lg p-3"
+                                          style={{ height: 'clamp(260px, 38vh, 420px)' }}
+                                        >
                                           <Resource
                                             value={chartComponent}
                                             onPending={() => <div class="h-full rounded-lg bg-gray-100 animate-pulse" />}
@@ -398,47 +385,31 @@ export default component$(() => {
                                     }
 
                                     return (
-                                      <div class="overflow-auto rounded-lg border border-gray-200">
-                                        <table class="min-w-full text-xs">
-                                          <thead class="bg-gray-100">
-                                            <tr>
-                                              {(reportResult.headers || []).slice(0, 8).map((header) => (
-                                                <th
-                                                  key={header.key}
-                                                  class="px-2 py-1 text-left font-semibold text-gray-700 whitespace-nowrap"
-                                                >
-                                                  {header.label || header.key}
-                                                </th>
-                                              ))}
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {(reportResult.data || []).slice(0, 8).map((row: any, rowIndex: number) => (
-                                              <tr key={`row-${rowIndex}`} class="border-t border-gray-100">
-                                                {(reportResult.headers || []).slice(0, 8).map((header) => (
-                                                  <td
-                                                    key={`${rowIndex}-${header.key}`}
-                                                    class="px-2 py-1 text-gray-600 whitespace-nowrap"
-                                                  >
-                                                    {row?.[header.key] === null || row?.[header.key] === undefined
-                                                      ? '-'
-                                                      : String(row[header.key])}
-                                                  </td>
-                                                ))}
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                        {(reportResult.data || []).length > 8 && (
-                                          <div class="px-2 py-1 text-[11px] text-gray-500 bg-gray-50 border-t border-gray-200">
-                                            Showing first 8 rows of {reportResult.data.length}
-                                          </div>
-                                        )}
-                                      </div>
+                                      <P9ETable
+                                        title={widget.title || 'Widget Table'}
+                                        header={(reportResult.headers || []).map((h: any) => ({
+                                          key: h.key.toLowerCase(),
+                                          label: h.label || h.key,
+                                          type: h.data_type,
+                                        }))}
+                                        data={(reportResult.data || []).map((row: any) => {
+                                          const normalizedRow: any = {};
+                                          Object.keys(row || {}).forEach((key) => {
+                                            normalizedRow[key.toLowerCase()] = row[key];
+                                          });
+                                          return normalizedRow;
+                                        })}
+                                        defaultLimit={8}
+                                        enableSearch={false}
+                                        enableSort={true}
+                                      />
                                     );
                                   })()
                                 ) : (
-                                  <div class="text-xs text-gray-400">Widget has no live result yet.</div>
+                                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                                    <span class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500"></span>
+                                    <span>{executionLoading.value ? 'Loading widget data...' : 'Waiting for live widget data...'}</span>
+                                  </div>
                                 )}
                               </div>
                             );

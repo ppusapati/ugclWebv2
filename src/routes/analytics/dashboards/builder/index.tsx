@@ -85,8 +85,31 @@ const WIDGET_TEMPLATES: Array<{
 const DASHBOARD_GRID_COLS = 12;
 const DASHBOARD_GRID_ROWS = 12;
 const DASHBOARD_GRID_ROW_HEIGHT = 48;
+const DASHBOARD_GRID_GAP = 16;
 const DASHBOARD_CANVAS_MIN_WIDTH = 840;
 const DASHBOARD_CANVAS_MIN_HEIGHT = DASHBOARD_GRID_ROWS * DASHBOARD_GRID_ROW_HEIGHT;
+
+const getGridTargetFromEvent = (
+  gridElement: HTMLElement | undefined,
+  e: DragEvent,
+  gridCols: number
+) => {
+  if (!gridElement) {
+    return { x: 0, y: 0 };
+  }
+
+  const rect = gridElement.getBoundingClientRect();
+  const relativeX = Math.max(0, Math.min(rect.width - 1, e.clientX - rect.left));
+  const relativeY = Math.max(0, Math.min(rect.height - 1, e.clientY - rect.top));
+  const colWidth = (rect.width - DASHBOARD_GRID_GAP * (gridCols - 1)) / gridCols;
+  const colStep = colWidth + DASHBOARD_GRID_GAP;
+  const rowStep = DASHBOARD_GRID_ROW_HEIGHT + DASHBOARD_GRID_GAP;
+
+  return {
+    x: Math.floor(relativeX / Math.max(colStep, 1)),
+    y: Math.floor(relativeY / Math.max(rowStep, 1)),
+  };
+};
 
 export default component$(() => {
   const nav = useNavigate();
@@ -108,6 +131,8 @@ export default component$(() => {
     currentStep: 1,
     selectedWidget: null as DashboardWidget | null,
     draggedTemplate: null as string | null,
+    draggedWidgetId: null as string | null,
+    isCanvasDragActive: false,
     showSaveModal: false,
     showWidgetConfig: false,
     gridCols: DASHBOARD_GRID_COLS,
@@ -122,6 +147,7 @@ export default component$(() => {
   const compactTextareaClass = `${compactFieldClass} min-h-20`;
 
   const widgetIdCounter = useSignal(0);
+  const canvasGridRef = useSignal<HTMLElement>();
 
   const getActiveBusinessId = $(() => {
     const keys = ['business_vertical_id', 'business_id', 'active_business_id', 'ugcl_current_business_vertical'];
@@ -210,7 +236,8 @@ export default component$(() => {
       config: {},
     };
 
-    dashboardConfig.widgets = [...(dashboardConfig.widgets || []), newWidget];
+    const nextWidgets = [...(dashboardConfig.widgets || []), newWidget];
+    dashboardConfig.widgets = nextWidgets;
     state.selectedWidget = newWidget;
     state.showWidgetConfig = true;
   });
@@ -227,22 +254,94 @@ export default component$(() => {
   // Handle drag start
   const handleDragStart = $((e: DragEvent, templateType: string) => {
     state.draggedTemplate = templateType;
+    state.draggedWidgetId = null;
+    state.isCanvasDragActive = true;
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', templateType);
+    }
+  });
+
+  const handleWidgetDragStart = $((e: DragEvent, widgetId: string) => {
+    state.draggedWidgetId = widgetId;
+    state.draggedTemplate = null;
+    state.isCanvasDragActive = true;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', `widget:${widgetId}`);
+    }
+  });
+
+  const handleWidgetDragEnd = $(() => {
+    state.draggedWidgetId = null;
+    state.isCanvasDragActive = false;
+  });
+
+  const moveWidgetToPosition = $((widgetId: string, targetX: number, targetY: number) => {
+    const widgets = dashboardConfig.widgets || [];
+    const widgetIndex = widgets.findIndex((widget) => widget.id === widgetId);
+    if (widgetIndex < 0) {
+      return;
+    }
+
+    const widget = widgets[widgetIndex];
+    const maxX = Math.max(0, state.gridCols - widget.position.w);
+    const maxY = Math.max(0, state.gridRows - widget.position.h);
+
+    const updatedWidget = {
+      ...widget,
+      position: {
+        ...widget.position,
+        x: Math.max(0, Math.min(maxX, targetX)),
+        y: Math.max(0, Math.min(maxY, targetY)),
+      },
+    };
+
+    dashboardConfig.widgets = [
+      ...widgets.slice(0, widgetIndex),
+      updatedWidget,
+      ...widgets.slice(widgetIndex + 1),
+    ];
+
+    if (state.selectedWidget?.id === widgetId) {
+      state.selectedWidget = updatedWidget;
     }
   });
 
   // Handle drag over canvas
   const handleDragOver = $((e: DragEvent) => {
     e.preventDefault();
+    state.isCanvasDragActive = true;
     if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'copy';
+      e.dataTransfer.dropEffect = state.draggedWidgetId ? 'move' : 'copy';
+    }
+  });
+
+  const handleDragLeave = $((e: DragEvent) => {
+    const currentTarget = e.currentTarget as HTMLElement | null;
+    const related = e.relatedTarget as Node | null;
+    if (!currentTarget || !related || !currentTarget.contains(related)) {
+      state.isCanvasDragActive = false;
     }
   });
 
   // Handle drop on canvas
   const handleDrop = $(async (e: DragEvent) => {
     e.preventDefault();
+
+    const rawText = e.dataTransfer?.getData('text/plain') || '';
+    const draggedWidgetIdFromPayload = rawText.startsWith('widget:') ? rawText.slice('widget:'.length) : '';
+    const droppedWidgetId = state.draggedWidgetId || draggedWidgetIdFromPayload;
+
+    if (droppedWidgetId && canvasGridRef.value) {
+      const target = getGridTargetFromEvent(canvasGridRef.value, e, state.gridCols);
+      moveWidgetToPosition(droppedWidgetId, target.x, target.y);
+      state.draggedWidgetId = null;
+      state.draggedTemplate = null;
+      state.isCanvasDragActive = false;
+      return;
+    }
+
     if (state.draggedTemplate) {
       const template = WIDGET_TEMPLATES.find(t => t.type === state.draggedTemplate);
       if (template) {
@@ -250,6 +349,8 @@ export default component$(() => {
       }
       state.draggedTemplate = null;
     }
+
+    state.isCanvasDragActive = false;
   });
 
   // Update widget configuration
@@ -258,11 +359,12 @@ export default component$(() => {
       const widgetIndex = dashboardConfig.widgets?.findIndex(w => w.id === state.selectedWidget?.id);
       if (widgetIndex !== undefined && widgetIndex >= 0 && dashboardConfig.widgets) {
         const updatedWidget = { ...dashboardConfig.widgets[widgetIndex], [key]: value };
-        dashboardConfig.widgets = [
+        const nextWidgets = [
           ...dashboardConfig.widgets.slice(0, widgetIndex),
           updatedWidget,
           ...dashboardConfig.widgets.slice(widgetIndex + 1),
         ];
+        dashboardConfig.widgets = nextWidgets;
         state.selectedWidget = updatedWidget;
       }
     }
@@ -335,7 +437,7 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="space-y-6">
       {/* Page Header with DS PageHeader */}
       <PageHeader
         title="Dashboard Builder"
@@ -374,24 +476,30 @@ export default component$(() => {
       </PageHeader>
 
       {/* Progress Steps */}
-      <div class="container mx-auto px-4 py-4">
-        <div class="flex items-center gap-4">
-          {['Info', 'Layout', 'Preview'].map((step, idx) => (
-            <div key={step} class="flex items-center">
-              <div class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                state.currentStep === idx + 1
-                  ? 'bg-interactive-primary text-white font-semibold scale-105'
-                  : state.currentStep > idx + 1
-                  ? 'bg-color-semantic-success-100 text-color-semantic-success-800'
+      <div class="space-x-8">
+        <div class="flex items-center justify-center gap-2">
+          {[
+            { num: 1, label: 'Info' },
+            { num: 2, label: 'Layout' },
+            { num: 3, label: 'Preview' },
+          ].map((step) => (
+            <div key={step.num} class="flex items-center">
+              <div class={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                state.currentStep >= step.num
+                  ? 'bg-interactive-primary text-white font-semibold'
                   : 'bg-color-neutral-100 text-color-neutral-700'
               }`}>
-                <span class="text-lg">{idx + 1}</span>
-                <span>{step}</span>
+                <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  state.currentStep >= step.num ? 'bg-white text-interactive-primary' : 'bg-color-neutral-300 text-color-neutral-600'
+                }`}>
+                  {step.num}
+                </div>
+                <span class="text-sm font-medium hidden md:inline">{step.label}</span>
               </div>
-              {idx < 2 && (
-                <div class={`w-12 h-0.5 mx-2 ${
-                  state.currentStep > idx + 1 ? 'bg-color-semantic-success-800' : 'bg-color-neutral-300'
-                }`}></div>
+              {step.num < 3 && (
+                <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="text-color-neutral-400"></path>
+                </svg>
               )}
             </div>
           ))}
@@ -399,11 +507,11 @@ export default component$(() => {
       </div>
 
       {/* Main Content */}
-      <div class="container mx-auto px-4 py-6">
+      <div class="py-8">
         {/* Step 1: Dashboard Info */}
         {state.currentStep === 1 && (
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
               <div class="p-6">
                 <h2 class="text-2xl font-bold mb-6 text-color-text-primary">
                   <i class="i-heroicons-document-text-solid h-6 w-6 inline-block text-orange-600" aria-hidden="true"></i>
@@ -478,7 +586,7 @@ export default component$(() => {
               </div>
             </div>
 
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 shadow-lg">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
               <div class="p-6">
                 <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
                   <i class="i-heroicons-light-bulb-solid h-5 w-5 inline-block text-amber-500" aria-hidden="true"></i>
@@ -521,12 +629,12 @@ export default component$(() => {
 
         {/* Step 2: Layout Builder */}
         {state.currentStep === 2 && (
-          <div class="grid grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)_22rem] gap-6 items-start">
+          <div class="grid grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)_22rem] gap-6 lg:gap-8 items-start">
             {/* Widget Library - Left Sidebar */}
             <div class="space-y-4 xl:sticky xl:top-4 self-start">
-              <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                <div class="p-6">
-                  <h3 class="text-xl font-bold mb-4 text-color-text-primary">
+              <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                <div class="p-5 lg:p-6">
+                  <h3 class="text-lg lg:text-xl font-bold tracking-tight mb-4 text-color-text-primary">
                     <i class="i-heroicons-squares-plus-solid h-6 w-6 inline-block text-indigo-600" aria-hidden="true"></i>
                     Widget Library
                   </h3>
@@ -577,13 +685,16 @@ export default component$(() => {
 
             {/* Canvas - Main Area */}
             <div class="min-w-0">
-              <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                <div class="p-6">
+              <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                <div class="p-5 lg:p-7">
                   <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold text-color-text-primary">
+                    <div>
+                    <h3 class="text-lg lg:text-xl font-bold tracking-tight text-color-text-primary">
                       <i class="i-heroicons-swatch-solid h-6 w-6 inline-block text-pink-600" aria-hidden="true"></i>
                       Dashboard Canvas
                     </h3>
+                    <p class="text-xs lg:text-sm text-gray-500 mt-1">Drag from left panel to add widgets. Drag an existing widget card to reposition.</p>
+                    </div>
                     <Badge variant="info" class="px-3 py-1">
                       {dashboardConfig.widgets?.length || 0} widgets
                     </Badge>
@@ -591,12 +702,23 @@ export default component$(() => {
 
                   <div
                     onDragOver$={handleDragOver}
+                    onDragLeave$={handleDragLeave}
                     onDrop$={handleDrop}
-                    class="border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-x-auto min-h-[var(--dashboard-canvas-min-height)]"
+                    class={`border-2 border-dashed rounded-xl p-3 lg:p-4 relative overflow-x-auto min-h-[var(--dashboard-canvas-min-height)] transition-all ${
+                      state.isCanvasDragActive
+                        ? 'border-indigo-500 bg-indigo-50/60 shadow-[0_0_0_3px_rgba(99,102,241,0.12)] dark:border-indigo-400 dark:bg-indigo-900/20'
+                        : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900'
+                    }`}
                     style={{ '--dashboard-canvas-min-height': `${DASHBOARD_CANVAS_MIN_HEIGHT}px` }}
                   >
+                    {state.isCanvasDragActive && (
+                      <div class="pointer-events-none absolute right-4 top-4 z-10 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+                        {state.draggedWidgetId ? 'Drop to move widget' : 'Drop to add widget'}
+                      </div>
+                    )}
                     <div
-                      class="grid grid-cols-12 gap-4 min-w-[var(--dashboard-canvas-min-width)] min-h-[var(--dashboard-canvas-min-height)] auto-rows-[var(--dashboard-grid-row-height)]"
+                      ref={canvasGridRef}
+                      class="grid grid-cols-12 gap-3 lg:gap-4 min-w-[var(--dashboard-canvas-min-width)] min-h-[var(--dashboard-canvas-min-height)] auto-rows-[var(--dashboard-grid-row-height)]"
                       style={{
                         '--dashboard-canvas-min-width': `${DASHBOARD_CANVAS_MIN_WIDTH}px`,
                         '--dashboard-canvas-min-height': `${DASHBOARD_CANVAS_MIN_HEIGHT}px`,
@@ -604,7 +726,7 @@ export default component$(() => {
                       }}
                     >
                     {dashboardConfig.widgets?.length === 0 ? (
-                      <div class="absolute inset-0 flex items-center justify-center">
+                      <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                         <div class="text-center">
                           <i class="i-heroicons-swatch-solid mb-4 inline-block h-16 w-16 text-pink-500" aria-hidden="true"></i>
                           <p class="text-xl font-semibold text-gray-500 dark:text-gray-400">
@@ -622,43 +744,51 @@ export default component$(() => {
                         return (
                           <div
                             key={widget.id}
+                            draggable
+                            onDragStart$={(e) => handleWidgetDragStart(e, widget.id)}
+                            onDragEnd$={handleWidgetDragEnd}
+                            onDragOver$={handleDragOver}
                             onClick$={() => {
                               state.selectedWidget = widget;
                               state.showWidgetConfig = true;
                             }}
                             class={`rounded-lg shadow-lg transition-all cursor-pointer group overflow-hidden ${
                               state.selectedWidget?.id === widget.id
-                                ? 'ring-4 ring-purple-500 scale-105'
-                                : 'hover:shadow-xl hover:scale-102'
+                                ? 'ring-2 ring-indigo-500 shadow-xl'
+                                : 'shadow-md hover:shadow-xl'
                             } bg-gradient-to-br ${template.color} [grid-column:var(--widget-grid-column)] [grid-row:var(--widget-grid-row)]`}
                             style={{
                               '--widget-grid-column': `${widget.position.x + 1} / span ${Math.max(1, widget.position.w)}`,
                               '--widget-grid-row': `${widget.position.y + 1} / span ${Math.max(1, widget.position.h)}`,
                             }}
                           >
-                            <div class="h-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg flex flex-col">
+                            <div class="h-full p-3 lg:p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg flex flex-col">
                               <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2">
+                                  <i class="i-heroicons-arrows-pointing-out-solid h-4 w-4 inline-block text-gray-500" aria-hidden="true"></i>
                                     <i class={`${template.icon} h-6 w-6 inline-block`} aria-hidden="true"></i>
-                                  <span class="font-semibold text-sm truncate">{widget.title}</span>
+                                  <span class="font-semibold text-sm lg:text-[0.95rem] truncate">{widget.title}</span>
                                 </div>
-                                <Btn
+                                <button
+                                  type="button"
                                   onClick$={(e) => {
                                     e.stopPropagation();
                                     removeWidget(widget.id);
                                   }}
-                                  size="sm"
-                                  variant="ghost"
-                                  class="h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  class="h-6 w-6 rounded-full p-0 opacity-90 hover:opacity-100 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                                  title="Remove widget"
+                                  aria-label="Remove widget"
                                 >
                                   <i class="i-heroicons-x-mark-solid h-4 w-4 inline-block" aria-hidden="true"></i>
-                                </Btn>
+                                </button>
                               </div>
                               {widget.description && (
                                 <p class="text-xs text-gray-500 dark:text-gray-400">{widget.description}</p>
                               )}
-                              <div class="flex-1 flex items-center justify-center text-gray-400 mt-2">
-                                <span class="text-xs">{template.label}</span>
+                              <div class="flex-1 mt-2 min-h-0">
+                                <div class="h-full flex items-center justify-center text-gray-400">
+                                  <span class="text-xs">{template.label}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -672,11 +802,11 @@ export default component$(() => {
             </div>
 
             {/* Widget Configuration - Right Sidebar */}
-            <div class="self-start 2xl:sticky 2xl:top-4 xl:col-span-full">
+            <div class="self-start xl:sticky xl:top-4">
               {state.showWidgetConfig && state.selectedWidget ? (
-                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                  <div class="p-6">
-                    <h3 class="text-xl font-bold mb-4 text-color-text-primary">
+                <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                  <div class="p-5 lg:p-6">
+                    <h3 class="text-lg lg:text-xl font-bold tracking-tight mb-4 text-color-text-primary">
                       <i class="i-heroicons-cog-6-tooth-solid h-6 w-6 inline-block text-slate-600" aria-hidden="true"></i>
                       Widget Settings
                     </h3>
@@ -845,31 +975,30 @@ export default component$(() => {
                         </FormField>
                       </div>
 
-                      <Btn
+                      <button
+                        type="button"
                         onClick$={() => {
                           removeWidget(state.selectedWidget!.id);
                           state.showWidgetConfig = false;
                         }}
-                        size="sm"
-                        variant="danger"
-                        class="w-full mt-4"
+                        class="mt-4 h-8 w-8 self-end rounded-full p-0 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                        title="Delete widget"
+                        aria-label="Delete widget"
                       >
-                        <i class="i-heroicons-trash-solid h-4 w-4 inline-block" aria-hidden="true"></i>
-                        Remove Widget
-                      </Btn>
+                        <i class="i-heroicons-x-mark-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                      </button>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 shadow-lg">
-                  <div class="p-8 flex flex-col items-center text-center">
+                <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                  <div class="p-6 lg:p-8 flex flex-col items-center text-center">
                     <i class="i-heroicons-cog-6-tooth-solid mb-4 inline-block h-16 w-16 text-slate-600" aria-hidden="true"></i>
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
                       No Widget Selected
                     </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                      Click on a widget to configure its settings
-                    </p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Click a widget to configure settings.</p>
+                    <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Tip: use the X icon on any widget card for quick removal.</p>
                   </div>
                 </div>
               )}
@@ -880,7 +1009,7 @@ export default component$(() => {
         {/* Step 3: Preview */}
         {state.currentStep === 3 && (
           <div class="space-y-6">
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
               <div class="p-6">
                 <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   <i class="i-heroicons-eye-solid h-6 w-6 inline-block text-indigo-600" aria-hidden="true"></i>
@@ -982,8 +1111,10 @@ export default component$(() => {
                           {widget.description && (
                             <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{widget.description}</p>
                           )}
-                          <div class="flex-1 flex items-center justify-center">
-                            <span class="text-sm text-gray-400">{template.label}</span>
+                          <div class="flex-1 min-h-0">
+                            <div class="h-full flex items-center justify-center">
+                              <span class="text-sm text-gray-400">{template.label}</span>
+                            </div>
                           </div>
                         </div>
                       </div>

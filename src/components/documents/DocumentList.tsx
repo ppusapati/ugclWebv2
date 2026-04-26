@@ -345,13 +345,25 @@ export const DocumentList = component$<DocumentListProps>((props) => {
                     {formatDate(document.created_at)}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a
-                      href={documentService.getDownloadUrl(document.id)}
-                      class="text-blue-600 hover:text-blue-900 mr-3"
-                      download
-                    >
-                      Download
-                    </a>
+                    <div class="inline-flex items-center gap-2">
+                      <a
+                        href={documentService.getDownloadUrl(document.id)}
+                        class="icon-action-btn icon-action-btn-primary"
+                        title="Download"
+                        aria-label="Download document"
+                        download
+                      >
+                        <i class="i-heroicons-arrow-down-tray-solid h-4 w-4" aria-hidden="true"></i>
+                      </a>
+                      <a
+                        href={`/documents/view/${document.id}`}
+                        class="icon-action-btn icon-action-btn-secondary"
+                        title="Open Reader"
+                        aria-label="Open document reader"
+                      >
+                        <i class="i-heroicons-arrows-pointing-out-solid h-4 w-4" aria-hidden="true"></i>
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -392,6 +404,17 @@ export const DocumentList = component$<DocumentListProps>((props) => {
                 <span class={`px-2 py-1 rounded-full ${getStatusColor(document.status)}`}>
                   {document.status}
                 </span>
+              </div>
+              <div class="mt-3 pt-2 border-t border-gray-100 flex justify-end">
+                <a
+                  href={`/documents/view/${document.id}`}
+                  class="icon-action-btn icon-action-btn-secondary"
+                  title="Open Full Reader"
+                  aria-label="Open full reader"
+                  onClick$={(e) => e.stopPropagation()}
+                >
+                  <i class="i-heroicons-arrows-pointing-out-solid h-3.5 w-3.5" aria-hidden="true"></i>
+                </a>
               </div>
             </div>
           ))}

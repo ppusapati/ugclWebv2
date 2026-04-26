@@ -256,11 +256,19 @@ export const apiClient = {
     });
   },
 
-  async download(endpoint: string, filename?: string): Promise<Blob> {
+  async download(
+    endpoint: string,
+    filename?: string,
+    options?: { method?: string; body?: BodyInit | null; skipContentType?: boolean }
+  ): Promise<Blob> {
     const url = `${getBaseUrl()}${endpoint}`;
-    const headers = buildHeaders();
+    const headers = buildHeaders(undefined, undefined, options?.skipContentType ?? false);
 
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, {
+      method: options?.method || 'GET',
+      headers,
+      body: options?.body,
+    });
     if (!response.ok) await handleError(response);
 
     const blob = await response.blob();
