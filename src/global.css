@@ -1,3 +1,5 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
 html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
 a, abbr, acronym, address, big, cite, code,
@@ -491,4 +493,237 @@ a {
 	font-size: var(--typography-fontSize-sm);
 	font-weight: 600;
 	line-height: 1.4;
+}
+
+/* ===== PROJECT ROUTE UI LAYER ===== */
+
+.project-route-shell {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	padding-block: 0.75rem;
+}
+
+.project-surface {
+	background: linear-gradient(165deg, var(--color-surface-primary) 0%, #f8fbff 100%);
+	border: 1px solid var(--color-border-primary);
+	border-radius: 0.75rem;
+	box-shadow: var(--ShadowCard);
+}
+
+.project-toolbar {
+	padding: 1rem;
+}
+
+.project-toolbar-grid {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+	align-items: end;
+}
+
+.project-toolbar-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+	margin-top: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--color-border-primary);
+}
+
+.project-toolbar-meta {
+	font-size: var(--typography-fontSize-sm);
+	color: var(--color-text-secondary);
+}
+
+.project-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.project-kpi-card {
+	padding: 0.875rem;
+	border: 1px solid var(--color-border-primary);
+	border-radius: 0.75rem;
+	background-color: var(--color-surface-primary);
+	box-shadow: var(--ShadowXs);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.project-kpi-label {
+	font-size: var(--typography-fontSize-xs);
+	color: var(--color-text-secondary);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.project-kpi-value {
+	font-size: var(--typography-fontSize-2xl);
+	line-height: 1.1;
+	font-weight: 700;
+	color: var(--color-text-primary);
+}
+
+.project-kpi-footnote {
+	font-size: var(--typography-fontSize-xs);
+	color: var(--color-text-secondary);
+}
+
+.project-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.project-empty-state {
+	text-align: center;
+	padding: 2.5rem 1rem;
+	border: 1px dashed var(--color-border-secondary);
+	border-radius: 0.75rem;
+	background-color: var(--color-surface-primary);
+}
+
+.project-empty-state h3 {
+	font-size: var(--typography-fontSize-lg);
+	font-weight: 700;
+	color: var(--color-text-primary);
+	margin-bottom: 0.4rem;
+}
+
+.project-empty-state p {
+	font-size: var(--typography-fontSize-sm);
+	color: var(--color-text-secondary);
+	margin-bottom: 1rem;
+}
+
+.project-detail-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.project-panel {
+	padding: 1rem;
+	border-radius: 0.75rem;
+	border: 1px solid var(--color-border-primary);
+	background: var(--color-surface-primary);
+	box-shadow: var(--ShadowXs);
+}
+
+.project-panel-title {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: var(--typography-fontSize-sm);
+	font-weight: 700;
+	color: var(--color-text-primary);
+	margin-bottom: 0.75rem;
+}
+
+.project-map-upload {
+	max-width: 32rem;
+	margin-inline: auto;
+	background: var(--color-surface-primary);
+	border: 1px solid var(--color-border-primary);
+	border-radius: 0.75rem;
+	padding: 1rem;
+}
+
+@media (max-width: 1024px) {
+	.project-grid,
+	.project-kpi-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 768px) {
+	.project-toolbar-grid,
+	.project-detail-grid,
+	.project-grid,
+	.project-kpi-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.project-toolbar-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}
+
+/* ===== TASK CREATE ROUTE ===== */
+
+.task-stepper {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	flex-wrap: wrap;
+}
+
+.task-step-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.5rem 0.8rem;
+	border-radius: 0.6rem;
+	border: 1px solid var(--color-border-primary);
+	background: var(--color-surface-secondary);
+	color: var(--color-text-secondary);
+	transition: all 150ms ease;
+}
+
+.task-step-chip-active {
+	border-color: var(--color-brand-primary-300);
+	background: var(--color-brand-primary-50);
+	color: var(--color-brand-primary-800);
+	box-shadow: var(--ShadowXs);
+}
+
+.task-step-chip-done {
+	border-color: var(--color-semantic-success-300);
+	background: var(--color-semantic-success-50);
+	color: var(--color-semantic-success-800);
+}
+
+.task-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+}
+
+.task-modal-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(17, 24, 39, 0.55);
+	backdrop-filter: blur(1px);
+}
+
+.task-modal-card {
+	position: relative;
+	width: min(42rem, 100%);
+	max-height: min(85vh, 100%);
+	overflow: auto;
+	border-radius: 0.9rem;
+	background: var(--color-surface-primary);
+	border: 1px solid var(--color-border-primary);
+	box-shadow: var(--ShadowModal);
+	padding: 1.25rem;
+	z-index: 1;
+}
+
+.task-modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-top: 1rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--color-border-primary);
 }

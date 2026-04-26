@@ -46,6 +46,36 @@ export default component$(() => {
     error: (initialData.value as any).error || '',
   });
 
+  const buildSuggestedProjectCode = (baseCode: string) => {
+    const normalized = (baseCode || 'PROJ').trim().toUpperCase();
+    const now = new Date();
+    const y = String(now.getFullYear());
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const suffix = `${y}${m}${d}${h}${min}`;
+    return `${normalized}_${suffix}`;
+  };
+
+  const isDuplicateProjectCodeError = (err: any) => {
+    const text = [
+      err?.message,
+      err?.data?.raw,
+      err?.data?.message,
+      err?.data?.error,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return (
+      text.includes('idx_projects_code') ||
+      text.includes('duplicate key value violates unique constraint') ||
+      text.includes('sqlstate 23505')
+    );
+  };
+
   const handleSubmit = $(async (data: CreateProjectRequest, kmzFile?: File) => {
     console.debug('[CreateProject] Submitting payload:', data);
     
@@ -76,8 +106,13 @@ export default component$(() => {
       createResponse = await apiClient.post('/admin/projects', payload);
     } catch (err: any) {
       console.error('[CreateProject] Submit failed:', err);
-      // Pass through the actual error message from backend
-      const errorMsg = err?.data?.raw || err?.message || 'Failed to create project';
+      let errorMsg = err?.data?.raw || err?.message || 'Failed to create project';
+
+      if (isDuplicateProjectCodeError(err)) {
+        const suggestedCode = buildSuggestedProjectCode(payload.code || data.code || 'PROJ');
+        errorMsg = `Project code already exists. Please use a unique code (for example: ${suggestedCode}).`;
+      }
+
       throw new Error(errorMsg);
     }
 
@@ -132,7 +167,7 @@ export default component$(() => {
   });
 
   return (
-    <div class="space-y-6 py-2">
+    <div class="project-route-shell">
       {/* Header */}
       <PageHeader title="Create New Project" subtitle="Add a new project and optionally upload KMZ file">
         <Btn q:slot="actions" variant="secondary" onClick$={handleCancel} class="flex items-center gap-1">
@@ -151,7 +186,7 @@ export default component$(() => {
 
       {/* Loading State */}
       {state.loading && (
-        <SectionCard>
+        <SectionCard class="project-surface">
           <div class="animate-pulse space-y-4">
             <div class="h-4 bg-gray-200 rounded w-1/4"></div>
             <div class="h-10 bg-gray-200 rounded"></div>
@@ -165,13 +200,40 @@ export default component$(() => {
 
       {/* Form */}
       {!state.loading && (
-        <SectionCard>
-          <ProjectCreateForm
-            businessVerticals={state.businessVerticals}
-            onSubmit$={handleSubmit}
-            onCancel$={handleCancel}
-          />
-        </SectionCard>
+        <div class="project-detail-grid">
+          <SectionCard class="project-surface">
+            <ProjectCreateForm
+              businessVerticals={state.businessVerticals}
+              onSubmit$={handleSubmit}
+              onCancel$={handleCancel}
+            />
+          </SectionCard>
+
+          <aside class="project-panel">
+            <h3 class="project-panel-title">
+              <i class="i-heroicons-information-circle-solid w-5 h-5 inline-block text-blue-600"></i>
+              Before You Submit
+            </h3>
+            <ul class="space-y-3 text-sm text-gray-700">
+              <li class="flex items-start gap-2">
+                <i class="i-heroicons-check-circle-solid w-4 h-4 inline-block text-green-600 mt-0.5"></i>
+                <span>Use a unique project code for traceability across tasks, billing, and reports.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="i-heroicons-check-circle-solid w-4 h-4 inline-block text-green-600 mt-0.5"></i>
+                <span>Select the correct business vertical to enforce access scope and routing.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="i-heroicons-check-circle-solid w-4 h-4 inline-block text-green-600 mt-0.5"></i>
+                <span>Upload KMZ during creation when available for immediate map and zone activation.</span>
+              </li>
+            </ul>
+
+            <div class="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+              Recommended: keep project budget and timeline filled from day one so dashboard KPIs are accurate immediately.
+            </div>
+          </aside>
+        </div>
       )}
     </div>
   );

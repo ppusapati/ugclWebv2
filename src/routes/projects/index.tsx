@@ -3,7 +3,7 @@
  * Displays all projects with filtering and search
  */
 
-import { component$, useStore, $ } from '@builder.io/qwik';
+import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import { ProjectCard } from '~/components/projects/project-card';
 import { Alert, Btn, FormField, PageHeader } from '~/components/ds';
@@ -16,6 +16,43 @@ interface BusinessVertical {
   code: string;
 }
 
+const extractProjects = (payload: any): Project[] => {
+  if (Array.isArray(payload)) return payload;
+
+  const candidates = [
+    payload?.projects,
+    payload?.data?.projects,
+    payload?.data?.data?.projects,
+    payload?.result?.projects,
+    payload?.items,
+    payload?.data,
+  ];
+
+  for (const item of candidates) {
+    if (Array.isArray(item)) return item;
+  }
+
+  return [];
+};
+
+const extractBusinessVerticals = (payload: any): BusinessVertical[] => {
+  if (Array.isArray(payload)) return payload;
+
+  const candidates = [
+    payload?.businesses,
+    payload?.data?.businesses,
+    payload?.data?.data?.businesses,
+    payload?.data,
+    payload?.items,
+  ];
+
+  for (const item of candidates) {
+    if (Array.isArray(item)) return item;
+  }
+
+  return [];
+};
+
 // Load data with SSR support
 export const useProjectsData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -24,7 +61,7 @@ export const useProjectsData = routeLoader$(async (requestEvent) => {
     // Load projects and business verticals separately for better error tracking
     let projectsResponse: any = { projects: [] };
     try {
-      projectsResponse = await ssrApiClient.get<ProjectListResponse>('/admin/projects');
+      projectsResponse = await ssrApiClient.get<ProjectListResponse>('/projects');
     } catch (projError: any) {
       // Don't throw - continue to load other data
     }
@@ -36,13 +73,9 @@ export const useProjectsData = routeLoader$(async (requestEvent) => {
       // Don't throw - continue with empty businesses
     }
 
-    // Handle different response structures
-    const projects = projectsResponse?.projects || projectsResponse || [];
-    const businesses = businessesData?.businesses || businessesData?.data || businessesData || [];
-
     return {
-      projects: Array.isArray(projects) ? projects : [],
-      businessVerticals: Array.isArray(businesses) ? businesses : [],
+      projects: extractProjects(projectsResponse),
+      businessVerticals: extractBusinessVerticals(businessesData),
     };
   } catch (error: any) {
     return {
@@ -81,12 +114,19 @@ export default component$(() => {
         params.status = state.filters.status;
       }
 
-      const response = await apiClient.get<ProjectListResponse>('/admin/projects', params);
-      state.projects = response.projects || [];
+      const response = await apiClient.get<ProjectListResponse>('/projects', params);
+      state.projects = extractProjects(response);
+      state.error = '';
     } catch (error: any) {
       state.error = error.message || 'Failed to load projects';
     } finally {
       state.loading = false;
+    }
+  });
+
+  useVisibleTask$(async () => {
+    if (state.projects.length === 0) {
+      await loadProjects();
     }
   });
 
@@ -96,6 +136,13 @@ export default component$(() => {
 
   const handleCreateProject = $(() => {
     nav('/projects/create');
+  });
+
+  const clearFilters = $(() => {
+    state.filters.business_vertical_id = '';
+    state.filters.status = '';
+    state.filters.search = '';
+    loadProjects();
   });
 
   const filteredProjects = state.projects.filter(project => {
@@ -110,9 +157,17 @@ export default component$(() => {
     return true;
   });
 
+  const totalProjects = state.projects.length;
+  const activeProjects = state.projects.filter((project) => project.status === 'active').length;
+  const completedProjects = state.projects.filter((project) => project.status === 'completed').length;
+  const mappedProjects = state.projects.filter((project) => !!project.kmz_file_name).length;
+  const hasActiveFilters =
+    !!state.filters.business_vertical_id ||
+    !!state.filters.status ||
+    !!state.filters.search;
+
   return (
-    <div class="py-4">
-      {/* Debug Info */}
+    <div class="project-route-shell">
       <PageHeader title="Projects" subtitle="Manage your construction projects">
         <Btn
           q:slot="actions"
@@ -123,15 +178,38 @@ export default component$(() => {
         </Btn>
       </PageHeader>
 
+      <section class="project-kpi-grid">
+        <article class="project-kpi-card">
+          <span class="project-kpi-label">Total Projects</span>
+          <span class="project-kpi-value">{totalProjects}</span>
+          <span class="project-kpi-footnote">Across all business verticals</span>
+        </article>
+        <article class="project-kpi-card">
+          <span class="project-kpi-label">Active</span>
+          <span class="project-kpi-value">{activeProjects}</span>
+          <span class="project-kpi-footnote">Currently running</span>
+        </article>
+        <article class="project-kpi-card">
+          <span class="project-kpi-label">Completed</span>
+          <span class="project-kpi-value">{completedProjects}</span>
+          <span class="project-kpi-footnote">Delivered projects</span>
+        </article>
+        <article class="project-kpi-card">
+          <span class="project-kpi-label">Mapped</span>
+          <span class="project-kpi-value">{mappedProjects}</span>
+          <span class="project-kpi-footnote">KMZ data available</span>
+        </article>
+      </section>
+
       {/* Filters */}
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <section class="project-surface project-toolbar">
+        <div class="project-toolbar-grid">
           {/* Search */}
-          <FormField class="md:col-span-2" label="Search">
+          <FormField label="Search">
             <input
               type="text"
               class="form-input w-full"
-              placeholder="Search by name, code, or description..."
+              placeholder="Search by name, code, or description"
               value={state.filters.search}
               onInput$={(e) => {
                 state.filters.search = (e.target as HTMLInputElement).value;
@@ -177,7 +255,18 @@ export default component$(() => {
             </select>
           </FormField>
         </div>
-      </div>
+
+        <div class="project-toolbar-actions">
+          <span class="project-toolbar-meta">
+            Showing {filteredProjects.length} of {state.projects.length} projects
+          </span>
+          {hasActiveFilters && (
+            <Btn variant="secondary" size="sm" onClick$={clearFilters}>
+              Clear Filters
+            </Btn>
+          )}
+        </div>
+      </section>
 
       {/* Error Message */}
       {state.error && (
@@ -189,9 +278,9 @@ export default component$(() => {
 
       {/* Loading State */}
       {state.loading && (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="project-grid">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
+            <div key={i} class="project-panel animate-pulse">
               <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
               <div class="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
               <div class="h-20 bg-gray-200 rounded mb-4"></div>
@@ -203,14 +292,7 @@ export default component$(() => {
 
       {/* Projects Grid */}
       {!state.loading && filteredProjects.length > 0 && (
-        <>
-          <div class="flex items-center justify-between mb-4">
-            <p class="text-sm text-gray-600">
-              Showing {filteredProjects.length} of {state.projects.length} projects
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="project-grid">
             {filteredProjects.map(project => (
               <ProjectCard
                 key={project.id}
@@ -218,23 +300,29 @@ export default component$(() => {
                 onView$={handleViewProject}
               />
             ))}
-          </div>
-        </>
+        </div>
       )}
 
       {/* Empty State */}
       {!state.loading && filteredProjects.length === 0 && (
-        <div class="text-center py-12">
+        <div class="project-empty-state">
           <div class="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
             <i class="i-heroicons-folder-open w-16 h-16 inline-block text-gray-400"></i>
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">No projects found</h3>
-          <p class="text-sm text-gray-600 mb-6">
+          <h3>No projects found</h3>
+          <p>
             {state.projects.length === 0
               ? "Get started by creating your first project"
               : "Try adjusting your filters"
             }
           </p>
+
+          {state.projects.length > 0 && hasActiveFilters && (
+            <Btn variant="secondary" onClick$={clearFilters} class="mr-2">
+              Reset Filters
+            </Btn>
+          )}
+
           {state.projects.length === 0 && (
             <Btn
               onClick$={handleCreateProject}

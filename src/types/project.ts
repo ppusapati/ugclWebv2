@@ -430,6 +430,8 @@ export interface TaskListResponse {
   tasks: Task[];
   count: number;
   total?: number;
+  page?: number;
+  page_size?: number;
 }
 
 export interface BudgetSummary {

@@ -3,13 +3,38 @@
  * Displays project information with map visualization and tabs
  */
 
-import { component$, useStore, useSignal, useResource$, Resource, $ } from '@builder.io/qwik';
+import {
+  component$,
+  useStore,
+  useSignal,
+  useResource$,
+  Resource,
+  $,
+  noSerialize,
+  type NoSerialize,
+} from '@builder.io/qwik';
 import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
 import { Alert, Badge, Btn, TabBar } from '~/components/ds';
 import { projectService } from '~/services/project.service';
 import { taskService } from '~/services/task.service';
+import { ProjectMap } from '~/components/maps/project-map';
 import type { Project, Zone, Node, GeoJSONFeatureCollection, Task } from '~/types/project';
+
+const normalizeGeoJSON = (payload: any): GeoJSONFeatureCollection | null => {
+  if (!payload || typeof payload !== 'object') return null;
+
+  const candidate = payload?.geojson || payload;
+  if (candidate?.type === 'FeatureCollection' && Array.isArray(candidate?.features)) {
+    return candidate as GeoJSONFeatureCollection;
+  }
+
+  return null;
+};
+
+const hasGeoJSONFeatures = (payload: GeoJSONFeatureCollection | null | undefined): boolean => {
+  return !!payload && Array.isArray(payload.features) && payload.features.length > 0;
+};
 
 export const useProjectDetailData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -26,7 +51,8 @@ export const useProjectDetailData = routeLoader$(async (requestEvent) => {
     let geojsonData: GeoJSONFeatureCollection | null = null;
     if (project.kmz_file_name) {
       try {
-        geojsonData = await ssrApiClient.get<GeoJSONFeatureCollection>(`/projects/${projectId}/geojson`);
+        const geojsonResponse = await ssrApiClient.get<any>(`/projects/${projectId}/geojson`);
+        geojsonData = normalizeGeoJSON(geojsonResponse);
       } catch {
         geojsonData = null;
       }
@@ -74,22 +100,20 @@ export default component$(() => {
 
   // KMZ upload local state
   const kmz = useStore({
-    file: null as File | null,
     uploading: false,
     error: '',
     success: '',
   });
+  const kmzFile = useSignal<NoSerialize<File> | null>(null);
+
+  const budgetRemaining = Math.max((state.project?.total_budget || 0) - (state.project?.spent_budget || 0), 0);
+  const budgetUtilization = state.project?.total_budget
+    ? Math.min(((state.project.spent_budget || 0) / state.project.total_budget) * 100, 100)
+    : 0;
 
   const statsCardComponent = useResource$(async () => {
     const mod = await import('~/components/projects/project-stats-card');
     return mod.ProjectStatsCard;
-  });
-
-  const projectMapComponent = useResource$(async ({ track }) => {
-    track(() => activeTab.value);
-    if (activeTab.value !== 'map') return null;
-    const mod = await import('~/components/maps/project-map');
-    return mod.ProjectMap;
   });
 
   const taskCardComponent = useResource$(async ({ track }) => {
@@ -135,7 +159,7 @@ export default component$(() => {
   const onKmzFileChange = $((e: Event) => {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0] || null;
-    kmz.file = null;
+    kmzFile.value = null;
     kmz.error = '';
     kmz.success = '';
     if (file) {
@@ -147,12 +171,12 @@ export default component$(() => {
         kmz.error = 'File must be less than 50MB';
         return;
       }
-      kmz.file = file;
+      kmzFile.value = noSerialize(file);
     }
   });
 
   const uploadKmz = $(async () => {
-    if (!kmz.file) {
+    if (!kmzFile.value) {
       kmz.error = 'Please choose a KMZ file first';
       return;
     }
@@ -160,7 +184,7 @@ export default component$(() => {
       kmz.uploading = true;
       kmz.error = '';
       kmz.success = '';
-      await projectService.uploadKMZ(projectId, kmz.file);
+      await projectService.uploadKMZ(projectId, kmzFile.value as unknown as File);
       kmz.success = 'KMZ uploaded successfully';
       // Refresh geojson, zones, and nodes
       try {
@@ -169,7 +193,7 @@ export default component$(() => {
         const nodesResponse = await projectService.getProjectNodes(projectId);
         state.nodes = nodesResponse.nodes || [];
         const geojson = await projectService.getProjectGeoJSON(projectId);
-        state.geojsonData = geojson;
+        state.geojsonData = normalizeGeoJSON(geojson);
       } catch (refreshErr) {
         console.warn('KMZ uploaded but failed to refresh map data:', refreshErr);
       }
@@ -182,7 +206,7 @@ export default component$(() => {
 
   if (state.loading) {
     return (
-      <div class="space-y-6 py-2">
+      <div class="project-route-shell">
         <div class="animate-pulse">
           <div class="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div class="h-64 bg-gray-200 rounded mb-6"></div>
@@ -198,7 +222,7 @@ export default component$(() => {
 
   if (state.error || !state.project) {
     return (
-      <div class="space-y-6 py-2">
+      <div class="project-route-shell">
         <Alert variant="error">
           <i class="i-heroicons-exclamation-circle-solid w-4 h-4 inline-block mr-2"></i>
           {state.error || 'Project not found'}
@@ -207,8 +231,13 @@ export default component$(() => {
     );
   }
 
+  const hasRenderableMapData =
+    hasGeoJSONFeatures(state.geojsonData as GeoJSONFeatureCollection | null) ||
+    state.zones.length > 0 ||
+    state.nodes.length > 0;
+
   return (
-    <div class="space-y-6 py-2">
+    <div class="project-route-shell">
       {/* KMZ upload failure banner via query param */}
       {loc.url.searchParams.get('kmz') === 'failed' && (
         <Alert variant="error" class="mb-4 flex items-start gap-2 text-sm">
@@ -219,8 +248,17 @@ export default component$(() => {
         </Alert>
       )}
 
+      {loc.url.searchParams.get('task') === 'created' && (
+        <Alert variant="success" class="mb-4 flex items-start gap-2 text-sm">
+          <i class="i-heroicons-check-circle-solid w-4 h-4 inline-block mt-0.5"></i>
+          <div>
+            Task created successfully.
+          </div>
+        </Alert>
+      )}
+
       {/* Header */}
-      <div class="mb-6">
+      <div class="project-surface p-4">
         <button
           onClick$={() => nav('/projects')}
           class="text-sm text-gray-600 hover:text-gray-900 mb-3 flex items-center gap-1"
@@ -229,7 +267,7 @@ export default component$(() => {
           Back to Projects
         </button>
 
-        <div class="flex items-start justify-between">
+        <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-2">
               <h1 class="text-2xl font-bold text-gray-900">{state.project.name}</h1>
@@ -252,6 +290,31 @@ export default component$(() => {
             {state.project.description && (
               <p class="text-sm text-gray-700">{state.project.description}</p>
             )}
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="project-panel">
+                <p class="text-xs text-gray-600 uppercase tracking-wide">Budget Utilization</p>
+                <p class="text-xl font-semibold text-gray-900 mt-1">{budgetUtilization.toFixed(1)}%</p>
+                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div
+                    class="h-2 rounded-full bg-blue-600 w-[var(--project-budget-progress)]"
+                    style={{ '--project-budget-progress': `${budgetUtilization}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div class="project-panel">
+                <p class="text-xs text-gray-600 uppercase tracking-wide">Remaining Budget</p>
+                <p class="text-xl font-semibold text-emerald-700 mt-1">
+                  ₹{(budgetRemaining / 100000).toFixed(2)}L
+                </p>
+                <p class="text-xs text-gray-500 mt-2">Based on recorded spend</p>
+              </div>
+              <div class="project-panel">
+                <p class="text-xs text-gray-600 uppercase tracking-wide">Map Coverage</p>
+                <p class="text-xl font-semibold text-gray-900 mt-1">{state.zones.length} Zones</p>
+                <p class="text-xs text-gray-500 mt-2">{state.nodes.length} mapped nodes</p>
+              </div>
+            </div>
           </div>
 
           <div class="flex gap-2">
@@ -269,7 +332,7 @@ export default component$(() => {
 
       {/* Stats Cards */}
       {state.stats && (
-        <div class="mb-6">
+        <div>
           <Resource
             value={statsCardComponent}
             onPending={() => <div class="h-40 rounded-lg bg-gray-100 animate-pulse" />}
@@ -279,7 +342,7 @@ export default component$(() => {
       )}
 
       {/* Tabs */}
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="project-surface">
         {/* Tab Navigation */}
         <div class="border-b border-gray-200 p-2">
           <TabBar
@@ -300,14 +363,14 @@ export default component$(() => {
         </div>
 
         {/* Tab Content */}
-        <div class="p-6">
+        <div class="p-4 md:p-6">
           {/* Overview Tab */}
           {activeTab.value === 'overview' && (
             <div class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="project-detail-grid">
                 {/* Project Info */}
-                <div class="bg-gray-50 rounded-lg p-4">
-                  <h3 class="text-sm font-semibold text-gray-900 mb-3">Project Information</h3>
+                <div class="project-panel">
+                  <h3 class="project-panel-title">Project Information</h3>
                   <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
                       <span class="text-gray-600">Code:</span>
@@ -333,8 +396,8 @@ export default component$(() => {
                 </div>
 
                 {/* Budget Info */}
-                <div class="bg-gray-50 rounded-lg p-4">
-                  <h3 class="text-sm font-semibold text-gray-900 mb-3">Budget Overview</h3>
+                <div class="project-panel">
+                  <h3 class="project-panel-title">Budget Overview</h3>
                   <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
                       <span class="text-gray-600">Total Budget:</span>
@@ -365,9 +428,9 @@ export default component$(() => {
               </div>
 
               {/* Zones & Nodes Summary */}
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-blue-50 rounded-lg p-4">
-                  <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <div class="project-detail-grid">
+                <div class="project-panel">
+                  <h3 class="project-panel-title">
                     <i class="i-heroicons-map-solid w-5 h-5 inline-block text-blue-600"></i>
                     Zones ({state.zones.length})
                   </h3>
@@ -387,8 +450,8 @@ export default component$(() => {
                   )}
                 </div>
 
-                <div class="bg-green-50 rounded-lg p-4">
-                  <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <div class="project-panel">
+                  <h3 class="project-panel-title">
                     <i class="i-heroicons-map-pin-solid w-5 h-5 inline-block text-green-600"></i>
                     Nodes ({state.nodes.length})
                   </h3>
@@ -433,29 +496,25 @@ export default component$(() => {
           {/* Map Tab */}
           {activeTab.value === 'map' && (
             <div>
-              {state.geojsonData || state.zones.length > 0 || state.nodes.length > 0 ? (
-                <Resource
-                  value={projectMapComponent}
-                  onPending={() => <div class="h-[600px] rounded-lg bg-gray-100 animate-pulse" />}
-                  onResolved={(ProjectMapComponent) =>
-                    ProjectMapComponent ? (
-                      <ProjectMapComponent
-                        geojsonData={state.geojsonData || undefined}
-                        zones={state.zones}
-                        nodes={state.nodes}
-                        height="600px"
-                        onNodeClick$={handleNodeClick}
-                        onZoneClick$={handleZoneClick}
-                      />
-                    ) : null
-                  }
+              {hasRenderableMapData ? (
+                <ProjectMap
+                  geojsonData={state.geojsonData || undefined}
+                  zones={state.zones}
+                  nodes={state.nodes}
+                  height="600px"
+                  onNodeClick$={handleNodeClick}
+                  onZoneClick$={handleZoneClick}
                 />
               ) : (
                 <div class="text-center py-12 bg-gray-50 rounded-lg">
                   <i class="i-heroicons-map w-16 h-16 inline-block text-gray-400 mb-3"></i>
                   <h3 class="text-lg font-semibold text-gray-900 mb-2">No Map Data Available</h3>
-                  <p class="text-sm text-gray-600 mb-4">Upload a KMZ file to view the project on a map</p>
-                  <div class="mx-auto max-w-md bg-white rounded-md border border-gray-200 p-4 text-left">
+                  <p class="text-sm text-gray-600 mb-4">
+                    {state.project.kmz_file_name
+                      ? 'KMZ uploaded, but no supported map features were detected. Try another KMZ export format or re-upload.'
+                      : 'Upload a KMZ file to view the project on a map'}
+                  </p>
+                  <div class="project-map-upload text-left">
                     {kmz.error && (
                       <Alert variant="error" class="mb-3 px-2 py-2 text-xs">{kmz.error}</Alert>
                     )}
@@ -485,14 +544,21 @@ export default component$(() => {
           {/* Tasks Tab */}
           {activeTab.value === 'tasks' && (
             <div>
+              <div class="mb-4 flex justify-end">
+                <Btn variant="secondary" onClick$={() => nav(`/projects/${projectId}/tasks`)}>
+                  <i class="i-heroicons-queue-list-solid w-4 h-4 inline-block mr-1"></i>
+                  Open Full Task Board
+                </Btn>
+              </div>
+
               {state.loadingTasks ? (
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="project-grid">
                   {[1, 2, 3].map(i => (
                     <div key={i} class="bg-gray-100 rounded-lg p-4 animate-pulse h-64"></div>
                   ))}
                 </div>
               ) : state.tasks.length > 0 ? (
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="project-grid">
                   <Resource
                     value={taskCardComponent}
                     onPending={() => <div class="col-span-full h-64 rounded-lg bg-gray-100 animate-pulse" />}
@@ -525,10 +591,10 @@ export default component$(() => {
 
           {/* Budget Tab */}
           {activeTab.value === 'budget' && (
-            <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <div class="project-empty-state">
               <i class="i-heroicons-currency-dollar-solid w-16 h-16 inline-block text-gray-400 mb-3"></i>
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">Budget Management</h3>
-              <p class="text-sm text-gray-600">Budget allocation and tracking will be shown here</p>
+              <h3>Budget Management</h3>
+              <p>Budget allocation, RA billing progression, and spend trend visualizations will be shown here.</p>
             </div>
           )}
         </div>

@@ -6,29 +6,23 @@
 import { component$, useSignal, useTask$, type QRL, isServer } from '@builder.io/qwik';
 import type { GeoJSONFeatureCollection, Node, Zone } from '../../types/project';
 
-// Helper to load MapLibre GL from CDN to avoid bundler issues
-const loadMaplibreGL = (): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    // Check if already loaded
-    if ((window as any).maplibregl) {
-      resolve((window as any).maplibregl);
+const extendBoundsFromCoordinates = (bounds: any, coordinates: any): boolean => {
+  let added = false;
+
+  const walk = (coords: any) => {
+    if (!Array.isArray(coords)) return;
+
+    if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      bounds.extend([coords[0], coords[1]]);
+      added = true;
       return;
     }
 
-    // Load script from CDN
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js';
-    script.async = true;
-    script.onload = () => {
-      if ((window as any).maplibregl) {
-        resolve((window as any).maplibregl);
-      } else {
-        reject(new Error('MapLibre GL failed to load'));
-      }
-    };
-    script.onerror = () => reject(new Error('Failed to load MapLibre GL script'));
-    document.head.appendChild(script);
-  });
+    coords.forEach((child: any) => walk(child));
+  };
+
+  walk(coordinates);
+  return added;
 };
 
 export interface ProjectMapProps {
@@ -62,17 +56,9 @@ export const ProjectMap = component$<ProjectMapProps>(({
     if (!mapContainer.value) return;
 
     try {
-      // Load MapLibre GL JS from CDN to avoid bundler issues
-      const maplibregl = await loadMaplibreGL();
-
-      // Import MapLibre CSS
-      if (!document.getElementById('maplibre-css')) {
-        const link = document.createElement('link');
-        link.id = 'maplibre-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css';
-        document.head.appendChild(link);
-      }
+      // Load bundled MapLibre (from npm) for reliable offline/CSP-safe behavior.
+      const maplibreModule: any = await import('maplibre-gl');
+      const maplibregl = maplibreModule?.default || maplibreModule;
 
       // Initialize map if not already done
       if (!mapInstance.value) {
@@ -123,6 +109,11 @@ export const ProjectMap = component$<ProjectMapProps>(({
           }),
           'bottom-left'
         );
+
+        mapInstance.value.on('error', (event: any) => {
+          const details = event?.error?.message || 'Unknown map error';
+          errorMsg.value = `Map rendering issue: ${details}`;
+        });
       }
 
       const map = mapInstance.value;
@@ -175,7 +166,11 @@ export const ProjectMap = component$<ProjectMapProps>(({
           id: 'geojson-polygons-fill',
           type: 'fill',
           source: 'geojson-data',
-          filter: ['==', ['geometry-type'], 'Polygon'],
+          filter: [
+            'any',
+            ['==', ['geometry-type'], 'Polygon'],
+            ['==', ['geometry-type'], 'MultiPolygon'],
+          ],
           paint: {
             'fill-color': '#3b82f6',
             'fill-opacity': 0.3,
@@ -187,7 +182,11 @@ export const ProjectMap = component$<ProjectMapProps>(({
           id: 'geojson-polygons-outline',
           type: 'line',
           source: 'geojson-data',
-          filter: ['==', ['geometry-type'], 'Polygon'],
+          filter: [
+            'any',
+            ['==', ['geometry-type'], 'Polygon'],
+            ['==', ['geometry-type'], 'MultiPolygon'],
+          ],
           paint: {
             'line-color': '#2563eb',
             'line-width': 2,
@@ -200,7 +199,11 @@ export const ProjectMap = component$<ProjectMapProps>(({
           id: 'geojson-lines',
           type: 'line',
           source: 'geojson-data',
-          filter: ['==', ['geometry-type'], 'LineString'],
+          filter: [
+            'any',
+            ['==', ['geometry-type'], 'LineString'],
+            ['==', ['geometry-type'], 'MultiLineString'],
+          ],
           paint: {
             'line-color': '#16a34a',
             'line-width': 3,
@@ -287,15 +290,8 @@ export const ProjectMap = component$<ProjectMapProps>(({
 
         // Extend bounds
         geojsonData.features.forEach((feature: any) => {
-          if (feature.geometry.type === 'Point') {
-            bounds.extend(feature.geometry.coordinates);
-            hasBounds = true;
-          } else if (feature.geometry.type === 'Polygon') {
-            feature.geometry.coordinates[0].forEach((coord: number[]) => {
-              bounds.extend(coord as [number, number]);
-              hasBounds = true;
-            });
-          }
+          if (!feature?.geometry?.coordinates) return;
+          hasBounds = extendBoundsFromCoordinates(bounds, feature.geometry.coordinates) || hasBounds;
         });
       }
 
@@ -357,12 +353,8 @@ export const ProjectMap = component$<ProjectMapProps>(({
 
           // Extend bounds
           zonesGeoJSON.features.forEach((feature: any) => {
-            if (feature.geometry.type === 'Polygon') {
-              feature.geometry.coordinates[0].forEach((coord: number[]) => {
-                bounds.extend(coord as [number, number]);
-                hasBounds = true;
-              });
-            }
+            if (!feature?.geometry?.coordinates) return;
+            hasBounds = extendBoundsFromCoordinates(bounds, feature.geometry.coordinates) || hasBounds;
           });
         }
       }

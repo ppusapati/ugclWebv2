@@ -393,7 +393,7 @@ export class ChatService {
 
   private buildChatStreamUrl(): string {
     const base = resolveApiBaseUrl();
-    const url = new URL(`${base}/api/v1/chat/events`);
+    const url = new URL(`${base}/chat/events`);
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
       if (token) url.searchParams.set('token', token);

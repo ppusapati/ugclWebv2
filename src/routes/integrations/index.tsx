@@ -4,7 +4,7 @@ import { routeLoader$, type DocumentHead, useNavigate } from '@builder.io/qwik-c
 import { createSSRApiClient } from '~/services';
 import { integrationService } from '~/services/integration.service';
 import type { ThirdPartyIntegration, IntegrationListResponse } from '~/types/integration';
-import { Alert, Badge, Btn, PageHeader, SectionCard } from '~/components/ds';
+import { Alert, Badge, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
 import type { BadgeVariant } from '~/components/ds/badge';
 
 export const useIntegrationsData = routeLoader$(async (requestEvent) => {
@@ -30,6 +30,10 @@ export default component$(() => {
   const error = useSignal<string | null>(initial.value.error);
   const deletingId = useSignal<string | null>(null);
   const confirmDelete = useStore({ id: '', name: '' });
+  const filters = useStore({
+    search: '',
+    status: 'all',
+  });
 
   const reload = $(async () => {
     try {
@@ -65,8 +69,24 @@ export default component$(() => {
     }
   });
 
+  const filteredItems = items.value.filter((item) => {
+    const query = filters.search.trim().toLowerCase();
+    const matchesSearch = !query ||
+      item.name.toLowerCase().includes(query) ||
+      (item.description || '').toLowerCase().includes(query) ||
+      (item.contact_email || '').toLowerCase().includes(query) ||
+      (item.api_key_prefix || '').toLowerCase().includes(query);
+
+    const matchesStatus = filters.status === 'all' || item.status === filters.status;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const activeCount = items.value.filter((item) => item.status === 'active').length;
+  const suspendedCount = items.value.filter((item) => item.status === 'suspended').length;
+
   return (
-    <div class="container mx-auto px-4 py-6 space-y-6 max-w-6xl">
+    <div class="space-y-6 py-4">
       <PageHeader
         title="Third-Party Integrations"
         subtitle="Manage external partners: allowed callback URLs, permitted source IPs, and data scopes they may access."
@@ -85,6 +105,49 @@ export default component$(() => {
         </Alert>
       ) : null}
 
+      <SectionCard>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="Search Integrations" id="integration-search" labelFor="integration-search">
+            <input
+              id="integration-search"
+              type="text"
+              class="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+              placeholder="Search by name, description, contact, or key prefix..."
+              value={filters.search}
+              onInput$={(e) => {
+                filters.search = (e.target as HTMLInputElement).value;
+              }}
+            />
+          </FormField>
+
+          <FormField label="Status" id="integration-status" labelFor="integration-status">
+            <select
+              id="integration-status"
+              class="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+              value={filters.status}
+              onChange$={(e) => {
+                filters.status = (e.target as HTMLSelectElement).value;
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </FormField>
+        </div>
+
+        <div class="mt-4 flex items-center gap-2 flex-wrap text-sm text-neutral-600">
+          <span class="font-medium">Showing:</span>
+          <span>{filteredItems.length} integration{filteredItems.length !== 1 ? 's' : ''}</span>
+          <Badge variant="success">{activeCount} Active</Badge>
+          {suspendedCount > 0 ? <Badge variant="error">{suspendedCount} Suspended</Badge> : null}
+          {filters.status !== 'all' ? (
+            <Badge variant="info">{filters.status}</Badge>
+          ) : null}
+        </div>
+      </SectionCard>
+
       {items.value.length === 0 ? (
         <SectionCard>
           <p class="text-color-text-secondary text-sm text-center py-8">
@@ -92,78 +155,102 @@ export default component$(() => {
           </p>
         </SectionCard>
       ) : (
-        <div class="space-y-3">
-          {items.value.map((item) => (
-            <SectionCard key={item.id} class="hover:shadow-md transition-shadow">
-              <div class="flex items-start gap-4">
-                {/* Icon */}
-                <div class="flex-shrink-0 h-10 w-10 rounded-lg bg-color-brand-primary-100 flex items-center justify-center text-color-brand-primary-700 font-bold text-lg">
-                  {item.name.charAt(0).toUpperCase()}
-                </div>
-
-                {/* Details */}
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <h3 class="font-semibold text-color-text-primary">{item.name}</h3>
-                    <Badge variant={STATUS_BADGE[item.status] ?? 'neutral'}>
-                      {item.status}
-                    </Badge>
-                  </div>
-                  {item.description ? (
-                    <p class="mt-0.5 text-sm text-color-text-secondary line-clamp-1">{item.description}</p>
-                  ) : null}
-                  <div class="mt-2 flex flex-wrap gap-3 text-xs text-color-text-tertiary">
-                    <span>
-                      <strong class="text-color-text-secondary">{item.allowed_urls?.length ?? 0}</strong> allowed URL{item.allowed_urls?.length !== 1 ? 's' : ''}
-                    </span>
-                    <span>
-                      <strong class="text-color-text-secondary">{item.allowed_ips?.length ?? 0}</strong> allowed IP{item.allowed_ips?.length !== 1 ? 's' : ''}
-                    </span>
-                    <span>
-                      <strong class="text-color-text-secondary">{item.data_scopes?.length ?? 0}</strong> data scope{item.data_scopes?.length !== 1 ? 's' : ''}
-                    </span>
-                    {item.api_key_prefix ? (
-                      <span>Key: <code class="font-mono bg-color-surface-secondary px-1 rounded">{item.api_key_prefix}…</code></span>
-                    ) : null}
-                    {item.last_accessed_at ? (
-                      <span>Last access: {new Date(item.last_accessed_at).toLocaleDateString()}</span>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <Btn
-                    variant="ghost"
-                    size="sm"
-                    onClick$={() => handleToggleStatus(item)}
-                  >
-                    {item.status === 'active' ? 'Disable' : 'Enable'}
-                  </Btn>
-                  <Btn
-                    variant="secondary"
-                    size="sm"
-                    onClick$={() => nav(`/integrations/${item.id}`)}
-                  >
-                    <i class="i-heroicons-pencil-square-solid w-4 h-4 inline-block"></i>
-                    Edit
-                  </Btn>
-                  <Btn
-                    variant="danger"
-                    size="sm"
-                    onClick$={() => {
-                      confirmDelete.id = item.id;
-                      confirmDelete.name = item.name;
-                    }}
-                  >
-                    <i class="i-heroicons-trash-solid w-4 h-4 inline-block"></i>
-                    Delete
-                  </Btn>
-                </div>
-              </div>
-            </SectionCard>
-          ))}
-        </div>
+        <SectionCard class="p-0 overflow-hidden">
+          {filteredItems.length === 0 ? (
+            <div class="text-center py-12 px-6">
+              <i class="i-heroicons-circle-stack-solid h-16 w-16 inline-block text-light-300 mb-4" aria-hidden="true"></i>
+              <h3 class="text-xl font-semibold text-neutral-800 mb-2">No Integrations Found</h3>
+              <p class="text-neutral-600 mb-6">
+                {filters.search || filters.status !== 'all'
+                  ? 'Try adjusting your filters'
+                  : 'Create your first integration'}
+              </p>
+              {!filters.search && filters.status === 'all' ? (
+                <Btn onClick$={() => nav('/integrations/new')}>
+                  <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block"></i>
+                  New Integration
+                </Btn>
+              ) : null}
+            </div>
+          ) : (
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-light-200">
+                <thead class="bg-neutral-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Integration</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Status</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Allowed URLs</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Allowed IPs</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Scopes</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Last Access</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-neutral-700 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-light-200">
+                  {filteredItems.map((item) => (
+                    <tr key={item.id} class="hover:bg-neutral-50 transition">
+                      <td class="px-6 py-4">
+                        <div>
+                          <div class="text-sm font-medium text-neutral-800 flex items-center gap-2">
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-color-brand-primary-100 text-color-brand-primary-700 font-semibold text-xs">
+                              {item.name.charAt(0).toUpperCase()}
+                            </span>
+                            <span>{item.name}</span>
+                          </div>
+                          {item.description ? (
+                            <div class="text-xs text-neutral-500 mt-1">{item.description}</div>
+                          ) : null}
+                          {item.api_key_prefix ? (
+                            <div class="text-xs text-neutral-500 mt-1 font-mono">Key: {item.api_key_prefix}…</div>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <Badge variant={STATUS_BADGE[item.status] ?? 'neutral'}>{item.status}</Badge>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-neutral-700">{item.allowed_urls?.length ?? 0}</td>
+                      <td class="px-6 py-4 text-sm text-neutral-700">{item.allowed_ips?.length ?? 0}</td>
+                      <td class="px-6 py-4 text-sm text-neutral-700">{item.data_scopes?.length ?? 0}</td>
+                      <td class="px-6 py-4 text-sm text-neutral-700">
+                        {item.last_accessed_at ? new Date(item.last_accessed_at).toLocaleDateString() : 'Never'}
+                      </td>
+                      <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                          <Btn
+                            variant="ghost"
+                            size="sm"
+                            onClick$={() => handleToggleStatus(item)}
+                          >
+                            {item.status === 'active' ? 'Disable' : 'Enable'}
+                          </Btn>
+                          <Btn
+                            variant="secondary"
+                            size="sm"
+                            onClick$={() => nav(`/integrations/${item.id}`)}
+                          >
+                            <i class="i-heroicons-pencil-square-solid w-4 h-4 inline-block"></i>
+                            Edit
+                          </Btn>
+                          <Btn
+                            variant="danger"
+                            size="sm"
+                            onClick$={() => {
+                              confirmDelete.id = item.id;
+                              confirmDelete.name = item.name;
+                            }}
+                          >
+                            <i class="i-heroicons-trash-solid w-4 h-4 inline-block"></i>
+                            Delete
+                          </Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </SectionCard>
       )}
 
       {/* Delete confirmation modal */}

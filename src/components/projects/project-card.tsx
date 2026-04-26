@@ -14,13 +14,13 @@ export interface ProjectCardProps {
 }
 
 export const ProjectCard = component$<ProjectCardProps>(({ project, onView$, onEdit$ }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusClasses = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'on-hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -29,7 +29,7 @@ export const ProjectCard = component$<ProjectCardProps>(({ project, onView$, onE
     : 0;
 
   return (
-    <SectionCard class="p-4 hover:shadow-md transition-shadow">
+    <SectionCard class="project-panel p-4 hover:shadow-md transition-shadow">
       {/* Header */}
       <div class="flex items-start justify-between mb-3">
         <div class="flex-1">
@@ -37,7 +37,7 @@ export const ProjectCard = component$<ProjectCardProps>(({ project, onView$, onE
           <p class="text-xs text-gray-500">Code: {project.code}</p>
         </div>
         <span>
-        <Badge class={getStatusColor(project.status).replace('bg-', 'bg-').replace('text-', 'text-')}>
+        <Badge class={`border ${getStatusClasses(project.status)}`}>
           {project.status}
         </Badge>
         </span>

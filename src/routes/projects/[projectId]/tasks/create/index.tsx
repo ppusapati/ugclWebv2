@@ -71,6 +71,7 @@ export default component$(() => {
     filteredNodes: [] as Node[],
     loading: false,
     error: initialData.value.error || '',
+    success: '',
     currentStep: 1,
     showSaveModal: false,
   });
@@ -115,10 +116,17 @@ export default component$(() => {
     try {
       state.loading = true;
       state.error = '';
+      state.success = '';
 
       // Validate required fields
       if (!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id) {
-        alert('Please fill in all required fields');
+        state.error = 'Please fill in all required fields: Code, Title, Start Node, and Stop Node.';
+        state.loading = false;
+        return;
+      }
+
+      if (taskForm.start_node_id === taskForm.stop_node_id) {
+        state.error = 'Start node and stop node must be different.';
         state.loading = false;
         return;
       }
@@ -126,30 +134,46 @@ export default component$(() => {
       // Calculate total cost
       await calculateTotalCost();
 
-      // Create task
-      const response = await taskService.createTask({
+      const toRFC3339 = (dateValue?: string) => {
+        if (!dateValue) return undefined;
+        return `${dateValue}T00:00:00Z`;
+      };
+
+      const payload: any = {
         code: taskForm.code!,
         title: taskForm.title!,
         description: taskForm.description,
         project_id: projectId,
-        zone_id: taskForm.zone_id,
         start_node_id: taskForm.start_node_id!,
         stop_node_id: taskForm.stop_node_id!,
-        planned_start_date: taskForm.planned_start_date,
-        planned_end_date: taskForm.planned_end_date,
         allocated_budget: taskForm.allocated_budget || 0,
         priority: taskForm.priority || 'medium',
-      });
+      };
+
+      // Send optional fields only when present to avoid backend decode errors.
+      if (taskForm.zone_id) {
+        payload.zone_id = taskForm.zone_id;
+      }
+      if (taskForm.planned_start_date) {
+        payload.planned_start_date = toRFC3339(taskForm.planned_start_date as string);
+      }
+      if (taskForm.planned_end_date) {
+        payload.planned_end_date = toRFC3339(taskForm.planned_end_date as string);
+      }
+
+      // Create task
+      const response = await taskService.createTask(payload);
 
       console.log('Task created successfully:', response);
+      state.success = 'Task created successfully. Redirecting to project...';
       state.showSaveModal = false;
       state.loading = false;
 
       // Navigate back to project detail
-      await nav(`/projects/${projectId}`);
+      await nav(`/projects/${projectId}?task=created`);
     } catch (error: any) {
       console.error('Failed to create task:', error);
-      alert(`Failed to create task: ${error.message || 'Unknown error'}`);
+      state.error = `Failed to create task: ${error.message || 'Unknown error'}`;
       state.loading = false;
     }
   });
@@ -160,28 +184,28 @@ export default component$(() => {
     (taskForm.equipment_cost || 0) +
     (taskForm.other_cost || 0);
 
+  const canSubmit = !!taskForm.code && !!taskForm.title && !!taskForm.start_node_id && !!taskForm.stop_node_id && !state.loading;
+
   return (
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div class="project-route-shell">
       {/* Header */}
-      <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-2xl">
-        <div class="px-6 py-8">
-          <div class="flex items-center justify-between mb-6">
+      <section class="project-surface p-4 md:p-6">
+          <div class="flex items-center justify-between mb-4 gap-3">
             <div class="flex items-center gap-4">
               <Btn
                 onClick$={() => nav(`/projects/${projectId}`)}
-                variant="ghost"
+                variant="secondary"
                 size="sm"
-                class="text-white hover:bg-white/20"
               >
                 <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
                 Back to Project
               </Btn>
               <div>
-                <h1 class="text-4xl font-bold flex items-center gap-3">
-                  <i class="i-heroicons-clipboard-document-list-solid h-9 w-9 inline-block" aria-hidden="true"></i>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                  <i class="i-heroicons-clipboard-document-list-solid h-7 w-7 inline-block text-blue-700" aria-hidden="true"></i>
                   Create New Task
                 </h1>
-                <p class="text-blue-100 mt-2">
+                <p class="text-gray-600 mt-1 text-sm">
                   {state.project?.name || 'Loading...'}
                 </p>
               </div>
@@ -189,15 +213,13 @@ export default component$(() => {
             <div class="flex gap-3">
               <Btn
                 onClick$={() => nav(`/projects/${projectId}`)}
-                variant="ghost"
-                class="border border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+                variant="secondary"
               >
                 Cancel
               </Btn>
               <Btn
                 onClick$={() => state.showSaveModal = true}
                 disabled={state.loading}
-                class="bg-white text-blue-600 hover:bg-blue-50 shadow-lg"
               >
                 {state.loading ? 'Creating...' : 'Create Task'}
               </Btn>
@@ -205,50 +227,56 @@ export default component$(() => {
           </div>
 
           {/* Progress Steps */}
-          <div class="flex items-center gap-4">
+          <div class="task-stepper">
             {['Basic Info', 'Nodes & Timeline', 'Budget'].map((step, idx) => (
               <div key={step} class="flex items-center">
-                <div class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                <div class={`task-step-chip ${
                   state.currentStep === idx + 1
-                    ? 'bg-white text-blue-600 font-semibold scale-105'
+                    ? 'task-step-chip-active'
                     : state.currentStep > idx + 1
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white/20 text-blue-100'
+                    ? 'task-step-chip-done'
+                    : ''
                 }`}>
-                  <span class="text-lg">{idx + 1}</span>
-                  <span>{step}</span>
+                  <span class="text-sm font-semibold">{idx + 1}</span>
+                  <span class="text-sm">{step}</span>
                 </div>
                 {idx < 2 && (
                   <div class={`w-12 h-0.5 mx-2 ${
-                    state.currentStep > idx + 1 ? 'bg-blue-300' : 'bg-white/30'
+                    state.currentStep > idx + 1 ? 'bg-blue-300' : 'bg-gray-300'
                   }`}></div>
                 )}
               </div>
             ))}
           </div>
-        </div>
-      </div>
+      </section>
 
       {/* Error Alert */}
       {state.error && (
-        <div class="px-6 py-4">
-          <Alert variant="error" class="shadow-lg">
+        <Alert variant="error" class="mb-1">
             <span class="inline-flex items-center gap-2">
               <i class="i-heroicons-exclamation-triangle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
               {state.error}
             </span>
           </Alert>
-        </div>
+      )}
+
+      {state.success && (
+        <Alert variant="success" class="mb-1">
+          <span class="inline-flex items-center gap-2">
+            <i class="i-heroicons-check-circle-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+            {state.success}
+          </span>
+        </Alert>
       )}
 
       {/* Form Content */}
-      <div class="px-6 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div>
+        <div class="project-detail-grid">
           {/* Main Form - 2/3 width */}
-          <div class="lg:col-span-2 space-y-6">
+          <div class="space-y-6">
             {/* Step 1: Basic Info */}
             {state.currentStep === 1 && (
-              <SectionCard class="bg-white shadow-xl dark:bg-gray-800">
+              <SectionCard class="project-surface">
                 <h2 class="mb-6 text-2xl font-semibold text-color-text-primary">Basic Information</h2>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -323,6 +351,10 @@ export default component$(() => {
                     </select>
                 </FormField>
 
+                <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+                  Tip: Use clear titles and descriptions so field engineers can execute without ambiguity.
+                </div>
+
                 <div class="mt-6 flex justify-end">
                   <Btn onClick$={() => state.currentStep = 2}>
                     Next: Nodes & Timeline
@@ -334,7 +366,7 @@ export default component$(() => {
 
             {/* Step 2: Nodes & Timeline */}
             {state.currentStep === 2 && (
-              <SectionCard class="bg-white shadow-xl dark:bg-gray-800">
+              <SectionCard class="project-surface">
                 <h2 class="mb-6 text-2xl font-semibold text-color-text-primary">Nodes & Timeline</h2>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -375,7 +407,7 @@ export default component$(() => {
                   </FormField>
                 </div>
 
-                  <div class="divider">Timeline</div>
+                <div class="my-4 border-t border-gray-200 pt-4 text-sm font-semibold text-gray-700">Timeline</div>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField id="task-create-planned-start" label="Planned Start Date">
@@ -399,6 +431,10 @@ export default component$(() => {
                   </FormField>
                 </div>
 
+                <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  Ensure planned dates are realistic and aligned with dependency constraints.
+                </div>
+
                 <div class="mt-6 flex justify-between">
                   <Btn onClick$={() => state.currentStep = 1} variant="ghost">
                     <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
@@ -414,7 +450,7 @@ export default component$(() => {
 
             {/* Step 3: Budget */}
             {state.currentStep === 3 && (
-              <SectionCard class="bg-white shadow-xl dark:bg-gray-800">
+              <SectionCard class="project-surface">
                 <h2 class="mb-6 text-2xl font-semibold text-color-text-primary">Budget Allocation</h2>
 
                 <FormField id="task-create-allocated-budget" label="Allocated Budget" class="mb-4">
@@ -430,7 +466,7 @@ export default component$(() => {
                     />
                 </FormField>
 
-                  <div class="divider">Cost Breakdown</div>
+                <div class="my-4 border-t border-gray-200 pt-4 text-sm font-semibold text-gray-700">Cost Breakdown</div>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField id="task-create-labor-cost" label="Labor Cost">
@@ -505,20 +541,26 @@ export default component$(() => {
                   </div>
                 </Alert>
 
+                {taskForm.allocated_budget !== undefined && taskForm.allocated_budget > 0 && totalCost > taskForm.allocated_budget && (
+                  <Alert variant="warning" class="mt-3">
+                    Estimated cost exceeds allocated budget by ₹{(totalCost - taskForm.allocated_budget).toFixed(2)}.
+                  </Alert>
+                )}
+
                 <div class="mt-6 flex justify-between">
                   <Btn onClick$={() => state.currentStep = 2} variant="ghost">
                     <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
                     Previous
                   </Btn>
-                  <Btn onClick$={() => state.showSaveModal = true}>Create Task</Btn>
+                  <Btn disabled={!canSubmit} onClick$={() => state.showSaveModal = true}>Create Task</Btn>
                 </div>
               </SectionCard>
             )}
           </div>
 
           {/* Sidebar - 1/3 width */}
-          <div class="lg:col-span-1">
-            <SectionCard class="sticky top-4 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-xl dark:from-gray-800 dark:to-gray-700">
+          <div>
+            <SectionCard class="project-panel">
                 <h3 class="text-xl font-semibold mb-4">Task Creation Tips</h3>
                 <ul class="space-y-3">
                   <li class="flex items-start gap-3">
@@ -551,11 +593,16 @@ export default component$(() => {
                   </li>
                 </ul>
 
-                <div class="divider"></div>
+                <div class="my-4 border-t border-gray-200"></div>
 
-                <StatCard class="bg-white dark:bg-gray-700">
+                <StatCard class="bg-white">
                   <div class="text-sm text-color-text-secondary">Available Nodes</div>
                   <div class="mt-2 text-2xl font-bold text-primary-600">{state.nodes.length}</div>
+                </StatCard>
+
+                <StatCard class="bg-white mt-3">
+                  <div class="text-sm text-color-text-secondary">Selected Zone Nodes</div>
+                  <div class="mt-2 text-2xl font-bold text-primary-600">{state.filteredNodes.length}</div>
                 </StatCard>
             </SectionCard>
           </div>
@@ -564,8 +611,8 @@ export default component$(() => {
 
       {/* Save Confirmation Modal */}
       {state.showSaveModal && (
-        <div class="modal modal-open">
-          <div class="modal-box max-w-2xl bg-white dark:bg-gray-800">
+        <div class="task-modal-overlay">
+          <div class="task-modal-card">
             <h3 class="mb-6 text-2xl font-semibold text-color-text-primary">
               Create Task
             </h3>
@@ -596,7 +643,7 @@ export default component$(() => {
               )}
             </div>
 
-            <div class="modal-action">
+            <div class="task-modal-actions">
               <Btn
                 onClick$={() => state.showSaveModal = false}
                 variant="ghost"
@@ -606,11 +653,11 @@ export default component$(() => {
               </Btn>
               <Btn
                 onClick$={saveTask}
-                disabled={!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id || state.loading}
+                disabled={!canSubmit}
               >
                 {state.loading ? (
                   <>
-                    <span class="loading loading-spinner loading-sm"></span>
+                    <i class="i-heroicons-arrow-path-solid w-4 h-4 inline-block animate-spin mr-2"></i>
                     Creating...
                   </>
                 ) : (
@@ -619,7 +666,7 @@ export default component$(() => {
               </Btn>
             </div>
           </div>
-          <div class="modal-backdrop" onClick$={() => !state.loading && (state.showSaveModal = false)}></div>
+          <div class="task-modal-backdrop" onClick$={() => !state.loading && (state.showSaveModal = false)}></div>
         </div>
       )}
     </div>

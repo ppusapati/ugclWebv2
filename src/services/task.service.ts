@@ -17,7 +17,7 @@ import type {
 } from '../types/project';
 
 class TaskService {
-  private readonly basePath = '/tasks';
+  private readonly basePath = '/project-tasks';
 
   /**
    * Create a new task
@@ -42,6 +42,9 @@ class TaskService {
     status?: string;
     priority?: string;
     assigned_to?: string;
+    search?: string;
+    sort_by?: 'status' | 'priority' | 'planned_end_date' | 'progress' | 'created_at';
+    sort_order?: 'asc' | 'desc';
     page?: number;
     page_size?: number;
   }): Promise<TaskListResponse> {

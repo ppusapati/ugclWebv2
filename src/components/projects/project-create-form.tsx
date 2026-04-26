@@ -70,6 +70,19 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
     delete state.errors.kmz;
   });
 
+  const generateUniqueCode = $(() => {
+    const now = new Date();
+    const y = String(now.getFullYear());
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const sec = String(now.getSeconds()).padStart(2, '0');
+    state.code = `PROJ_${y}${m}${d}_${h}${min}${sec}`;
+    state.touched.code = true;
+    validateField('code', state.code);
+  });
+
   const validateField = $((field: string, value: string) => {
     switch (field) {
       case 'code':
@@ -187,9 +200,14 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
 
       {/* Project Code */}
       <div>
-        <label class="form-label">
-          Project Code <span class="text-red-500">*</span>
-        </label>
+        <div class="mb-1 flex items-center justify-between gap-2">
+          <label class="form-label">
+            Project Code <span class="text-red-500">*</span>
+          </label>
+          <Btn type="button" variant="secondary" size="sm" onClick$={generateUniqueCode}>
+            Generate Code
+          </Btn>
+        </div>
         <input
           type="text"
           class={`form-input w-full ${state.errors.code && state.touched.code ? 'form-input-error' : ''}`}
@@ -203,6 +221,9 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
         />
         {state.errors.code && state.touched.code && (
           <div class="form-error mt-1">{state.errors.code}</div>
+        )}
+        {!state.errors.code && (
+          <div class="mt-1 text-xs text-gray-500">Tip: Use Generate Code to avoid duplicate code conflicts.</div>
         )}
       </div>
 

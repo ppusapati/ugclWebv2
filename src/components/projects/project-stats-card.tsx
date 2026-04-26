@@ -30,6 +30,12 @@ export const ProjectStatsCard = component$<ProjectStatsCardProps>(({ stats, load
 
   const totalBudget = Number((stats as any)?.total_budget || 0);
   const spentBudget = Number((stats as any)?.spent_budget || 0);
+  const totalZones = Number((stats as any)?.total_zones ?? (stats as any)?.zones_count ?? 0);
+  const totalNodes = Number((stats as any)?.total_nodes ??
+    ((stats as any)?.nodes_by_type || []).reduce((sum: number, row: any) => sum + Number(row?.count || 0), 0));
+  const totalTasks = Number((stats as any)?.total_tasks ??
+    ((stats as any)?.tasks_by_status || []).reduce((sum: number, row: any) => sum + Number(row?.count || 0), 0));
+  const completedTasks = Number((stats as any)?.tasks_by_status?.find((row: any) => row?.status === 'completed')?.count || 0);
   const budgetUtilization = totalBudget > 0
     ? (spentBudget / totalBudget) * 100
     : 0;
@@ -41,7 +47,7 @@ export const ProjectStatsCard = component$<ProjectStatsCardProps>(({ stats, load
         <div class="flex items-start justify-between">
           <div>
             <div class="text-xs text-blue-600 font-medium mb-1">Total Zones</div>
-            <div class="text-2xl font-bold text-blue-900">{(stats as any)?.total_zones ?? 0}</div>
+            <div class="text-2xl font-bold text-blue-900">{totalZones}</div>
           </div>
           <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
             <i class="i-heroicons-map-solid h-5 w-5 inline-block text-blue-600"></i>
@@ -54,7 +60,7 @@ export const ProjectStatsCard = component$<ProjectStatsCardProps>(({ stats, load
         <div class="flex items-start justify-between">
           <div>
             <div class="text-xs text-green-600 font-medium mb-1">Total Nodes</div>
-            <div class="text-2xl font-bold text-green-900">{(stats as any)?.total_nodes ?? 0}</div>
+            <div class="text-2xl font-bold text-green-900">{totalNodes}</div>
           </div>
           <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
             <i class="i-heroicons-map-pin-solid h-5 w-5 inline-block text-green-600"></i>
@@ -67,14 +73,14 @@ export const ProjectStatsCard = component$<ProjectStatsCardProps>(({ stats, load
         <div class="flex items-start justify-between">
           <div>
             <div class="text-xs text-purple-600 font-medium mb-1">Total Tasks</div>
-            <div class="text-2xl font-bold text-purple-900">{(stats as any)?.total_tasks ?? 0}</div>
+            <div class="text-2xl font-bold text-purple-900">{totalTasks}</div>
           </div>
           <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
             <i class="i-heroicons-clipboard-document-list-solid h-5 w-5 inline-block text-purple-600"></i>
           </div>
         </div>
         <div class="mt-3 text-xs text-gray-600">
-          {(stats as any)?.tasks_by_status?.completed || 0} completed
+          {completedTasks} completed
         </div>
       </StatCard>
 

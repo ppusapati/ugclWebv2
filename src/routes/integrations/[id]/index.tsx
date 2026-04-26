@@ -156,7 +156,7 @@ export default component$(() => {
   });
 
   return (
-    <div class="container mx-auto px-4 py-6 space-y-6 max-w-4xl">
+    <div class="space-y-6 py-4">
       <PageHeader
         title={isNew ? 'New Integration' : `Edit: ${integration?.name ?? '…'}`}
         subtitle={
@@ -205,7 +205,7 @@ export default component$(() => {
 
       {/* ── Basic details ── */}
       <SectionCard title="Basic Details" class="mb-5">
-        <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Integration Name" required id="name" labelFor="name" error={errors.name}>
             <input
               id="name"
@@ -214,17 +214,6 @@ export default component$(() => {
               placeholder="e.g. Acme ERP"
               value={form.name}
               onInput$={(e) => { form.name = (e.target as HTMLInputElement).value; }}
-            />
-          </FormField>
-
-          <FormField label="Description" id="desc" labelFor="desc">
-            <textarea
-              id="desc"
-              class="input w-full resize-none"
-              rows={2}
-              placeholder="Short description of the integration"
-              value={form.description}
-              onInput$={(e) => { form.description = (e.target as HTMLTextAreaElement).value; }}
             />
           </FormField>
 
@@ -238,22 +227,46 @@ export default component$(() => {
               onInput$={(e) => { form.contactEmail = (e.target as HTMLInputElement).value; }}
             />
           </FormField>
+
+          <FormField label="Description" id="desc" labelFor="desc" class="md:col-span-2">
+            <textarea
+              id="desc"
+              class="input w-full resize-none"
+              rows={2}
+              placeholder="Short description of the integration"
+              value={form.description}
+              onInput$={(e) => { form.description = (e.target as HTMLTextAreaElement).value; }}
+            />
+          </FormField>
         </div>
       </SectionCard>
 
       {/* ── Allowed callback URLs ── */}
       <SectionCard title="AI Provider Configuration" subtitle="Configure provider settings through this integration screen (no backend hardcoding)." class="mb-5">
         <div class="space-y-4">
-          <FormField label="Provider" id="provider" labelFor="provider" hint="Example: openai or claude.">
-            <input
-              id="provider"
-              class="input w-full"
-              type="text"
-              placeholder="openai"
-              value={form.provider}
-              onInput$={(e) => { form.provider = (e.target as HTMLInputElement).value; }}
-            />
-          </FormField>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="Provider" id="provider" labelFor="provider" hint="Example: openai or claude.">
+              <input
+                id="provider"
+                class="input w-full"
+                type="text"
+                placeholder="openai"
+                value={form.provider}
+                onInput$={(e) => { form.provider = (e.target as HTMLInputElement).value; }}
+              />
+            </FormField>
+
+            <FormField label="Model" id="model" labelFor="model" error={errors.model}>
+              <input
+                id="model"
+                class="input w-full"
+                type="text"
+                placeholder="gpt-4o-mini"
+                value={form.model}
+                onInput$={(e) => { form.model = (e.target as HTMLInputElement).value; }}
+              />
+            </FormField>
+          </div>
 
           <FormField label="Endpoint URL" id="endpoint-url" labelFor="endpoint-url" error={errors.endpointUrl}>
             <input
@@ -269,16 +282,6 @@ export default component$(() => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Model" id="model" labelFor="model" error={errors.model}>
               <input
-                id="model"
-                class="input w-full"
-                type="text"
-                placeholder="gpt-4o-mini"
-                value={form.model}
-                onInput$={(e) => { form.model = (e.target as HTMLInputElement).value; }}
-              />
-            </FormField>
-            <FormField label="Auth Header" id="auth-header" labelFor="auth-header">
-              <input
                 id="auth-header"
                 class="input w-full"
                 type="text"
@@ -287,9 +290,6 @@ export default component$(() => {
                 onInput$={(e) => { form.authHeader = (e.target as HTMLInputElement).value; }}
               />
             </FormField>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Auth Scheme" id="auth-scheme" labelFor="auth-scheme" hint="Usually Bearer.">
               <input
                 id="auth-scheme"
@@ -300,6 +300,9 @@ export default component$(() => {
                 onInput$={(e) => { form.authScheme = (e.target as HTMLInputElement).value; }}
               />
             </FormField>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Provider Secret" id="secret" labelFor="secret" hint={integration?.has_secret ? 'Leave blank to keep current secret.' : 'Required for AI calls.'}>
               <input
                 id="secret"
@@ -310,68 +313,73 @@ export default component$(() => {
                 onInput$={(e) => { form.secret = (e.target as HTMLInputElement).value; }}
               />
             </FormField>
+            <div class="rounded-lg border border-color-border-primary bg-color-surface-secondary px-4 py-3 text-sm text-color-text-secondary">
+              <p class="font-medium text-color-text-primary mb-1">Provider setup notes</p>
+              <p>Use this only if the integration also manages external AI or model-backed processing. Leave it blank for normal webhook and dropdown integrations.</p>
+            </div>
           </div>
         </div>
       </SectionCard>
 
       {/* ── Allowed callback URLs ── */}
-      <SectionCard title="Allowed Callback URLs" class="mb-5">
-        <FormField
-          label="Callback URLs"
-          required
-          id="allowed-urls"
-          labelFor="allowed-urls"
-          hint="One URL per line (or comma-separated). Only these URLs will be accepted as webhook / dropdown callback targets."
-          error={errors.allowedUrls}
-        >
-          <textarea
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <SectionCard title="Allowed Callback URLs">
+          <FormField
+            label="Callback URLs"
+            required
             id="allowed-urls"
-            class="input w-full font-mono text-xs resize-none"
-            rows={5}
-            placeholder={"https://partner.example.com/callback\nhttps://erp.client.io/webhook"}
-            value={form.allowedUrlsText}
-            onInput$={(e) => { form.allowedUrlsText = (e.target as HTMLTextAreaElement).value; }}
-          />
-        </FormField>
-        {form.allowedUrlsText ? (
-          <ul class="mt-2 flex flex-wrap gap-1">
-            {parseLines(form.allowedUrlsText).map((u) => (
-              <li key={u} class="text-xs font-mono bg-color-surface-secondary border border-color-border-primary rounded px-2 py-0.5 text-color-text-secondary">
-                {u}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </SectionCard>
+            labelFor="allowed-urls"
+            hint="One URL per line (or comma-separated). Only these URLs will be accepted as webhook / dropdown callback targets."
+            error={errors.allowedUrls}
+          >
+            <textarea
+              id="allowed-urls"
+              class="input w-full font-mono text-xs resize-none"
+              rows={8}
+              placeholder={"https://partner.example.com/callback\nhttps://erp.client.io/webhook"}
+              value={form.allowedUrlsText}
+              onInput$={(e) => { form.allowedUrlsText = (e.target as HTMLTextAreaElement).value; }}
+            />
+          </FormField>
+          {form.allowedUrlsText ? (
+            <ul class="mt-2 flex flex-wrap gap-1">
+              {parseLines(form.allowedUrlsText).map((u) => (
+                <li key={u} class="text-xs font-mono bg-color-surface-secondary border border-color-border-primary rounded px-2 py-0.5 text-color-text-secondary">
+                  {u}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </SectionCard>
 
-      {/* ── Allowed source IPs ── */}
-      <SectionCard title="Allowed Source IPs" class="mb-5">
-        <FormField
-          label="Source IPs / CIDR ranges"
-          id="allowed-ips"
-          labelFor="allowed-ips"
-          hint="One entry per line. Only requests from these IPs will be able to call our APIs. Leave blank to allow any IP (not recommended)."
-          error={errors.allowedIps}
-        >
-          <textarea
+        <SectionCard title="Allowed Source IPs">
+          <FormField
+            label="Source IPs / CIDR ranges"
             id="allowed-ips"
-            class="input w-full font-mono text-xs resize-none"
-            rows={4}
-            placeholder={"203.0.113.0/24\n198.51.100.42"}
-            value={form.allowedIpsText}
-            onInput$={(e) => { form.allowedIpsText = (e.target as HTMLTextAreaElement).value; }}
-          />
-        </FormField>
-        {form.allowedIpsText ? (
-          <ul class="mt-2 flex flex-wrap gap-1">
-            {parseLines(form.allowedIpsText).map((ip) => (
-              <li key={ip} class="text-xs font-mono bg-color-surface-secondary border border-color-border-primary rounded px-2 py-0.5 text-color-text-secondary">
-                {ip}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </SectionCard>
+            labelFor="allowed-ips"
+            hint="One entry per line. Only requests from these IPs will be able to call our APIs. Leave blank to allow any IP (not recommended)."
+            error={errors.allowedIps}
+          >
+            <textarea
+              id="allowed-ips"
+              class="input w-full font-mono text-xs resize-none"
+              rows={8}
+              placeholder={"203.0.113.0/24\n198.51.100.42"}
+              value={form.allowedIpsText}
+              onInput$={(e) => { form.allowedIpsText = (e.target as HTMLTextAreaElement).value; }}
+            />
+          </FormField>
+          {form.allowedIpsText ? (
+            <ul class="mt-2 flex flex-wrap gap-1">
+              {parseLines(form.allowedIpsText).map((ip) => (
+                <li key={ip} class="text-xs font-mono bg-color-surface-secondary border border-color-border-primary rounded px-2 py-0.5 text-color-text-secondary">
+                  {ip}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </SectionCard>
+      </div>
 
       {/* ── Data Scopes ── */}
       <SectionCard title="Data Scopes" subtitle="Choose exactly which data this integration may access." class="mb-5">
