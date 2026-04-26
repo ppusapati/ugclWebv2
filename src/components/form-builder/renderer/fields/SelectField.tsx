@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/fields/SelectField.tsx
-import { component$, useSignal, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
+import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { FormField } from '~/components/ds';
 import { apiClient } from '~/services';
 import type { FormField as WorkflowFormField, FieldOption } from '~/types/workflow';
@@ -16,45 +16,141 @@ export default component$<SelectFieldProps>((props) => {
   const options = useSignal<FieldOption[]>(props.field.options || []);
   const loading = useSignal(false);
 
-  const normalizeEndpoint = $((endpoint: string): string => {
-    const trimmed = endpoint.trim();
-    if (!trimmed) {
-      return trimmed;
-    }
+  // Load API options client-side only.
+  // Inlined (no nested $() QRL) so props.businessCode is read at task-run
+  // time — not captured at component-creation time when it may be empty.
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
+    const dataSource = props.field.dataSource;
+    const rawEndpoint = props.field.apiEndpoint;
+    if (dataSource !== 'api' || !rawEndpoint) return;
 
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
-    }
-
+    // Resolve endpoint inline — avoids nested QRL capture issues
     const businessCode = props.businessCode || '';
-    const resolved = businessCode
-      ? trimmed.replaceAll('{vertical}', businessCode)
-      : trimmed;
+    let endpoint = rawEndpoint.trim();
+    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+      endpoint = endpoint.replaceAll('{vertical}', businessCode);
+      if (!endpoint.startsWith('/')) endpoint = `/${endpoint}`;
+    }
 
-    return resolved.startsWith('/') ? resolved : `/${resolved}`;
-  });
+    try {
+      loading.value = true;
 
-  // Load API options if configured
-  useTask$(async () => {
-    if (isServer) return;
-    if (props.field.dataSource === 'api' && props.field.apiEndpoint) {
-      try {
-        loading.value = true;
-        const data = await apiClient.get(await normalizeEndpoint(props.field.apiEndpoint)) as any;
+      const storedBusinessId = String(
+        localStorage.getItem('ugcl_current_business_vertical') ||
+        localStorage.getItem('business_vertical_id') ||
+        localStorage.getItem('business_id') ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
 
-        const items = Array.isArray(data)
-          ? data
-          : (data?.options || data?.data || data?.items || data?.sites || data?.records || []);
+      const storedBusinessCode = String(
+        props.businessCode ||
+        localStorage.getItem('business_code') ||
+        localStorage.getItem('businessCode') ||
+        localStorage.getItem('active_business_code') ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
 
-        options.value = items.map((item: any) => ({
-          label: item[props.field.displayField || 'name'],
-          value: item[props.field.valueField || 'id'],
-        }));
-      } catch (error) {
-        console.error('Failed to load options:', error);
-      } finally {
-        loading.value = false;
+      const isSiteEndpoint = /(^|\/)sites?(\/|$|\?)/i.test(endpoint);
+      const endpointParams = isSiteEndpoint
+        ? {
+            business_vertical_id: storedBusinessId || undefined,
+            business_code: storedBusinessCode || undefined,
+          }
+        : undefined;
+
+      const hasQuery = endpoint.includes('?');
+      const siteParamPairs = endpointParams
+        ? Object.entries(endpointParams).filter(([, value]) => !!value)
+        : [];
+
+      let resolvedEndpoint = endpoint;
+      if (hasQuery && siteParamPairs.length > 0) {
+        const extra = new URLSearchParams(
+          siteParamPairs as Array<[string, string]>
+        ).toString();
+        if (extra) {
+          resolvedEndpoint = `${endpoint}&${extra}`;
+        }
       }
+
+      let data: any;
+      try {
+        data = await apiClient.get(
+          resolvedEndpoint,
+          hasQuery ? undefined : endpointParams
+        ) as any;
+      } catch (err: any) {
+        const isForbidden = Number(err?.status) === 403;
+        const isAdminSitesEndpoint = /(^|\/)admin\/sites?(\/|$|\?)/i.test(endpoint);
+
+        if (isForbidden && isAdminSitesEndpoint && storedBusinessCode) {
+          // Fallback for non-admin users: fetch sites from business-scoped endpoint.
+          data = await apiClient.get(`/business/${storedBusinessCode}/sites`) as any;
+        } else {
+          throw err;
+        }
+      }
+
+      // Handle multiple backend response shapes — check 'data' first
+      const items: any[] = Array.isArray(data)
+        ? data
+        : (
+            data?.data ??
+            data?.options ??
+            data?.items ??
+            data?.sites ??
+            data?.records ??
+            data?.results ??
+            []
+          );
+
+      // Scope site-like payloads to the active business vertical.
+      const scopedItems = items.filter((item: any) => {
+        if (!item) return false;
+
+        const itemBusinessId = String(
+          item.business_vertical_id || item.business_vertical?.id || item.vertical_id || item.business_id || ''
+        )
+          .trim()
+          .toLowerCase();
+
+        const itemBusinessCode = String(
+          item.business_vertical_code ||
+            item.business_vertical?.code ||
+            item.vertical_code ||
+            item.business_code ||
+            ''
+        )
+          .trim()
+          .toLowerCase();
+
+        // If payload is not business-scoped metadata, keep it unchanged.
+        if (!itemBusinessId && !itemBusinessCode) return true;
+
+        const idMatch = !!storedBusinessId && itemBusinessId === storedBusinessId;
+        const codeMatch = !!storedBusinessCode && itemBusinessCode === storedBusinessCode;
+        return idMatch || codeMatch;
+      });
+
+      const labelKey = props.field.displayField || 'name';
+      const valueKey = props.field.valueField || 'id';
+
+      options.value = scopedItems
+        .filter((item: any) => item != null)
+        .map((item: any) => ({
+          label: String(item[labelKey] ?? item.name ?? item.label ?? item.title ?? item.code ?? ''),
+          value: String(item[valueKey] ?? item.id ?? item.value ?? item.code ?? ''),
+        }))
+        .filter((opt) => opt.value !== '');
+    } catch (err) {
+      console.error('[SelectField] Failed to load options from', endpoint, err);
+    } finally {
+      loading.value = false;
     }
   });
 

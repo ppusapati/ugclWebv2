@@ -16,7 +16,7 @@ export const useBusinessFormsData = routeLoader$(async (requestEvent) => {
       businessFormsResponse = await ssrApiClient.get<any>(`/business/${businessCode}/forms`);
     } catch {
       // Some environments store business code in uppercase on backend routes.
-      businessFormsResponse = await ssrApiClient.get<any>(`/business/${businessCode.toUpperCase()}/forms`);
+      businessFormsResponse = await ssrApiClient.get<any>(`/business/${businessCode?.toUpperCase() ?? businessCode}/forms`);
     }
     const formsRaw = businessFormsResponse?.forms || businessFormsResponse?.data || businessFormsResponse || [];
     const forms = Array.isArray(formsRaw)
@@ -78,7 +78,7 @@ export default component$(() => {
     <div class="space-y-6">
       <PageHeader
         title="Forms"
-        subtitle={`Select a form to submit for ${businessCode.toUpperCase()}`}
+        subtitle={`Select a form to submit for ${businessCode?.toUpperCase() ?? ''}`}
       >
         <Btn
           q:slot="actions"

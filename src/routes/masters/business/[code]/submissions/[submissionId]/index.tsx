@@ -111,7 +111,7 @@ export default component$(() => {
     <div class="space-y-6">
       <PageHeader
         title="Submission Detail"
-        subtitle={`Business: ${businessCode.toUpperCase()} • ID: ${submissionId.slice(0, 8)}...`}
+        subtitle={`Business: ${businessCode?.toUpperCase() ?? ''} • ID: ${submissionId?.slice(0, 8) ?? ''}...`}
       >
         <Btn q:slot="actions" variant="ghost" onClick$={handleBack}>
           Back to Submissions

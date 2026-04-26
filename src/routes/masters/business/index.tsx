@@ -107,17 +107,7 @@ export default component$(() => {
   const handleUpdate = $(async () => {
     if (!editingVertical.value) return;
     try {
-      // Try /admin/businesses endpoint first
-      let result;
-      try {
-        result = await apiClient.put<any>(`/admin/businesses/${editingVertical.value.id}`, editingVertical.value);
-      } catch (e: any) {
-        if (e.status === 404) {
-          result = await apiClient.put<any>(`/admin/masters/businesses/${editingVertical.value.id}`, editingVertical.value);
-        } else {
-          throw e;
-        }
-      }
+      const result = await apiClient.put<any>(`/admin/businesses/${editingVertical.value.id}`, editingVertical.value);
 
       const updatedVertical = result.vertical || result.data || result;
       const index = verticals.value.findIndex((v: BusinessVertical) => v.id === editingVertical.value!.id);
@@ -142,16 +132,7 @@ export default component$(() => {
     if (!confirm("Are you sure you want to delete this business vertical?")) return;
 
     try {
-      // Try /admin/businesses endpoint first
-      try {
-        await apiClient.delete(`/admin/businesses/${id}`);
-      } catch (e: any) {
-        if (e.status === 404) {
-          await apiClient.delete(`/admin/masters/businesses/${id}`);
-        } else {
-          throw e;
-        }
-      }
+      await apiClient.delete(`/admin/businesses/${id}`);
       verticals.value = verticals.value.filter((v: BusinessVertical) => v.id !== id);
       success.value = "Business vertical deleted successfully";
       setTimeout(() => (success.value = ""), 3000);

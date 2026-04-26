@@ -10,7 +10,7 @@ import { Btn } from '~/components/ds';
 import { chatService } from '~/services/chat.service';
 import { formService } from '~/services/form.service';
 import type { Module } from '~/services/types';
-import { isSuperAdminUser } from '~/utils/auth';
+import { getUser, isSuperAdminUser } from '~/utils/auth';
 
 export interface MenuItem {
   id: string
@@ -46,7 +46,8 @@ export const Header = component$(() => {
   const isMenuOpen = useSignal<boolean>(false);
   const availableModules = useSignal<Module[]>([]);
   const modulesLoaded = useSignal(false);
-  const isSuperAdmin = isSuperAdminUser(auth.user);
+  const effectiveUser = auth.user || getUser();
+  const isSuperAdmin = isSuperAdminUser(effectiveUser);
 
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(({ cleanup }) => {

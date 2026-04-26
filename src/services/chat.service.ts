@@ -330,11 +330,32 @@ export class ChatService {
     const url = this.buildChatStreamUrl();
     const eventSource = new EventSource(url, { withCredentials: true });
 
-    eventSource.onmessage = (ev) => {
+    const forwardEvent = (data: string, fallbackType?: string) => {
       try {
-        const event = JSON.parse(ev.data) as ChatSSEEvent;
-        if (event.type !== 'heartbeat' && event.type !== 'connected') {
-          onMessage(event);
+        const parsed = JSON.parse(data) as any;
+
+        const dataRoot = parsed?.data && typeof parsed.data === 'object' ? parsed.data : parsed;
+        const normalized: ChatSSEEvent = {
+          type: String(
+            dataRoot?.type ||
+            parsed?.type ||
+            parsed?.event_type ||
+            parsed?.event ||
+            fallbackType ||
+            'message'
+          ),
+          conversation_id:
+            dataRoot?.conversation_id ||
+            parsed?.conversation_id ||
+            dataRoot?.conversationId ||
+            parsed?.conversationId ||
+            dataRoot?.message?.conversation_id ||
+            parsed?.message?.conversation_id,
+          message: dataRoot?.message || parsed?.message,
+        };
+
+        if (normalized.type !== 'heartbeat' && normalized.type !== 'connected') {
+          onMessage(normalized);
         }
       } catch (err) {
         console.error('Failed to parse chat SSE event:', err);
@@ -342,12 +363,32 @@ export class ChatService {
       }
     };
 
+    eventSource.onmessage = (ev) => {
+      forwardEvent(ev.data);
+    };
+
+    // Some backends emit named SSE events (event: new_message) instead of default message events.
+    const namedEvents = ['new_message', 'message', 'chat_message', 'chat:new_message'];
+    const listeners = namedEvents.map((name) => {
+      const handler = (ev: Event) => {
+        const msgEvent = ev as MessageEvent;
+        forwardEvent(String(msgEvent.data || ''), name);
+      };
+      eventSource.addEventListener(name, handler);
+      return { name, handler };
+    });
+
     eventSource.onerror = (err) => {
       console.error('Chat SSE stream error:', err);
       onError?.(new Error('Chat stream connection error'));
     };
 
-    return () => eventSource.close();
+    return () => {
+      listeners.forEach(({ name, handler }) => {
+        eventSource.removeEventListener(name, handler);
+      });
+      eventSource.close();
+    };
   }
 
   private buildChatStreamUrl(): string {

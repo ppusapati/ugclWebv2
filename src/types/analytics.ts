@@ -35,6 +35,7 @@ export interface ReportField {
   data_source: string;
   data_type?: string;
   aggregate?: AggregateFunction;
+  aggregation?: AggregateFunction;
   is_visible: boolean;
   order: number;
   format?: string;

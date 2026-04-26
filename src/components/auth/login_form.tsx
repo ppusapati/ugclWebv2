@@ -4,6 +4,8 @@ import { isValidPhone } from "~/utils/validations";
 import ImgLogo from '~/media/logo.png?jsx';
 import { buildApiUrl } from '~/config/api';
 
+const API_KEY = '87339ea3-1add-4689-ae57-3128ebd03c4f';
+
 export const LoginForm = component$(() => {
     const state = useStore({
         phone: '',
@@ -68,15 +70,57 @@ export const LoginForm = component$(() => {
                 state.apiError = `Login failed: ${error}`;
             } else {
                 const data = await resp.json();
+              let enrichedUser = data.user;
+
+              // Hydrate full user context (permissions + business roles) for sidebar/form visibility.
+              try {
+                const profileResp = await fetch(buildApiUrl('/profile'), {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${data.token}`,
+                    'x-api-key': API_KEY,
+                  },
+                });
+
+                if (profileResp.ok) {
+                  enrichedUser = await profileResp.json();
+                }
+              } catch {
+                // Fallback to login payload if profile call fails.
+              }
+
                 state.apiSuccess = true;
                 // Store in localStorage for client-side
-                localStorage.setItem('user', JSON.stringify(data.user));
+              localStorage.setItem('user', JSON.stringify(enrichedUser));
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('auth_token', data.token);
 
+              const firstBusinessRole = Array.isArray(enrichedUser?.business_roles)
+                ? enrichedUser.business_roles[0]
+                : null;
+              const verticalCode =
+                firstBusinessRole?.vertical_code ||
+                firstBusinessRole?.business_vertical_code ||
+                firstBusinessRole?.business_vertical?.code ||
+                '';
+              const verticalId =
+                firstBusinessRole?.vertical_id ||
+                firstBusinessRole?.business_vertical_id ||
+                firstBusinessRole?.business_vertical?.id ||
+                '';
+
+              if (verticalCode) {
+                localStorage.setItem('active_business_code', verticalCode);
+                localStorage.setItem('business_code', verticalCode);
+                localStorage.setItem('businessCode', verticalCode);
+              }
+              if (verticalId) {
+                localStorage.setItem('ugcl_current_business_vertical', verticalId);
+              }
+
                 // Also store in cookies for SSR (routeLoader$ access)
                 document.cookie = `token=${data.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
-                document.cookie = `user=${encodeURIComponent(JSON.stringify(data.user))}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+              document.cookie = `user=${encodeURIComponent(JSON.stringify(enrichedUser))}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
 
                 // Full reload so layout remounts and useVisibleTask$ re-runs with the new auth state
                 window.location.href = '/dashboard';

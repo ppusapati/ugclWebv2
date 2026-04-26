@@ -209,8 +209,8 @@ class AnalyticsService {
   /**
    * Get available form tables for report building
    */
-  async getFormTables(): Promise<FormTablesResponse> {
-    return apiClient.get<FormTablesResponse>('/reports/forms/tables');
+  async getFormTables(params?: Record<string, any>): Promise<FormTablesResponse> {
+    return apiClient.get<FormTablesResponse>('/reports/forms/tables', params);
   }
 
   /**

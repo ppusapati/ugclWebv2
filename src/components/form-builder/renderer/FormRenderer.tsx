@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/FormRenderer.tsx
-import { component$, useStore, useSignal, useTask$, $, type PropFunction, isServer } from '@builder.io/qwik';
+import { component$, useStore, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { formBuilderService } from '~/services';
 import type { FormStep } from '~/types/workflow';
 import StepNavigation from './StepNavigation';
@@ -33,9 +33,10 @@ export default component$<FormRendererProps>((props) => {
   const formData = useStore<Record<string, any>>(props.initialData || {});
   const errors = useStore<Record<string, string>>({});
 
-  // Load form definition
-  useTask$(async () => {
-    if (isServer) return;
+  // Load form definition — useVisibleTask$ runs only client-side after mount,
+  // which ensures the user's auth token is available in localStorage.
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
     try {
       loading.value = true;
       const form = await formBuilderService.getFormByCode(props.formCode, props.businessCode);

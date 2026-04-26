@@ -2,7 +2,7 @@
 import { component$, useSignal, useStore, $, type PropFunction } from '@builder.io/qwik';
 import { Btn, FormField } from '~/components/ds';
 import type { FormDefinition, FormStep, FormField as WorkflowFormField, Module, WorkflowDefinition, WorkflowConfig } from '~/types/workflow';
-import type { BusinessVertical, Site } from '~/services/types';
+import type { BusinessVertical, Site, Permission } from '~/services/types';
 import FieldEditor from './FieldEditor';
 import { WorkflowPanel } from './workflow';
 
@@ -10,6 +10,7 @@ interface FormBuilderProps {
   initialDefinition?: FormDefinition;
   modules: Module[];
   workflows: WorkflowDefinition[];
+  permissions: Permission[];
   businessVerticals: BusinessVertical[];
   sites: Site[];
   onSave$: PropFunction<(definition: FormDefinition) => void>;
@@ -19,6 +20,7 @@ interface FormBuilderProps {
 export default component$<FormBuilderProps>((props) => {
   const activeTab = useSignal<'basic' | 'steps' | 'workflow' | 'json'>('basic');
   const currentStepIndex = useSignal(0);
+  const validationError = useSignal<string | null>(null);
 
   const form = useStore<FormDefinition>({
     form_code: props.initialDefinition?.form_code || '',
@@ -117,6 +119,30 @@ export default component$<FormBuilderProps>((props) => {
     }
   });
 
+  const handleSave = $(async () => {
+    validationError.value = null;
+
+    if (!String(form.module || '').trim()) {
+      validationError.value = 'Please select which module this form belongs to.';
+      activeTab.value = 'basic';
+      return;
+    }
+
+    if (!Array.isArray(form.accessible_verticals) || form.accessible_verticals.length === 0) {
+      validationError.value = 'Please select at least one business vertical for this form.';
+      activeTab.value = 'basic';
+      return;
+    }
+
+    if (!String(form.permissions?.create || '').trim()) {
+      validationError.value = 'Please select the required permission for this form.';
+      activeTab.value = 'basic';
+      return;
+    }
+
+    await props.onSave$(form);
+  });
+
   return (
     <div class="form-builder min-h-screen bg-gray-50">
       <div class="mx-auto">
@@ -132,11 +158,17 @@ export default component$<FormBuilderProps>((props) => {
                 </Btn>
               )}
               <Btn
-                onClick$={() => props.onSave$(form)}
+                onClick$={handleSave}
               >
                 Save Form
               </Btn>
             </div>
+
+          {validationError.value && (
+            <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {validationError.value}
+            </div>
+          )}
 
           {/* Tabs */}
           <div class="flex gap-4 mt-6 border-b border-gray-200">
@@ -280,6 +312,31 @@ export default component$<FormBuilderProps>((props) => {
                   >
                     <option value="single_page">Single Page</option>
                     <option value="multi_step">Multi-Step</option>
+                  </select>
+                </FormField>
+              </div>
+
+              <div>
+                <FormField id="form-required-permission" label="Required Permission" required>
+                  <select
+                    id="form-required-permission"
+                    value={form.permissions?.create || ''}
+                    onChange$={(e) => {
+                      const selectedPermission = (e.target as HTMLSelectElement).value;
+                      if (!form.permissions) {
+                        form.permissions = {};
+                      }
+                      form.permissions.create = selectedPermission;
+                    }}
+                    class="form-input w-full"
+                    required
+                  >
+                    <option value="">Select required permission</option>
+                    {props.permissions.map((permission) => (
+                      <option key={permission.id} value={permission.name}>
+                        {permission.name}
+                      </option>
+                    ))}
                   </select>
                 </FormField>
               </div>

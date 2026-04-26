@@ -1,48 +1,20 @@
-// src/routes/business/[code]/forms/[formCode]/index.tsx
+// src/routes/masters/business/[code]/forms/[formCode]/index.tsx
 import { component$, useSignal, $ } from '@builder.io/qwik';
-import { routeLoader$, useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
+import { useNavigate, useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import FormRenderer from '~/components/form-builder/renderer/FormRenderer';
-import { Btn, PageHeader, SectionCard } from '~/components/ds';
-import { createSSRApiClient, workflowService } from '~/services';
+import { Btn, PageHeader } from '~/components/ds';
+import { workflowService } from '~/services';
 import type { AppForm } from '~/types/workflow';
 
-export const useBusinessFormData = routeLoader$(async (requestEvent) => {
-  const ssrApiClient = createSSRApiClient(requestEvent);
-  const businessCode = requestEvent.params.code;
-  const formCode = requestEvent.params.formCode;
-
-  try {
-    const formData = await ssrApiClient.get<AppForm>(`/admin/forms/${formCode}`);
-
-    // Preserve existing access control behavior.
-    if ((formData as any).vertical_access && (formData as any).vertical_access.length > 0) {
-      if (!(formData as any).vertical_access.includes(businessCode)) {
-        throw new Error('This form is not available for this business vertical');
-      }
-    }
-
-    return {
-      form: formData,
-      error: null as string | null,
-    };
-  } catch (err: any) {
-    return {
-      form: null as AppForm | null,
-      error: err.message || 'Failed to load form',
-    };
-  }
-});
-
 export default component$(() => {
-  const initialData = useBusinessFormData();
   const nav = useNavigate();
   const loc = useLocation();
   const businessCode = loc.params.code;
   const formCode = loc.params.formCode;
 
-  const form = useSignal<AppForm | null>(initialData.value.form || null);
-  const loading = useSignal(false);
-  const error = useSignal<string | null>(initialData.value.error || null);
+  // SSR data is not used; FormRenderer fetches the form client-side with the
+  // user's auth token, which avoids the SSR "Invalid or missing API key" error.
+  const form = useSignal<AppForm | null>(null);
   const submitting = useSignal(false);
 
   const handleSubmit = $(async (formData: Record<string, any>) => {
@@ -110,7 +82,7 @@ export default component$(() => {
     <div class="space-y-6">
       <PageHeader
         title={form.value?.title || formCode}
-        subtitle={form.value?.description || `Submit form for ${businessCode.toUpperCase()}`}
+        subtitle={form.value?.description || `Submit form for ${businessCode?.toUpperCase() ?? ''}`}
       >
         <Btn q:slot="actions" variant="ghost" onClick$={handleCancel}>
           Back to Forms
@@ -123,42 +95,16 @@ export default component$(() => {
         )}
       </PageHeader>
 
-        {/* Loading State */}
-        {loading.value && (
-          <SectionCard class="p-12">
-            <div class="flex flex-col items-center justify-center">
-              <div class="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-              <p class="mt-4 text-gray-600">Loading form...</p>
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Error State */}
-        {error.value && (
-          <SectionCard class="p-12">
-            <div class="text-center">
-              <svg class="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 class="mt-4 text-lg font-medium text-gray-900">Error Loading Form</h3>
-              <p class="mt-2 text-sm text-gray-600">{error.value}</p>
-              <Btn onClick$={handleCancel} variant="secondary" class="mt-6">
-                Go Back
-              </Btn>
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Form Renderer */}
-        {!loading.value && !error.value && form.value && (
-          <FormRenderer
-            businessCode={businessCode}
-            formCode={formCode}
-            onSubmit$={handleSubmit}
-            onSaveDraft$={handleSaveDraft}
-            onCancel$={handleCancel}
-          />
-        )}
+      {/* FormRenderer always mounts and fetches the form definition client-side
+          using the user's auth token. SSR is intentionally skipped to avoid
+          the "Invalid or missing API key" error when the server has no auth context. */}
+      <FormRenderer
+        businessCode={businessCode}
+        formCode={formCode}
+        onSubmit$={handleSubmit}
+        onSaveDraft$={handleSaveDraft}
+        onCancel$={handleCancel}
+      />
     </div>
   );
 });

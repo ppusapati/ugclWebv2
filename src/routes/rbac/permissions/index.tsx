@@ -350,11 +350,14 @@ export default component$(() => {
                     >
                       <option value="">Select action</option>
                       <option value="*">* (All Actions - Wildcard)</option>
+                      <option value="view">View</option>
                       <option value="read">Read</option>
-                      <option value="create">Create</option>
+                      <option value="Create">Create</option>
                       <option value="update">Update</option>
                       <option value="delete">Delete</option>
-                      <option value="manage">Manage</option>
+                      <option value="approve">Approve</option>
+                      <option value="reject">Reject</option>
+                      <option value="submit">Submit</option>
                     </select>
                   </FormField>
                   <FormField id="perm-name" label="Permission Name (auto-generated)" hint="Format: resource:action">

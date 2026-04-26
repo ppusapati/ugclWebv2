@@ -1,5 +1,5 @@
 // Analytics Report Builder - Professional UI
-import { component$, useSignal, useStore, $ } from '@builder.io/qwik';
+import { component$, useSignal, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$, server$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
@@ -15,6 +15,192 @@ interface RoleOption {
   business_vertical_id?: string;
   business_vertical_name?: string;
 }
+
+const KPI_AGGREGATIONS = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'] as const;
+type KpiAggregation = (typeof KPI_AGGREGATIONS)[number];
+
+const getEntityId = (value: any): string =>
+  String(
+    value?.id ||
+      value?.module_id ||
+      value?.vertical_id ||
+      value?.business_vertical_id ||
+      value?.business_id ||
+      value ||
+      ''
+  ).trim();
+
+const filterTablesBySelection = (tables: any[], verticalId: string, moduleId: string) => {
+  const normalizedVerticalId = String(verticalId || '').trim();
+  const normalizedModuleId = String(moduleId || '').trim();
+
+  return tables.filter((table: any) => {
+    const tableVerticalId = getEntityId(
+      table?.business_vertical_id ||
+        table?.vertical_id ||
+        table?.business_id ||
+        table?.business_vertical
+    );
+    const tableModuleId = getEntityId(
+      table?.module_id ||
+        table?.form_module_id ||
+        table?.module
+    );
+
+    const verticalMatches = !tableVerticalId || tableVerticalId === normalizedVerticalId;
+    const moduleMatches = !!tableModuleId && tableModuleId === normalizedModuleId;
+    return verticalMatches && moduleMatches;
+  });
+};
+
+const normalizeScopeToken = (value: any): string =>
+  String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const hasScopeMetadata = (table: any): boolean => {
+  const tableVerticalId = getEntityId(
+    table?.business_vertical_id ||
+      table?.vertical_id ||
+      table?.business_id ||
+      table?.business_vertical
+  );
+  const tableModuleId = getEntityId(
+    table?.module_id ||
+      table?.form_module_id ||
+      table?.module
+  );
+  return !!tableVerticalId || !!tableModuleId;
+};
+
+const buildModuleTokens = (moduleOption: any, moduleId: string): string[] => {
+  const values = [
+    moduleId,
+    moduleOption?.id,
+    moduleOption?.module_id,
+    moduleOption?.code,
+    moduleOption?.module_code,
+    moduleOption?.name,
+    moduleOption?.module_name,
+  ];
+
+  const tokenSet = new Set<string>();
+  values.forEach((value) => {
+    const normalized = normalizeScopeToken(value);
+    if (normalized) {
+      tokenSet.add(normalized);
+      tokenSet.add(normalized.replace(/_/g, ''));
+    }
+  });
+
+  return Array.from(tokenSet).filter((token) => token.length >= 3);
+};
+
+const isNumericFieldType = (fieldType: string | undefined): boolean => {
+  if (!fieldType) return false;
+  const numericTypes = ['number', 'integer', 'int', 'float', 'decimal', 'currency', 'percent', 'money', 'bigint', 'smallint', 'numeric', 'real', 'double'];
+  return numericTypes.includes(fieldType.toLowerCase());
+};
+
+const isDateLikeFieldType = (fieldType: string | undefined): boolean => {
+  if (!fieldType) return false;
+  const dateTypes = ['date', 'datetime', 'timestamp', 'time'];
+  return dateTypes.includes(fieldType.toLowerCase());
+};
+
+const isBooleanFieldType = (fieldType: string | undefined): boolean => {
+  if (!fieldType) return false;
+  const booleanTypes = ['bool', 'boolean'];
+  return booleanTypes.includes(fieldType.toLowerCase());
+};
+
+const operatorLabelMap: Record<FilterOperator, string> = {
+  eq: 'Equals',
+  ne: 'Not equals',
+  gt: 'Greater than',
+  gte: 'Greater than or equal',
+  lt: 'Less than',
+  lte: 'Less than or equal',
+  like: 'Contains',
+  in: 'In list',
+  between: 'Between',
+  this_month: 'This month',
+  this_week: 'This week',
+  this_year: 'This year',
+  last_month: 'Last month',
+  last_week: 'Last week',
+  last_year: 'Last year',
+};
+
+const tableMatchesModuleHeuristic = (table: any, moduleId: string, moduleTokens: string[]): boolean => {
+  const tableModuleId = getEntityId(
+    table?.module_id ||
+      table?.form_module_id ||
+      table?.module
+  );
+
+  if (tableModuleId && tableModuleId === moduleId) {
+    return true;
+  }
+
+  const candidates = [
+    table?.table_name,
+    table?.form_code,
+    table?.form_title,
+    table?.module_name,
+    table?.module_code,
+    table?.module?.name,
+    table?.module?.code,
+  ]
+    .map((value) => normalizeScopeToken(value))
+    .filter(Boolean);
+
+  if (candidates.length === 0 || moduleTokens.length === 0) {
+    return false;
+  }
+
+  return candidates.some((candidate) =>
+    moduleTokens.some((token) => {
+      if (!token) return false;
+      return (
+        candidate === token ||
+        candidate.startsWith(`${token}_`) ||
+        candidate.includes(`_${token}_`) ||
+        candidate.includes(token)
+      );
+    })
+  );
+};
+
+const resolveScopedTables = (
+  tables: any[],
+  verticalId: string,
+  moduleId: string,
+  moduleOption?: any
+): any[] => {
+  const strictMatches = filterTablesBySelection(tables, verticalId, moduleId);
+  if (strictMatches.length > 0) {
+    return strictMatches;
+  }
+
+  const anyMetadataPresent = tables.some((table) => hasScopeMetadata(table));
+  const moduleTokens = buildModuleTokens(moduleOption, moduleId);
+
+  // If payload has partial metadata but strict matching still missed (e.g., module serialized inconsistently),
+  // fall back to module token matching before giving up.
+  const moduleFallbackMatches = tables.filter((table) =>
+    tableMatchesModuleHeuristic(table, moduleId, moduleTokens)
+  );
+
+  if (anyMetadataPresent) {
+    return moduleFallbackMatches;
+  }
+
+  return moduleFallbackMatches;
+};
 
 // Load available form tables with SSR support
 export const useFormTablesData = routeLoader$(async (requestEvent) => {
@@ -37,11 +223,6 @@ export const useFormTablesData = routeLoader$(async (requestEvent) => {
       error: error.message || 'Failed to load form tables',
     };
   }
-});
-
-const getTableFieldsServer = server$(async function (tableName: string) {
-  const ssrApiClient = createSSRApiClient(this as any);
-  return ssrApiClient.get(`/reports/forms/tables/${encodeURIComponent(tableName)}/fields`);
 });
 
 const getBusinessVerticalsServer = server$(async function () {
@@ -145,7 +326,7 @@ export default component$(() => {
     chart_type: 'bar',
   });
 
-  const availableTables = useSignal(initialData.value.tables);
+  const availableTables = useSignal<any[]>([]);
   const tableFields = useSignal<any[]>([]);
   const selectedTable = useSignal('');
   const previewData = useSignal<any>(null);
@@ -154,6 +335,16 @@ export default component$(() => {
   const showSaveModal = useSignal(false);
   const currentStep = useSignal(1);
   const draggedFieldIndex = useSignal<number | null>(null);
+  const fieldSearch = useSignal('');
+  const showSelectedFieldsOnly = useSignal(false);
+  const filterFieldName = useSignal('');
+  const filterOperatorValue = useSignal<FilterOperator>('eq');
+  const filterValueInput = useSignal('');
+  const filterLogicalOp = useSignal<LogicalOperator>('AND');
+  const sortFieldName = useSignal('');
+  const sortDirection = useSignal<'ASC' | 'DESC'>('ASC');
+  const groupByFieldName = useSignal('');
+  const previewLimit = useSignal('100');
 
   // Business vertical and module data
   const availableVerticals = useSignal<any[]>([]);
@@ -162,11 +353,69 @@ export default component$(() => {
   const selectedModule = useSignal('');
   const loadingModalData = useSignal(false);
 
+  const clearSelectedDataSource = $(() => {
+    selectedTable.value = '';
+    tableFields.value = [];
+    reportConfig.data_sources = [];
+    reportConfig.fields = [];
+    reportConfig.filters = [];
+  });
+
+  const loadScopedTables = $(async (verticalId?: string, moduleId?: string) => {
+    const normalizedVerticalId = String(verticalId || '').trim();
+    const normalizedModuleId = String(moduleId || '').trim();
+
+    if (!normalizedVerticalId || !normalizedModuleId) {
+      availableTables.value = [];
+      await clearSelectedDataSource();
+      return;
+    }
+
+    try {
+      const response: any = await analyticsService.getFormTables({
+        business_vertical_id: normalizedVerticalId,
+        vertical_id: normalizedVerticalId,
+        module_id: normalizedModuleId,
+      });
+
+      let tables = response?.tables || [];
+      if (tables.length === 0) {
+        const fallbackResponse: any = await analyticsService.getFormTables();
+        tables = fallbackResponse?.tables || [];
+      }
+
+      const selectedModuleOption = availableModules.value.find((m: any) => {
+        const candidateId = String(m?.id || m?.module_id || '').trim();
+        return candidateId === normalizedModuleId;
+      });
+
+      availableTables.value = resolveScopedTables(
+        tables,
+        normalizedVerticalId,
+        normalizedModuleId,
+        selectedModuleOption
+      );
+      await clearSelectedDataSource();
+    } catch (err: any) {
+      console.error('Failed to load scoped data sources:', err);
+      availableTables.value = [];
+      await clearSelectedDataSource();
+      error.value = err?.message || 'Failed to load data sources for selected business vertical and module.';
+    }
+  });
+
   // Report access / visibility
   const isPublic = useSignal(false);
   const allowedRoles = useSignal<string[]>([]);
   const roleScope = useSignal<'selected_vertical' | 'all_verticals'>('selected_vertical');
   const availableRoles = useSignal<RoleOption[]>([]);
+
+  // KPI configuration state (enterprise metric definition)
+  const kpiMetricField = useSignal('');
+  const kpiAggregation = useSignal<KpiAggregation>('COUNT');
+  const kpiGroupByField = useSignal('');
+  const kpiTargetValue = useSignal('');
+  const kpiComparisonMode = useSignal<'none' | 'previous_period' | 'same_period_last_month'>('none');
 
   const getScopedRoleOptions = () => {
     const byName = new Map<string, RoleOption>();
@@ -205,7 +454,7 @@ export default component$(() => {
   });
 
   const getActiveBusinessId = $(() => {
-    const keys = ['business_vertical_id', 'business_id', 'active_business_id'];
+    const keys = ['business_vertical_id', 'business_id', 'active_business_id', 'ugcl_current_business_vertical'];
     for (const key of keys) {
       const value = localStorage.getItem(key);
       if (value && value !== 'null' && value !== 'undefined') {
@@ -248,6 +497,38 @@ export default component$(() => {
     }
   });
 
+  const loadBuilderScopeData = $(async () => {
+    loadingModalData.value = true;
+    try {
+      const verticals = await getBusinessVerticalsServer();
+      availableVerticals.value = verticals;
+
+      const activeVerticalId = await getActiveBusinessId();
+      if (!selectedVertical.value && activeVerticalId && verticals.some((v: any) => String(v.id || v.vertical_id) === String(activeVerticalId))) {
+        selectedVertical.value = activeVerticalId;
+      }
+
+      if (!selectedVertical.value && verticals.length === 1) {
+        selectedVertical.value = verticals[0].id || verticals[0].vertical_id;
+      }
+
+      if (selectedVertical.value) {
+        const modules = await getModulesServer(selectedVertical.value);
+        availableModules.value = modules;
+      } else {
+        availableModules.value = [];
+      }
+    } catch (err: any) {
+      console.error('Failed to load builder scope data:', err);
+    } finally {
+      loadingModalData.value = false;
+    }
+  });
+
+  useVisibleTask$(async () => {
+    await loadBuilderScopeData();
+  });
+
   const buildUniqueReportCode = $((name: string) => {
     const base = (name || 'report')
       .toLowerCase()
@@ -260,7 +541,7 @@ export default component$(() => {
   // Load fields when table is selected
   const loadTableFields = $(async (tableName: string) => {
     try {
-      const response: any = await getTableFieldsServer(tableName);
+      const response: any = await analyticsService.getTableFields(tableName);
       // Use form_fields (human-readable form definitions) as primary source
       // Fall back to db_fields (database columns) or fields (legacy) if form_fields not available
       const fields = response.form_fields || response.db_fields || response.fields || [];
@@ -305,11 +586,42 @@ export default component$(() => {
         is_visible: true,
         order: (reportConfig.fields?.length || 0) + 1
       }];
+
+      if (reportConfig.report_type === 'kpi') {
+        if (!kpiMetricField.value) {
+          kpiMetricField.value = fieldName;
+        }
+        ensureKpiConfigDefaults();
+      }
     }
   });
 
   const removeField = $((index: number) => {
+    const removedField = (reportConfig.fields || [])[index] as any;
     reportConfig.fields = (reportConfig.fields || []).filter((_, i) => i !== index);
+
+    if (removedField?.field_name && kpiMetricField.value === removedField.field_name) {
+      kpiMetricField.value = (reportConfig.fields || [])[0]?.field_name || '';
+    }
+    if (removedField?.field_name && kpiGroupByField.value === removedField.field_name) {
+      kpiGroupByField.value = '';
+    }
+
+    if (reportConfig.report_type === 'kpi') {
+      ensureKpiConfigDefaults();
+    }
+  });
+
+  const toggleFieldSelection = $((field: any) => {
+    const fieldName = field.column_name || field.id || field.name;
+    const selectedIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === fieldName);
+
+    if (selectedIndex >= 0) {
+      removeField(selectedIndex);
+      return;
+    }
+
+    addField(field);
   });
 
   const moveField = $((fromIndex: number, toIndex: number) => {
@@ -320,13 +632,13 @@ export default component$(() => {
     reportConfig.fields = fields;
   });
 
-  const addFilter = $((fieldName: string, operator: FilterOperator, value: any) => {
+  const addFilter = $((fieldName: string, operator: FilterOperator, value: any, logicalOp: LogicalOperator = 'AND') => {
     reportConfig.filters = [...(reportConfig.filters || []), {
       field_name: fieldName,
       data_source: 'data',
       operator,
       value,
-      logical_op: 'AND' as LogicalOperator
+      logical_op: logicalOp
     }];
   });
 
@@ -334,9 +646,215 @@ export default component$(() => {
     reportConfig.filters = (reportConfig.filters || []).filter((_, i) => i !== index);
   });
 
+  const addSort = $((fieldName: string, direction: 'ASC' | 'DESC') => {
+    if (!fieldName) return;
+    const existing = reportConfig.sorting || [];
+    const already = existing.find((item: any) => item.field_name === fieldName);
+    if (already) {
+      already.direction = direction;
+      reportConfig.sorting = [...existing].map((item: any, index: number) => ({
+        ...item,
+        order: index + 1,
+      }));
+      return;
+    }
+
+    reportConfig.sorting = [
+      ...existing,
+      {
+        field_name: fieldName,
+        data_source: 'data',
+        direction,
+        order: existing.length + 1,
+      },
+    ];
+  });
+
+  const removeSort = $((index: number) => {
+    reportConfig.sorting = (reportConfig.sorting || [])
+      .filter((_, i) => i !== index)
+      .map((item: any, nextIndex: number) => ({
+        ...item,
+        order: nextIndex + 1,
+      }));
+  });
+
+  const addGroupBy = $((fieldName: string) => {
+    if (!fieldName) return;
+    const existing = (reportConfig as any).groupings || [];
+    const already = existing.some((item: any) => item.field_name === fieldName);
+    if (already) return;
+
+    (reportConfig as any).groupings = [
+      ...existing,
+      {
+        field_name: fieldName,
+        data_source: 'data',
+        order: existing.length + 1,
+      },
+    ];
+  });
+
+  const removeGroupBy = $((index: number) => {
+    (reportConfig as any).groupings = ((reportConfig as any).groupings || [])
+      .filter((_: any, i: number) => i !== index)
+      .map((item: any, nextIndex: number) => ({
+        ...item,
+        order: nextIndex + 1,
+      }));
+  });
+
+  const selectedFilterFieldType = (() => {
+    if (!filterFieldName.value) return 'text';
+
+    const selected = (reportConfig.fields || []).find(
+      (field: any) => field.field_name === filterFieldName.value
+    );
+    if (selected?.data_type) return String(selected.data_type);
+
+    const source = (tableFields.value || []).find(
+      (field: any) =>
+        String(field.column_name || field.id || field.name || '') === String(filterFieldName.value)
+    );
+
+    return String(source?.dataType || source?.data_type || source?.type || 'text');
+  })();
+
+  const selectedFilterOperators: FilterOperator[] = isBooleanFieldType(selectedFilterFieldType)
+    ? ['eq', 'ne']
+    : isDateLikeFieldType(selectedFilterFieldType)
+      ? ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'between', 'this_week', 'this_month', 'this_year', 'last_week', 'last_month', 'last_year']
+      : isNumericFieldType(selectedFilterFieldType)
+        ? ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'between', 'in']
+        : ['eq', 'ne', 'like', 'in'];
+
+  const requiresFilterValue = (operator: FilterOperator): boolean => {
+    return !['this_week', 'this_month', 'this_year', 'last_week', 'last_month', 'last_year'].includes(operator);
+  };
+
+  const addFilterFromInputs = $(async () => {
+    const field = filterFieldName.value;
+    const operator = filterOperatorValue.value;
+    const needValue = !['this_week', 'this_month', 'this_year', 'last_week', 'last_month', 'last_year'].includes(operator);
+
+    if (!field || !operator) return;
+    const trimmed = String(filterValueInput.value || '').trim();
+    if (needValue && !trimmed) return;
+
+    let parsedValue: any = trimmed;
+    if (operator === 'in') {
+      parsedValue = trimmed
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+    } else if (operator === 'between') {
+      parsedValue = trimmed
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 2);
+    }
+
+    addFilter(field, operator, parsedValue, filterLogicalOp.value);
+    filterValueInput.value = '';
+  });
+
+  const applyKpiConfiguration = $(() => {
+    if (reportConfig.report_type !== 'kpi') {
+      return;
+    }
+
+    const metricFieldName = kpiMetricField.value;
+    if (!metricFieldName) {
+      return;
+    }
+
+    const groupByFieldName = kpiGroupByField.value;
+    const shouldBreakout = !!groupByFieldName && groupByFieldName !== metricFieldName;
+
+    const nextFields = [...(reportConfig.fields || [])].map((field: any, index: number) => {
+      const isMetric = field.field_name === metricFieldName;
+      const isGroupBy = shouldBreakout && field.field_name === groupByFieldName;
+
+      return {
+        ...field,
+        aggregation: isMetric ? kpiAggregation.value : '',
+        is_visible: isMetric || isGroupBy,
+        order: index + 1,
+      };
+    });
+
+    reportConfig.fields = nextFields;
+    reportConfig.aggregations = [];
+
+    reportConfig.groupings = shouldBreakout
+      ? [{ field_name: groupByFieldName, data_source: 'data', order: 1 }]
+      : [];
+
+    reportConfig.sorting = shouldBreakout
+      ? [{ field_name: metricFieldName, data_source: 'data', direction: 'DESC', order: 1 }]
+      : [];
+
+    reportConfig.chart_config = {
+      ...(reportConfig.chart_config || {}),
+      kpi: {
+        metric_field: metricFieldName,
+        aggregation: kpiAggregation.value,
+        breakout_field: shouldBreakout ? groupByFieldName : '',
+        target: kpiTargetValue.value ? Number(kpiTargetValue.value) : undefined,
+        comparison_mode: kpiComparisonMode.value,
+      },
+    };
+  });
+
+  const ensureKpiConfigDefaults = $(() => {
+    if (reportConfig.report_type !== 'kpi') {
+      return;
+    }
+
+    const fields = reportConfig.fields || [];
+    if (!kpiMetricField.value && fields.length > 0) {
+      kpiMetricField.value = fields[0].field_name;
+    }
+
+    if (kpiGroupByField.value && kpiGroupByField.value === kpiMetricField.value) {
+      kpiGroupByField.value = '';
+    }
+
+    applyKpiConfiguration();
+  });
+
+  const validateKpiConfiguration = $(() => {
+    if (reportConfig.report_type !== 'kpi') {
+      return true;
+    }
+
+    if (!kpiMetricField.value) {
+      error.value = 'For KPI Dashboard, select a metric field.';
+      return false;
+    }
+
+    const metric = (reportConfig.fields || []).find((field: any) => field.field_name === kpiMetricField.value);
+    if (!metric) {
+      error.value = 'Selected KPI metric field is not available. Please reselect.';
+      return false;
+    }
+
+    if (!metric.aggregation) {
+      error.value = 'KPI aggregation is required (COUNT/SUM/AVG/MIN/MAX).';
+      return false;
+    }
+
+    return true;
+  });
+
   const handlePreview = $(async () => {
     if (!reportConfig.fields || reportConfig.fields.length === 0) {
       error.value = 'Please select at least one field';
+      return;
+    }
+
+    if (!(await validateKpiConfiguration())) {
       return;
     }
 
@@ -353,7 +871,11 @@ export default component$(() => {
       const createResponse = await analyticsService.createReport(tempReport);
       const reportId = createResponse.report.id;
 
-      const executeResponse = await analyticsService.executeReport(reportId);
+      const parsedLimit = Math.max(1, parseInt(previewLimit.value || '100', 10) || 100);
+      const executeResponse = await analyticsService.executeReport(reportId, undefined, {
+        page: 1,
+        page_size: parsedLimit,
+      });
       previewData.value = executeResponse.result;
       currentStep.value = 4;
     } catch (err: any) {
@@ -366,6 +888,11 @@ export default component$(() => {
   const handleSave = $(async () => {
     if (!reportConfig.name) {
       error.value = 'Please enter a report name';
+      return;
+    }
+
+    await ensureKpiConfigDefaults();
+    if (!(await validateKpiConfiguration())) {
       return;
     }
 
@@ -500,142 +1027,137 @@ export default component$(() => {
         </div>
       )}
 
-      {/* Main Content */}
-      <div class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-12 gap-6">
-          {/* Left Sidebar - Configuration Panel */}
-          <div class="col-span-4 space-y-6">
-            {/* Step 1: Data Source Selector */}
-            <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-              <div class="p-6 bg-blue-50 border-b border-blue-200">
-                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                  <div class="bg-interactive-primary p-2 rounded-xl">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-                    </svg>
-                  </div>
-                  Data Source
-                </h3>
-              </div>
-              <div class="p-6">
+      {/* Quick Configuration Panel */}
+      <div class="bg-white border-b border-gray-200">
+        <div class="container mx-auto px-4 py-5">
+          <div class="grid grid-cols-12 gap-4 items-end">
+            <div class="col-span-3">
+              <FormField id="builder-business-vertical" label="Business Vertical" required>
                 <select
-                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  onChange$={(e: any) => {
-                    const table = availableTables.value.find((t: any) => t.table_name === e.target.value);
-                    if (table) {
-                      handleTableSelect(table.table_name, table.form_code, table.form_id);
-                    }
+                  id="builder-business-vertical"
+                  class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
+                  value={selectedVertical.value}
+                  onChange$={async (e: any) => {
+                    selectedVertical.value = e.target.value;
+                    selectedModule.value = '';
+                    availableModules.value = selectedVertical.value
+                      ? await getModulesServer(selectedVertical.value)
+                      : [];
+                    await clearSelectedDataSource();
+                    availableTables.value = [];
                   }}
+                  disabled={loadingModalData.value}
                 >
-                  <option value="">Select a data source...</option>
-                  {availableTables.value.map((table: any) => (
-                    <option key={table.table_name} value={table.table_name}>
-                      {table.form_title}
+                  <option value="">Select vertical...</option>
+                  {availableVerticals.value.map((v: any) => (
+                    <option key={v.id || v.vertical_id} value={v.id || v.vertical_id}>
+                      {v.name || v.vertical_name}
                     </option>
                   ))}
                 </select>
-                {selectedTable.value && (
-                  <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <p class="text-sm text-green-800 flex items-center gap-2">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Connected: {selectedTable.value}
-                    </p>
-                  </div>
-                )}
-              </div>
+              </FormField>
             </div>
 
-            {/* Step 2: Available Fields */}
-            {selectedTable.value && (
-              <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-                <div class="p-6 bg-purple-50 border-b border-purple-200">
-                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <div class="bg-purple-600 p-2 rounded-xl">
-                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                      </svg>
-                    </div>
-                    Available Fields
-                  </h3>
-                  <p class="text-sm text-gray-600 mt-2">Click to add fields to your report</p>
-                </div>
-                <div class="p-4 space-y-2 overflow-y-auto">
-                  {tableFields.value.length === 0 ? (
-                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                      No fields found for the selected table. The table may be missing in the database or has no readable columns.
-                    </div>
-                  ) : (
-                    tableFields.value.map((field: any) => {
-                      // Trust backend form schema: column_name is the actual database column
-                      // id might be form field ID, so use column_name as primary key
-                      const fieldKey = field.column_name || field.id || field.name;
-                      const fieldLabel = field.label || field.name || field.column_name;
-                      const fieldType = field.dataType || field.data_type || field.type;
-                      const fieldSource = field.source || 'form';
-                      return (
-                      <Btn
-                        size="sm"
-                        variant="ghost"
-                        key={fieldKey}
-                        onClick$={() => addField(field)}
-                        class="w-full text-left p-3 transition-all hover:bg-purple-50 rounded-lg"
-                      >
-                        <div class="flex items-center gap-3">
-                          <i class={`${fieldTypeIcon(fieldType)} h-5 w-5 inline-block text-purple-600`} aria-hidden="true"></i>
-                          <div class="flex-1 min-w-0">
-                            <div class="text-gray-900 truncate transition-colors font-medium">
-                              {fieldLabel}
-                            </div>
-                            <div class="text-xs mt-0.5 flex items-center gap-1">
-                              <span>{fieldType}</span>
-                              {fieldSource === 'form' && <Badge variant="info">Form Field</Badge>}
-                            </div>
-                          </div>
-                          <svg class="w-5 h-5 text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                          </svg>
-                        </div>
-                      </Btn>
-                    );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
+            <div class="col-span-3">
+              <FormField id="builder-module" label="Module" required>
+                <select
+                  id="builder-module"
+                  class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
+                  value={selectedModule.value}
+                  onChange$={async (e: any) => {
+                    selectedModule.value = e.target.value;
+                    await loadScopedTables(selectedVertical.value, selectedModule.value);
+                  }}
+                  disabled={loadingModalData.value || !selectedVertical.value}
+                >
+                  <option value="">Select module...</option>
+                  {availableModules.value.map((m: any) => (
+                    <option key={m.id || m.module_id} value={m.id || m.module_id}>
+                      {m.name || m.module_name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
 
-            {/* Step 3: Report Type & Chart Configuration */}
-            <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-              <div class="p-6 bg-green-50 border-b border-green-200">
-                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                  <div class="bg-success-600 p-2 rounded-xl">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                  </div>
-                  Visualization
-                </h3>
-              </div>
-              <div class="p-6 space-y-4">
-                <FormField id="report-builder-type" label="Report Type">
-                  <select
-                    id="report-builder-type"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
-                    value={reportConfig.report_type}
-                    onChange$={(e: any) => {
-                      reportConfig.report_type = e.target.value;
-                      currentStep.value = 3;
-                    }}
-                  >
-                    <option value="table">Table Report</option>
-                    <option value="chart">Chart Visualization</option>
-                    <option value="kpi">KPI Dashboard</option>
-                  </select>
-                </FormField>
+            <div class="col-span-3">
+              <label class="block text-xs font-medium text-gray-700 mb-1.5">Data Source</label>
+              <select
+                class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
+                onChange$={(e: any) => {
+                  const table = availableTables.value.find((t: any) => t.table_name === e.target.value);
+                  if (table) {
+                    handleTableSelect(table.table_name, table.form_code, table.form_id);
+                  }
+                }}
+                disabled={!selectedVertical.value || !selectedModule.value || availableTables.value.length === 0}
+              >
+                <option value="">
+                  {!selectedVertical.value || !selectedModule.value
+                    ? 'Select vertical & module...'
+                    : 'Select data source...'}
+                </option>
+                {availableTables.value.map((table: any) => (
+                  <option key={table.table_name} value={table.table_name}>
+                    {table.form_title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div class="col-span-3">
+              <FormField id="report-builder-type" label="Visualization Type">
+                <select
+                  id="report-builder-type"
+                  class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all text-sm"
+                  value={reportConfig.report_type}
+                  onChange$={(e: any) => {
+                    reportConfig.report_type = e.target.value;
+                    currentStep.value = 3;
+                    if (reportConfig.report_type === 'kpi') {
+                      ensureKpiConfigDefaults();
+                    }
+                  }}
+                >
+                  <option value="table">Table Report</option>
+                  <option value="chart">Chart Visualization</option>
+                  <option value="kpi">KPI Dashboard</option>
+                </select>
+              </FormField>
+            </div>
+          </div>
+
+          {selectedVertical.value && selectedModule.value && availableTables.value.length === 0 && (
+            <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+              No data sources found for the selected business vertical and module.
+            </div>
+          )}
+          {selectedTable.value && (
+            <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-800 flex items-center gap-2">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Connected: {selectedTable.value}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-10">
+          <div class="space-y-6 xl:col-span-3 xl:col-start-8 xl:row-start-1">
+            {reportConfig.report_type !== 'table' ? (
+              <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden h-full">
+                <div class={`p-6 border-b ${reportConfig.report_type === 'chart' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                  <h3 class="text-xl font-bold text-gray-900">Visualization Settings</h3>
+                  <p class="text-sm text-gray-600 mt-1">
+                    {reportConfig.report_type === 'chart' ? 'Chart settings' : 'KPI configuration'}
+                  </p>
+                </div>
 
                 {reportConfig.report_type === 'chart' && (
-                  <FormField id="report-builder-chart-type" label="Chart Type">
+                  <div class="p-6">
                     <div class="grid grid-cols-2 gap-2">
                       {[
                         { value: 'bar', label: 'Bar', icon: 'i-heroicons-chart-bar-solid' },
@@ -650,136 +1172,336 @@ export default component$(() => {
                           variant={reportConfig.chart_type === chart.value ? 'primary' : 'secondary'}
                           key={chart.value}
                           onClick$={() => reportConfig.chart_type = chart.value as ChartType}
+                          class="text-xs"
                         >
-                          <i class={`${chart.icon} h-5 w-5 inline-block`} aria-hidden="true"></i>
-                          <div class="text-xs font-medium mt-1">{chart.label}</div>
+                          <i class={`${chart.icon} h-4 w-4 inline-block`} aria-hidden="true"></i>
+                          <div class="text-[10px] font-medium mt-1">{chart.label}</div>
                         </Btn>
                       ))}
                     </div>
-                  </FormField>
+                  </div>
+                )}
+
+                {reportConfig.report_type === 'kpi' && (
+                  <div class="p-6 space-y-3">
+                    <FormField id="report-builder-kpi-metric-field" label="Metric Field" required>
+                      <select
+                        id="report-builder-kpi-metric-field"
+                        class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
+                        value={kpiMetricField.value}
+                        onChange$={async (e: any) => {
+                          kpiMetricField.value = e.target.value;
+                          await applyKpiConfiguration();
+                        }}
+                      >
+                        <option value="">Select field...</option>
+                        {(reportConfig.fields || [])
+                          .filter((field: any) => isNumericFieldType(field.data_type))
+                          .map((field: any) => (
+                            <option key={field.field_name} value={field.field_name}>
+                              {field.alias || field.field_name}
+                            </option>
+                          ))}
+                      </select>
+                    </FormField>
+
+                    <FormField id="report-builder-kpi-aggregation" label="Aggregation" required>
+                      <select
+                        id="report-builder-kpi-aggregation"
+                        class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
+                        value={kpiAggregation.value}
+                        onChange$={async (e: any) => {
+                          kpiAggregation.value = e.target.value as KpiAggregation;
+                          await applyKpiConfiguration();
+                        }}
+                      >
+                        {KPI_AGGREGATIONS.map((agg) => (
+                          <option key={agg} value={agg}>{agg}</option>
+                        ))}
+                      </select>
+                    </FormField>
+
+                    <FormField id="report-builder-kpi-breakout" label="Breakout (Optional)">
+                      <select
+                        id="report-builder-kpi-breakout"
+                        class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
+                        value={kpiGroupByField.value}
+                        onChange$={async (e: any) => {
+                          kpiGroupByField.value = e.target.value;
+                          await applyKpiConfiguration();
+                        }}
+                      >
+                        <option value="">Single card</option>
+                        {(reportConfig.fields || [])
+                          .filter((field: any) => field.field_name !== kpiMetricField.value)
+                          .map((field: any) => (
+                            <option key={field.field_name} value={field.field_name}>
+                              {field.alias || field.field_name}
+                            </option>
+                          ))}
+                      </select>
+                    </FormField>
+
+                    <div class="grid grid-cols-2 gap-3">
+                      <FormField id="report-builder-kpi-target" label="Target">
+                        <input
+                          id="report-builder-kpi-target"
+                          type="number"
+                          class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
+                          value={kpiTargetValue.value}
+                          onInput$={async (e: any) => {
+                            kpiTargetValue.value = e.target.value;
+                            await applyKpiConfiguration();
+                          }}
+                          placeholder="e.g. 100"
+                        />
+                      </FormField>
+
+                      <FormField id="report-builder-kpi-compare" label="Compare">
+                        <select
+                          id="report-builder-kpi-compare"
+                          class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
+                          value={kpiComparisonMode.value}
+                          onChange$={async (e: any) => {
+                            kpiComparisonMode.value = e.target.value;
+                            await applyKpiConfiguration();
+                          }}
+                        >
+                          <option value="none">None</option>
+                          <option value="previous_period">Prev period</option>
+                          <option value="same_period_last_month">Last month</option>
+                        </select>
+                      </FormField>
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="p-6 bg-gray-50 border-b border-gray-200">
+                  <h3 class="text-xl font-bold text-gray-900">Visualization Settings</h3>
+                  <p class="text-sm text-gray-600 mt-1">Table reports do not require extra chart or KPI configuration.</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Main Canvas - Report Design Area */}
-          <div class="col-span-12 lg:col-span-8 space-y-6">
-            {/* Selected Fields */}
+          <div class="space-y-6 xl:col-span-4 xl:col-start-4 xl:row-start-1">
             <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
               <div class="p-6 bg-indigo-50 border-b border-indigo-200">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <div class="bg-indigo-600 p-2 rounded-xl">
-                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                      </svg>
-                    </div>
-                    Selected Fields
-                  </h3>
+                  <div>
+                    <h3 class="text-xl font-bold text-gray-900">Fields</h3>
+                    <p class="text-sm text-gray-600 mt-1">Selected fields stay white. Unselected fields are muted. Edit the display name directly on selected rows.</p>
+                  </div>
                   <Badge variant="info" class="px-3 py-1 text-sm">
                     {(reportConfig.fields || []).length} fields
                   </Badge>
                 </div>
               </div>
               <div class="p-6">
-                {(reportConfig.fields || []).length === 0 ? (
+                {!selectedTable.value ? (
                   <div class="text-center py-16">
-                    <div class="bg-gray-100 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                      </svg>
-                    </div>
-                    <h4 class="text-xl font-semibold text-gray-700 mb-2">No fields selected</h4>
-                    <p class="text-gray-500 mb-6">Select a data source and add fields from the sidebar</p>
-                    <div class="flex items-center justify-center gap-2 text-sm text-gray-600">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                      </svg>
-                      Select fields from the left sidebar
-                    </div>
+                    <h4 class="text-xl font-semibold text-gray-700 mb-2">No data source selected</h4>
+                    <p class="text-gray-500">Choose a data source above to load its fields.</p>
+                  </div>
+                ) : tableFields.value.length === 0 ? (
+                  <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    No fields found for the selected table. The table may be missing in the database or has no readable columns.
                   </div>
                 ) : (
-                  <div class="space-y-3">
-                    {(reportConfig.fields || []).map((field: any, index: number) => (
-                      <div
-                        key={index}
-                        draggable
-                        onDragStart$={() => draggedFieldIndex.value = index}
-                        onDragOver$={(e: DragEvent) => e.preventDefault()}
-                        onDrop$={() => {
-                          if (draggedFieldIndex.value !== null && draggedFieldIndex.value !== index) {
-                            moveField(draggedFieldIndex.value, index);
-                            draggedFieldIndex.value = null;
-                          }
+                  <div class="space-y-4">
+                    <div class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 md:flex-row md:items-center md:justify-between">
+                      <input
+                        id="report-builder-field-search"
+                        type="text"
+                        value={fieldSearch.value}
+                        onInput$={(e: any) => {
+                          fieldSearch.value = e.target.value;
                         }}
-                        class={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-move ${
-                          draggedFieldIndex.value === index
-                            ? 'bg-indigo-50 border-indigo-300 opacity-50'
-                            : 'bg-gray-50 border-gray-200 hover:border-indigo-300'
-                        }`}
-                      >
-                        <svg class="w-5 h-5 text-gray-400 cursor-move" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm4-16h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
-                        </svg>
+                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 md:max-w-sm"
+                        placeholder="Search fields by label, name, or type"
+                      />
+                      <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={showSelectedFieldsOnly.value}
+                          onChange$={(e: any) => {
+                            showSelectedFieldsOnly.value = !!e.target.checked;
+                          }}
+                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        Show selected only
+                      </label>
+                    </div>
 
-                        <div class="flex-1 grid grid-cols-2 gap-4">
-                          <FormField id={`report-builder-field-alias-${index}`} label="Display Name">
-                            <input
-                              id={`report-builder-field-alias-${index}`}
-                              type="text"
-                              value={field.alias}
-                              onInput$={(e: any) => {
-                                (reportConfig.fields || [])[index].alias = e.target.value;
+                    <div class="space-y-3">
+                      {[...tableFields.value]
+                        .filter((field: any) => {
+                          const fieldKey = String(field.column_name || field.id || field.name || '');
+                          const fieldLabel = String(field.label || field.name || field.column_name || '');
+                          const fieldType = String(field.dataType || field.data_type || field.type || 'text');
+                          const selected = (reportConfig.fields || []).some((item: any) => item.field_name === fieldKey);
+                          const query = fieldSearch.value.trim().toLowerCase();
+
+                          if (showSelectedFieldsOnly.value && !selected) {
+                            return false;
+                          }
+
+                          if (!query) {
+                            return true;
+                          }
+
+                          return [fieldKey, fieldLabel, fieldType].some((value) => value.toLowerCase().includes(query));
+                        })
+                        .sort((left: any, right: any) => {
+                          const leftKey = String(left.column_name || left.id || left.name || '');
+                          const rightKey = String(right.column_name || right.id || right.name || '');
+                          const leftSelected = (reportConfig.fields || []).some((item: any) => item.field_name === leftKey);
+                          const rightSelected = (reportConfig.fields || []).some((item: any) => item.field_name === rightKey);
+
+                          if (leftSelected !== rightSelected) {
+                            return leftSelected ? -1 : 1;
+                          }
+
+                          const leftIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === leftKey);
+                          const rightIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === rightKey);
+
+                          if (leftSelected && rightSelected && leftIndex !== rightIndex) {
+                            return leftIndex - rightIndex;
+                          }
+
+                          const leftLabel = String(left.label || left.name || left.column_name || '').toLowerCase();
+                          const rightLabel = String(right.label || right.name || right.column_name || '').toLowerCase();
+                          return leftLabel.localeCompare(rightLabel);
+                        })
+                        .map((field: any) => {
+                          const fieldKey = field.column_name || field.id || field.name;
+                          const fieldLabel = field.label || field.name || field.column_name;
+                          const fieldType = field.dataType || field.data_type || field.type || 'text';
+                          const selectedIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === fieldKey);
+                          const selectedField = selectedIndex >= 0 ? (reportConfig.fields || [])[selectedIndex] : null;
+
+                          return (
+                            <div
+                              key={fieldKey}
+                              draggable={selectedIndex >= 0}
+                              onDragStart$={() => {
+                                if (selectedIndex >= 0) {
+                                  draggedFieldIndex.value = selectedIndex;
+                                }
                               }}
-                              class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                              placeholder="Field alias"
-                            />
-                          </FormField>
-                          <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Field Name</label>
-                            <div class="px-3 py-2 text-sm bg-gray-100 rounded-lg text-gray-700 flex items-center gap-2">
-                              <span>{fieldTypeIcon(field.data_type || 'text')}</span>
-                              <span class="truncate">{field.field_name}</span>
-                            </div>
-                          </div>
-                        </div>
+                              onDragOver$={(e: DragEvent) => {
+                                if (selectedIndex >= 0) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              onDrop$={() => {
+                                if (
+                                  selectedIndex >= 0 &&
+                                  draggedFieldIndex.value !== null &&
+                                  draggedFieldIndex.value !== selectedIndex
+                                ) {
+                                  moveField(draggedFieldIndex.value, selectedIndex);
+                                  draggedFieldIndex.value = null;
+                                }
+                              }}
+                              class={`rounded-xl border transition-all ${
+                                selectedIndex >= 0
+                                  ? 'border-gray-200 bg-white shadow-sm'
+                                  : 'border-gray-200 bg-gray-100/70'
+                              } ${draggedFieldIndex.value === selectedIndex ? 'opacity-60' : ''}`}
+                            >
+                              <div class="flex items-start gap-3 p-3">
+                                <button
+                                  type="button"
+                                  class={`mt-0.5 h-4 w-4 rounded border transition-colors ${
+                                    selectedIndex >= 0
+                                      ? 'border-indigo-600 bg-indigo-600'
+                                      : 'border-gray-300 bg-white'
+                                  }`}
+                                  onClick$={() => toggleFieldSelection(field)}
+                                  aria-label={selectedIndex >= 0 ? `Remove ${fieldLabel}` : `Add ${fieldLabel}`}
+                                >
+                                  {selectedIndex >= 0 && <span class="block text-[10px] leading-3 text-white">✓</span>}
+                                </button>
 
-                        <Btn
-                          size="sm"
-                          variant="danger"
-                          onClick$={() => removeField(index)}
-                          title="Remove field"
-                        >
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                          </svg>
-                        </Btn>
-                      </div>
-                    ))}
+                                <div class="flex-1 min-w-0">
+                                  <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                      {selectedIndex >= 0 && selectedField ? (
+                                        <input
+                                          id={`report-builder-field-alias-${selectedIndex}`}
+                                          type="text"
+                                          value={selectedField.alias}
+                                          onInput$={(e: any) => {
+                                            (reportConfig.fields || [])[selectedIndex].alias = e.target.value;
+                                          }}
+                                          class="w-full border-0 bg-transparent p-0 text-sm font-medium text-gray-900 focus:outline-none focus:ring-0"
+                                          placeholder={fieldLabel}
+                                        />
+                                      ) : (
+                                        <div class="truncate text-sm font-medium text-gray-600">
+                                          {fieldLabel}
+                                        </div>
+                                      )}
+                                      <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
+                                        <span>{fieldKey}</span>
+                                        <span class="uppercase tracking-wide">{fieldType}</span>
+                                        {selectedField?.aggregation && (
+                                          <Badge variant="info" class="text-[10px] px-2 py-0.5">{selectedField.aggregation}</Badge>
+                                        )}
+                                        {selectedField?.is_visible === false && (
+                                          <Badge variant="neutral" class="text-[10px] px-2 py-0.5">Hidden</Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      class={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                                        selectedIndex >= 0
+                                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                      }`}
+                                      onClick$={() => toggleFieldSelection(field)}
+                                    >
+                                      {selectedIndex >= 0 ? 'Selected' : 'Select'}
+                                    </button>
+                                  </div>
+
+                                  {selectedIndex >= 0 && selectedField && (
+                                    <div class="mt-1 min-w-0 text-[11px] text-gray-500 md:text-right">
+                                      <span class="font-medium text-gray-600">Field Name:</span> {selectedField.field_name}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Filters Section */}
-            {(reportConfig.fields || []).length > 0 && (
-              <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+          <div class="space-y-6 xl:col-span-3 xl:col-start-1 xl:row-start-1">
+              <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden h-full">
                 <div class="p-6 bg-cyan-50 border-b border-cyan-200">
-                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <div class="bg-cyan-600 p-2 rounded-xl">
-                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                      </svg>
-                    </div>
-                    Filters
-                    <span class="text-sm font-normal text-gray-600">(Optional)</span>
-                  </h3>
+                  <h3 class="text-xl font-bold text-gray-900">Filters <span class="text-sm font-normal text-gray-600">(Optional)</span></h3>
                 </div>
                 <div class="p-6 space-y-4">
+                  {(reportConfig.fields || []).length === 0 && (
+                    <div class="rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-800">
+                      Select at least one field to add filters.
+                    </div>
+                  )}
+
                   {(reportConfig.filters || []).map((filter: any, index: number) => (
                     <div key={index} class="flex items-center gap-3 p-3 bg-cyan-50 border border-cyan-200 rounded-xl">
                       <span class="text-sm font-medium text-gray-900">
-                        {filter.field_name} <span class="text-cyan-600 dark:text-cyan-400">{filter.operator}</span> {filter.value}
+                        {filter.field_name} <span class="text-cyan-600 dark:text-cyan-400">{operatorLabelMap[filter.operator as FilterOperator] || filter.operator}</span> {Array.isArray(filter.value) ? filter.value.join(', ') : String(filter.value ?? '')}
                       </span>
                       <Btn
                         size="sm"
@@ -793,9 +1515,44 @@ export default component$(() => {
                     </div>
                   ))}
 
-                  <div class="grid grid-cols-12 gap-2 items-end">
-                    <FormField id="filter-field" label="Field" class="col-span-4 mb-0">
-                      <select class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-field">
+                  <div class="flex flex-wrap items-end gap-2 rounded-xl border border-cyan-200 bg-white p-3">
+                    <FormField id="filter-field" label="Field" class="mb-0 min-w-[170px] flex-1">
+                      <select
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                        id="filter-field"
+                        value={filterFieldName.value}
+                        onChange$={(e: any) => {
+                          filterFieldName.value = e.target.value;
+                          const selectedFieldName = e.target.value;
+                          const selectedField = (reportConfig.fields || []).find(
+                            (field: any) => field.field_name === selectedFieldName
+                          );
+                          const sourceField = (tableFields.value || []).find(
+                            (field: any) =>
+                              String(field.column_name || field.id || field.name || '') === String(selectedFieldName)
+                          );
+                          const nextFieldType = String(
+                            selectedField?.data_type ||
+                              sourceField?.dataType ||
+                              sourceField?.data_type ||
+                              sourceField?.type ||
+                              'text'
+                          );
+
+                          const options: FilterOperator[] = isBooleanFieldType(nextFieldType)
+                            ? ['eq', 'ne']
+                            : isDateLikeFieldType(nextFieldType)
+                              ? ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'between', 'this_week', 'this_month', 'this_year', 'last_week', 'last_month', 'last_year']
+                              : isNumericFieldType(nextFieldType)
+                                ? ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'between', 'in']
+                                : ['eq', 'ne', 'like', 'in'];
+
+                          if (!options.includes(filterOperatorValue.value)) {
+                            filterOperatorValue.value = options[0];
+                          }
+                        }}
+                        disabled={(reportConfig.fields || []).length === 0}
+                      >
                         <option value="">Select field...</option>
                         {(reportConfig.fields || []).map((field: any) => (
                           <option key={field.field_name} value={field.field_name}>
@@ -804,102 +1561,249 @@ export default component$(() => {
                         ))}
                       </select>
                     </FormField>
-                    <FormField id="filter-operator" label="Operator" class="col-span-3 mb-0">
-                      <select class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-operator">
-                        <option value="eq">Equals</option>
-                        <option value="gt">Greater Than</option>
-                        <option value="lt">Less Than</option>
-                        <option value="like">Contains</option>
-                        <option value="this_month">This Month</option>
-                        <option value="this_week">This Week</option>
+                    <FormField id="filter-operator" label="Operator" class="mb-0 min-w-[170px]">
+                      <select
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                        id="filter-operator"
+                        value={filterOperatorValue.value}
+                        onChange$={(e: any) => {
+                          filterOperatorValue.value = e.target.value as FilterOperator;
+                        }}
+                        disabled={(reportConfig.fields || []).length === 0}
+                      >
+                        {selectedFilterOperators.map((operator) => (
+                          <option key={operator} value={operator}>
+                            {operatorLabelMap[operator]}
+                          </option>
+                        ))}
                       </select>
                     </FormField>
-                    <FormField id="filter-value" label="Value" class="col-span-4 mb-0">
-                      <input type="text" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm" id="filter-value" placeholder="Value" />
+                    <FormField id="filter-logical" label="Join" class="mb-0 min-w-[120px]">
+                      <select
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                        id="filter-logical"
+                        value={filterLogicalOp.value}
+                        onChange$={(e: any) => {
+                          filterLogicalOp.value = e.target.value as LogicalOperator;
+                        }}
+                        disabled={(reportConfig.fields || []).length === 0}
+                      >
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                      </select>
+                    </FormField>
+                    <FormField id="filter-value" label="Value" class="mb-0 min-w-[200px] flex-1">
+                      <input
+                        type="text"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                        id="filter-value"
+                        value={filterValueInput.value}
+                        onInput$={(e: any) => {
+                          filterValueInput.value = e.target.value;
+                        }}
+                        placeholder={
+                          filterOperatorValue.value === 'between'
+                            ? 'start,end'
+                            : filterOperatorValue.value === 'in'
+                              ? 'a,b,c'
+                              : requiresFilterValue(filterOperatorValue.value)
+                                ? 'Value'
+                                : 'No value needed'
+                        }
+                        disabled={(reportConfig.fields || []).length === 0}
+                      />
                     </FormField>
                     <Btn
                       size="sm"
                       variant="primary"
-                      onClick$={() => {
-                        const field = (document.getElementById('filter-field') as HTMLSelectElement)?.value;
-                        const operator = (document.getElementById('filter-operator') as HTMLSelectElement)?.value as FilterOperator;
-                        const value = (document.getElementById('filter-value') as HTMLInputElement)?.value;
-                        if (field && operator) {
-                          addFilter(field, operator, value);
-                        }
+                      disabled={(reportConfig.fields || []).length === 0}
+                      onClick$={async () => {
+                        await addFilterFromInputs();
                       }}
-                      class="col-span-1"
+                      class="whitespace-nowrap"
                     >
                       Add
                     </Btn>
                   </div>
+
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <h4 class="text-sm font-semibold text-slate-800">Query Operations</h4>
+
+                    <div class="flex flex-wrap items-end gap-2">
+                      <FormField id="query-sort-field" label="Sort Field" class="mb-0 min-w-[170px] flex-1">
+                        <select
+                          id="query-sort-field"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={sortFieldName.value}
+                          onChange$={(e: any) => {
+                            sortFieldName.value = e.target.value;
+                          }}
+                          disabled={(reportConfig.fields || []).length === 0}
+                        >
+                          <option value="">Select field...</option>
+                          {(reportConfig.fields || []).map((field: any) => (
+                            <option key={field.field_name} value={field.field_name}>{field.alias}</option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <FormField id="query-sort-direction" label="Direction" class="mb-0 min-w-[120px]">
+                        <select
+                          id="query-sort-direction"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={sortDirection.value}
+                          onChange$={(e: any) => {
+                            sortDirection.value = e.target.value;
+                          }}
+                          disabled={(reportConfig.fields || []).length === 0}
+                        >
+                          <option value="ASC">ASC</option>
+                          <option value="DESC">DESC</option>
+                        </select>
+                      </FormField>
+
+                      <Btn
+                        size="sm"
+                        variant="secondary"
+                        disabled={!sortFieldName.value}
+                        onClick$={() => addSort(sortFieldName.value, sortDirection.value)}
+                        class="whitespace-nowrap"
+                      >
+                        Add Sort
+                      </Btn>
+                    </div>
+
+                    {(reportConfig.sorting || []).length > 0 && (
+                      <div class="space-y-2">
+                        {(reportConfig.sorting || []).map((sort: any, index: number) => (
+                          <div key={`${sort.field_name}-${index}`} class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                            <span>{sort.field_name} ({sort.direction})</span>
+                            <Btn size="sm" variant="danger" onClick$={() => removeSort(index)}>Remove</Btn>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div class="flex flex-wrap items-end gap-2">
+                      <FormField id="query-group-by" label="Group By" class="mb-0 min-w-[170px] flex-1">
+                        <select
+                          id="query-group-by"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={groupByFieldName.value}
+                          onChange$={(e: any) => {
+                            groupByFieldName.value = e.target.value;
+                          }}
+                          disabled={(reportConfig.fields || []).length === 0}
+                        >
+                          <option value="">Select field...</option>
+                          {(reportConfig.fields || []).map((field: any) => (
+                            <option key={field.field_name} value={field.field_name}>{field.alias}</option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <Btn
+                        size="sm"
+                        variant="secondary"
+                        disabled={!groupByFieldName.value}
+                        onClick$={() => addGroupBy(groupByFieldName.value)}
+                        class="whitespace-nowrap"
+                      >
+                        Add Group
+                      </Btn>
+                    </div>
+
+                    {((reportConfig as any).groupings || []).length > 0 && (
+                      <div class="space-y-2">
+                        {((reportConfig as any).groupings || []).map((group: any, index: number) => (
+                          <div key={`${group.field_name}-${index}`} class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                            <span>{group.field_name}</span>
+                            <Btn size="sm" variant="danger" onClick$={() => removeGroupBy(index)}>Remove</Btn>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <FormField id="query-preview-limit" label="Preview Row Limit" class="mb-0">
+                      <input
+                        id="query-preview-limit"
+                        type="number"
+                        min="1"
+                        max="1000"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                        value={previewLimit.value}
+                        onInput$={(e: any) => {
+                          previewLimit.value = e.target.value;
+                        }}
+                        placeholder="100"
+                      />
+                    </FormField>
+                  </div>
                 </div>
               </div>
-            )}
+          </div>
+        </div>
 
-            {/* Preview Section */}
-            {previewData.value && (
-              <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-                <div class="p-6 bg-emerald-50 border-b border-emerald-200">
-                  <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-                      <div class="bg-emerald-600 p-2 rounded-xl">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
-                      </div>
-                      Preview
-                    </h3>
-                    <div class="flex items-center gap-4 text-sm text-gray-600">
-                      <span class="flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        {previewData.value.metadata.total_rows} rows
-                      </span>
-                      <span class="flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        {previewData.value.metadata.execution_time_ms}ms
-                      </span>
-                    </div>
+        {previewData.value && (
+          <div class="mt-6 bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="p-6 bg-emerald-50 border-b border-emerald-200">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
+                  <div class="bg-emerald-600 p-2 rounded-xl">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
                   </div>
+                  Preview
+                </h3>
+                <div class="flex items-center gap-4 text-sm text-gray-600">
+                  <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    {previewData.value.metadata.total_rows} rows
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {previewData.value.metadata.execution_time_ms}ms
+                  </span>
                 </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full">
-                    <thead>
-                      <tr class="bg-gray-50">
-                        {previewData.value.headers.map((header: any) => (
-                          <th key={header.key} class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {header.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                      {previewData.value.data.slice(0, 10).map((row: any, i: number) => (
-                        <tr key={i} class="hover:bg-gray-50 transition-colors">
-                          {previewData.value.headers.map((header: any) => (
-                            <td key={header.key} class="px-6 py-4 text-sm text-gray-900">
-                              {row[header.key] !== null && row[header.key] !== undefined ? String(row[header.key]) : '-'}
-                            </td>
-                          ))}
-                        </tr>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-gray-50">
+                    {previewData.value.headers.map((header: any) => (
+                      <th key={header.key} class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        {header.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  {previewData.value.data.slice(0, 10).map((row: any, index: number) => (
+                    <tr key={index} class="hover:bg-gray-50 transition-colors">
+                      {previewData.value.headers.map((header: any) => (
+                        <td key={header.key} class="px-6 py-4 text-sm text-gray-900">
+                          {row[header.key] !== null && row[header.key] !== undefined ? String(row[header.key]) : '-'}
+                        </td>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-                {previewData.value.data.length > 10 && (
-                  <div class="p-4 bg-gray-50 border-t border-gray-200 text-center text-sm text-gray-600">
-                    Showing 10 of {previewData.value.data.length} rows
-                  </div>
-                )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {previewData.value.data.length > 10 && (
+              <div class="p-4 bg-gray-50 border-t border-gray-200 text-center text-sm text-gray-600">
+                Showing 10 of {previewData.value.data.length} rows
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Save Modal */}
@@ -1100,7 +2004,15 @@ export default component$(() => {
                     <ul class="mt-2 text-xs text-blue-800 space-y-1">
                       <li>• {(reportConfig.fields || []).length} fields selected</li>
                       <li>• {(reportConfig.filters || []).length} filters applied</li>
-                      <li>• Type: {reportConfig.report_type === 'chart' ? `${reportConfig.chart_type} chart` : reportConfig.report_type}</li>
+                      <li>
+                        • Type: {
+                          reportConfig.report_type === 'chart'
+                            ? `${reportConfig.chart_type} chart`
+                            : reportConfig.report_type === 'kpi'
+                              ? `${kpiAggregation.value} of ${kpiMetricField.value || 'metric field'}`
+                              : reportConfig.report_type
+                        }
+                      </li>
                     </ul>
                   </div>
                 </div>

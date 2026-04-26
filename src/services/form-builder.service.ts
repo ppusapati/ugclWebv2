@@ -15,6 +15,24 @@ import type {
 } from '../types/workflow';
 
 export class FormBuilderService {
+  private extractModules(payload: unknown): Module[] {
+    if (Array.isArray(payload)) {
+      return payload as Module[];
+    }
+
+    if (payload && typeof payload === 'object') {
+      const candidate = payload as { modules?: unknown; data?: unknown };
+      if (Array.isArray(candidate.modules)) {
+        return candidate.modules as Module[];
+      }
+      if (Array.isArray(candidate.data)) {
+        return candidate.data as Module[];
+      }
+    }
+
+    return [];
+  }
+
   private normalizeIdentifier(value: string, fallback: string): string {
     const cleaned = String(value || '')
       .trim()
@@ -51,8 +69,8 @@ export class FormBuilderService {
    * Get all modules
    */
   async getModules(): Promise<Module[]> {
-    const response = await apiClient.get<ModulesResponse>('/modules');
-    return response.modules;
+    const response = await apiClient.get<ModulesResponse | Module[] | { data?: Module[] }>('/modules');
+    return this.extractModules(response);
   }
 
   // ========================================================================

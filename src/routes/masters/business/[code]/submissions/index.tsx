@@ -79,7 +79,7 @@ export default component$(() => {
     <div class="space-y-6">
       <PageHeader
         title="My Submissions"
-        subtitle={`View and manage your form submissions for ${businessCode.toUpperCase()}`}
+        subtitle={`View and manage your form submissions for ${businessCode?.toUpperCase() ?? ''}`}
       >
         <Btn
           q:slot="actions"

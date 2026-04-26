@@ -36,8 +36,8 @@ class FormService {
    * Get all modules
    */
   async getModules(): Promise<Module[]> {
-    const response = await apiClient.get<{ modules: Module[] }>('/modules');
-    return response.modules;
+    const response = await apiClient.get<unknown>('/modules');
+    return extractModules(response);
   }
 
   /**

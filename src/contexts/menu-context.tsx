@@ -102,7 +102,9 @@ export const MenuProvider = component$(() => {
   const setActiveFromRoute = $((path: string) => {
     // Find matching menu item and sidebar item based on path
     for (const menu of menuItems) {
-      const matchingSubItem = menu.subItems?.find(sub => path.startsWith(sub.href));
+      const matchingSubItem = menu.subItems?.find((sub) =>
+        sub.href === '/' ? path === '/' : path.startsWith(sub.href)
+      );
       if (matchingSubItem) {
         activeMainMenu.value = menu.id;
         activeSidebarItem.value = matchingSubItem.id;

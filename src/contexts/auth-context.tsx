@@ -267,7 +267,7 @@ export const AuthProvider = component$(() => {
 
     if (storedBusinessId) {
       currentBusiness = authState.user.business_roles.find(
-        (br: any) => br.business_vertical_id === storedBusinessId
+          (br: any) => (br.vertical_id || br.business_vertical_id) === storedBusinessId
       );
     }
 
@@ -288,7 +288,7 @@ export const AuthProvider = component$(() => {
 
     if (storedBusinessId) {
       currentBusiness = authState.user.business_roles.find(
-        (br: any) => br.business_vertical_id === storedBusinessId
+          (br: any) => (br.vertical_id || br.business_vertical_id) === storedBusinessId
       );
     }
 

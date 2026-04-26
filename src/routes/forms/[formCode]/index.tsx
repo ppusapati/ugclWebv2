@@ -5,7 +5,12 @@ import FormBuilderComplete from '~/components/form-builder/FormBuilder';
 import { Btn, PageHeader, SectionCard } from '~/components/ds';
 import { formBuilderService, createSSRApiClient } from '~/services';
 import type { FormDefinition, WorkflowDefinition, Module, AppForm } from '~/types/workflow';
-import type { BusinessVertical, Site } from '~/services/types';
+import type { BusinessVertical, Site, Permission } from '~/services/types';
+
+const isUuid = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
 
 export const useEditFormData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -14,11 +19,12 @@ export const useEditFormData = routeLoader$(async (requestEvent) => {
   try {
     const form = await ssrApiClient.get<AppForm>(`/admin/forms/${formCode}`);
 
-    const [modulesData, workflowsData, businessVerticalsData, sitesData] = await Promise.all([
+    const [modulesData, workflowsData, businessVerticalsData, sitesData, permissionsData] = await Promise.all([
       ssrApiClient.get<{ modules: Module[] }>('/modules'),
       ssrApiClient.get<{ workflows: WorkflowDefinition[] }>('/admin/workflows'),
       ssrApiClient.get<any>('/admin/businesses'),
       ssrApiClient.get<{ data: Site[] }>('/admin/sites', { include: 'business_vertical' }),
+      ssrApiClient.get<Permission[]>('/admin/permissions'),
     ]);
 
     return {
@@ -27,6 +33,7 @@ export const useEditFormData = routeLoader$(async (requestEvent) => {
       workflows: workflowsData.workflows || [],
       businessVerticals: businessVerticalsData.data || businessVerticalsData.businesses || [],
       sites: sitesData.data || [],
+      permissions: permissionsData || [],
       error: null as string | null,
     };
   } catch (err: any) {
@@ -36,6 +43,7 @@ export const useEditFormData = routeLoader$(async (requestEvent) => {
       workflows: [] as WorkflowDefinition[],
       businessVerticals: [] as BusinessVertical[],
       sites: [] as Site[],
+      permissions: [] as Permission[],
       error: err.message || 'Failed to load form',
     };
   }
@@ -51,6 +59,7 @@ export default component$(() => {
   const workflows = useSignal<WorkflowDefinition[]>(initialData.value.workflows || []);
   const businessVerticals = useSignal<BusinessVertical[]>(initialData.value.businessVerticals || []);
   const sites = useSignal<Site[]>(initialData.value.sites || []);
+  const permissions = useSignal<Permission[]>(initialData.value.permissions || []);
   const existingForm = useSignal<AppForm | null>(initialData.value.existingForm || null);
   const initialDefinition = useSignal<FormDefinition | null>(
     initialData.value.existingForm
@@ -73,12 +82,32 @@ export default component$(() => {
       const patch = parseInt(versionParts[2] || '0', 10);
       const newVersion = `${major}.${minor}.${patch + 1}`;
 
+      const normalizedModuleId = isUuid(definition.module)
+        ? definition.module
+        : modules.value.find(
+            (module) =>
+              module.id === definition.module || module.code === definition.module
+          )?.id || definition.module;
+
+      const normalizedVerticalIds = (definition.accessible_verticals || [])
+        .map((verticalCodeOrId) => {
+          const matchedVertical = businessVerticals.value.find(
+            (vertical) =>
+              vertical.id === verticalCodeOrId || vertical.code === verticalCodeOrId
+          );
+          return matchedVertical?.id || verticalCodeOrId;
+        })
+        .filter(Boolean);
+
       // Update the form
       await formBuilderService.updateForm(formCode, {
         title: definition.title,
         description: definition.description,
         steps: definition.steps,
         version: newVersion,
+        module_id: normalizedModuleId,
+        accessible_verticals: normalizedVerticalIds,
+        required_permission: definition.permissions?.create,
         workflow_id: (definition as any).workflow_id,
         initial_state: definition.workflow?.initial_state,
       } as any);
@@ -159,6 +188,7 @@ export default component$(() => {
             initialDefinition={initialDefinition.value}
             modules={modules.value}
             workflows={workflows.value}
+            permissions={permissions.value}
             businessVerticals={businessVerticals.value}
             sites={sites.value}
             onSave$={handleSave}

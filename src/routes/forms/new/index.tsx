@@ -5,7 +5,7 @@ import { Btn, PageHeader, SectionCard } from '~/components/ds';
 import FormBuilderComplete from '~/components/form-builder/FormBuilder';
 import { formBuilderService, createSSRApiClient } from '~/services';
 import type { FormDefinition, WorkflowDefinition, Module } from '~/types/workflow';
-import type { BusinessVertical, Site } from '~/services/types';
+import type { BusinessVertical, Site, Permission } from '~/services/types';
 
 const normalizeIdentifier = (value: string, fallback: string): string => {
   const cleaned = String(value || '')
@@ -28,11 +28,12 @@ export const useNewFormData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
 
   try {
-    const [modulesData, workflowsData, businessVerticalsData, sitesData] = await Promise.all([
+    const [modulesData, workflowsData, businessVerticalsData, sitesData, permissionsData] = await Promise.all([
       ssrApiClient.get<{ modules: Module[] }>('/modules'),
       ssrApiClient.get<{ workflows: WorkflowDefinition[] }>('/admin/workflows'),
       ssrApiClient.get<any>('/admin/businesses'),
       ssrApiClient.get<{ data: Site[] }>('/admin/sites', { include: 'business_vertical' }),
+      ssrApiClient.get<Permission[]>('/admin/permissions'),
     ]);
 
     return {
@@ -40,6 +41,7 @@ export const useNewFormData = routeLoader$(async (requestEvent) => {
       workflows: workflowsData.workflows || [],
       businessVerticals: businessVerticalsData.data || businessVerticalsData.businesses || [],
       sites: sitesData.data || [],
+      permissions: permissionsData || [],
       error: null as string | null,
     };
   } catch (err: any) {
@@ -48,6 +50,7 @@ export const useNewFormData = routeLoader$(async (requestEvent) => {
       workflows: [] as WorkflowDefinition[],
       businessVerticals: [] as BusinessVertical[],
       sites: [] as Site[],
+      permissions: [] as Permission[],
       error: err.message || 'Failed to load required data',
     };
   }
@@ -60,6 +63,7 @@ export default component$(() => {
   const workflows = useSignal<WorkflowDefinition[]>(initialData.value.workflows || []);
   const businessVerticals = useSignal<BusinessVertical[]>(initialData.value.businessVerticals || []);
   const sites = useSignal<Site[]>(initialData.value.sites || []);
+  const permissions = useSignal<Permission[]>(initialData.value.permissions || []);
   const loading = useSignal(false);
   const error = useSignal<string | null>(initialData.value.error || null);
   const saving = useSignal(false);
@@ -67,6 +71,21 @@ export default component$(() => {
   const handleSave = $(async (definition: FormDefinition) => {
     try {
       saving.value = true;
+
+      if (!String(definition.module || '').trim()) {
+        alert('Please select which module this form belongs to.');
+        return;
+      }
+
+      if (!Array.isArray(definition.accessible_verticals) || definition.accessible_verticals.length === 0) {
+        alert('Please select at least one business vertical for this form.');
+        return;
+      }
+
+      if (!String(definition.permissions?.create || '').trim()) {
+        alert('Please select the required permission for this form.');
+        return;
+      }
 
       const normalizedFormCode = normalizeIdentifier(definition.form_code, 'form');
       const normalizedModuleId = isUuid(definition.module)
@@ -178,6 +197,7 @@ export default component$(() => {
           <FormBuilderComplete
             modules={modules.value}
             workflows={workflows.value}
+            permissions={permissions.value}
             businessVerticals={businessVerticals.value}
             sites={sites.value}
             onSave$={handleSave}

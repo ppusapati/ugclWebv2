@@ -57,6 +57,16 @@ function getMessageTypeForFile(mimeType?: string): 'file' | 'image' | 'video' | 
   return 'file';
 }
 
+function normalizeIdentity(value: unknown): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hasIdentity(identityKeys: string[], value: unknown): boolean {
+  const normalized = normalizeIdentity(value);
+  if (!normalized) return false;
+  return identityKeys.includes(normalized);
+}
+
 /** Single / double / blue-double tick based on message status */
 const ReadReceipt = component$<{ status: string; readCount?: number }>(
   ({ status, readCount }) => {
@@ -86,14 +96,16 @@ const ReadReceipt = component$<{ status: string; readCount?: number }>(
 /** Inline reaction summary row shown below a message bubble */
 const ReactionBar = component$<{
   reactions: ReactionSummaryDTO[];
-  currentUserId: string;
+  currentUserKeys: string[];
   onToggle$: (emoji: string, alreadyReacted: boolean) => void;
-}>(({ reactions, currentUserId, onToggle$ }) => {
+}>(({ reactions, currentUserKeys, onToggle$ }) => {
   if (!reactions || reactions.length === 0) return null;
   return (
     <div class="mt-1 inline-flex max-w-full flex-wrap gap-1">
       {reactions.map((r) => {
-        const alreadyReacted = r.user_ids?.includes(currentUserId) ?? false;
+        const alreadyReacted = (r.user_ids || []).some((id) =>
+          hasIdentity(currentUserKeys, id)
+        );
         return (
           <button
             type="button"
@@ -119,6 +131,9 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
   const messages = useSignal<MessageDTO[]>([]);
   const selectedConversationId = useSignal<string>(initialConversationId || '');
   const currentUserId = useSignal<string>('');
+  const currentUserName = useSignal<string>('');
+  const currentUserEmail = useSignal<string>('');
+  const currentUserKeys = useSignal<string[]>([]);
   const bootstrapping = useSignal(true);
 
   const loadingConversations = useSignal(false);
@@ -157,11 +172,124 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
 
   // ─── helpers ────────────────────────────────────────────────────────────────
 
-  const getConversationTitle = (conversation: ConversationDTO): string => {
-    if (conversation.title?.trim()) return conversation.title;
-    if (conversation.type === 'direct') {
-      return conversation.other_participant?.user_name || 'Direct Chat';
+  const getMessageSenderName = (
+    message: MessageDTO,
+    conversation?: ConversationDTO | null
+  ): string => {
+    const participant = conversation?.participants?.find(
+      (p) => normalizeIdentity(p.user_id) === normalizeIdentity(message.sender_id)
+    );
+
+    if (participant?.user_name?.trim()) return participant.user_name;
+    if (participant?.user_email?.trim()) return participant.user_email;
+    return 'Unknown user';
+  };
+
+  const isMyMessage = (message: MessageDTO): boolean => {
+    const raw = message as any;
+    const senderCandidates = [
+      raw?.sender_id,
+      raw?.sender_user_id,
+      raw?.sender_uuid,
+      raw?.sender?.id,
+      raw?.sender?.user_id,
+      raw?.sender?.uuid,
+    ];
+
+    if (senderCandidates.some((value) => hasIdentity(currentUserKeys.value, value))) {
+      return true;
     }
+
+    // Additional fallback for APIs that hydrate sender profile more than IDs.
+    const senderName = normalizeIdentity(raw?.sender_name || raw?.sender?.name || '');
+    const senderEmail = normalizeIdentity(raw?.sender_email || raw?.sender?.email || '');
+
+    if (
+      senderName &&
+      currentUserName.value &&
+      senderName === normalizeIdentity(currentUserName.value)
+    ) {
+      return true;
+    }
+
+    if (
+      senderEmail &&
+      currentUserEmail.value &&
+      senderEmail === normalizeIdentity(currentUserEmail.value)
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const isMyMessageInConversation = (
+    message: MessageDTO,
+    conversation?: ConversationDTO | null
+  ): boolean => {
+    if (isMyMessage(message)) return true;
+
+    const sender = normalizeIdentity((message as any)?.sender_id);
+    if (!sender || !conversation?.participants?.length) return false;
+
+    const senderParticipant = conversation.participants.find(
+      (p) => normalizeIdentity(p.user_id) === sender
+    );
+    if (!senderParticipant) return false;
+
+    if (
+      currentUserName.value &&
+      normalizeIdentity(senderParticipant.user_name) === normalizeIdentity(currentUserName.value)
+    ) {
+      return true;
+    }
+
+    if (
+      currentUserEmail.value &&
+      normalizeIdentity(senderParticipant.user_email) === normalizeIdentity(currentUserEmail.value)
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const getConversationTitle = (conversation: ConversationDTO): string => {
+    if (conversation.type === 'direct') {
+      const otherByField = conversation.other_participant;
+      const otherByParticipants = conversation.participants?.find(
+        (p) => !hasIdentity(currentUserKeys.value, p.user_id)
+      );
+
+      if (
+        otherByField?.user_name?.trim() &&
+        !hasIdentity(currentUserKeys.value, otherByField.user_id)
+      ) {
+        return otherByField.user_name;
+      }
+
+      if (otherByParticipants?.user_name?.trim()) {
+        return otherByParticipants.user_name;
+      }
+
+      if (otherByParticipants?.user_email?.trim()) {
+        return otherByParticipants.user_email;
+      }
+
+      // Fallback only if the title is not the currently logged-in user's own name.
+      const directTitle = conversation.title?.trim();
+      if (directTitle) {
+        const isSelfName =
+          !!currentUserName.value &&
+          directTitle.toLowerCase() === currentUserName.value.toLowerCase();
+        if (!isSelfName) {
+          return directTitle;
+        }
+      }
+
+      return 'Direct Chat';
+    }
+    if (conversation.title?.trim()) return conversation.title;
     return 'Untitled Group';
   };
 
@@ -494,7 +622,25 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        currentUserId.value = String(user?.id || user?.user_id || '');
+        const resolvedUserId = String(user?.id || user?.user_id || user?.uuid || user?.user_uuid || '');
+        currentUserId.value = resolvedUserId;
+        currentUserName.value = String(user?.name || user?.user_name || '').trim();
+        currentUserEmail.value = String(user?.email || user?.user_email || '').trim();
+
+        const keys = [
+          user?.id,
+          user?.user_id,
+          user?.uuid,
+          user?.user_uuid,
+          user?.employee_id,
+          user?.email,
+          user?.user_email,
+          resolvedUserId,
+        ]
+          .map((v) => String(v || '').trim().toLowerCase())
+          .filter(Boolean);
+
+        currentUserKeys.value = Array.from(new Set(keys));
       }
     } catch { /* ignore */ }
 
@@ -515,16 +661,44 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
     const closeSSE = chatService.subscribeToChatEvents(
       async (event) => {
         sseConnected.value = true;
-        if (event.type === 'new_message') {
-          // Append to active conversation inline; otherwise just refresh the list
-          if (event.conversation_id === selectedConversationId.value && event.message) {
+        const eventType = String(event.type || '').toLowerCase();
+        const eventConversationId =
+          event.conversation_id ||
+          event.message?.conversation_id ||
+          '';
+
+        const looksLikeMessageEvent =
+          eventType.includes('message') ||
+          !!event.message ||
+          !!eventConversationId;
+
+        if (looksLikeMessageEvent) {
+          // If the active thread received a full message payload, append without waiting for an API round trip.
+          if (
+            eventConversationId &&
+            eventConversationId === selectedConversationId.value &&
+            event.message
+          ) {
             const msg = event.message;
-            messages.value = [...messages.value, msg].sort(
-              (a, b) => toMillis(a.created_at) - toMillis(b.created_at)
-            );
-            await chatService.markAsRead(event.conversation_id).catch(() => undefined);
+            const exists = messages.value.some((m) => m.id === msg.id);
+            if (!exists) {
+              messages.value = [...messages.value, msg].sort(
+                (a, b) => toMillis(a.created_at) - toMillis(b.created_at)
+              );
+            }
+            await chatService.markAsRead(eventConversationId).catch(() => undefined);
           }
-          // Always refresh conversation list to update unread counts / last message preview
+
+          // If active thread changed but payload is partial, force refresh thread to avoid stale UI.
+          if (
+            eventConversationId &&
+            eventConversationId === selectedConversationId.value &&
+            !event.message
+          ) {
+            await loadMessages(eventConversationId);
+          }
+
+          // Always refresh conversation list for preview/unread badges.
           await loadConversations();
         }
       },
@@ -534,13 +708,17 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
     );
     sseConnected.value = true;
 
-    // 60-second fallback poll for resilience when SSE reconnects or misses events
+    // Fast fallback poll so UI stays fresh even when SSE is blocked/intermittent.
     const fallbackPoll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return;
+      }
+
       void loadConversations();
       if (selectedConversationId.value) {
         void loadMessages(selectedConversationId.value);
       }
-    }, 60_000);
+    }, 2_000);
 
     cleanup(() => {
       closeSSE();
@@ -724,7 +902,8 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                   </div>
                 ) : (
                   messages.value.map((message) => {
-                    const isMine = message.sender_id === currentUserId.value;
+                    const isMine = isMyMessageInConversation(message, activeConversation);
+                    const senderName = getMessageSenderName(message, activeConversation);
                     const showPicker = activeReactionPickerId.value === message.id;
                     return (
                       <div
@@ -742,7 +921,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                           >
                             {!isMine && (
                               <p class="mb-1 text-[11px] font-semibold text-gray-500">
-                                {message.sender_id}
+                                {senderName}
                               </p>
                             )}
                             <p class="whitespace-pre-wrap break-words">{message.content}</p>
@@ -840,7 +1019,9 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                                     const existing = message.reactions?.find(
                                       (r) =>
                                         r.reaction === emoji &&
-                                        r.user_ids?.includes(currentUserId.value)
+                                        (r.user_ids || []).some((id) =>
+                                          hasIdentity(currentUserKeys.value, id)
+                                        )
                                     );
                                     await toggleReaction(message.id, emoji, !!existing);
                                     activeReactionPickerId.value = '';
@@ -857,7 +1038,7 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                           {message.reactions && message.reactions.length > 0 && (
                             <ReactionBar
                               reactions={message.reactions}
-                              currentUserId={currentUserId.value}
+                              currentUserKeys={currentUserKeys.value}
                               onToggle$={(emoji, alreadyReacted) =>
                                 toggleReaction(message.id, emoji, alreadyReacted)
                               }

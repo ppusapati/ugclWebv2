@@ -156,16 +156,32 @@ export default component$(() => {
         }
       } else {
         // Save business role
-        if (!state.newRole.business_vertical_id) {
-          throw new Error('Business vertical is required for business roles');
-        }
-        const vertical = state.verticals.find(v => v.id === state.newRole.business_vertical_id);
-        if (!vertical) throw new Error('Vertical not found');
+        let verticalCode = '';
 
         if (state.editingRole) {
-          await apiClient.put(`/business/${vertical.code}/roles/${state.editingRole.id}`, state.newRole);
+          // Business vertical is immutable for existing business roles.
+          // Use the role's original vertical code to avoid cross-vertical updates.
+          verticalCode =
+            state.editingRole.business_vertical?.code ||
+            state.verticals.find(v => v.id === state.editingRole?.business_vertical_id)?.code ||
+            '';
         } else {
-          await apiClient.post(`/business/${vertical.code}/roles`, state.newRole);
+          if (!state.newRole.business_vertical_id) {
+            throw new Error('Business vertical is required for business roles');
+          }
+          const vertical = state.verticals.find(v => v.id === state.newRole.business_vertical_id);
+          if (!vertical) throw new Error('Vertical not found');
+          verticalCode = vertical.code;
+        }
+
+        if (!verticalCode) {
+          throw new Error('Could not resolve business vertical for this role');
+        }
+
+        if (state.editingRole) {
+          await apiClient.put(`/business/${verticalCode}/roles/${state.editingRole.id}`, state.newRole);
+        } else {
+          await apiClient.post(`/business/${verticalCode}/roles`, state.newRole);
         }
       }
 
@@ -185,9 +201,12 @@ export default component$(() => {
       if (role.is_global) {
         await apiClient.delete(`/admin/roles/${role.id}`);
       } else {
-        const vertical = state.verticals.find(v => v.id === role.business_vertical_id);
-        if (!vertical) throw new Error('Vertical not found');
-        await apiClient.delete(`/business/${vertical.code}/roles/${role.id}`);
+        const verticalCode =
+          role.business_vertical?.code ||
+          state.verticals.find(v => v.id === role.business_vertical_id)?.code ||
+          '';
+        if (!verticalCode) throw new Error('Vertical not found');
+        await apiClient.delete(`/business/${verticalCode}/roles/${role.id}`);
       }
 
       state.roles = state.roles.filter(r => r.id !== role.id);
@@ -461,16 +480,22 @@ export default component$(() => {
                       value={state.newRole.business_vertical_id}
                       required
                       aria-required="true"
+                      disabled={!!state.editingRole}
                       onChange$={(e) => {
                         state.newRole.business_vertical_id = (e.target as HTMLSelectElement).value;
                       }}
-                      class="w-full px-4 py-3 border border-neutral-300 rounded-lg"
+                      class="w-full px-4 py-3 border border-neutral-300 rounded-lg disabled:bg-gray-100 disabled:text-gray-500"
                     >
                       <option value="">Select Business Vertical</option>
                       {state.verticals.map(v => (
                         <option key={v.id} value={v.id}>{v.name}</option>
                       ))}
                     </select>
+                    {state.editingRole && (
+                      <p class="mt-2 text-xs text-neutral-500">
+                        Business vertical cannot be changed for an existing business role.
+                      </p>
+                    )}
                   </FormField>
                 )}
 
