@@ -20,6 +20,7 @@ export type FieldType =
   | 'checkbox'
   | 'dropdown'
   | 'file_upload'
+  | 'camera'
   | 'signature'
   | 'select'
   | 'location';

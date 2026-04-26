@@ -209,10 +209,10 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header with Gradient */}
-      <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-2xl">
-        <div class="container mx-auto px-4 py-8">
+    <div class="space-y-6">
+      {/* Page Header */}
+      <div class="rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-xl">
+        <div class="px-6 py-6">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
             <div>
               <h1 class="text-4xl font-bold flex items-center gap-3 mb-2">
@@ -267,7 +267,7 @@ export default component$(() => {
       </div>
 
       {/* Search and Filters */}
-      <div class="container mx-auto px-4 py-6">
+      <div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg mb-6">
           <div class="p-6">
             <div class="flex flex-col lg:flex-row gap-4">
@@ -331,7 +331,7 @@ export default component$(() => {
       </div>
 
       {/* Main Content Area */}
-      <div class="container mx-auto px-4 py-6">
+      <div>
         {state.error && (
           <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
             <div class="flex items-start gap-3">
@@ -669,6 +669,7 @@ export default component$(() => {
         </div>
         </>
       )}
+      </div>
 
       {/* CSS Animations */}
       <style>{`
@@ -686,7 +687,6 @@ export default component$(() => {
           animation: fade-in 0.3s ease-out forwards;
         }
       `}</style>
-    </div>
     </div>
   );
 });

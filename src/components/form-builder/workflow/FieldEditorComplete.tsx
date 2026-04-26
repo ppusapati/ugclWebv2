@@ -25,6 +25,7 @@ const FIELD_TYPES: { value: FieldType; label: string; icon: string }[] = [
   { value: 'dropdown', label: 'Dropdown', icon: 'i-heroicons-chevron-down-solid' },
   { value: 'select', label: 'Select', icon: 'i-heroicons-clipboard-document-list-solid' },
   { value: 'file_upload', label: 'File Upload', icon: 'i-heroicons-paper-clip-solid' },
+  { value: 'camera', label: 'Camera', icon: 'i-heroicons-camera-solid' },
   { value: 'signature', label: 'Signature', icon: 'i-heroicons-pencil-solid' },
   { value: 'location', label: 'Location', icon: 'i-heroicons-map-pin-solid' },
 ];

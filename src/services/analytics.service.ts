@@ -220,6 +220,35 @@ class AnalyticsService {
     return apiClient.get<TableFieldsResponse>(`/reports/forms/tables/${encodeURIComponent(tableName)}/fields`);
   }
 
+  /**
+   * Get full workflow lifecycle for a single form submission (used by report timeline drill-down)
+   */
+  async getSubmissionWorkflowHistory(submissionId: string): Promise<{
+    history: Array<{
+      id: string;
+      submission_id: string;
+      from_state: string;
+      to_state: string;
+      action: string;
+      actor_id: string;
+      actor_name: string;
+      actor_role: string;
+      comment: string;
+      transitioned_at: string;
+      created_at: string;
+    }>;
+    count: number;
+    submission?: {
+      id: string;
+      form_code: string;
+      current_state: string;
+      submitted_by: string;
+      submitted_at: string;
+    };
+  }> {
+    return apiClient.get(`/reports/submissions/${encodeURIComponent(submissionId)}/workflow-history`);
+  }
+
   // ============================================================================
   // DASHBOARDS
   // ============================================================================

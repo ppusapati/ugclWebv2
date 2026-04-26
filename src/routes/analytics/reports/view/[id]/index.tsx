@@ -5,7 +5,7 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
 import type { ReportDefinition, ReportResult, ReportFilter, ChartType } from '~/types/analytics';
-import { P9ETable } from '~/components/table/table';
+import { P9ETable, type ActionButton } from '~/components/table';
 import { useAuthContext } from '~/contexts/auth-context';
 import { Badge, Btn } from '~/components/ds';
 
@@ -244,6 +244,18 @@ export default component$(() => {
     loading: false,
     error: (initialData.value as any).error || '',
     runtimeFilters: [] as ReportFilter[],
+    timeline: {
+      open: false,
+      submissionId: '',
+      loading: false,
+      error: '',
+      history: [] as Array<{
+        id: string; from_state: string; to_state: string;
+        action: string; actor_name: string; actor_role: string;
+        comment: string; transitioned_at: string;
+      }>,
+      submission: null as null | { id: string; form_code: string; current_state: string; submitted_by: string; submitted_at: string },
+    },
   });
   const permissionState = useStore({
     canExport: false,
@@ -312,6 +324,28 @@ export default component$(() => {
     } catch (err: any) {
       state.error = err.message || 'Failed to export report';
     }
+  });
+
+  const openTimeline = $(async (submissionId: string) => {
+    state.timeline.open = true;
+    state.timeline.submissionId = submissionId;
+    state.timeline.loading = true;
+    state.timeline.error = '';
+    state.timeline.history = [];
+    state.timeline.submission = null;
+    try {
+      const res = await analyticsService.getSubmissionWorkflowHistory(submissionId);
+      state.timeline.history = res.history as any;
+      state.timeline.submission = res.submission || null;
+    } catch (err: any) {
+      state.timeline.error = err.message || 'Failed to load workflow history';
+    } finally {
+      state.timeline.loading = false;
+    }
+  });
+
+  const closeTimeline = $(() => {
+    state.timeline.open = false;
   });
 
   const reportConfig = state.report ? {
@@ -532,26 +566,88 @@ export default component$(() => {
           </div>
 
           {/* Table View */}
-          {state.report?.report_type === 'table' && (
-            <P9ETable
-              title={state.report.name || 'Report'}
-              header={state.reportData.headers.map((h: any) => ({
-                key: h.key.toLowerCase(),
+          {state.report?.report_type === 'table' && (() => {
+            const normalizeKey = (value: any) => String(value || '')
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '_')
+              .replace(/^_+|_+$/g, '');
+
+            const submissionHeader = (state.reportData.headers || []).find((header: any) => {
+              const key = normalizeKey(header.key);
+              const label = normalizeKey(header.label);
+              return key === 'submission_id' || label === 'submission_id';
+            });
+
+            const getSubmissionId = (row: any) => {
+              if (submissionHeader?.key && row[submissionHeader.key] != null && row[submissionHeader.key] !== '') {
+                return String(row[submissionHeader.key]);
+              }
+              // Fallbacks for legacy/normalized keys
+              const fallbackKeys = ['submission_id', 'submission id', 'submissionid'];
+              for (const key of fallbackKeys) {
+                if (row[key] != null && row[key] !== '') {
+                  return String(row[key]);
+                }
+              }
+              return '';
+            };
+
+            const rows = state.reportData.data.map((row: any) => {
+              const normalizedRow: any = {};
+              Object.keys(row).forEach(key => {
+                normalizedRow[key] = row[key];
+                normalizedRow[key.toLowerCase()] = row[key];
+                normalizedRow[normalizeKey(key)] = row[key];
+              });
+              return normalizedRow;
+            });
+            const hasTimeline = rows.some((r: any) => !!getSubmissionId(r));
+            const visibleHeaders = (state.reportData.headers || []).filter((h: any) => {
+              const key = normalizeKey(h.key);
+              const label = normalizeKey(h.label);
+              return key !== 'submission_id' && label !== 'submission_id';
+            });
+            const tableHeaders = [
+              ...visibleHeaders.map((h: any) => ({
+                key: normalizeKey(h.key),
                 label: h.label,
-                type: h.data_type
-              }))}
-              data={state.reportData.data.map((row: any) => {
-                const normalizedRow: any = {};
-                Object.keys(row).forEach(key => {
-                  normalizedRow[key.toLowerCase()] = row[key];
-                });
-                return normalizedRow;
-              })}
-              defaultLimit={20}
-              enableSearch={true}
-              enableSort={true}
-            />
-          )}
+                type: h.data_type,
+              })),
+              ...(hasTimeline ? [{ key: 'actions', label: 'Lifecycle', type: 'text' }] : []),
+            ];
+            const tableRows = rows.map((row: any) => {
+              const mapped: any = {};
+              visibleHeaders.forEach((h: any) => {
+                mapped[normalizeKey(h.key)] = row[h.key] ?? row[normalizeKey(h.key)] ?? '';
+              });
+              const submissionId = getSubmissionId(row);
+              if (hasTimeline) {
+                mapped.actions = submissionId
+                  ? [
+                      {
+                        type: 'button',
+                        label: 'Timeline',
+                        onClick$: $(() => openTimeline(submissionId)),
+                        class: 'px-3 py-1 text-sm text-indigo-700 hover:text-indigo-900 border border-indigo-300 rounded hover:bg-indigo-50',
+                      } as ActionButton,
+                    ]
+                  : [];
+              }
+              mapped.id = submissionId || row.id || JSON.stringify(row);
+              return mapped;
+            });
+            return (
+              <P9ETable
+                title={state.report!.name || 'Report'}
+                header={tableHeaders}
+                data={tableRows}
+                defaultLimit={10}
+                enableSearch={true}
+                enableSort={true}
+              />
+            );
+          })()}
 
           {/* Chart View */}
           {state.report?.report_type === 'chart' && (
@@ -625,19 +721,161 @@ export default component$(() => {
       {/* CSS Animations */}
       <style>{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out forwards;
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
         }
+        .slide-in-right { animation: slide-in-right 0.25s ease-out forwards; }
       `}</style>
+
+      {/* Workflow Lifecycle Timeline Drawer */}
+      {state.timeline.open && (
+        <div class="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            class="flex-1 bg-black/40"
+            onClick$={closeTimeline}
+          />
+          {/* Drawer panel */}
+          <div class="w-full max-w-lg bg-white shadow-2xl flex flex-col slide-in-right">
+            {/* Header */}
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-600 to-purple-600">
+              <div>
+                <h2 class="text-lg font-bold text-white">Workflow Lifecycle</h2>
+                {state.timeline.submission && (
+                  <p class="text-indigo-100 text-xs mt-0.5">
+                    {state.timeline.submission.form_code} &middot; Current: <span class="font-semibold capitalize">{state.timeline.submission.current_state}</span>
+                  </p>
+                )}
+              </div>
+              <button
+                class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg p-2 transition-colors"
+                onClick$={closeTimeline}
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div class="flex-1 overflow-y-auto px-6 py-6">
+              {state.timeline.loading && (
+                <div class="flex flex-col items-center justify-center py-16 gap-4">
+                  <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                  <p class="text-sm text-gray-500">Loading lifecycle...</p>
+                </div>
+              )}
+
+              {state.timeline.error && (
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                  {state.timeline.error}
+                </div>
+              )}
+
+              {!state.timeline.loading && !state.timeline.error && state.timeline.history.length === 0 && (
+                <div class="text-center py-16">
+                  <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p class="text-gray-500 text-sm">No workflow transitions recorded yet.</p>
+                </div>
+              )}
+
+              {!state.timeline.loading && state.timeline.history.length > 0 && (
+                <div class="relative">
+                  {/* Submission start node */}
+                  {state.timeline.submission && (
+                    <div class="flex gap-4 mb-6">
+                      <div class="flex flex-col items-center">
+                        <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div class="w-0.5 flex-1 bg-gray-200 mt-1 min-h-6" />
+                      </div>
+                      <div class="pb-6">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Submitted</p>
+                        <p class="text-sm text-gray-800 font-medium">by {state.timeline.submission.submitted_by}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                          {new Date(state.timeline.submission.submitted_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Transition events */}
+                  {state.timeline.history.map((t, i) => {
+                    const isLast = i === state.timeline.history.length - 1;
+                    const actionColor: Record<string, string> = {
+                      approve: 'bg-green-500',
+                      approved: 'bg-green-500',
+                      reject: 'bg-red-500',
+                      rejected: 'bg-red-500',
+                      submit: 'bg-blue-500',
+                      review: 'bg-yellow-500',
+                      reopen: 'bg-orange-500',
+                    };
+                    const dot = actionColor[t.action?.toLowerCase()] || 'bg-indigo-500';
+                    return (
+                      <div key={t.id} class="flex gap-4">
+                        <div class="flex flex-col items-center">
+                          <div class={`w-9 h-9 rounded-full ${dot} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          {!isLast && <div class="w-0.5 flex-1 bg-gray-200 mt-1 min-h-6" />}
+                        </div>
+                        <div class={`pb-6 ${isLast ? '' : ''}`}>
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm font-semibold text-gray-900 capitalize">{t.action}</span>
+                            <span class="text-xs text-gray-400">
+                              {t.from_state} &rarr; {t.to_state}
+                            </span>
+                          </div>
+                          <p class="text-sm text-gray-700 mt-0.5">
+                            {t.actor_name || t.actor_role || 'Unknown actor'}
+                            {t.actor_role && t.actor_name && (
+                              <span class="text-xs text-gray-400 ml-1">({t.actor_role})</span>
+                            )}
+                          </p>
+                          {t.comment && (
+                            <p class="text-xs text-gray-500 mt-1 italic bg-gray-50 rounded px-2 py-1">
+                              "{t.comment}"
+                            </p>
+                          )}
+                          <p class="text-xs text-gray-400 mt-1">
+                            {new Date(t.transitioned_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+              <span class="text-xs text-gray-500">{state.timeline.history.length} transition{state.timeline.history.length !== 1 ? 's' : ''}</span>
+              <button
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick$={closeTimeline}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

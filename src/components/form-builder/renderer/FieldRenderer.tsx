@@ -77,9 +77,10 @@ export default component$<FieldRendererProps>((props) => {
       {props.field.type === 'checkbox' && <SelectField {...selectProps} />}
       {props.field.type === 'dropdown' && <SelectField {...selectProps} />}
       {props.field.type === 'file_upload' && <FileUploadField {...commonProps} />}
+      {props.field.type === 'camera' && <FileUploadField {...commonProps} />}
 
       {/* Fallback for unsupported types */}
-      {!['text', 'email', 'phone', 'textarea', 'number', 'date', 'datetime', 'time', 'radio', 'checkbox', 'dropdown', 'file_upload'].includes(props.field.type) && (
+      {!['text', 'email', 'phone', 'textarea', 'number', 'date', 'datetime', 'time', 'radio', 'checkbox', 'dropdown', 'file_upload', 'camera'].includes(props.field.type) && (
         <div class="p-4 bg-yellow-50 border border-yellow-200 rounded">
           <p class="text-sm text-yellow-800">
             Field type "{props.field.type}" is not yet supported

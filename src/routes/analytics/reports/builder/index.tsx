@@ -7,13 +7,12 @@ import { analyticsService } from '~/services/analytics.service';
 import type { ReportDefinition, FormTablesResponse, FilterOperator, LogicalOperator, ChartType } from '~/types/analytics';
 import { Badge, Btn, FormField, PageHeader } from '~/components/ds';
 
-interface RoleOption {
+interface PermissionOption {
   id: string;
   name: string;
   description?: string;
-  is_global?: boolean;
-  business_vertical_id?: string;
-  business_vertical_name?: string;
+  resource?: string;
+  action?: string;
 }
 
 const KPI_AGGREGATIONS = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'] as const;
@@ -134,6 +133,24 @@ const operatorLabelMap: Record<FilterOperator, string> = {
   last_week: 'Last week',
   last_year: 'Last year',
 };
+
+const CHART_TYPE_META = [
+  { value: 'bar', label: 'Bar', icon: 'i-heroicons-chart-bar-solid', desc: 'Compare values across categories. Ideal for rankings or grouped comparisons.' },
+  { value: 'line', label: 'Line', icon: 'i-heroicons-presentation-chart-line-solid', desc: 'Track changes and trends over time or a continuous sequence.' },
+  { value: 'area', label: 'Area', icon: 'i-heroicons-chart-bar-square-solid', desc: 'Emphasise cumulative volume or filled region under a trend line.' },
+  { value: 'pie', label: 'Pie', icon: 'i-heroicons-chart-pie-solid', desc: 'Show part-to-whole proportions across a small number of categories.' },
+  { value: 'doughnut', label: 'Donut', icon: 'i-heroicons-circle-stack-solid', desc: 'Same as pie with a centre space for a summary value or label.' },
+  { value: 'scatter', label: 'Scatter', icon: 'i-heroicons-sparkles-solid', desc: 'Reveal correlations or distribution between two numeric fields.' },
+];
+
+const CHART_COLOR_PALETTES = [
+  { id: 'default', name: 'Default', colors: ['#3b82f6', '#6366f1', '#8b5cf6', '#a78bfa'] },
+  { id: 'warm', name: 'Warm', colors: ['#ef4444', '#f97316', '#eab308', '#84cc16'] },
+  { id: 'cool', name: 'Cool', colors: ['#06b6d4', '#0ea5e9', '#3b82f6', '#10b981'] },
+  { id: 'vibrant', name: 'Vibrant', colors: ['#f43f5e', '#a855f7', '#3b82f6', '#22c55e'] },
+  { id: 'earth', name: 'Earth', colors: ['#78716c', '#a16207', '#15803d', '#0369a1'] },
+  { id: 'pastel', name: 'Pastel', colors: ['#93c5fd', '#c4b5fd', '#6ee7b7', '#fde68a'] },
+];
 
 const tableMatchesModuleHeuristic = (table: any, moduleId: string, moduleTokens: string[]): boolean => {
   const tableModuleId = getEntityId(
@@ -276,36 +293,31 @@ const getModulesServer = server$(async function (verticalId: string) {
   }
 });
 
-const getAvailableRolesServer = server$(async function () {
+const getAvailablePermissionsServer = server$(async function () {
   const ssrApiClient = createSSRApiClient(this as any);
   try {
-    const response: any = await ssrApiClient.get('/admin/roles/unified?include_business=true');
-    const roles = response?.roles || response?.data || response || [];
-    if (Array.isArray(roles) && roles.length > 0) {
-      return roles.map((role: any, index: number) => ({
-        id: role?.id || role?.ID || role?.role_id || `role_${index}`,
-        name: role?.display_name || role?.DisplayName || role?.name || role?.Name || '',
-        description: role?.description || role?.Description,
-        is_global: role?.is_global ?? role?.IsGlobal,
-        business_vertical_id: role?.business_vertical_id || role?.BusinessVerticalID,
-        business_vertical_name:
-          role?.business_vertical_name ||
-          role?.BusinessVerticalName ||
-          role?.business_vertical?.name ||
-          role?.BusinessVertical?.Name,
-      })) as RoleOption[];
+    const response: any = await ssrApiClient.get('/admin/permissions');
+    const permissions = response?.permissions || response?.data || response || [];
+    if (!Array.isArray(permissions)) {
+      return [] as PermissionOption[];
     }
 
-    // Fallback for environments where unified roles endpoint is unavailable.
-    const fallback: any = await ssrApiClient.get('/reports/available-roles');
-    return (fallback?.roles || []).map((role: any) => ({
-      id: role.id,
-      name: role.name,
-      description: role.description,
-      is_global: true,
-    })) as RoleOption[];
+    return permissions
+      .map((permission: any, index: number) => ({
+        id: permission?.id || permission?.ID || `permission_${index}`,
+        name:
+          permission?.name ||
+          (permission?.resource && permission?.action
+            ? `${permission.resource}:${permission.action}`
+            : ''),
+        description: permission?.description,
+        resource: permission?.resource,
+        action: permission?.action,
+      }))
+      .filter((permission: PermissionOption) => !!permission.name)
+      .sort((left: PermissionOption, right: PermissionOption) => left.name.localeCompare(right.name));
   } catch (error) {
-    console.error('Failed to fetch available roles:', error);
+    console.error('Failed to fetch available permissions:', error);
     return [];
   }
 });
@@ -406,9 +418,9 @@ export default component$(() => {
 
   // Report access / visibility
   const isPublic = useSignal(false);
-  const allowedRoles = useSignal<string[]>([]);
-  const roleScope = useSignal<'selected_vertical' | 'all_verticals'>('selected_vertical');
-  const availableRoles = useSignal<RoleOption[]>([]);
+  const selectedPermissions = useSignal<string[]>([]);
+  const availablePermissions = useSignal<PermissionOption[]>([]);
+  const permissionToAdd = useSignal('');
 
   // KPI configuration state (enterprise metric definition)
   const kpiMetricField = useSignal('');
@@ -417,41 +429,28 @@ export default component$(() => {
   const kpiTargetValue = useSignal('');
   const kpiComparisonMode = useSignal<'none' | 'previous_period' | 'same_period_last_month'>('none');
 
-  const getScopedRoleOptions = () => {
-    const byName = new Map<string, RoleOption>();
-    const normalizedSelectedVertical = selectedVertical.value || '';
+  // Chart visualization configuration state
+  const chartXAxisField = useSignal('');
+  const chartXAxisLabel = useSignal('');
+  const chartXAxisDateGrouping = useSignal('');
+  const chartYAxisField = useSignal('');
+  const chartYAxisLabel = useSignal('');
+  const chartYAxisAggregate = useSignal<KpiAggregation>('SUM');
+  const chartGroupByField = useSignal('');
+  const chartShowLegend = useSignal(true);
+  const chartLegendPosition = useSignal<'top' | 'bottom' | 'left' | 'right'>('top');
+  const chartShowDataLabels = useSignal(false);
+  const chartShowGridLines = useSignal(true);
+  const chartStacked = useSignal(false);
+  const chartStacked100 = useSignal(false);
+  const chartColorPalette = useSignal('default');
+  const chartCustomColors = useSignal<string[]>(['#2563eb', '#f97316', '#22c55e', '#a855f7', '#ef4444']);
+  const chartTitle = useSignal('');
 
-    const filteredRoles = availableRoles.value.filter((role) => {
-      if (!role?.name) return false;
-      if (roleScope.value === 'all_verticals') return true;
-      if (!normalizedSelectedVertical) return !!role.is_global;
-      return !!role.is_global || role.business_vertical_id === normalizedSelectedVertical;
-    });
-
-    for (const role of filteredRoles) {
-      const key = role.name.trim().toLowerCase();
-      if (key && !byName.has(key)) {
-        byName.set(key, role);
-      }
-    }
-
-    return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const getAvailablePermissionOptions = () => {
+    const selected = new Set(selectedPermissions.value);
+    return availablePermissions.value.filter((permission) => !selected.has(permission.name));
   };
-
-  const trimAllowedRolesToScope = $(() => {
-    const normalizedSelectedVertical = selectedVertical.value || '';
-    const validRoles = new Set(
-      availableRoles.value
-        .filter((role) => {
-          if (!role?.name) return false;
-          if (roleScope.value === 'all_verticals') return true;
-          if (!normalizedSelectedVertical) return !!role.is_global;
-          return !!role.is_global || role.business_vertical_id === normalizedSelectedVertical;
-        })
-        .map((role) => role.name)
-    );
-    allowedRoles.value = allowedRoles.value.filter((roleName) => validRoles.has(roleName));
-  });
 
   const getActiveBusinessId = $(() => {
     const keys = ['business_vertical_id', 'business_id', 'active_business_id', 'ugcl_current_business_vertical'];
@@ -467,29 +466,7 @@ export default component$(() => {
   const loadModalData = $(async () => {
     loadingModalData.value = true;
     try {
-      const [verticals, roles] = await Promise.all([
-        getBusinessVerticalsServer(),
-        getAvailableRolesServer(),
-      ]);
-      availableVerticals.value = verticals;
-      availableRoles.value = roles;
-
-      const activeVerticalId = await getActiveBusinessId();
-      if (!selectedVertical.value && activeVerticalId && verticals.some((v: any) => (v.id || v.vertical_id) === activeVerticalId)) {
-        selectedVertical.value = activeVerticalId;
-      }
-
-      // If there's only one vertical, select it automatically
-      if (verticals.length === 1) {
-        selectedVertical.value = verticals[0].id || verticals[0].vertical_id;
-      }
-
-      if (selectedVertical.value) {
-        const modules = await getModulesServer(selectedVertical.value);
-        availableModules.value = modules;
-      }
-
-      await trimAllowedRolesToScope();
+      availablePermissions.value = await getAvailablePermissionsServer();
     } catch (err: any) {
       console.error('Failed to load modal data:', err);
     } finally {
@@ -569,23 +546,62 @@ export default component$(() => {
     currentStep.value = 2;
   });
 
-  const addField = $((field: any) => {
-    // Always use column_name from form schema (backend ensures it's the actual database column)
-    // Fall back to id/name only if column_name not available (for legacy db_fields)
+  const WORKFLOW_TIMELINE_FIELDS = new Set([
+    'current_state',
+    'wf_last_action',
+    'wf_last_action_by',
+    'wf_last_action_at',
+    'wf_last_comment',
+  ]);
+
+  const buildSelectedField = (field: any, order: number) => {
     const fieldName = field.column_name || field.id || field.name;
     const fieldLabel = field.label || field.name || field.column_name;
     const fieldType = field.dataType || field.data_type || field.type || 'text';
 
+    return {
+      field_name: fieldName,
+      alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+      data_source: 'data',
+      data_type: fieldType,
+      is_visible: true,
+      order,
+    };
+  };
+
+  const hasWorkflowTimelineSelection = () =>
+    (reportConfig.fields || []).some((field: any) => WORKFLOW_TIMELINE_FIELDS.has(String(field.field_name || '')));
+
+  const ensureSubmissionIdField = () => {
+    const alreadySelected = (reportConfig.fields || []).some((field: any) => field.field_name === 'submission_id');
+    if (alreadySelected) return;
+
+    const submissionField = (tableFields.value || []).find((field: any) =>
+      String(field.column_name || field.id || field.name || '') === 'submission_id'
+    );
+    if (!submissionField) return;
+
+    reportConfig.fields = [
+      ...(reportConfig.fields || []),
+      buildSelectedField(submissionField, (reportConfig.fields?.length || 0) + 1),
+    ];
+  };
+
+  const addField = $((field: any) => {
+    // Always use column_name from form schema (backend ensures it's the actual database column)
+    // Fall back to id/name only if column_name not available (for legacy db_fields)
+    const fieldName = field.column_name || field.id || field.name;
+
     const exists = reportConfig.fields?.some(f => f.field_name === fieldName);
     if (!exists) {
-      reportConfig.fields = [...(reportConfig.fields || []), {
-        field_name: fieldName,
-        alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-        data_source: 'data',
-        data_type: fieldType,
-        is_visible: true,
-        order: (reportConfig.fields?.length || 0) + 1
-      }];
+      reportConfig.fields = [
+        ...(reportConfig.fields || []),
+        buildSelectedField(field, (reportConfig.fields?.length || 0) + 1),
+      ];
+
+      if (WORKFLOW_TIMELINE_FIELDS.has(String(fieldName || ''))) {
+        ensureSubmissionIdField();
+      }
 
       if (reportConfig.report_type === 'kpi') {
         if (!kpiMetricField.value) {
@@ -598,6 +614,12 @@ export default component$(() => {
 
   const removeField = $((index: number) => {
     const removedField = (reportConfig.fields || [])[index] as any;
+
+    if (removedField?.field_name === 'submission_id' && hasWorkflowTimelineSelection()) {
+      error.value = 'Submission ID is required for workflow timeline drill-down. Remove workflow status fields first if you do not need the timeline.';
+      return;
+    }
+
     reportConfig.fields = (reportConfig.fields || []).filter((_, i) => i !== index);
 
     if (removedField?.field_name && kpiMetricField.value === removedField.field_name) {
@@ -785,9 +807,9 @@ export default component$(() => {
     });
 
     reportConfig.fields = nextFields;
-    reportConfig.aggregations = [];
+    (reportConfig as any).aggregations = [];
 
-    reportConfig.groupings = shouldBreakout
+    (reportConfig as any).groupings = shouldBreakout
       ? [{ field_name: groupByFieldName, data_source: 'data', order: 1 }]
       : [];
 
@@ -805,6 +827,64 @@ export default component$(() => {
         comparison_mode: kpiComparisonMode.value,
       },
     };
+  });
+
+  const applyChartConfiguration = $(() => {
+    if (reportConfig.report_type !== 'chart') return;
+
+    const xField = chartXAxisField.value;
+    const yField = chartYAxisField.value;
+    const groupField = chartGroupByField.value;
+    const isStackable = ['bar', 'area'].includes(reportConfig.chart_type || '');
+
+    reportConfig.chart_config = {
+      ...(reportConfig.chart_config as any || {}),
+      title: chartTitle.value || undefined,
+      x_axis: {
+        field: xField || undefined,
+        label: chartXAxisLabel.value || undefined,
+        date_grouping: (chartXAxisDateGrouping.value as any) || undefined,
+      },
+      y_axis: {
+        field: yField || undefined,
+        label: chartYAxisLabel.value || undefined,
+      },
+      series: yField
+        ? [{ field: yField, aggregate: chartYAxisAggregate.value, label: chartYAxisLabel.value || undefined }]
+        : [],
+      group_by: groupField || undefined,
+      appearance: {
+        show_legend: chartShowLegend.value,
+        legend_position: chartLegendPosition.value,
+        show_data_labels: chartShowDataLabels.value,
+        show_grid_lines: chartShowGridLines.value,
+        color_palette: chartColorPalette.value,
+        custom_colors: chartColorPalette.value === 'custom' ? [...chartCustomColors.value] : undefined,
+        stacked: isStackable && chartStacked.value,
+        stacked_100: isStackable && chartStacked100.value,
+      },
+    } as any;
+
+    // Build groupings so the backend can GROUP BY x-axis / split-by fields
+    const newGroupings: any[] = [];
+    if (xField) newGroupings.push({ field_name: xField, data_source: 'data', order: 1 });
+    if (groupField && groupField !== xField) {
+      newGroupings.push({ field_name: groupField, data_source: 'data', order: newGroupings.length + 1 });
+    }
+    (reportConfig as any).groupings = newGroupings;
+
+    // Stamp aggregation on the Y-axis field inside the fields list so the backend can aggregate it
+    if (yField) {
+      reportConfig.fields = (reportConfig.fields || []).map((field: any) => ({
+        ...field,
+        aggregation: field.field_name === yField ? chartYAxisAggregate.value : (field.field_name === xField || field.field_name === groupField ? '' : field.aggregation),
+      }));
+    }
+
+    // Default sort by X-axis ascending for time-series readability
+    if (xField) {
+      reportConfig.sorting = [{ field_name: xField, data_source: 'data', direction: 'ASC', order: 1 }];
+    }
   });
 
   const ensureKpiConfigDefaults = $(() => {
@@ -911,7 +991,9 @@ export default component$(() => {
         code: await buildUniqueReportCode(reportConfig.name || 'report'),
         business_vertical_id: businessVerticalId,
         is_public: isPublic.value,
-        allowed_roles: allowedRoles.value,
+        permissions: {
+          required: selectedPermissions.value,
+        },
         ...(selectedVertical.value && { vertical_id: selectedVertical.value }),
         ...(selectedModule.value && { module_id: selectedModule.value })
       };
@@ -942,7 +1024,7 @@ export default component$(() => {
   };
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="space-y-6">
       {/* Page Header with DS PageHeader */}
       <PageHeader
         title="Report Builder"
@@ -974,7 +1056,7 @@ export default component$(() => {
       </PageHeader>
 
       {/* Progress Steps */}
-      <div class="container mx-auto px-4 py-4">
+      <div class="space-x-8">
         <div class="flex items-center justify-center gap-2">
           {[
             { num: 1, label: 'Data Source' },
@@ -1007,7 +1089,7 @@ export default component$(() => {
 
       {/* Error Alert */}
       {error.value && (
-        <div class="container mx-auto px-4 py-4 animate-fade-in">
+        <div class="animate-fade-in">
           <div class="bg-red-50 border-l-4 border-red-500 rounded-xl p-5 flex items-start gap-4 shadow-lg">
             <div class="bg-red-100 rounded-full p-2">
               <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1029,7 +1111,7 @@ export default component$(() => {
 
       {/* Quick Configuration Panel */}
       <div class="bg-white border-b border-gray-200">
-        <div class="container mx-auto px-4 py-5">
+        <div class="py-5">
           <div class="grid grid-cols-12 gap-4 items-end">
             <div class="col-span-3">
               <FormField id="builder-business-vertical" label="Business Vertical" required>
@@ -1111,11 +1193,13 @@ export default component$(() => {
                   id="report-builder-type"
                   class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all text-sm"
                   value={reportConfig.report_type}
-                  onChange$={(e: any) => {
+                  onChange$={async (e: any) => {
                     reportConfig.report_type = e.target.value;
                     currentStep.value = 3;
                     if (reportConfig.report_type === 'kpi') {
-                      ensureKpiConfigDefaults();
+                      await ensureKpiConfigDefaults();
+                    } else if (reportConfig.report_type === 'chart') {
+                      await applyChartConfiguration();
                     }
                   }}
                 >
@@ -1144,7 +1228,7 @@ export default component$(() => {
       </div>
 
       {/* Main Content */}
-      <div class="container mx-auto px-4 py-8">
+      <div class="py-8">
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-10">
           <div class="space-y-6 xl:col-span-3 xl:col-start-8 xl:row-start-1">
             {reportConfig.report_type !== 'table' ? (
@@ -1157,34 +1241,403 @@ export default component$(() => {
                 </div>
 
                 {reportConfig.report_type === 'chart' && (
-                  <div class="p-6">
-                    <div class="grid grid-cols-2 gap-2">
-                      {[
-                        { value: 'bar', label: 'Bar', icon: 'i-heroicons-chart-bar-solid' },
-                        { value: 'line', label: 'Line', icon: 'i-heroicons-presentation-chart-line-solid' },
-                        { value: 'pie', label: 'Pie', icon: 'i-heroicons-chart-pie-solid' },
-                        { value: 'doughnut', label: 'Doughnut', icon: 'i-heroicons-circle-stack-solid' },
-                        { value: 'area', label: 'Area', icon: 'i-heroicons-chart-bar-square-solid' },
-                        { value: 'scatter', label: 'Scatter', icon: 'i-heroicons-sparkles-solid' },
-                      ].map((chart) => (
-                        <Btn
-                          size="sm"
-                          variant={reportConfig.chart_type === chart.value ? 'primary' : 'secondary'}
-                          key={chart.value}
-                          onClick$={() => reportConfig.chart_type = chart.value as ChartType}
-                          class="text-xs"
-                        >
-                          <i class={`${chart.icon} h-4 w-4 inline-block`} aria-hidden="true"></i>
-                          <div class="text-[10px] font-medium mt-1">{chart.label}</div>
-                        </Btn>
-                      ))}
+                  <div class="divide-y divide-gray-100">
+                    {/* 1 – Chart Type */}
+                    <div class="p-5">
+                      <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Chart Type</p>
+                      <div class="grid grid-cols-3 gap-2">
+                        {CHART_TYPE_META.map((ct) => (
+                          <button
+                            key={ct.value}
+                            type="button"
+                            onClick$={async () => {
+                              reportConfig.chart_type = ct.value as ChartType;
+                              await applyChartConfiguration();
+                            }}
+                            class={`flex flex-col items-center gap-1 rounded-xl border-2 p-2.5 transition-all ${
+                              reportConfig.chart_type === ct.value
+                                ? 'border-blue-500 bg-blue-50 shadow-sm'
+                                : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'
+                            }`}
+                          >
+                            <i
+                              class={`${ct.icon} h-5 w-5 ${reportConfig.chart_type === ct.value ? 'text-blue-600' : 'text-gray-400'}`}
+                              aria-hidden="true"
+                            />
+                            <span class={`text-[11px] font-semibold ${reportConfig.chart_type === ct.value ? 'text-blue-700' : 'text-gray-600'}`}>
+                              {ct.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      {(() => {
+                        const meta = CHART_TYPE_META.find((c) => c.value === reportConfig.chart_type);
+                        return meta ? (
+                          <p class="mt-2.5 text-[11px] leading-relaxed text-gray-500">{meta.desc}</p>
+                        ) : null;
+                      })()}
                     </div>
+
+                    {/* 2 – Axes */}
+                    <div class="p-5 space-y-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Data Mapping' : 'Axes'}
+                      </p>
+
+                      <FormField
+                        id="chart-x-axis-field"
+                        label={(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Label Field' : 'X-Axis Field'}
+                        hint={(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'The field used as slice labels.' : 'The category or time dimension shown on the horizontal axis.'}
+                      >
+                        <select
+                          id="chart-x-axis-field"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={chartXAxisField.value}
+                          onChange$={async (e: any) => {
+                            chartXAxisField.value = e.target.value;
+                            await applyChartConfiguration();
+                          }}
+                          disabled={(reportConfig.fields || []).length === 0}
+                        >
+                          <option value="">Select field...</option>
+                          {(reportConfig.fields || []).map((field: any) => (
+                            <option key={field.field_name} value={field.field_name}>
+                              {field.alias || field.field_name}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      {chartXAxisField.value && isDateLikeFieldType(
+                        (reportConfig.fields || []).find((f: any) => f.field_name === chartXAxisField.value)?.data_type || ''
+                      ) && (
+                        <FormField
+                          id="chart-date-grouping"
+                          label="Date Grouping"
+                          hint="Aggregate date values by this interval to reduce noise."
+                        >
+                          <select
+                            id="chart-date-grouping"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                            value={chartXAxisDateGrouping.value}
+                            onChange$={async (e: any) => {
+                              chartXAxisDateGrouping.value = e.target.value;
+                              await applyChartConfiguration();
+                            }}
+                          >
+                            <option value="">No grouping</option>
+                            <option value="day">Daily</option>
+                            <option value="week">Weekly</option>
+                            <option value="month">Monthly</option>
+                            <option value="quarter">Quarterly</option>
+                            <option value="year">Yearly</option>
+                          </select>
+                        </FormField>
+                      )}
+
+                      <FormField
+                        id="chart-y-axis-field"
+                        label={(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Value Field' : 'Y-Axis Field'}
+                        required
+                        hint={(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'The numeric field that determines slice size.' : 'The numeric field plotted on the vertical axis.'}
+                      >
+                        <select
+                          id="chart-y-axis-field"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={chartYAxisField.value}
+                          onChange$={async (e: any) => {
+                            chartYAxisField.value = e.target.value;
+                            await applyChartConfiguration();
+                          }}
+                          disabled={(reportConfig.fields || []).length === 0}
+                        >
+                          <option value="">Select field...</option>
+                          {(reportConfig.fields || []).map((field: any) => (
+                            <option key={field.field_name} value={field.field_name}>
+                              {field.alias || field.field_name}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <FormField
+                        id="chart-y-aggregate"
+                        label="Y-Axis Aggregation"
+                        required
+                        hint="How to combine multiple row values for each X position."
+                      >
+                        <select
+                          id="chart-y-aggregate"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={chartYAxisAggregate.value}
+                          onChange$={async (e: any) => {
+                            chartYAxisAggregate.value = e.target.value as KpiAggregation;
+                            await applyChartConfiguration();
+                          }}
+                        >
+                          {KPI_AGGREGATIONS.map((agg) => (
+                            <option key={agg} value={agg}>{agg}</option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <div class="grid grid-cols-2 gap-2">
+                        <FormField id="chart-x-label" label="X-Axis Label" class="mb-0">
+                          <input
+                            id="chart-x-label"
+                            type="text"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                            value={chartXAxisLabel.value}
+                            onInput$={async (e: any) => {
+                              chartXAxisLabel.value = e.target.value;
+                              await applyChartConfiguration();
+                            }}
+                            placeholder="Auto"
+                          />
+                        </FormField>
+                        <FormField id="chart-y-label" label="Y-Axis Label" class="mb-0">
+                          <input
+                            id="chart-y-label"
+                            type="text"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                            value={chartYAxisLabel.value}
+                            onInput$={async (e: any) => {
+                              chartYAxisLabel.value = e.target.value;
+                              await applyChartConfiguration();
+                            }}
+                            placeholder="Auto"
+                          />
+                        </FormField>
+                      </div>
+                    </div>
+
+                    {/* 3 – Series / Grouping (not for pie/doughnut) */}
+                    {!(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') && (
+                      <div class="p-5 space-y-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Series</p>
+
+                        <FormField
+                          id="chart-group-by"
+                          label="Split by (Optional)"
+                          hint="Divide data into multiple colored series by this field."
+                        >
+                          <select
+                            id="chart-group-by"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                            value={chartGroupByField.value}
+                            onChange$={async (e: any) => {
+                              chartGroupByField.value = e.target.value;
+                              await applyChartConfiguration();
+                            }}
+                            disabled={(reportConfig.fields || []).length === 0}
+                          >
+                            <option value="">No split</option>
+                            {(reportConfig.fields || [])
+                              .filter((field: any) => field.field_name !== chartXAxisField.value && field.field_name !== chartYAxisField.value)
+                              .map((field: any) => (
+                                <option key={field.field_name} value={field.field_name}>
+                                  {field.alias || field.field_name}
+                                </option>
+                              ))}
+                          </select>
+                        </FormField>
+
+                        {(['bar', 'area'] as string[]).includes(reportConfig.chart_type || '') && (
+                          <div class="space-y-2">
+                            <label class="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={chartStacked.value}
+                                onChange$={async (e: any) => {
+                                  chartStacked.value = (e.target as HTMLInputElement).checked;
+                                  if ((e.target as HTMLInputElement).checked) chartStacked100.value = false;
+                                  await applyChartConfiguration();
+                                }}
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span class="text-sm text-gray-700">Stacked series</span>
+                            </label>
+                            <label class="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={chartStacked100.value}
+                                onChange$={async (e: any) => {
+                                  chartStacked100.value = (e.target as HTMLInputElement).checked;
+                                  if ((e.target as HTMLInputElement).checked) chartStacked.value = false;
+                                  await applyChartConfiguration();
+                                }}
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span class="text-sm text-gray-700">100% stacked</span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 4 – Appearance */}
+                    <div class="p-5 space-y-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Appearance</p>
+
+                      <FormField id="chart-title" label="Chart Title">
+                        <input
+                          id="chart-title"
+                          type="text"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          value={chartTitle.value}
+                          onInput$={async (e: any) => {
+                            chartTitle.value = e.target.value;
+                            await applyChartConfiguration();
+                          }}
+                          placeholder="Optional chart title"
+                        />
+                      </FormField>
+
+                      <div>
+                        <div class="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
+                          <div class="mb-2 flex items-center justify-between">
+                            <p class="text-xs font-medium text-blue-800">Chart Colors</p>
+                            <span class="text-[10px] text-blue-700">Pick any colors you want</span>
+                          </div>
+                          <div class="grid grid-cols-5 gap-2">
+                            {chartCustomColors.value.map((color: string, index: number) => (
+                              <label key={index} class="flex flex-col items-center gap-1">
+                                <input
+                                  type="color"
+                                  value={color}
+                                  class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0"
+                                  onInput$={async (e: any) => {
+                                    const next = [...chartCustomColors.value];
+                                    next[index] = e.target.value;
+                                    chartCustomColors.value = next;
+                                    chartColorPalette.value = 'custom';
+                                    await applyChartConfiguration();
+                                  }}
+                                />
+                                <span class="text-[10px] text-gray-600">C{index + 1}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="space-y-2">
+                        <label class="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={chartShowLegend.value}
+                            onChange$={async (e: any) => {
+                              chartShowLegend.value = (e.target as HTMLInputElement).checked;
+                              await applyChartConfiguration();
+                            }}
+                            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-sm text-gray-700">Show legend</span>
+                        </label>
+
+                        {chartShowLegend.value && (
+                          <div class="ml-6">
+                            <select
+                              class="w-full px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-sm"
+                              value={chartLegendPosition.value}
+                              onChange$={async (e: any) => {
+                                chartLegendPosition.value = e.target.value;
+                                await applyChartConfiguration();
+                              }}
+                            >
+                              <option value="top">Top</option>
+                              <option value="bottom">Bottom</option>
+                              <option value="left">Left</option>
+                              <option value="right">Right</option>
+                            </select>
+                          </div>
+                        )}
+
+                        <label class="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={chartShowDataLabels.value}
+                            onChange$={async (e: any) => {
+                              chartShowDataLabels.value = (e.target as HTMLInputElement).checked;
+                              await applyChartConfiguration();
+                            }}
+                            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-sm text-gray-700">Show data labels</span>
+                        </label>
+
+                        {!(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') && (
+                          <label class="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={chartShowGridLines.value}
+                              onChange$={async (e: any) => {
+                                chartShowGridLines.value = (e.target as HTMLInputElement).checked;
+                                await applyChartConfiguration();
+                              }}
+                              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span class="text-sm text-gray-700">Show grid lines</span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 5 – Summary */}
+                    {(chartXAxisField.value || chartYAxisField.value) && (
+                      <div class="p-5">
+                        <div class="space-y-1.5 rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm text-gray-700">
+                          <p class="font-semibold text-gray-900">Chart Summary</p>
+                          {chartXAxisField.value && (
+                            <div>
+                              <span class="font-medium text-gray-900">
+                                {(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Labels' : 'X-Axis'}:
+                              </span>{' '}
+                              {(reportConfig.fields || []).find((f: any) => f.field_name === chartXAxisField.value)?.alias || chartXAxisField.value}
+                              {chartXAxisDateGrouping.value ? ` (${chartXAxisDateGrouping.value})` : ''}
+                            </div>
+                          )}
+                          {chartYAxisField.value && (
+                            <div>
+                              <span class="font-medium text-gray-900">
+                                {(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Values' : 'Y-Axis'}:
+                              </span>{' '}
+                              {chartYAxisAggregate.value}({(reportConfig.fields || []).find((f: any) => f.field_name === chartYAxisField.value)?.alias || chartYAxisField.value})
+                            </div>
+                          )}
+                          {chartGroupByField.value && (
+                            <div>
+                              <span class="font-medium text-gray-900">Split by:</span>{' '}
+                              {(reportConfig.fields || []).find((f: any) => f.field_name === chartGroupByField.value)?.alias || chartGroupByField.value}
+                            </div>
+                          )}
+                          {(chartStacked.value || chartStacked100.value) && (
+                            <div>
+                              <span class="font-medium text-gray-900">Mode:</span>{' '}
+                              {chartStacked100.value ? '100% Stacked' : 'Stacked'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {reportConfig.report_type === 'kpi' && (
                   <div class="p-6 space-y-3">
-                    <FormField id="report-builder-kpi-metric-field" label="Metric Field" required>
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                      <p class="font-semibold">What a KPI means here</p>
+                      <p class="mt-1 text-emerald-800">
+                        A KPI card shows one core number. You choose the metric field, how it is aggregated, an optional breakout, a target threshold, and an optional comparison baseline.
+                      </p>
+                    </div>
+
+                    <FormField
+                      id="report-builder-kpi-metric-field"
+                      label="Metric Field"
+                      required
+                      hint="Pick the numeric field you want the KPI card to measure."
+                    >
                       <select
                         id="report-builder-kpi-metric-field"
                         class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
@@ -1205,7 +1658,12 @@ export default component$(() => {
                       </select>
                     </FormField>
 
-                    <FormField id="report-builder-kpi-aggregation" label="Aggregation" required>
+                    <FormField
+                      id="report-builder-kpi-aggregation"
+                      label="Aggregation"
+                      required
+                      hint="Choose how the metric field should be calculated across all matching rows."
+                    >
                       <select
                         id="report-builder-kpi-aggregation"
                         class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
@@ -1221,7 +1679,11 @@ export default component$(() => {
                       </select>
                     </FormField>
 
-                    <FormField id="report-builder-kpi-breakout" label="Breakout (Optional)">
+                    <FormField
+                      id="report-builder-kpi-breakout"
+                      label="Breakout (Optional)"
+                      hint="Split one KPI into multiple cards by another field, such as site, status, or category."
+                    >
                       <select
                         id="report-builder-kpi-breakout"
                         class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
@@ -1243,7 +1705,11 @@ export default component$(() => {
                     </FormField>
 
                     <div class="grid grid-cols-2 gap-3">
-                      <FormField id="report-builder-kpi-target" label="Target">
+                      <FormField
+                        id="report-builder-kpi-target"
+                        label="Target Threshold"
+                        hint="Optional goal or benchmark for the KPI. Example: daily production target, expected count, revenue goal."
+                      >
                         <input
                           id="report-builder-kpi-target"
                           type="number"
@@ -1253,11 +1719,15 @@ export default component$(() => {
                             kpiTargetValue.value = e.target.value;
                             await applyKpiConfiguration();
                           }}
-                          placeholder="e.g. 100"
+                          placeholder="Example: 100"
                         />
                       </FormField>
 
-                      <FormField id="report-builder-kpi-compare" label="Compare">
+                      <FormField
+                        id="report-builder-kpi-compare"
+                        label="Compare Against"
+                        hint="Optional baseline used to show trend or delta for the KPI."
+                      >
                         <select
                           id="report-builder-kpi-compare"
                           class="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-sm"
@@ -1267,11 +1737,41 @@ export default component$(() => {
                             await applyKpiConfiguration();
                           }}
                         >
-                          <option value="none">None</option>
-                          <option value="previous_period">Prev period</option>
-                          <option value="same_period_last_month">Last month</option>
+                          <option value="none">No comparison</option>
+                          <option value="previous_period">Previous period</option>
+                          <option value="same_period_last_month">Same period last month</option>
                         </select>
                       </FormField>
+                    </div>
+
+                    <div class="rounded-xl border border-emerald-200 bg-white p-4">
+                      <h4 class="text-sm font-semibold text-gray-900">KPI Summary</h4>
+                      <div class="mt-3 space-y-2 text-sm text-gray-700">
+                        <div>
+                          <span class="font-medium text-gray-900">Metric:</span>{' '}
+                          {kpiMetricField.value || 'Not selected'}
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-900">Calculation:</span>{' '}
+                          {kpiAggregation.value} of {kpiMetricField.value || 'metric field'}
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-900">Breakout:</span>{' '}
+                          {kpiGroupByField.value || 'Single KPI card'}
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-900">Target:</span>{' '}
+                          {kpiTargetValue.value || 'No target set'}
+                        </div>
+                        <div>
+                          <span class="font-medium text-gray-900">Compare:</span>{' '}
+                          {kpiComparisonMode.value === 'none'
+                            ? 'No comparison'
+                            : kpiComparisonMode.value === 'previous_period'
+                              ? 'Previous period'
+                              : 'Same period last month'}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1333,6 +1833,11 @@ export default component$(() => {
                         />
                         Show selected only
                       </label>
+                    </div>
+
+                    <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
+                      <span class="font-semibold">Submission ID</span> enables workflow lifecycle drill-down in report table views.
+                      It is auto-added when you select workflow status fields such as <span class="font-medium">Status</span> or <span class="font-medium">Last Action</span>.
                     </div>
 
                     <div class="space-y-3">
@@ -1448,6 +1953,9 @@ export default component$(() => {
                                       <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
                                         <span>{fieldKey}</span>
                                         <span class="uppercase tracking-wide">{fieldType}</span>
+                                        {fieldKey === 'submission_id' && (
+                                          <Badge variant="info" class="text-[10px] px-2 py-0.5">Timeline key</Badge>
+                                        )}
                                         {selectedField?.aggregation && (
                                           <Badge variant="info" class="text-[10px] px-2 py-0.5">{selectedField.aggregation}</Badge>
                                         )}
@@ -1871,16 +2379,19 @@ export default component$(() => {
                 />
               </FormField>
 
-              {/* Visibility */}
+              {/* Scope Context (reuses selected builder values) */}
+              {/* Visibility and Permissions */}
               <div class="rounded-xl border border-gray-200 p-4 space-y-3">
-                <p class="text-sm font-semibold text-gray-800">Visibility &amp; Access</p>
+                <p class="text-sm font-semibold text-gray-800">Visibility &amp; Permissions</p>
 
                 <label class="flex items-center gap-3 cursor-pointer select-none">
                   <div
                     class={`relative w-11 h-6 rounded-full transition-colors ${isPublic.value ? 'bg-interactive-primary' : 'bg-gray-300'}`}
                     onClick$={() => {
                       isPublic.value = !isPublic.value;
-                      if (isPublic.value) allowedRoles.value = [];
+                      if (isPublic.value) {
+                        selectedPermissions.value = [];
+                      }
                     }}
                   >
                     <span
@@ -1888,110 +2399,72 @@ export default component$(() => {
                     />
                   </div>
                   <span class="text-sm text-gray-700">
-                    {isPublic.value ? 'Public – visible to all users with report access' : 'Private – only visible to allowed roles and creator'}
+                    {isPublic.value ? 'Public – visible to all users with report access' : 'Restricted – users must have selected permissions'}
                   </span>
                 </label>
 
                 {!isPublic.value && (
-                  <div>
-                    <FormField id="save-report-role-scope" label="Role Scope">
-                    <select
-                      id="save-report-role-scope"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 mb-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      value={roleScope.value}
-                      onChange$={async (e: any) => {
-                        roleScope.value = e.target.value;
-                        await trimAllowedRolesToScope();
-                      }}
-                    >
-                      <option value="selected_vertical">Roles from selected business vertical</option>
-                      <option value="all_verticals">Roles from all business verticals</option>
-                    </select>
-                    </FormField>
+                  <div class="space-y-3">
+                    <div class="flex gap-2 items-end">
+                      <FormField id="save-report-permission" label="Permission" class="flex-1 mb-0">
+                        <select
+                          id="save-report-permission"
+                          value={permissionToAdd.value}
+                          onChange$={(e: any) => {
+                            permissionToAdd.value = e.target.value;
+                          }}
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                          disabled={loadingModalData.value}
+                        >
+                          <option value="">Select permission...</option>
+                          {getAvailablePermissionOptions().map((permission) => (
+                            <option key={permission.id} value={permission.name}>
+                              {permission.name}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
 
-                    {roleScope.value === 'selected_vertical' && !selectedVertical.value && (
-                      <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
-                        Select a business vertical below to load that vertical's roles. Global roles are shown meanwhile.
-                      </p>
-                    )}
+                      <Btn
+                        type="button"
+                        variant="secondary"
+                        disabled={!permissionToAdd.value}
+                        onClick$={() => {
+                          if (!permissionToAdd.value) return;
+                          if (!selectedPermissions.value.includes(permissionToAdd.value)) {
+                            selectedPermissions.value = [...selectedPermissions.value, permissionToAdd.value];
+                          }
+                          permissionToAdd.value = '';
+                        }}
+                      >
+                        Add
+                      </Btn>
+                    </div>
 
-                    <label class="block text-xs font-medium text-gray-600 mb-2">
-                      Allowed Roles
-                      <span class="ml-1 text-gray-400 font-normal">(leave empty to restrict to creator only)</span>
-                    </label>
-                    {getScopedRoleOptions().length === 0 ? (
-                      <p class="text-xs text-gray-400 italic">Loading roles…</p>
-                    ) : (
-                      <div class="flex flex-wrap gap-2">
-                        {getScopedRoleOptions().map((role) => {
-                          const selected = allowedRoles.value.includes(role.name);
-                          return (
-                            <Btn
-                              key={role.id}
-                              type="button"
-                              size="sm"
-                              variant={selected ? 'primary' : 'secondary'}
-                              onClick$={() => {
-                                allowedRoles.value = selected
-                                  ? allowedRoles.value.filter((r) => r !== role.name)
-                                  : [...allowedRoles.value, role.name];
-                              }}
-                            >
-                              {role.name}
-                            </Btn>
-                          );
-                        })}
+                    {loadingModalData.value ? (
+                      <p class="text-xs text-gray-400 italic">Loading permissions…</p>
+                    ) : selectedPermissions.value.length > 0 ? (
+                      <div class="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                        {selectedPermissions.value.map((permissionName) => (
+                          <button
+                            key={permissionName}
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-200"
+                            onClick$={() => {
+                              selectedPermissions.value = selectedPermissions.value.filter((name) => name !== permissionName);
+                            }}
+                            title="Remove permission"
+                          >
+                            <span>{permissionName}</span>
+                            <span aria-hidden="true">x</span>
+                          </button>
+                        ))}
                       </div>
+                    ) : (
+                      <p class="text-xs text-gray-500">No permissions selected. Restricted reports will only be accessible when matching permissions are added.</p>
                     )}
                   </div>
                 )}
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <FormField id="save-report-business-vertical" label="Business Vertical">
-                  <select
-                    id="save-report-business-vertical"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                    value={selectedVertical.value}
-                    onChange$={async (e: any) => {
-                      selectedVertical.value = e.target.value;
-                      selectedModule.value = '';
-                      await trimAllowedRolesToScope();
-                      if (e.target.value) {
-                        const modules = await getModulesServer(e.target.value);
-                        availableModules.value = modules;
-                      } else {
-                        availableModules.value = [];
-                      }
-                    }}
-                    disabled={loadingModalData.value}
-                  >
-                    <option value="">Select a vertical...</option>
-                    {availableVerticals.value.map((v: any) => (
-                      <option key={v.id || v.vertical_id} value={v.id || v.vertical_id}>
-                        {v.name || v.vertical_name}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
-                <FormField id="save-report-module" label="Module">
-                  <select
-                    id="save-report-module"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                    value={selectedModule.value}
-                    onChange$={(e: any) => {
-                      selectedModule.value = e.target.value;
-                    }}
-                    disabled={loadingModalData.value || !selectedVertical.value}
-                  >
-                    <option value="">Select a module...</option>
-                    {availableModules.value.map((m: any) => (
-                      <option key={m.id || m.module_id} value={m.id || m.module_id}>
-                        {m.name || m.module_name}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
               </div>
 
               <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl">

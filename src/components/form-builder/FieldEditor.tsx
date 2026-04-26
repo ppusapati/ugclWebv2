@@ -23,6 +23,7 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'dropdown', label: 'Dropdown' },
   { value: 'select', label: 'Select' },
   { value: 'file_upload', label: 'File Upload' },
+  { value: 'camera', label: 'Camera' },
   { value: 'signature', label: 'Signature' },
   { value: 'location', label: 'Location' },
 ];

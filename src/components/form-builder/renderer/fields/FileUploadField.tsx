@@ -17,6 +17,8 @@ export default component$<FileUploadFieldProps>((props) => {
   const uploadedFiles = useSignal<string[]>(
     Array.isArray(props.value) ? props.value : props.value ? [props.value] : []
   );
+  const isCameraField = props.field.type === 'camera';
+  const acceptedTypes = props.field.accept || (isCameraField ? 'image/*' : undefined);
 
   const handleFileSelect = $(async (e: Event) => {
     const files = (e.target as HTMLInputElement).files;
@@ -88,7 +90,8 @@ export default component$<FileUploadFieldProps>((props) => {
         <div class="relative">
         <input
           type="file"
-          accept={props.field.accept}
+          accept={acceptedTypes}
+          capture={isCameraField ? 'environment' : undefined}
           multiple={props.field.multiple}
           onChange$={handleFileSelect}
           disabled={uploading.value}
@@ -107,11 +110,11 @@ export default component$<FileUploadFieldProps>((props) => {
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <p class="mt-2 text-sm text-gray-600">
-              {uploading.value ? 'Uploading...' : 'Click to upload or drag and drop'}
+              {uploading.value ? 'Uploading...' : isCameraField ? 'Open camera or choose a photo' : 'Click to upload or drag and drop'}
             </p>
-            {props.field.accept && (
+            {acceptedTypes && (
               <p class="text-xs text-gray-500 mt-1">
-                Accepted: {props.field.accept}
+                Accepted: {acceptedTypes}
               </p>
             )}
             {props.field.maxSizePerFile && (

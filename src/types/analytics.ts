@@ -20,6 +20,46 @@ export type LogicalOperator = 'AND' | 'OR';
 export type AggregateFunction = 'SUM' | 'AVG' | 'COUNT' | 'MIN' | 'MAX';
 export type SortDirection = 'ASC' | 'DESC';
 
+export interface ChartAxisConfig {
+  field?: string;
+  label?: string;
+  date_grouping?: 'day' | 'week' | 'month' | 'quarter' | 'year';
+}
+
+export interface ChartSeriesConfig {
+  field: string;
+  label?: string;
+  aggregate: AggregateFunction;
+  color?: string;
+}
+
+export interface ChartAppearanceConfig {
+  show_legend: boolean;
+  legend_position: 'top' | 'bottom' | 'left' | 'right';
+  show_data_labels: boolean;
+  show_grid_lines: boolean;
+  color_palette: string;
+  stacked: boolean;
+  stacked_100: boolean;
+}
+
+export interface ChartConfig {
+  x_axis?: ChartAxisConfig;
+  y_axis?: ChartAxisConfig;
+  series?: ChartSeriesConfig[];
+  group_by?: string;
+  appearance?: ChartAppearanceConfig;
+  title?: string;
+  subtitle?: string;
+  kpi?: {
+    metric_field: string;
+    aggregation: string;
+    breakout_field?: string;
+    target?: number;
+    comparison_mode?: string;
+  };
+}
+
 export interface DataSource {
   alias: string;
   table_name: string;
@@ -57,6 +97,19 @@ export interface ReportSort {
   order: number;
 }
 
+export interface ReportGrouping {
+  field_name: string;
+  data_source: string;
+  order: number;
+}
+
+export interface ReportAggregation {
+  field_name: string;
+  data_source: string;
+  function: AggregateFunction;
+  alias?: string;
+}
+
 export interface ReportDefinition extends BaseEntity {
   code: string;
   name: string;
@@ -67,8 +120,10 @@ export interface ReportDefinition extends BaseEntity {
   fields: ReportField[];
   filters: ReportFilter[];
   sorting: ReportSort[];
+  groupings?: ReportGrouping[];
+  aggregations?: ReportAggregation[];
   chart_type?: ChartType;
-  chart_config?: Record<string, any>;
+  chart_config?: ChartConfig;
   is_favorite?: boolean;
   category?: string;
   tags?: string[];
