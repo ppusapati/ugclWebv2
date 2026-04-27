@@ -3,7 +3,7 @@
  * Dedicated task board for a single project
  */
 
-import { component$, useStore, $, type QRL } from '@builder.io/qwik';
+import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import { Alert, Badge, Btn, FormField, PageHeader } from '~/components/ds';
 import { TaskCard } from '~/components/tasks/task-card';
@@ -20,20 +20,39 @@ interface TaskLoaderData {
   error?: string;
 }
 
+const normalizeOptionalQueryParam = (value: string | null): string | undefined => {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '' || normalized === 'undefined' || normalized === 'null') {
+    return undefined;
+  }
+  return value;
+};
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+const safeDate = (value?: string): Date | null => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const fmtDate = (value: Date): string => value.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
 export const useProjectTasksData = routeLoader$(async (requestEvent): Promise<TaskLoaderData> => {
   const ssrApiClient = createSSRApiClient(requestEvent);
   const projectId = requestEvent.params.projectId;
   const page = Number(requestEvent.url.searchParams.get('page') || '1') || 1;
   const pageSize = Number(requestEvent.url.searchParams.get('page_size') || '12') || 12;
-  const status = requestEvent.url.searchParams.get('status') || undefined;
-  const priority = requestEvent.url.searchParams.get('priority') || undefined;
+  const status = normalizeOptionalQueryParam(requestEvent.url.searchParams.get('status'));
+  const priority = normalizeOptionalQueryParam(requestEvent.url.searchParams.get('priority'));
   const sortBy = requestEvent.url.searchParams.get('sort_by') || 'created_at';
   const sortOrder = requestEvent.url.searchParams.get('sort_order') || 'desc';
 
   try {
     const [project, tasksResponse] = await Promise.all([
       ssrApiClient.get<Project>(`/projects/${projectId}`),
-      ssrApiClient.get<{ tasks?: Task[]; count?: number; total?: number; page?: number; page_size?: number } | Task[]>(`/tasks`, {
+      ssrApiClient.get<{ tasks?: Task[]; count?: number; total?: number; page?: number; page_size?: number } | Task[]>(`/project-tasks`, {
         project_id: projectId,
         status,
         priority,
@@ -82,6 +101,8 @@ export default component$(() => {
     pageSize: initialData.value.pageSize,
     loading: false,
     error: initialData.value.error || '',
+    actionMessage: '',
+    updatingTaskId: '',
     filters: {
       search: '',
       status: '',
@@ -120,6 +141,43 @@ export default component$(() => {
       state.loading = false;
     }
   });
+
+  const applyTaskUpdate = $((updatedTask: Task) => {
+    state.tasks = state.tasks.map((task) => task.id === updatedTask.id ? { ...task, ...updatedTask } : task);
+  });
+
+  const handleInlineStatusChange: QRL<(task: Task, nextStatus: TaskStatus) => Promise<void>> = $(async (task, nextStatus) => {
+    try {
+      state.updatingTaskId = task.id;
+      state.actionMessage = '';
+      const response = await taskService.updateTaskStatus(task.id, { status: nextStatus });
+      await applyTaskUpdate(response.task);
+      state.actionMessage = `${task.title} moved to ${nextStatus}.`;
+    } catch (error: any) {
+      state.error = error?.message || 'Failed to update task status';
+    } finally {
+      state.updatingTaskId = '';
+    }
+  });
+
+  const handleInlineProgressChange: QRL<(task: Task, nextProgress: number) => Promise<void>> = $(async (task, nextProgress) => {
+    try {
+      state.updatingTaskId = task.id;
+      state.actionMessage = '';
+      const response = await taskService.updateTask(task.id, { progress: nextProgress });
+      await applyTaskUpdate(response.task);
+      state.actionMessage = `${task.title} progress updated to ${nextProgress}%.`;
+    } catch (error: any) {
+      state.error = error?.message || 'Failed to update task progress';
+    } finally {
+      state.updatingTaskId = '';
+    }
+  });
+
+  // Re-fetch on client after hydration to ensure fresh data
+  useVisibleTask$(async () => {
+    await loadTasks();
+  }, { strategy: 'document-ready' });
 
   const clearFilters = $(async () => {
     state.filters.search = '';
@@ -174,6 +232,73 @@ export default component$(() => {
   const totalPages = Math.max(1, Math.ceil((state.total || 0) / state.pageSize));
   const startIndex = state.total === 0 ? 0 : ((state.page - 1) * state.pageSize) + 1;
   const endIndex = Math.min(state.page * state.pageSize, state.total || 0);
+
+  const timelineSource = filteredTasks
+    .map((task) => {
+      const start = safeDate(task.planned_start_date) || safeDate(task.created_at);
+      const end = safeDate(task.planned_end_date) || start;
+      if (!start || !end) return null;
+
+      const safeEnd = end.getTime() < start.getTime() ? new Date(start.getTime()) : end;
+      return { task, start, end: safeEnd };
+    })
+    .filter((item): item is { task: Task; start: Date; end: Date } => item !== null);
+
+  const timelineBounds = timelineSource.length > 0
+    ? timelineSource.reduce((acc, item) => {
+      const startTime = item.start.getTime();
+      const endTime = item.end.getTime();
+      return {
+        min: Math.min(acc.min, startTime),
+        max: Math.max(acc.max, endTime),
+      };
+    }, { min: Number.POSITIVE_INFINITY, max: Number.NEGATIVE_INFINITY })
+    : null;
+
+  const totalTimelineSpan = timelineBounds
+    ? Math.max(timelineBounds.max - timelineBounds.min, ONE_DAY_MS)
+    : ONE_DAY_MS;
+
+  const ganttRows = timelineSource.slice(0, 12).map((item) => {
+    const startMs = item.start.getTime();
+    const endMs = item.end.getTime();
+    const offsetPct = timelineBounds ? ((startMs - timelineBounds.min) / totalTimelineSpan) * 100 : 0;
+    const widthPct = timelineBounds
+      ? (Math.max(endMs - startMs, ONE_DAY_MS) / totalTimelineSpan) * 100
+      : 100;
+
+    return {
+      task: item.task,
+      startLabel: fmtDate(item.start),
+      endLabel: fmtDate(item.end),
+      offsetPct: Math.max(0, Math.min(offsetPct, 100)),
+      widthPct: Math.max(2, Math.min(widthPct, 100)),
+      progressPct: Math.max(0, Math.min(item.task.progress || 0, 100)),
+    };
+  });
+
+  const taskBuckets: Record<TaskStatus, Task[]> = {
+    pending: filteredTasks.filter((task) => task.status === 'pending'),
+    assigned: filteredTasks.filter((task) => task.status === 'assigned'),
+    'in-progress': filteredTasks.filter((task) => task.status === 'in-progress'),
+    'on-hold': filteredTasks.filter((task) => task.status === 'on-hold'),
+    completed: filteredTasks.filter((task) => task.status === 'completed'),
+    cancelled: filteredTasks.filter((task) => task.status === 'cancelled'),
+  };
+
+  const plannedBudget = filteredTasks.reduce((sum, task) => sum + (task.allocated_budget || 0), 0);
+  const actualBudget = filteredTasks.reduce(
+    (sum, task) => sum + (task.labor_cost || 0) + (task.material_cost || 0) + (task.equipment_cost || 0) + (task.other_cost || 0),
+    0
+  );
+  const budgetVariance = actualBudget - plannedBudget;
+  const overdueTasks = filteredTasks.filter((task) => {
+    const plannedEnd = safeDate(task.planned_end_date);
+    return !!plannedEnd && plannedEnd.getTime() < Date.now() && task.status !== 'completed' && task.status !== 'cancelled';
+  }).length;
+  const avgProgress = filteredTasks.length > 0
+    ? filteredTasks.reduce((sum, task) => sum + (task.progress || 0), 0) / filteredTasks.length
+    : 0;
 
   return (
     <div class="project-route-shell">
@@ -347,6 +472,13 @@ export default component$(() => {
         </Alert>
       )}
 
+      {!state.error && state.actionMessage && (
+        <Alert variant="success">
+          <i class="i-heroicons-check-circle-solid w-4 h-4 inline-block mr-2"></i>
+          {state.actionMessage}
+        </Alert>
+      )}
+
       {state.loading && (
         <div class="project-grid">
           {[1, 2, 3, 4, 5, 6].map((item) => (
@@ -362,6 +494,148 @@ export default component$(() => {
 
       {!state.loading && filteredTasks.length > 0 && (
         <>
+          {timelineBounds && ganttRows.length > 0 && (
+            <section class="project-surface gantt-board">
+              <div class="gantt-board-head">
+                <div>
+                  <h3 class="gantt-board-title">Execution Timeline</h3>
+                  <p class="gantt-board-subtitle">Gantt-style view using planned start/end dates and live progress.</p>
+                </div>
+                <Badge variant="neutral" class="text-xs">Showing {ganttRows.length} tasks</Badge>
+              </div>
+
+              <div class="gantt-scale">
+                <span>{fmtDate(new Date(timelineBounds.min))}</span>
+                <span>{fmtDate(new Date(timelineBounds.max))}</span>
+              </div>
+
+              <div class="gantt-rows">
+                {ganttRows.map((row) => (
+                  <article key={`gantt-${row.task.id}`} class="gantt-row">
+                    <div class="gantt-row-meta">
+                      <strong>{row.task.title}</strong>
+                      <span>{row.task.code} | {row.startLabel} - {row.endLabel}</span>
+                    </div>
+                    <div class="gantt-row-track">
+                      <div
+                        class="gantt-row-bar"
+                        style={{ left: `${row.offsetPct}%`, width: `${row.widthPct}%` }}
+                        aria-label={`${row.task.title} timeline`}
+                      >
+                        <div class="gantt-row-progress" style={{ width: `${row.progressPct}%` }}></div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section class="project-surface project-kpi-grid task-metrics-strip">
+            <article class="project-kpi-card">
+              <span class="project-kpi-label">Average Progress</span>
+              <span class="project-kpi-value">{avgProgress.toFixed(0)}%</span>
+              <span class="project-kpi-footnote">Derived from task progress values</span>
+            </article>
+            <article class="project-kpi-card">
+              <span class="project-kpi-label">Planned Budget</span>
+              <span class="project-kpi-value">₹{(plannedBudget / 100000).toFixed(2)}L</span>
+              <span class="project-kpi-footnote">Sum of allocated task budgets</span>
+            </article>
+            <article class="project-kpi-card">
+              <span class="project-kpi-label">Actual Spend</span>
+              <span class="project-kpi-value">₹{(actualBudget / 100000).toFixed(2)}L</span>
+              <span class="project-kpi-footnote">Labor + material + equipment + other</span>
+            </article>
+            <article class="project-kpi-card">
+              <span class="project-kpi-label">Overdue Tasks</span>
+              <span class="project-kpi-value">{overdueTasks}</span>
+              <span class="project-kpi-footnote">Planned end date passed and not completed</span>
+            </article>
+          </section>
+
+          <section class="project-surface kanban-board">
+            <div class="gantt-board-head">
+              <div>
+                <h3 class="gantt-board-title">Kanban Workflow</h3>
+                <p class="gantt-board-subtitle">Track execution state, progress movement, and blocked work.</p>
+              </div>
+              <Badge variant={budgetVariance > 0 ? 'warning' : 'success'} class="text-xs">
+                Budget variance: ₹{(budgetVariance / 100000).toFixed(2)}L
+              </Badge>
+            </div>
+
+            <div class="kanban-grid">
+              {([
+                ['pending', 'Pending'],
+                ['assigned', 'Assigned'],
+                ['in-progress', 'In Progress'],
+                ['completed', 'Completed'],
+              ] as Array<[TaskStatus, string]>).map(([statusKey, label]) => (
+                <section key={statusKey} class="kanban-column">
+                  <header class="kanban-column-head">
+                    <h4>{label}</h4>
+                    <Badge variant="neutral">{taskBuckets[statusKey].length}</Badge>
+                  </header>
+                  <div class="kanban-column-body">
+                    {taskBuckets[statusKey].length > 0 ? taskBuckets[statusKey].slice(0, 6).map((task) => (
+                      <div key={`kanban-${task.id}`} class="kanban-card">
+                        <strong>{task.title}</strong>
+                        <span>{task.code}</span>
+                        <div class="kanban-card-meta">
+                          <Badge variant={task.priority === 'critical' || task.priority === 'high' ? 'warning' : 'info'}>
+                            {task.priority}
+                          </Badge>
+                          <span>{task.progress || 0}%</span>
+                        </div>
+                        <div class="kanban-inline-controls">
+                          <label class="kanban-inline-field">
+                            <span>Status</span>
+                            <select
+                              class="form-input w-full"
+                              value={task.status}
+                              disabled={state.updatingTaskId === task.id}
+                              onChange$={async (event) => {
+                                await handleInlineStatusChange(task, (event.target as HTMLSelectElement).value as TaskStatus);
+                              }}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="assigned">Assigned</option>
+                              <option value="in-progress">In Progress</option>
+                              <option value="on-hold">On Hold</option>
+                              <option value="completed">Completed</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </label>
+                          <label class="kanban-inline-field">
+                            <span>Progress</span>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              step="5"
+                              class="w-full"
+                              value={String(task.progress || 0)}
+                              disabled={state.updatingTaskId === task.id}
+                              onChange$={async (event) => {
+                                await handleInlineProgressChange(task, Number((event.target as HTMLInputElement).value));
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <Btn variant="secondary" size="sm" onClick$={() => handleViewTask(task)}>
+                          View Details
+                        </Btn>
+                      </div>
+                    )) : (
+                      <div class="kanban-empty">No tasks</div>
+                    )}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </section>
+
           <div class="project-grid">
             {filteredTasks.map((task) => (
               <TaskCard key={task.id} task={task} onView$={handleViewTask} />

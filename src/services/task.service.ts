@@ -8,6 +8,7 @@ import type {
   Task,
   TaskListResponse,
   CreateTaskRequest,
+  UpdateTaskRequest,
   AssignTaskRequest,
   UpdateTaskStatusRequest,
   TaskAssignment,
@@ -56,7 +57,7 @@ class TaskService {
    */
   async updateTask(
     id: string,
-    data: Partial<CreateTaskRequest>
+    data: UpdateTaskRequest
   ): Promise<{ message: string; task: Task }> {
     return apiClient.put<{ message: string; task: Task }>(`${this.basePath}/${id}`, data);
   }

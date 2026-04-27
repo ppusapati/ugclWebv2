@@ -389,8 +389,23 @@ export interface AssignTaskRequest {
 
 export interface UpdateTaskStatusRequest {
   status: TaskStatus;
-  progress?: number;
   comment?: string;
+  actual_start_date?: string;
+  actual_end_date?: string;
+}
+
+export interface UpdateTaskRequest {
+  title?: string;
+  description?: string;
+  planned_start_date?: string;
+  planned_end_date?: string;
+  allocated_budget?: number;
+  progress?: number;
+  priority?: TaskPriority;
+  labor_cost?: number;
+  material_cost?: number;
+  equipment_cost?: number;
+  other_cost?: number;
 }
 
 export interface CreateBudgetAllocationRequest {

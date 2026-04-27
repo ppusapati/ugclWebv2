@@ -22,6 +22,10 @@ export const TaskCard = component$<TaskCardProps>(({
   onAssign$,
   onUpdateStatus$,
 }) => {
+  const plannedEndDate = task.planned_end_date ? new Date(task.planned_end_date) : null;
+  const hasValidPlannedEndDate = !!plannedEndDate && !Number.isNaN(plannedEndDate.getTime());
+  const isOverdue = !!hasValidPlannedEndDate && plannedEndDate.getTime() < Date.now() && task.status !== 'completed' && task.status !== 'cancelled';
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800 border-green-300';
@@ -45,6 +49,7 @@ export const TaskCard = component$<TaskCardProps>(({
   const budgetUtilization = task.allocated_budget > 0
     ? (task.total_cost / task.allocated_budget) * 100
     : 0;
+  const budgetVariance = (task.total_cost || 0) - (task.allocated_budget || 0);
 
   return (
     <SectionCard class="p-4 hover:shadow-md transition-shadow">
@@ -72,6 +77,19 @@ export const TaskCard = component$<TaskCardProps>(({
       {task.description && (
         <p class="text-xs text-gray-600 mb-3 line-clamp-2">{task.description}</p>
       )}
+
+      <div class="mb-3 flex flex-wrap gap-2">
+        {task.allocated_budget > 0 && (
+          <Badge variant={budgetVariance > 0 ? 'warning' : 'success'} class="px-2 py-0.5 text-[11px]">
+            {budgetVariance > 0 ? 'Over budget' : 'Within budget'}
+          </Badge>
+        )}
+        {isOverdue && (
+          <Badge variant="error" class="px-2 py-0.5 text-[11px]">
+            Schedule overdue
+          </Badge>
+        )}
+      </div>
 
       {/* Node Info */}
       <div class="grid grid-cols-2 gap-2 mb-3 text-xs">

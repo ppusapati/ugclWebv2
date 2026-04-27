@@ -175,7 +175,21 @@ async function request<T>(
 ): Promise<T> {
   const baseUrl = serverBaseUrl || getBaseUrl();
 
-  const query = params ? '?' + new URLSearchParams(params).toString() : '';
+  const sanitizedParams = params
+    ? Object.fromEntries(
+        Object.entries(params).filter(([, value]) => {
+          if (value === undefined || value === null) return false;
+          if (typeof value === 'string') {
+            const normalized = value.trim().toLowerCase();
+            if (normalized === 'undefined' || normalized === 'null') return false;
+          }
+          return true;
+        })
+      )
+    : undefined;
+
+  const queryString = sanitizedParams ? new URLSearchParams(sanitizedParams as Record<string, string>).toString() : '';
+  const query = queryString ? `?${queryString}` : '';
   const url = `${baseUrl}${endpoint}${query}`;
 
   const headers = buildHeaders(customHeaders, serverToken, skipContentType);

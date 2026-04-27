@@ -61,6 +61,7 @@ export const useProjectDetailData = routeLoader$(async (requestEvent) => {
     return {
       project,
       stats,
+      taskCount: Number(stats?.total_tasks || 0),
       zones: zonesResponse.zones || [],
       nodes: nodesResponse.nodes || [],
       geojsonData,
@@ -70,6 +71,7 @@ export const useProjectDetailData = routeLoader$(async (requestEvent) => {
     return {
       project: null as Project | null,
       stats: null,
+      taskCount: 0,
       zones: [] as Zone[],
       nodes: [] as Node[],
       geojsonData: null as GeoJSONFeatureCollection | null,
@@ -92,6 +94,7 @@ export default component$(() => {
     zones: initialData.value.zones,
     nodes: initialData.value.nodes,
     tasks: [] as Task[],
+    taskCount: initialData.value.taskCount || 0,
     geojsonData: initialData.value.geojsonData,
     loading: false,
     loadingTasks: false,
@@ -131,6 +134,7 @@ export default component$(() => {
       state.loadingTasks = true;
       const response = await taskService.listTasks({ project_id: projectId });
       state.tasks = response.tasks || [];
+      state.taskCount = response.total || response.count || state.tasks.length;
     } catch (error: any) {
       console.error('Failed to load tasks:', error);
     } finally {
@@ -349,7 +353,7 @@ export default component$(() => {
             items={[
               { key: 'overview', label: 'Overview' },
               { key: 'map', label: 'Map View' },
-              { key: 'tasks', label: `Tasks (${state.stats?.total_tasks || 0})` },
+              { key: 'tasks', label: `Tasks (${state.taskCount || 0})` },
               { key: 'budget', label: 'Budget' },
             ]}
             activeKey={activeTab.value}
