@@ -3,6 +3,8 @@
 /lib
 /lib-types
 /server
+/profile
+/src/archive/*
 
 # Development
 node_modules
@@ -47,3 +49,4 @@ storybook-static
 # Cloudflare
 functions/**/*.js
 nul
+src/archive/

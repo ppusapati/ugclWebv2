@@ -7,16 +7,14 @@ import {
   presetAttributify,
 } from "unocss";
 import type { PresetOrFactoryAwaitable } from "unocss";
-import presetTagify from "@unocss/preset-tagify";
 import {presetP9E} from './unocss/preset-p9e';
 
 export default defineConfig({
   content: {
     pipeline: {
       include: [/\.([jt]sx?|mdx?)($|\?)/, "src/**/*.{js,ts,tsx,jsx}"],
+      exclude: ["src/archive/**", "node_modules/**"],
     },
-    // Limit filesystem scanning to src folder only for better build performance
-    filesystem: ["src/**/*.{js,ts,tsx,jsx}"],
   },
   presets: [
     presetP9E() as unknown as PresetOrFactoryAwaitable<object>,
