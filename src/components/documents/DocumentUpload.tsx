@@ -8,7 +8,10 @@ interface DocumentUploadProps {
   categories?: DocumentCategory[];
   tags?: DocumentTag[];
   businessVerticalId?: string;
+  projectId?: string;
+  taskId?: string;
   workflowId?: string;
+  contextMetadata?: Record<string, any>;
   maxFileSize?: number; // in MB
   allowedTypes?: string[];
 }
@@ -19,7 +22,10 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
     categories = [],
     tags = [],
     businessVerticalId,
+    projectId,
+    taskId,
     workflowId,
+    contextMetadata,
     maxFileSize = 100,
     allowedTypes,
   } = props;
@@ -137,7 +143,10 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
           description: state.description,
           category_id: state.categoryId || undefined,
           tags: state.selectedTags.length > 0 ? state.selectedTags : undefined,
+          metadata: contextMetadata,
           business_vertical_id: businessVerticalId,
+          project_id: projectId,
+          task_id: taskId,
           workflow_id: state.selectedWorkflowId || workflowId,
           is_public: state.isPublic,
         },

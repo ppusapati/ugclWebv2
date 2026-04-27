@@ -4,6 +4,8 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { Alert, Badge, Btn, PageHeader, SectionCard } from '~/components/ds';
 import { createSSRApiClient } from '~/services/api-client';
 import { taskService } from '~/services/task.service';
+import { DocumentUpload } from '~/components/documents/DocumentUpload';
+import { DocumentList } from '~/components/documents/DocumentList';
 import type { Task, TaskStatus, WorkflowAction, WorkflowHistoryEntry, TaskComment, CommentType } from '~/types/project';
 
 interface TaskDetailLoaderData {
@@ -100,6 +102,8 @@ export default component$(() => {
     commentText: '',
     commentType: 'general' as CommentType,
     commentSaving: false,
+    showTaskDocUpload: false,
+    taskDocsRefreshKey: 0,
   });
 
   const editForm = useStore({
@@ -206,6 +210,12 @@ export default component$(() => {
     } finally {
       state.commentSaving = false;
     }
+  });
+
+  const handleTaskDocumentUploaded = $(async () => {
+    state.showTaskDocUpload = false;
+    state.taskDocsRefreshKey++;
+    await loadWorkflow();
   });
 
   useVisibleTask$(async () => {
@@ -619,7 +629,13 @@ export default component$(() => {
                         <Btn
                           key={wa.action}
                           variant={wa.action === 'approve' || wa.action === 'verify' ? 'primary' : wa.action === 'reject' ? 'danger' : 'secondary'}
+                          disabled={state.workflowLoading || wa.document_ready === false}
+                          title={wa.document_ready === false ? (wa.document_message || 'Required documents are missing for this workflow action') : wa.label || wa.action}
                           onClick$={() => {
+                            if (wa.document_ready === false) {
+                              state.workflowError = wa.document_message || 'Required documents are missing for this workflow action.';
+                              return;
+                            }
                             if (state.activeAction === wa.action) {
                               state.activeAction = '';
                             } else {
@@ -632,6 +648,24 @@ export default component$(() => {
                           {wa.label || wa.action}
                         </Btn>
                       ))}
+                    </div>
+                  )}
+
+                  {state.workflowActions.some((wa) => wa.document_ready === false) && (
+                    <div class="space-y-1 rounded-md border border-amber-200 bg-amber-50 p-2">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-amber-800">Document requirements</p>
+                      {state.workflowActions
+                        .filter((wa) => wa.document_ready === false)
+                        .map((wa) => (
+                          <p key={`doc-req-${wa.action}`} class="text-xs text-amber-800">
+                            {wa.label || wa.action}: {wa.document_message || 'Required task documents are missing.'}
+                            {(wa.document_required?.min_documents || wa.document_required?.min_approved_documents) ? (
+                              <span class="ml-1 text-amber-900/90">
+                                (required: {wa.document_required?.min_documents || 0} linked, {wa.document_required?.min_approved_documents || 0} approved; current: {wa.document_counts?.total || 0} linked, {wa.document_counts?.approved || 0} approved)
+                              </span>
+                            ) : null}
+                          </p>
+                        ))}
                     </div>
                   )}
 
@@ -748,6 +782,65 @@ export default component$(() => {
               </div>
             </SectionCard>
           </div>
+
+          {/* Task Documents */}
+          <SectionCard
+            title="Task Documents"
+            subtitle="Upload and track task evidence such as inspection reports, photos, test certificates, and closure docs."
+            class="mt-4"
+          >
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="text-sm text-gray-600">
+                  Documents uploaded here are tagged with task and project context for traceability.
+                </div>
+                <div class="flex items-center gap-2">
+                  <Btn
+                    variant={state.showTaskDocUpload ? 'secondary' : 'primary'}
+                    onClick$={() => {
+                      state.showTaskDocUpload = !state.showTaskDocUpload;
+                    }}
+                  >
+                    <i class="i-heroicons-arrow-up-tray-solid w-4 h-4 inline-block mr-1"></i>
+                    {state.showTaskDocUpload ? 'Hide Upload' : 'Upload Task Document'}
+                  </Btn>
+                  <a
+                    href={`/documents?context=task&task_id=${task.id}`}
+                    class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 px-4 py-2 text-sm btn-secondary"
+                  >
+                    <i class="i-heroicons-arrow-top-right-on-square-solid w-4 h-4"></i>
+                    Open DMS Workspace
+                  </a>
+                </div>
+              </div>
+
+              {state.showTaskDocUpload && (
+                <DocumentUpload
+                  onUploadComplete={handleTaskDocumentUploaded}
+                  projectId={task.project_id}
+                  taskId={task.id}
+                  workflowId={task.workflow_id}
+                  contextMetadata={{
+                    context: 'task',
+                    task_id: task.id,
+                    task_code: task.code,
+                    project_id: task.project_id,
+                  }}
+                />
+              )}
+
+              <DocumentList
+                key={state.taskDocsRefreshKey}
+                contextFilter={{
+                  context: 'task',
+                  project_id: task.project_id,
+                  task_id: task.id,
+                }}
+                allowSelection={false}
+                onDocumentClick={$((document: any) => nav(`/documents/view/${document.id}`))}
+              />
+            </div>
+          </SectionCard>
         </>
       )}
     </div>

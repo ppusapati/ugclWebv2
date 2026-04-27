@@ -159,6 +159,10 @@ export interface WorkflowTransitionDef {
   label?: string;
   permission?: string;
   requires_comment?: boolean;
+  document_requirements?: {
+    min_documents?: number;
+    min_approved_documents?: number;
+  };
   notifications?: TransitionNotification[];
 }
 

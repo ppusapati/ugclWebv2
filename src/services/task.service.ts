@@ -15,6 +15,7 @@ import type {
   TaskAuditLog,
   TaskComment,
   TaskAttachment,
+  WorkflowAction,
 } from '../types/project';
 
 class TaskService {
@@ -156,7 +157,7 @@ class TaskService {
 
   // ── Workflow actions ──────────────────────────────────────────────────
 
-  async getWorkflowActions(taskId: string): Promise<{ current_state: string; actions: Array<{ action: string; label: string; requires_comment: boolean; to: string }> }> {
+  async getWorkflowActions(taskId: string): Promise<{ current_state: string; actions: WorkflowAction[] }> {
     return apiClient.get(`${this.basePath}/${taskId}/workflow/actions`);
   }
 

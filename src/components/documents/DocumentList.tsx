@@ -7,6 +7,11 @@ interface DocumentListProps {
   businessVerticalId?: string;
   categoryId?: string;
   status?: DocumentStatus;
+  contextFilter?: {
+    context?: string;
+    project_id?: string;
+    task_id?: string;
+  };
   onDocumentClick?: QRL<(document: Document) => void>;
   onDocumentSelect?: QRL<(documentIds: string[]) => void>;
   allowSelection?: boolean;
@@ -18,11 +23,18 @@ export const DocumentList = component$<DocumentListProps>((props) => {
     businessVerticalId,
     categoryId,
     status,
+    contextFilter,
     onDocumentClick,
     onDocumentSelect,
     allowSelection = false,
     viewMode: initialViewMode = 'list',
   } = props;
+
+  const hasContextFilter = !!contextFilter && (
+    !!contextFilter.context ||
+    !!contextFilter.project_id ||
+    !!contextFilter.task_id
+  );
 
   const state = useStore({
     documents: [] as Document[],
@@ -45,9 +57,11 @@ export const DocumentList = component$<DocumentListProps>((props) => {
 
     try {
       const params: DocumentListParams = {
-        page: state.page,
-        limit: state.limit,
+        page: hasContextFilter ? 1 : state.page,
+        limit: hasContextFilter ? 200 : state.limit,
         business_vertical_id: businessVerticalId,
+        project_id: contextFilter?.project_id,
+        task_id: contextFilter?.task_id,
         category_id: categoryId,
         status,
         search: state.search || undefined,
@@ -56,9 +70,34 @@ export const DocumentList = component$<DocumentListProps>((props) => {
       };
 
       const response = await documentService.getDocuments(params);
-      state.documents = response.documents;
-      state.total = response.total;
-      state.pages = response.pages;
+
+      const filteredDocuments = hasContextFilter
+        ? (response.documents || []).filter((document) => {
+            const metadata = document.metadata || {};
+
+            if (contextFilter?.context && metadata.context !== contextFilter.context) {
+              return false;
+            }
+
+            const documentProjectId = document.project_id || metadata.project_id;
+            const documentTaskId = document.task_id || metadata.task_id;
+
+            if (contextFilter?.project_id && documentProjectId !== contextFilter.project_id) {
+              return false;
+            }
+
+            if (contextFilter?.task_id && documentTaskId !== contextFilter.task_id) {
+              return false;
+            }
+
+            return true;
+          })
+        : (response.documents || []);
+
+      state.documents = filteredDocuments;
+      state.total = hasContextFilter ? filteredDocuments.length : response.total;
+      state.pages = hasContextFilter ? 1 : response.pages;
+      state.page = 1;
     } catch (error: any) {
       state.error = error.message || 'Failed to load documents';
     } finally {
@@ -211,6 +250,9 @@ export const DocumentList = component$<DocumentListProps>((props) => {
         <div class="mt-3 flex items-center justify-between text-sm text-gray-600">
           <div>
             Showing {state.documents.length} of {state.total} documents
+            {hasContextFilter && (
+              <span class="ml-2 text-blue-700 font-medium">(context filtered)</span>
+            )}
           </div>
           {allowSelection && state.selectedIds.size > 0 && (
             <div class="text-blue-600 font-medium">{state.selectedIds.size} selected</div>

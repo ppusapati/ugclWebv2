@@ -19,6 +19,7 @@ import { createSSRApiClient } from '~/services/api-client';
 import { Alert, Badge, Btn, TabBar } from '~/components/ds';
 import { projectService } from '~/services/project.service';
 import { taskService } from '~/services/task.service';
+import { documentService } from '~/services/document.service';
 import { ProjectMap } from '~/components/maps/project-map';
 import type { Project, Zone, Node, GeoJSONFeatureCollection, Task } from '~/types/project';
 
@@ -87,7 +88,7 @@ export default component$(() => {
   const projectId = loc.params.projectId;
   const initialData = useProjectDetailData();
 
-  const activeTab = useSignal<'overview' | 'map' | 'tasks' | 'budget'>('overview');
+  const activeTab = useSignal<'overview' | 'map' | 'tasks' | 'documents' | 'budget'>('overview');
 
   const state = useStore({
     project: initialData.value.project,
@@ -99,6 +100,8 @@ export default component$(() => {
     geojsonData: initialData.value.geojsonData,
     loading: false,
     loadingTasks: false,
+    showProjectDocUpload: false,
+    projectDocsRefreshKey: 0,
     error: initialData.value.error,
   });
 
@@ -125,6 +128,20 @@ export default component$(() => {
     if (activeTab.value !== 'tasks') return null;
     const mod = await import('~/components/tasks/task-card');
     return mod.TaskCard;
+  });
+
+  const projectDocumentUploadComponent = useResource$(async ({ track }) => {
+    track(() => activeTab.value);
+    if (activeTab.value !== 'documents') return null;
+    const mod = await import('~/components/documents/DocumentUpload');
+    return mod.DocumentUpload;
+  });
+
+  const projectDocumentListComponent = useResource$(async ({ track }) => {
+    track(() => activeTab.value);
+    if (activeTab.value !== 'documents') return null;
+    const mod = await import('~/components/documents/DocumentList');
+    return mod.DocumentList;
   });
 
   // Load tasks when tasks tab is active
@@ -191,6 +208,11 @@ export default component$(() => {
     nav(`/projects/${projectId}/tasks/create`);
   });
 
+  const handleProjectDocumentUploaded = $(() => {
+    state.showProjectDocUpload = false;
+    state.projectDocsRefreshKey++;
+  });
+
   const onKmzFileChange = $((e: Event) => {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0] || null;
@@ -219,8 +241,33 @@ export default component$(() => {
       kmz.uploading = true;
       kmz.error = '';
       kmz.success = '';
-      await projectService.uploadKMZ(projectId, kmzFile.value as unknown as File);
-      kmz.success = 'KMZ uploaded successfully';
+      const kmzFileObject = kmzFile.value as unknown as File;
+
+      await projectService.uploadKMZ(projectId, kmzFileObject);
+
+      try {
+        await documentService.uploadDocument({
+          file: kmzFileObject,
+          title: `${state.project?.code || 'PROJECT'} KMZ`,
+          description: `Project map KMZ upload for ${state.project?.name || 'project'}`,
+          business_vertical_id: state.project?.business_vertical_id,
+          project_id: projectId,
+          metadata: {
+            context: 'project',
+            project_id: projectId,
+            project_code: state.project?.code,
+            source: 'project_kmz_upload',
+            kmz_file_name: kmzFileObject.name,
+          },
+          is_public: false,
+        });
+        state.projectDocsRefreshKey++;
+        kmz.success = 'KMZ uploaded and added to project documents.';
+      } catch (documentError: any) {
+        kmz.success = 'KMZ uploaded successfully. Document registration failed.';
+        console.warn('KMZ uploaded but document registration failed:', documentError);
+      }
+
       // Refresh geojson, zones, and nodes
       try {
         const zonesResponse = await projectService.getProjectZones(projectId);
@@ -390,11 +437,12 @@ export default component$(() => {
               { key: 'overview', label: 'Overview' },
               { key: 'map', label: 'Map View' },
               { key: 'tasks', label: `Tasks (${state.taskCount || 0})` },
+              { key: 'documents', label: 'Documents' },
               { key: 'budget', label: 'Budget' },
             ]}
             activeKey={activeTab.value}
             onTabChange$={async (key) => {
-              activeTab.value = key as 'overview' | 'map' | 'tasks' | 'budget';
+              activeTab.value = key as 'overview' | 'map' | 'tasks' | 'documents' | 'budget';
               if (key === 'tasks') {
                 await loadTasks();
               }
@@ -626,6 +674,76 @@ export default component$(() => {
                   </Btn>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Documents Tab */}
+          {activeTab.value === 'documents' && (
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="text-sm text-gray-600">
+                  Store project-level files such as drawings, permits, RFIs, approvals, and handover records.
+                </div>
+                <div class="flex items-center gap-2">
+                  <Btn
+                    variant={state.showProjectDocUpload ? 'secondary' : 'primary'}
+                    onClick$={() => {
+                      state.showProjectDocUpload = !state.showProjectDocUpload;
+                    }}
+                  >
+                    <i class="i-heroicons-arrow-up-tray-solid w-4 h-4 inline-block mr-1"></i>
+                    {state.showProjectDocUpload ? 'Hide Upload' : 'Upload Document'}
+                  </Btn>
+                  <a
+                    href={`/documents?context=project&project_id=${projectId}`}
+                    class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 px-4 py-2 text-sm btn-secondary"
+                  >
+                    <i class="i-heroicons-arrow-top-right-on-square-solid w-4 h-4"></i>
+                    Open DMS Workspace
+                  </a>
+                </div>
+              </div>
+
+              {state.showProjectDocUpload && (
+                <Resource
+                  value={projectDocumentUploadComponent}
+                  onPending={() => <div class="h-48 rounded-lg bg-gray-100 animate-pulse" />}
+                  onResolved={(ProjectDocumentUploadComponent) =>
+                    ProjectDocumentUploadComponent ? (
+                      <ProjectDocumentUploadComponent
+                        onUploadComplete={handleProjectDocumentUploaded}
+                        businessVerticalId={state.project?.business_vertical_id}
+                        projectId={state.project?.id}
+                        workflowId={state.project?.workflow_id}
+                        contextMetadata={{
+                          context: 'project',
+                          project_id: state.project?.id,
+                          project_code: state.project?.code,
+                        }}
+                      />
+                    ) : null
+                  }
+                />
+              )}
+
+              <Resource
+                value={projectDocumentListComponent}
+                onPending={() => <div class="h-72 rounded-lg bg-gray-100 animate-pulse" />}
+                onResolved={(ProjectDocumentListComponent) =>
+                  ProjectDocumentListComponent ? (
+                    <ProjectDocumentListComponent
+                      key={state.projectDocsRefreshKey}
+                      businessVerticalId={state.project?.business_vertical_id}
+                      contextFilter={{
+                        context: 'project',
+                        project_id: projectId,
+                      }}
+                      allowSelection={false}
+                      onDocumentClick={$((document: any) => nav(`/documents/view/${document.id}`))}
+                    />
+                  ) : null
+                }
+              />
             </div>
           )}
 

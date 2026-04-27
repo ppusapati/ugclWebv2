@@ -1,6 +1,6 @@
 import { component$, useStore, useResource$, Resource, $ } from '@builder.io/qwik';
 import type { DocumentHead } from '@builder.io/qwik-city';
-import { Link, routeLoader$, useNavigate } from '@builder.io/qwik-city';
+import { Link, routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services';
 import { documentService } from '~/services/document.service';
 import type { Document, DocumentCategory, DocumentTag } from '~/types/document';
@@ -29,7 +29,22 @@ export const useDocumentsMetaData = routeLoader$(async (requestEvent) => {
 
 export default component$(() => {
   const navigate = useNavigate();
+  const loc = useLocation();
   const initialMeta = useDocumentsMetaData();
+
+  const contextType = loc.url.searchParams.get('context') || undefined;
+  const contextProjectId = loc.url.searchParams.get('project_id') || undefined;
+  const contextTaskId = loc.url.searchParams.get('task_id') || undefined;
+  const contextBusinessVerticalId = loc.url.searchParams.get('business_vertical_id') || undefined;
+
+  const contextMetadata = {
+    ...(contextType ? { context: contextType } : {}),
+    ...(contextProjectId ? { project_id: contextProjectId } : {}),
+    ...(contextTaskId ? { task_id: contextTaskId } : {}),
+  };
+
+  const hasContext = Object.keys(contextMetadata).length > 0;
+
   const state = useStore({
     showUpload: false,
     selectedDocumentIds: [] as string[],
@@ -113,6 +128,14 @@ export default component$(() => {
 
         {/* Main Content */}
         <div class="flex-1 min-w-0">
+          {hasContext && (
+            <div class="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              Context mode: {contextType || 'general'}
+              {contextProjectId ? ` | Project: ${contextProjectId}` : ''}
+              {contextTaskId ? ` | Task: ${contextTaskId}` : ''}
+            </div>
+          )}
+
           {/* Action Bar */}
           <div class="mb-6 flex gap-4">
             <Btn
@@ -173,6 +196,10 @@ export default component$(() => {
                       onUploadComplete={handleUploadComplete}
                       categories={state.categories}
                       tags={state.tags}
+                        businessVerticalId={contextBusinessVerticalId || undefined}
+                        projectId={contextProjectId || undefined}
+                        taskId={contextTaskId || undefined}
+                        contextMetadata={hasContext ? contextMetadata : undefined}
                     />
                   ) : null
                 }
@@ -188,6 +215,12 @@ export default component$(() => {
               <DocumentListComponent
                 key={state.refreshKey}
                 categoryId={state.selectedCategoryId}
+                businessVerticalId={contextBusinessVerticalId || undefined}
+                contextFilter={hasContext ? {
+                  context: contextType,
+                  project_id: contextProjectId,
+                  task_id: contextTaskId,
+                } : undefined}
                 onDocumentClick={handleDocumentClick}
                 onDocumentSelect={handleDocumentSelect}
                 allowSelection={true}

@@ -80,6 +80,8 @@ class DocumentService {
       tags: request.tags,
       metadata: request.metadata,
       business_vertical_id: request.business_vertical_id,
+      project_id: request.project_id,
+      task_id: request.task_id,
       workflow_id: request.workflow_id,
       is_public: request.is_public,
     };

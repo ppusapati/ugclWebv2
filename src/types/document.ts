@@ -73,6 +73,8 @@ export interface Document {
   tags?: DocumentTag[];
   metadata?: Record<string, any>;
   business_vertical_id?: string;
+  project_id?: string;
+  task_id?: string;
   uploaded_by_id: string;
   uploaded_by?: {
     id: string;
@@ -204,6 +206,8 @@ export interface DocumentUploadRequest {
   tags?: string[];
   metadata?: Record<string, any>;
   business_vertical_id?: string;
+  project_id?: string;
+  task_id?: string;
   workflow_id?: string;
   is_public?: boolean;
   file: File;
@@ -225,6 +229,8 @@ export interface DocumentListParams {
   status?: DocumentStatus;
   search?: string;
   business_vertical_id?: string;
+  project_id?: string;
+  task_id?: string;
   tag?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';

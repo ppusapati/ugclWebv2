@@ -8,6 +8,16 @@ export interface WorkflowAction {
   label: string;
   to: string;
   requires_comment: boolean;
+  document_ready?: boolean;
+  document_message?: string;
+  document_required?: {
+    min_documents?: number;
+    min_approved_documents?: number;
+  };
+  document_counts?: {
+    total?: number;
+    approved?: number;
+  };
 }
 
 export interface WorkflowHistoryEntry {
