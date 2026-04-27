@@ -9,7 +9,7 @@ COPY . /app
 WORKDIR /app
 
 # Install dependencies with pnpm
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Build the project
 RUN pnpm run build
