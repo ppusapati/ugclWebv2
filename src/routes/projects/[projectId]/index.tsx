@@ -8,6 +8,7 @@ import {
   useStore,
   useSignal,
   useResource$,
+  useVisibleTask$,
   Resource,
   $,
   noSerialize,
@@ -135,12 +136,42 @@ export default component$(() => {
       const response = await taskService.listTasks({ project_id: projectId });
       state.tasks = response.tasks || [];
       state.taskCount = response.total || response.count || state.tasks.length;
+      state.stats = {
+        ...(state.stats || {}),
+        total_tasks: state.taskCount,
+      };
     } catch (error: any) {
       console.error('Failed to load tasks:', error);
     } finally {
       state.loadingTasks = false;
     }
   });
+
+  const refreshProjectCounts = $(async () => {
+    try {
+      const [zonesResponse, nodesResponse, tasksResponse] = await Promise.all([
+        projectService.getProjectZones(projectId),
+        projectService.getProjectNodes(projectId),
+        taskService.listTasks({ project_id: projectId, page: 1, page_size: 1 }),
+      ]);
+
+      state.zones = zonesResponse.zones || state.zones;
+      state.nodes = nodesResponse.nodes || state.nodes;
+      state.taskCount = tasksResponse.total || tasksResponse.count || 0;
+      state.stats = {
+        ...(state.stats || {}),
+        total_zones: zonesResponse.count || zonesResponse.zones?.length || 0,
+        total_nodes: nodesResponse.count || nodesResponse.nodes?.length || 0,
+        total_tasks: state.taskCount,
+      };
+    } catch (error) {
+      console.warn('Failed to refresh project counts:', error);
+    }
+  });
+
+  useVisibleTask$(async () => {
+    await refreshProjectCounts();
+  }, { strategy: 'document-ready' });
 
   const handleNodeClick = $((node: Node) => {
     console.log('Node clicked:', node);
@@ -340,7 +371,12 @@ export default component$(() => {
           <Resource
             value={statsCardComponent}
             onPending={() => <div class="h-40 rounded-lg bg-gray-100 animate-pulse" />}
-            onResolved={(ProjectStatsCardComponent) => <ProjectStatsCardComponent stats={state.stats} />}
+            onResolved={(ProjectStatsCardComponent) => <ProjectStatsCardComponent stats={{
+              ...(state.stats || {}),
+              total_zones: state.zones.length,
+              total_nodes: state.nodes.length,
+              total_tasks: state.taskCount || state.stats?.total_tasks || 0,
+            }} />}
           />
         </div>
       )}

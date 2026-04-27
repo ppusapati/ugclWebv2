@@ -16,6 +16,11 @@ export interface RouteConfig {
 class BreadcrumbService {
   // Define route configurations for breadcrumb generation
   private routeConfigs: RouteConfig[] = [
+    // Project management routes
+    { path: '/projects', label: 'Projects', icon: 'i-heroicons-folder-open-solid', parent: '/' },
+    { path: '/projects/create', label: 'New Project', icon: 'i-heroicons-plus-circle-solid', parent: '/projects' },
+    { path: '/tasks', label: 'Tasks', icon: 'i-heroicons-clipboard-document-list-solid', parent: '/projects' },
+
     // Dashboard
     { path: '/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },
     { path: '/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },

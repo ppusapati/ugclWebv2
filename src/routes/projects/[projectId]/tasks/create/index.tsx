@@ -8,8 +8,10 @@ import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
 import { Alert, Btn, FormField, SectionCard, StatCard } from '~/components/ds';
+import { workflowService } from '~/services';
 import { taskService } from '~/services/task.service';
 import type { Project, Zone, Node, Task, TaskPriority } from '~/types/project';
+import type { WorkflowDefinition } from '~/types/workflow';
 
 // Load project data with SSR
 export const useProjectData = routeLoader$(async (requestEvent) => {
@@ -69,6 +71,9 @@ export default component$(() => {
     zones: initialData.value.zones,
     nodes: initialData.value.nodes,
     filteredNodes: [] as Node[],
+    workflows: [] as WorkflowDefinition[],
+    selectedWorkflowId: '',
+    workflowsLoading: false,
     loading: false,
     error: initialData.value.error || '',
     success: '',
@@ -98,9 +103,16 @@ export default component$(() => {
   });
 
   // Initialize filtered nodes
-  useTask$(() => {
+  useTask$(async () => {
     if (isServer) return;
     state.filteredNodes = state.nodes;
+
+    state.workflowsLoading = true;
+    state.workflows = await workflowService.getAllWorkflows();
+    if (state.workflows.length === 1) {
+      state.selectedWorkflowId = state.workflows[0].id;
+    }
+    state.workflowsLoading = false;
   });
 
   // Handle zone change
@@ -121,6 +133,12 @@ export default component$(() => {
       // Validate required fields
       if (!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id) {
         state.error = 'Please fill in all required fields: Code, Title, Start Node, and Stop Node.';
+        state.loading = false;
+        return;
+      }
+
+      if (state.workflows.length > 0 && !state.selectedWorkflowId) {
+        state.error = 'Please select a workflow definition before creating the task.';
         state.loading = false;
         return;
       }
@@ -164,6 +182,18 @@ export default component$(() => {
       // Create task
       const response = await taskService.createTask(payload);
 
+      if (state.selectedWorkflowId && response.task?.id) {
+        try {
+          await taskService.assignWorkflow(response.task.id, state.selectedWorkflowId);
+        } catch (workflowError: any) {
+          state.error = `Task created, but workflow assignment failed: ${workflowError?.message || 'Unknown error'}`;
+          state.showSaveModal = false;
+          state.loading = false;
+          await nav(`/tasks/${response.task.id}`);
+          return;
+        }
+      }
+
       console.log('Task created successfully:', response);
       state.success = 'Task created successfully. Redirecting to project...';
       state.showSaveModal = false;
@@ -184,7 +214,13 @@ export default component$(() => {
     (taskForm.equipment_cost || 0) +
     (taskForm.other_cost || 0);
 
-  const canSubmit = !!taskForm.code && !!taskForm.title && !!taskForm.start_node_id && !!taskForm.stop_node_id && !state.loading;
+  const canSubmit =
+    !!taskForm.code &&
+    !!taskForm.title &&
+    !!taskForm.start_node_id &&
+    !!taskForm.stop_node_id &&
+    (state.workflows.length === 0 || !!state.selectedWorkflowId) &&
+    !state.loading;
 
   return (
     <div class="project-route-shell">
@@ -307,6 +343,50 @@ export default component$(() => {
                       </select>
                   </FormField>
                 </div>
+
+                <FormField
+                  id="task-create-workflow"
+                  label="Workflow Definition"
+                  required={state.workflows.length > 0}
+                  hint={state.workflowsLoading ? 'Loading workflows...' : `${state.workflows.length} workflows available`}
+                >
+                    <div class="flex items-center gap-2">
+                      <div class="flex-1 min-w-0">
+                        <select
+                          id="task-create-workflow"
+                          value={state.selectedWorkflowId}
+                          onChange$={(e) => {
+                            state.selectedWorkflowId = (e.target as HTMLSelectElement).value;
+                          }}
+                          class={fieldClass}
+                          disabled={state.workflowsLoading}
+                        >
+                          <option value="">Select workflow definition...</option>
+                          {state.workflows.map((workflow) => (
+                            <option key={workflow.id} value={workflow.id}>
+                              {`${workflow.name} (${workflow.code})`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <Btn
+                        size="sm"
+                        variant="secondary"
+                        class="shrink-0"
+                        onClick$={() => nav('/workflows')}
+                      >
+                        <i class="i-heroicons-plus-circle-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+                        New Workflow
+                      </Btn>
+                    </div>
+                </FormField>
+
+                {state.workflows.length === 0 && !state.workflowsLoading && (
+                  <Alert variant="warning" class="mb-0">
+                    No workflow definitions found. Create one in Workflow Management, then assign it during task creation.
+                  </Alert>
+                )}
 
                 <FormField id="task-create-title" label="Task Title" required>
                     <input
@@ -636,9 +716,9 @@ export default component$(() => {
                 </StatCard>
               </div>
 
-              {(!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id) && (
+              {(!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id || (state.workflows.length > 0 && !state.selectedWorkflowId)) && (
                 <Alert variant="warning">
-                  Please fill in all required fields (Code, Title, Start Node, Stop Node)
+                  Please fill in all required fields (Code, Title, Start Node, Stop Node, Workflow)
                 </Alert>
               )}
             </div>

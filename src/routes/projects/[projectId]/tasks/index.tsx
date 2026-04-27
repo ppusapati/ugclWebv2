@@ -6,10 +6,9 @@
 import { component$, useStore, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import { Alert, Badge, Btn, FormField, PageHeader } from '~/components/ds';
-import { TaskCard } from '~/components/tasks/task-card';
 import { createSSRApiClient } from '~/services/api-client';
 import { taskService } from '~/services/task.service';
-import type { Project, Task, TaskPriority, TaskStatus } from '~/types/project';
+import type { AssignmentRole, Project, Task, TaskPriority, TaskStatus, UserType } from '~/types/project';
 
 interface TaskLoaderData {
   project: Project | null;
@@ -103,6 +102,17 @@ export default component$(() => {
     error: initialData.value.error || '',
     actionMessage: '',
     updatingTaskId: '',
+    dragTaskId: '',
+    dragOverColumn: '',
+    assignModal: { open: false, taskId: '', taskTitle: '' },
+    assignForm: {
+      user_id: '',
+      user_type: 'employee' as UserType,
+      role: 'worker' as AssignmentRole,
+      notes: '',
+      can_edit: false,
+      can_approve: false,
+    },
     filters: {
       search: '',
       status: '',
@@ -160,20 +170,6 @@ export default component$(() => {
     }
   });
 
-  const handleInlineProgressChange: QRL<(task: Task, nextProgress: number) => Promise<void>> = $(async (task, nextProgress) => {
-    try {
-      state.updatingTaskId = task.id;
-      state.actionMessage = '';
-      const response = await taskService.updateTask(task.id, { progress: nextProgress });
-      await applyTaskUpdate(response.task);
-      state.actionMessage = `${task.title} progress updated to ${nextProgress}%.`;
-    } catch (error: any) {
-      state.error = error?.message || 'Failed to update task progress';
-    } finally {
-      state.updatingTaskId = '';
-    }
-  });
-
   // Re-fetch on client after hydration to ensure fresh data
   useVisibleTask$(async () => {
     await loadTasks();
@@ -207,6 +203,81 @@ export default component$(() => {
 
   const handleCreateTask = $(() => {
     nav(`/projects/${projectId}/tasks/create`);
+  });
+
+  const handleDrop$: QRL<(targetStatus: TaskStatus) => Promise<void>> = $(async (targetStatus) => {
+    const taskId = state.dragTaskId;
+    state.dragTaskId = '';
+    state.dragOverColumn = '';
+    if (!taskId) return;
+    const taskIndex = state.tasks.findIndex((t) => t.id === taskId);
+    if (taskIndex < 0) return;
+    if (state.tasks[taskIndex].status === targetStatus) return;
+    // Dropping into 'assigned' opens the assignment modal instead of a blind status update
+    if (targetStatus === 'assigned') {
+      const task = state.tasks[taskIndex];
+      state.assignModal.open = true;
+      state.assignModal.taskId = task.id;
+      state.assignModal.taskTitle = task.title;
+      state.assignForm.user_id = '';
+      state.assignForm.user_type = 'employee';
+      state.assignForm.role = 'worker';
+      state.assignForm.notes = '';
+      state.assignForm.can_edit = false;
+      state.assignForm.can_approve = false;
+      return;
+    }
+    try {
+      state.updatingTaskId = taskId;
+      state.actionMessage = '';
+      const response = await taskService.updateTaskStatus(taskId, { status: targetStatus });
+      state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...response.task };
+      state.actionMessage = `Task moved to ${targetStatus}.`;
+    } catch (err: any) {
+      state.error = err?.message || 'Failed to update task status';
+    } finally {
+      state.updatingTaskId = '';
+    }
+  });
+
+  const handleOpenAssign$: QRL<(task: Task) => void> = $((task) => {
+    state.assignModal.open = true;
+    state.assignModal.taskId = task.id;
+    state.assignModal.taskTitle = task.title;
+    state.assignForm.user_id = '';
+    state.assignForm.user_type = 'employee';
+    state.assignForm.role = 'worker';
+    state.assignForm.notes = '';
+    state.assignForm.can_edit = false;
+    state.assignForm.can_approve = false;
+  });
+
+  const handleAssignSubmit$: QRL<() => Promise<void>> = $(async () => {
+    if (!state.assignForm.user_id.trim()) {
+      state.error = 'User ID is required';
+      return;
+    }
+    const taskTitle = state.assignModal.taskTitle;
+    try {
+      state.loading = true;
+      await taskService.assignTask(state.assignModal.taskId, {
+        user_id: state.assignForm.user_id.trim(),
+        user_type: state.assignForm.user_type,
+        role: state.assignForm.role,
+        notes: state.assignForm.notes || undefined,
+        can_edit: state.assignForm.can_edit,
+        can_approve: state.assignForm.can_approve,
+      });
+      state.assignModal.open = false;
+      state.assignModal.taskId = '';
+      state.assignModal.taskTitle = '';
+      state.actionMessage = `User assigned to "${taskTitle}" successfully.`;
+      await loadTasks();
+    } catch (err: any) {
+      state.error = err?.message || 'Failed to assign user';
+    } finally {
+      state.loading = false;
+    }
   });
 
   const filteredTasks = state.tasks.filter((task) => {
@@ -558,7 +629,7 @@ export default component$(() => {
             <div class="gantt-board-head">
               <div>
                 <h3 class="gantt-board-title">Kanban Workflow</h3>
-                <p class="gantt-board-subtitle">Track execution state, progress movement, and blocked work.</p>
+                <p class="gantt-board-subtitle">Drag cards to change status — drop into <strong>Assigned</strong> to set a user. Click any card to open details.</p>
               </div>
               <Badge variant={budgetVariance > 0 ? 'warning' : 'success'} class="text-xs">
                 Budget variance: ₹{(budgetVariance / 100000).toFixed(2)}L
@@ -572,63 +643,103 @@ export default component$(() => {
                 ['in-progress', 'In Progress'],
                 ['completed', 'Completed'],
               ] as Array<[TaskStatus, string]>).map(([statusKey, label]) => (
-                <section key={statusKey} class="kanban-column">
+                <section
+                  key={statusKey}
+                  class={`kanban-column ${state.dragOverColumn === statusKey && state.dragTaskId ? 'kanban-column--drop-target' : ''}`}
+                  onDragOver$={(e) => { e.preventDefault(); state.dragOverColumn = statusKey; }}
+                  onDragLeave$={() => { state.dragOverColumn = ''; }}
+                  onDrop$={async (e) => { e.preventDefault(); await handleDrop$(statusKey); }}
+                >
                   <header class="kanban-column-head">
                     <h4>{label}</h4>
                     <Badge variant="neutral">{taskBuckets[statusKey].length}</Badge>
                   </header>
                   <div class="kanban-column-body">
-                    {taskBuckets[statusKey].length > 0 ? taskBuckets[statusKey].slice(0, 6).map((task) => (
-                      <div key={`kanban-${task.id}`} class="kanban-card">
-                        <strong>{task.title}</strong>
-                        <span>{task.code}</span>
-                        <div class="kanban-card-meta">
-                          <Badge variant={task.priority === 'critical' || task.priority === 'high' ? 'warning' : 'info'}>
-                            {task.priority}
-                          </Badge>
-                          <span>{task.progress || 0}%</span>
-                        </div>
-                        <div class="kanban-inline-controls">
-                          <label class="kanban-inline-field">
-                            <span>Status</span>
-                            <select
-                              class="form-input w-full"
-                              value={task.status}
-                              disabled={state.updatingTaskId === task.id}
-                              onChange$={async (event) => {
-                                await handleInlineStatusChange(task, (event.target as HTMLSelectElement).value as TaskStatus);
-                              }}
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="assigned">Assigned</option>
-                              <option value="in-progress">In Progress</option>
-                              <option value="on-hold">On Hold</option>
-                              <option value="completed">Completed</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
-                          </label>
-                          <label class="kanban-inline-field">
+                    {taskBuckets[statusKey].length > 0 ? taskBuckets[statusKey].slice(0, 6).map((task) => {
+                      const plannedEnd = task.planned_end_date ? new Date(task.planned_end_date) : null;
+                      const isOverdue = !!plannedEnd && !Number.isNaN(plannedEnd.getTime()) && plannedEnd.getTime() < Date.now() && task.status !== 'completed' && task.status !== 'cancelled';
+                      const budgetVarianceCard = (task.total_cost || 0) - (task.allocated_budget || 0);
+                      return (
+                        <div
+                          key={`kanban-${task.id}`}
+                          class={`kanban-card ${state.dragTaskId === task.id ? 'kanban-card--dragging' : ''}`}
+                          draggable={true}
+                          onClick$={() => handleViewTask(task)}
+                          onDragStart$={(e) => { e.stopPropagation(); state.dragTaskId = task.id; }}
+                          onDragEnd$={() => { state.dragTaskId = ''; state.dragOverColumn = ''; }}
+                        >
+                          {/* Title row */}
+                          <div class="kanban-card-header">
+                            <span class="kanban-drag-handle" aria-hidden="true" onClick$={(e) => e.stopPropagation()}>⠿</span>
+                            <strong class="kanban-card-title">{task.title}</strong>
+                            <i class={`i-heroicons-flag-solid w-3 h-3 inline-block flex-shrink-0 ${task.priority === 'critical' ? 'text-red-500' : task.priority === 'high' ? 'text-orange-500' : task.priority === 'medium' ? 'text-yellow-500' : 'text-gray-400'}`}></i>
+                          </div>
+                          <span class="kanban-card-code">{task.code}</span>
+
+                          {/* Overdue / budget flags */}
+                          {(isOverdue || (task.allocated_budget > 0 && budgetVarianceCard > 0)) && (
+                            <div class="kanban-card-flags">
+                              {isOverdue && <span class="kanban-flag kanban-flag--overdue">Overdue</span>}
+                              {task.allocated_budget > 0 && budgetVarianceCard > 0 && <span class="kanban-flag kanban-flag--budget">Over budget</span>}
+                            </div>
+                          )}
+
+                          {/* Start / Stop nodes */}
+                          <div class="kanban-nodes">
+                            <div class="kanban-node kanban-node--start">
+                              <i class="i-heroicons-map-pin-solid w-3 h-3 inline-block"></i>
+                              <span>{task.start_node?.name || task.start_node_id || '—'}</span>
+                            </div>
+                            <div class="kanban-node kanban-node--stop">
+                              <i class="i-heroicons-map-pin w-3 h-3 inline-block"></i>
+                              <span>{task.stop_node?.name || task.stop_node_id || '—'}</span>
+                            </div>
+                          </div>
+
+                          {/* Progress */}
+                          <div class="kanban-progress-row">
                             <span>Progress</span>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              step="5"
-                              class="w-full"
-                              value={String(task.progress || 0)}
-                              disabled={state.updatingTaskId === task.id}
-                              onChange$={async (event) => {
-                                await handleInlineProgressChange(task, Number((event.target as HTMLInputElement).value));
-                              }}
-                            />
-                          </label>
+                            <span class="kanban-progress-label">{task.progress || 0}%</span>
+                          </div>
+                          <div class="kanban-progress-track">
+                            <div class="kanban-progress-fill" style={{ width: `${task.progress || 0}%` }}></div>
+                          </div>
+
+                          {/* Budget */}
+                          {task.allocated_budget > 0 && (
+                            <div class="kanban-budget-row">
+                              <span>Budget</span>
+                              <span>₹{(task.allocated_budget / 1000).toFixed(1)}K</span>
+                            </div>
+                          )}
+
+                          {/* Dates */}
+                          {(task.planned_start_date || task.planned_end_date) && (
+                            <div class="kanban-dates-row">
+                              <i class="i-heroicons-calendar-solid w-3 h-3 inline-block text-gray-400"></i>
+                              <span>{task.planned_start_date ? fmtDate(new Date(task.planned_start_date)) : '—'}</span>
+                              <span class="kanban-dates-arrow">→</span>
+                              <span class={isOverdue ? 'text-red-600 font-semibold' : ''}>{task.planned_end_date ? fmtDate(new Date(task.planned_end_date)) : '—'}</span>
+                            </div>
+                          )}
+
+                          {/* Assignments */}
+                          {task.assignments && task.assignments.length > 0 && (
+                            <div class="kanban-assignments">
+                              {task.assignments.slice(0, 2).map((a) => (
+                                <span key={a.id} class="kanban-assignee">{a.user_name || a.user_id} <em>{a.role}</em></span>
+                              ))}
+                              {task.assignments.length > 2 && <span class="kanban-assignee">+{task.assignments.length - 2}</span>}
+                            </div>
+                          )}
+
+                          {state.updatingTaskId === task.id && (
+                            <div class="kanban-card-updating">Updating…</div>
+                          )}
                         </div>
-                        <Btn variant="secondary" size="sm" onClick$={() => handleViewTask(task)}>
-                          View Details
-                        </Btn>
-                      </div>
-                    )) : (
-                      <div class="kanban-empty">No tasks</div>
+                      );
+                    }) : (
+                      <div class="kanban-empty">Drop tasks here</div>
                     )}
                   </div>
                 </section>
@@ -636,27 +747,7 @@ export default component$(() => {
             </div>
           </section>
 
-          <div class="project-grid">
-            {filteredTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onView$={handleViewTask} />
-            ))}
-          </div>
 
-          <section class="project-surface p-3 md:p-4">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
-              <p class="text-sm text-gray-600">
-                Page {state.page} of {totalPages}
-              </p>
-              <div class="flex items-center gap-2">
-                <Btn variant="secondary" size="sm" disabled={state.page <= 1 || state.loading} onClick$={previousPage}>
-                  Previous
-                </Btn>
-                <Btn variant="secondary" size="sm" disabled={state.page >= totalPages || state.loading} onClick$={nextPage}>
-                  Next
-                </Btn>
-              </div>
-            </div>
-          </section>
         </>
       )}
 
@@ -682,6 +773,94 @@ export default component$(() => {
               <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-1"></i>
               Create Task
             </Btn>
+          </div>
+        </div>
+      )}
+
+      {state.assignModal.open && (
+        <div
+          class="modal-overlay"
+          onClick$={(e) => {
+            if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
+              state.assignModal.open = false;
+            }
+          }}
+        >
+          <div class="modal-panel">
+            <header class="modal-header">
+              <h3>Assign User</h3>
+              <span class="modal-subtitle">{state.assignModal.taskTitle}</span>
+              <button class="modal-close" onClick$={() => { state.assignModal.open = false; }}>✕</button>
+            </header>
+            <div class="modal-body">
+              <FormField label="User ID *">
+                <input
+                  type="text"
+                  class="form-input w-full"
+                  placeholder="Enter user ID"
+                  value={state.assignForm.user_id}
+                  onInput$={(e) => { state.assignForm.user_id = (e.target as HTMLInputElement).value; }}
+                />
+              </FormField>
+              <FormField id="assign-user-type" label="User Type">
+                <select
+                  id="assign-user-type"
+                  class="form-input w-full"
+                  value={state.assignForm.user_type}
+                  onChange$={(e) => { state.assignForm.user_type = (e.target as HTMLSelectElement).value as UserType; }}
+                >
+                  <option value="employee">Employee</option>
+                  <option value="contractor">Contractor</option>
+                  <option value="supervisor">Supervisor</option>
+                </select>
+              </FormField>
+              <FormField id="assign-role" label="Role">
+                <select
+                  id="assign-role"
+                  class="form-input w-full"
+                  value={state.assignForm.role}
+                  onChange$={(e) => { state.assignForm.role = (e.target as HTMLSelectElement).value as AssignmentRole; }}
+                >
+                  <option value="worker">Worker</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="manager">Manager</option>
+                  <option value="approver">Approver</option>
+                </select>
+              </FormField>
+              <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={state.assignForm.can_edit}
+                    onChange$={(e) => { state.assignForm.can_edit = (e.target as HTMLInputElement).checked; }}
+                  />
+                  <span class="text-sm">Can Edit</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={state.assignForm.can_approve}
+                    onChange$={(e) => { state.assignForm.can_approve = (e.target as HTMLInputElement).checked; }}
+                  />
+                  <span class="text-sm">Can Approve</span>
+                </label>
+              </div>
+              <FormField label="Notes">
+                <textarea
+                  class="form-input w-full"
+                  rows={3}
+                  placeholder="Optional notes about this assignment"
+                  value={state.assignForm.notes}
+                  onInput$={(e) => { state.assignForm.notes = (e.target as HTMLTextAreaElement).value; }}
+                />
+              </FormField>
+            </div>
+            <footer class="modal-footer">
+              <Btn variant="secondary" onClick$={() => { state.assignModal.open = false; }}>Cancel</Btn>
+              <Btn onClick$={handleAssignSubmit$} disabled={state.loading}>
+                {state.loading ? 'Assigning…' : 'Assign User'}
+              </Btn>
+            </footer>
           </div>
         </div>
       )}

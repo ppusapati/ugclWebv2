@@ -153,6 +153,35 @@ class TaskService {
       `${this.basePath}/${taskId}/attachments`
     );
   }
-}
 
+  // ── Workflow actions ──────────────────────────────────────────────────
+
+  async getWorkflowActions(taskId: string): Promise<{ current_state: string; actions: Array<{ action: string; label: string; requires_comment: boolean; to: string }> }> {
+    return apiClient.get(`${this.basePath}/${taskId}/workflow/actions`);
+  }
+
+  async getWorkflowHistory(taskId: string): Promise<{ history: Array<{ id: string; from_state: string; to_state: string; action: string; performed_by: string; performed_by_name?: string; comment?: string; created_at: string }>; count: number }> {
+    return apiClient.get(`${this.basePath}/${taskId}/workflow/history`);
+  }
+
+  async submitForApproval(taskId: string, comment?: string): Promise<{ message: string; task: Task }> {
+    return apiClient.post(`${this.basePath}/${taskId}/submit`, { comment: comment || '' });
+  }
+
+  async approveTask(taskId: string, comment: string): Promise<{ message: string; task: Task }> {
+    return apiClient.post(`${this.basePath}/${taskId}/approve`, { comment });
+  }
+
+  async rejectTask(taskId: string, comment: string): Promise<{ message: string; task: Task }> {
+    return apiClient.post(`${this.basePath}/${taskId}/reject`, { comment });
+  }
+
+  async completeTask(taskId: string, comment?: string): Promise<{ message: string; task: Task }> {
+    return apiClient.post(`${this.basePath}/${taskId}/complete`, { comment: comment || '' });
+  }
+
+  async assignWorkflow(taskId: string, workflowId: string): Promise<{ message: string; task: Task }> {
+    return apiClient.post(`${this.basePath}/${taskId}/workflow`, { workflow_id: workflowId });
+  }
+}
 export const taskService = new TaskService();

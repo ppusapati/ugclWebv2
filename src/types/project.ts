@@ -3,6 +3,24 @@
  * Matches backend models from models/project.go
  */
 
+export interface WorkflowAction {
+  action: string;
+  label: string;
+  to: string;
+  requires_comment: boolean;
+}
+
+export interface WorkflowHistoryEntry {
+  id: string;
+  from_state: string;
+  to_state: string;
+  action: string;
+  performed_by: string;
+  performed_by_name?: string;
+  comment?: string;
+  created_at: string;
+}
+
 export interface Project {
   id: string;
   code: string;
