@@ -8,8 +8,6 @@ import { P9ETable } from '~/components/table';
 import { Alert, Badge, Btn } from '~/components/ds';
 
 const DASHBOARD_GRID_COLS = 12;
-const DASHBOARD_GRID_ROW_HEIGHT = 48;
-const DASHBOARD_CANVAS_MIN_WIDTH = 840;
 
 const transformToChartOption = (
   reportData: ReportResult,

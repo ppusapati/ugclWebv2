@@ -143,14 +143,6 @@ const CHART_TYPE_META = [
   { value: 'scatter', label: 'Scatter', icon: 'i-heroicons-sparkles-solid', desc: 'Reveal correlations or distribution between two numeric fields.' },
 ];
 
-const CHART_COLOR_PALETTES = [
-  { id: 'default', name: 'Default', colors: ['#3b82f6', '#6366f1', '#8b5cf6', '#a78bfa'] },
-  { id: 'warm', name: 'Warm', colors: ['#ef4444', '#f97316', '#eab308', '#84cc16'] },
-  { id: 'cool', name: 'Cool', colors: ['#06b6d4', '#0ea5e9', '#3b82f6', '#10b981'] },
-  { id: 'vibrant', name: 'Vibrant', colors: ['#f43f5e', '#a855f7', '#3b82f6', '#22c55e'] },
-  { id: 'earth', name: 'Earth', colors: ['#78716c', '#a16207', '#15803d', '#0369a1'] },
-  { id: 'pastel', name: 'Pastel', colors: ['#93c5fd', '#c4b5fd', '#6ee7b7', '#fde68a'] },
-];
 
 const SYSTEM_MODULE_OPTION_ID = '__SYSTEM_DATA_SOURCES__';
 const SYSTEM_MODULE_OPTION = {
@@ -1036,21 +1028,6 @@ export default component$(() => {
       loading.value = false;
     }
   });
-
-  const fieldTypeIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      text: 'i-heroicons-document-text-solid',
-      string: 'i-heroicons-document-text-solid',
-      number: 'i-heroicons-calculator-solid',
-      integer: 'i-heroicons-calculator-solid',
-      float: 'i-heroicons-calculator-solid',
-      date: 'i-heroicons-calendar-days-solid',
-      datetime: 'i-heroicons-calendar-days-solid',
-      boolean: 'i-heroicons-check-circle-solid',
-      json: 'i-heroicons-code-bracket-solid',
-    };
-    return icons[type.toLowerCase()] || 'i-heroicons-clipboard-document-list-solid';
-  };
 
   return (
     <div class="space-y-6">

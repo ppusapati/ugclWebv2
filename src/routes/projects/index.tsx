@@ -62,14 +62,14 @@ export const useProjectsData = routeLoader$(async (requestEvent) => {
     let projectsResponse: any = { projects: [] };
     try {
       projectsResponse = await ssrApiClient.get<ProjectListResponse>('/projects');
-    } catch (projError: any) {
+    } catch {
       // Don't throw - continue to load other data
     }
 
     let businessesData: any = {};
     try {
       businessesData = await ssrApiClient.get<any>('/admin/businesses');
-    } catch (bizError: any) {
+    } catch {
       // Don't throw - continue with empty businesses
     }
 

@@ -5,7 +5,7 @@ import { createSSRApiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
 import type { Dashboard, DashboardListResponse, ReportResult, ChartType } from '~/types/analytics';
 import { P9ETable } from '~/components/table/table';
-import { Alert, Badge, Btn } from '~/components/ds';
+import { Alert, Btn } from '~/components/ds';
 
 export const onGet: import('@builder.io/qwik-city').RequestHandler = async ({ cookie, redirect }) => {
   const token = cookie.get('token')?.value || '';
@@ -17,8 +17,6 @@ export const onGet: import('@builder.io/qwik-city').RequestHandler = async ({ co
 };
 
 const DASHBOARD_GRID_COLS = 12;
-const DASHBOARD_GRID_ROW_HEIGHT = 48;
-const DASHBOARD_CANVAS_MIN_WIDTH = 840;
 
 const transformToChartOption = (
   reportData: ReportResult,

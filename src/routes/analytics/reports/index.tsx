@@ -6,7 +6,7 @@ import { createSSRApiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
 import type { ReportDefinition, ReportListResponse } from '~/types/analytics';
 import { useAuthContext } from '~/contexts/auth-context';
-import { Badge, Btn, PageHeader } from '~/components/ds';
+import { Badge, Btn } from '~/components/ds';
 
 // Load reports with SSR support
 export const useReportsData = routeLoader$(async (requestEvent) => {

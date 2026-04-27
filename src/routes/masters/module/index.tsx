@@ -43,7 +43,7 @@ export const useModulesLoader = routeLoader$(async (requestEvent) => {
     // Clean API call - no manual token or baseUrl handling needed!
     const response = await api.get<any>('/modules');
     return response;
-  } catch (error) {
+  } catch {
     return { modules: [], count: 0 };
   }
 });

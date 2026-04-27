@@ -16,6 +16,36 @@ interface BusinessVertical {
   code: string;
 }
 
+const buildSuggestedProjectCode = (baseCode: string) => {
+  const normalized = (baseCode || 'PROJ').trim().toUpperCase();
+  const now = new Date();
+  const y = String(now.getFullYear());
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const h = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const suffix = `${y}${m}${d}${h}${min}`;
+  return `${normalized}_${suffix}`;
+};
+
+const isDuplicateProjectCodeError = (err: any) => {
+  const text = [
+    err?.message,
+    err?.data?.raw,
+    err?.data?.message,
+    err?.data?.error,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    text.includes('idx_projects_code') ||
+    text.includes('duplicate key value violates unique constraint') ||
+    text.includes('sqlstate 23505')
+  );
+};
+
 // Load data with SSR support
 export const useCreateProjectData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -45,36 +75,6 @@ export default component$(() => {
     loading: false,
     error: (initialData.value as any).error || '',
   });
-
-  const buildSuggestedProjectCode = (baseCode: string) => {
-    const normalized = (baseCode || 'PROJ').trim().toUpperCase();
-    const now = new Date();
-    const y = String(now.getFullYear());
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const h = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const suffix = `${y}${m}${d}${h}${min}`;
-    return `${normalized}_${suffix}`;
-  };
-
-  const isDuplicateProjectCodeError = (err: any) => {
-    const text = [
-      err?.message,
-      err?.data?.raw,
-      err?.data?.message,
-      err?.data?.error,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-
-    return (
-      text.includes('idx_projects_code') ||
-      text.includes('duplicate key value violates unique constraint') ||
-      text.includes('sqlstate 23505')
-    );
-  };
 
   const handleSubmit = $(async (data: CreateProjectRequest, kmzFile?: File) => {
     console.debug('[CreateProject] Submitting payload:', data);

@@ -391,7 +391,6 @@ export default component$(() => {
         <div class="space-y-2">
           {ALL_DATA_SCOPES.map((scope) => {
             const checked = form.dataScopes.has(scope);
-            const [group, sub] = scope.split('.');
             return (
               <label
                 key={scope}
@@ -462,6 +461,6 @@ export default component$(() => {
   );
 });
 
-export const head: DocumentHead = ({ resolveValue, params }) => ({
+export const head: DocumentHead = ({ params }) => ({
   title: params.id === 'new' ? 'New Integration | Admin' : 'Edit Integration | Admin',
 });

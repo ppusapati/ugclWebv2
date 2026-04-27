@@ -77,6 +77,7 @@ export const Sidebar = component$(() => {
   const auth = useAuthContext();
   const menuContext = useMenuContext();
   const effectiveUser = auth.user || getUser();
+  const activeMainMenu = menuContext.activeMainMenu;
   const activeSidebarItem = menuContext.activeSidebarItem;
   const moduleDefinitions = useSignal<Module[]>([]);
   const moduleForms = useSignal<SidebarFormItem[]>([]);
@@ -123,12 +124,12 @@ export const Sidebar = component$(() => {
 
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async ({ track }) => {
-    track(() => menuContext.activeMainMenu.value);
+    track(() => activeMainMenu.value);
     track(() => auth.user?.business_roles?.length || 0);
     track(() => auth.user?.is_super_admin);
     track(() => auth.user?.role);
     track(() => (auth.user as any)?.global_role);
-    const activeMenuId = menuContext.activeMainMenu.value;
+    const activeMenuId = activeMainMenu.value;
     const isSuperAdmin = isSuperAdminUser(auth.user || getUser());
     const user = auth.user || getUser();
     const userPermissions = Array.isArray((user as any)?.permissions)
@@ -187,7 +188,7 @@ export const Sidebar = component$(() => {
 
         const fallbackModuleId = moduleDefinitions.value[0]?.id || '';
         if (fallbackModuleId && fallbackModuleId !== activeMenuId) {
-          menuContext.activeMainMenu.value = fallbackModuleId;
+          activeMainMenu.value = fallbackModuleId;
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('activeMainMenu', fallbackModuleId);
           }

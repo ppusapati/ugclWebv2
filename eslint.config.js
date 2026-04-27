@@ -45,6 +45,7 @@ const ignores = [
   "**/package-lock.json",
   "**/yarn.lock",
   "**/server",
+  "**/src/archive/**",
   "eslint.config.js",
 ];
 

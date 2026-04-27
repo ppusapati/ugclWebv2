@@ -1,4 +1,4 @@
-import { $, component$, useSignal, useStore, useVisibleTask$ } from '@builder.io/qwik';
+import { $, component$, type QRL, useSignal, useStore, useVisibleTask$ } from '@builder.io/qwik';
 import { chatService } from '~/services/chat.service';
 import { fileService } from '~/services/file.service';
 import type { ConversationDTO, MessageDTO, ReactionSummaryDTO, UserOption } from '~/types/chat';
@@ -97,7 +97,7 @@ const ReadReceipt = component$<{ status: string; readCount?: number }>(
 const ReactionBar = component$<{
   reactions: ReactionSummaryDTO[];
   currentUserKeys: string[];
-  onToggle$: (emoji: string, alreadyReacted: boolean) => void;
+  onToggle$: QRL<(emoji: string, alreadyReacted: boolean) => void>;
 }>(({ reactions, currentUserKeys, onToggle$ }) => {
   if (!reactions || reactions.length === 0) return null;
   return (
@@ -1039,9 +1039,9 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                             <ReactionBar
                               reactions={message.reactions}
                               currentUserKeys={currentUserKeys.value}
-                              onToggle$={(emoji, alreadyReacted) =>
+                              onToggle$={$((emoji, alreadyReacted) =>
                                 toggleReaction(message.id, emoji, alreadyReacted)
-                              }
+                              )}
                             />
                           )}
                         </div>

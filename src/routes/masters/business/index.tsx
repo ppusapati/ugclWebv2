@@ -23,7 +23,7 @@ export const useVerticalLoader = routeLoader$(async (requestEvent) => {
     // Clean API call - no manual token or baseUrl handling needed!
     const response = await api.get<any>('/admin/businesses');
     return response;
-  } catch (error) {
+  } catch {
     return { verticals: [], count: 0 };
   }
 });
