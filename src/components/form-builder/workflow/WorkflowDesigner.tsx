@@ -8,6 +8,8 @@ import WorkflowDiagram from './WorkflowDiagram';
 import ValidationSummary from './ValidationSummary';
 import { validateWorkflow } from './validation';
 import { roleService } from '~/services/role.service';
+import { businessService } from '~/services/business.service';
+import type { BusinessVertical } from '~/services/types';
 
 interface WorkflowDesignerProps {
   workflow?: WorkflowDefinition;
@@ -21,8 +23,13 @@ export default component$<WorkflowDesignerProps>((props) => {
   const selectedTransitionIndex = useSignal<number | null>(null);
   const showValidation = useSignal(false);
   const availablePermissions = useSignal<string[]>([]);
+  const businessVerticalOptions = useSignal<Array<{ code: string; label: string }>>([]);
+  const businessVerticalsLoading = useSignal(false);
+  const businessVerticalsError = useSignal('');
 
   useTask$(async () => {
+    businessVerticalsLoading.value = true;
+
     try {
       const perms = await roleService.getPermissions();
       availablePermissions.value = perms
@@ -33,12 +40,45 @@ export default component$<WorkflowDesignerProps>((props) => {
       console.error('Failed to fetch permissions:', err);
       availablePermissions.value = ['admin_all', '*:*:*'];
     }
+
+    try {
+      const allBusinesses = await businessService.getAllBusinesses({ page: 1, page_size: 200 });
+      const businessList = (allBusinesses?.data || []) as BusinessVertical[];
+
+      businessVerticalOptions.value = businessList
+        .filter((business) => !!business.code)
+        .map((business) => ({
+          code: String(business.code).toLowerCase(),
+          label: business.name || business.code,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    } catch (adminFetchError) {
+      try {
+        const myBusinesses = await businessService.getMyBusinesses();
+        businessVerticalOptions.value = (myBusinesses || [])
+          .filter((business) => !!business.code)
+          .map((business) => ({
+            code: String(business.code).toLowerCase(),
+            label: business.name || business.code,
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+      } catch (fallbackError) {
+        console.error('Failed to fetch business verticals:', fallbackError);
+        businessVerticalsError.value = 'Unable to load business verticals from master data.';
+      }
+    } finally {
+      businessVerticalsLoading.value = false;
+    }
   });
 
   const workflow = useStore<Partial<WorkflowDefinition>>({
     code: props.workflow?.code || '',
     name: props.workflow?.name || '',
     description: props.workflow?.description || '',
+    business_vertical_codes:
+      props.workflow?.business_vertical_codes ||
+      props.workflow?.metadata?.business_vertical_codes ||
+      (props.workflow?.business_vertical_code ? [props.workflow.business_vertical_code] : []),
     version: props.workflow?.version || '1.0.0',
     initial_state: props.workflow?.initial_state || 'draft',
     states: props.workflow?.states || [
@@ -53,6 +93,19 @@ export default component$<WorkflowDesignerProps>((props) => {
     ],
     transitions: props.workflow?.transitions || [],
     is_active: props.workflow?.is_active ?? true,
+  });
+
+  const toggleVerticalCode = $((code: string) => {
+    if (!workflow.business_vertical_codes) {
+      workflow.business_vertical_codes = [];
+    }
+
+    if (workflow.business_vertical_codes.includes(code)) {
+      workflow.business_vertical_codes = workflow.business_vertical_codes.filter((value) => value !== code);
+      return;
+    }
+
+    workflow.business_vertical_codes = [...workflow.business_vertical_codes, code];
   });
 
   const addState = $(() => {
@@ -329,6 +382,41 @@ export default component$<WorkflowDesignerProps>((props) => {
                   rows={3}
                   placeholder="Brief description of this workflow"
                 />
+              </FormField>
+
+              <FormField
+                id="workflow-designer-vertical-tags"
+                label="Applicable Business Verticals"
+                class="col-span-2"
+                hint="Select one or more verticals to make task workflow matching deterministic."
+              >
+                <div class="rounded-lg border border-gray-200 p-3">
+                  {businessVerticalsLoading.value ? (
+                    <div class="text-sm text-gray-500">Loading business verticals...</div>
+                  ) : businessVerticalOptions.value.length === 0 ? (
+                    <div class="text-sm text-amber-700">
+                      {businessVerticalsError.value || 'No business verticals found in master data.'}
+                    </div>
+                  ) : (
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {businessVerticalOptions.value.map((option) => (
+                        <label key={option.code} class="flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={workflow.business_vertical_codes?.includes(option.code) || false}
+                            onChange$={() => toggleVerticalCode(option.code)}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {(!workflow.business_vertical_codes || workflow.business_vertical_codes.length === 0) && (
+                    <p class="mt-2 text-xs text-amber-700">
+                      No vertical selected. This workflow will be available as a general fallback.
+                    </p>
+                  )}
+                </div>
               </FormField>
 
               <FormField id="workflow-designer-initial-state" label="Initial State" required>

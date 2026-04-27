@@ -13,6 +13,136 @@ import { taskService } from '~/services/task.service';
 import type { Project, Zone, Node, Task, TaskPriority } from '~/types/project';
 import type { WorkflowDefinition } from '~/types/workflow';
 
+const normalizeText = (value?: string) =>
+  (value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const verticalKeywordSets: Record<'road' | 'building' | 'solar' | 'water', string[]> = {
+  road: ['road', 'highway', 'pavement', 'asphalt', 'bitumen', 'chainage', 'carriageway'],
+  building: ['building', 'civil', 'structural', 'rcc', 'mep', 'architecture', 'tower'],
+  solar: ['solar', 'pv', 'epc', 'inverter', 'string', 'dc', 'ac', 'commissioning'],
+  water: ['water', 'pipeline', 'pump', 'hydr', 'sewage', 'stp', 'wtp', 'distribution'],
+};
+
+type WorkflowMatchResult = {
+  workflows: WorkflowDefinition[];
+  matchedCount: number;
+  totalCount: number;
+  usedFallback: boolean;
+};
+
+const getBusinessAwareWorkflows = (
+  workflows: WorkflowDefinition[],
+  project?: Project | null,
+): WorkflowMatchResult => {
+  if (!project || !project.business_vertical_id || workflows.length === 0) {
+    return {
+      workflows,
+      matchedCount: workflows.length,
+      totalCount: workflows.length,
+      usedFallback: false,
+    };
+  }
+
+  const verticalName = normalizeText(project.business_vertical?.name);
+  const verticalCode = normalizeText(project.business_vertical?.code);
+  const verticalId = project.business_vertical_id;
+  const verticalContext = `${verticalName} ${verticalCode}`;
+
+  const matched = workflows
+    .map((workflow) => {
+      const wf = workflow as WorkflowDefinition & {
+        business_vertical_id?: string;
+        business_vertical_ids?: string[];
+        business_vertical_code?: string;
+        business_vertical_codes?: string[];
+        tags?: string[];
+        metadata?: {
+          business_vertical_id?: string;
+          business_vertical_ids?: string[];
+          business_vertical_code?: string;
+          business_vertical_codes?: string[];
+          tags?: string[];
+        };
+      };
+
+      const explicitVerticalIds = [
+        wf.business_vertical_id,
+        ...(wf.business_vertical_ids || []),
+        wf.metadata?.business_vertical_id,
+        ...(wf.metadata?.business_vertical_ids || []),
+      ].filter(Boolean) as string[];
+
+      if (explicitVerticalIds.includes(verticalId)) {
+        return { workflow, score: 1000 };
+      }
+
+      const explicitVerticalCodes = [
+        wf.business_vertical_code,
+        ...(wf.business_vertical_codes || []),
+        wf.metadata?.business_vertical_code,
+        ...(wf.metadata?.business_vertical_codes || []),
+      ]
+        .filter(Boolean)
+        .map((code) => normalizeText(code));
+
+      if (
+        (verticalCode && explicitVerticalCodes.includes(verticalCode)) ||
+        (verticalName && explicitVerticalCodes.includes(verticalName))
+      ) {
+        return { workflow, score: 900 };
+      }
+
+      const workflowSearchText = normalizeText(
+        [
+          workflow.name,
+          workflow.code,
+          workflow.description,
+          ...(wf.tags || []),
+          ...(wf.metadata?.tags || []),
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
+
+      let score = 0;
+      if (verticalCode && workflowSearchText.includes(verticalCode)) score += 20;
+      if (verticalName && workflowSearchText.includes(verticalName)) score += 20;
+
+      (Object.entries(verticalKeywordSets) as Array<[keyof typeof verticalKeywordSets, string[]]>).forEach(([, keywords]) => {
+        const shouldUseSet = keywords.some((keyword) => verticalContext.includes(keyword));
+        if (!shouldUseSet) return;
+        keywords.forEach((keyword) => {
+          if (workflowSearchText.includes(keyword)) {
+            score += 5;
+          }
+        });
+      });
+
+      return { workflow, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (matched.length === 0) {
+    return {
+      workflows,
+      matchedCount: 0,
+      totalCount: workflows.length,
+      usedFallback: true,
+    };
+  }
+
+  return {
+    workflows: matched.map((item) => item.workflow),
+    matchedCount: matched.length,
+    totalCount: workflows.length,
+    usedFallback: false,
+  };
+};
+
 // Load project data with SSR
 export const useProjectData = routeLoader$(async (requestEvent) => {
   const ssrApiClient = createSSRApiClient(requestEvent);
@@ -109,9 +239,12 @@ export default component$(() => {
 
     state.workflowsLoading = true;
     state.workflows = await workflowService.getAllWorkflows();
-    if (state.workflows.length === 1) {
-      state.selectedWorkflowId = state.workflows[0].id;
+
+    const workflowMatch = getBusinessAwareWorkflows(state.workflows, state.project);
+    if (workflowMatch.workflows.length === 1) {
+      state.selectedWorkflowId = workflowMatch.workflows[0].id;
     }
+
     state.workflowsLoading = false;
   });
 
@@ -137,7 +270,7 @@ export default component$(() => {
         return;
       }
 
-      if (state.workflows.length > 0 && !state.selectedWorkflowId) {
+      if (workflowMatch.totalCount > 0 && !state.selectedWorkflowId) {
         state.error = 'Please select a workflow definition before creating the task.';
         state.loading = false;
         return;
@@ -214,12 +347,22 @@ export default component$(() => {
     (taskForm.equipment_cost || 0) +
     (taskForm.other_cost || 0);
 
+  const workflowMatch = getBusinessAwareWorkflows(state.workflows, state.project);
+  const verticalLabel = state.project?.business_vertical?.name || state.project?.business_vertical?.code || 'selected business vertical';
+  const workflowHintText = state.workflowsLoading
+    ? 'Loading workflows...'
+    : workflowMatch.totalCount === 0
+      ? '0 workflows available'
+      : workflowMatch.usedFallback
+        ? `No direct match for ${verticalLabel}. Showing all ${workflowMatch.totalCount} workflows.`
+        : `Showing ${workflowMatch.matchedCount} workflows for ${verticalLabel}.`;
+
   const canSubmit =
     !!taskForm.code &&
     !!taskForm.title &&
     !!taskForm.start_node_id &&
     !!taskForm.stop_node_id &&
-    (state.workflows.length === 0 || !!state.selectedWorkflowId) &&
+    (workflowMatch.totalCount === 0 || !!state.selectedWorkflowId) &&
     !state.loading;
 
   return (
@@ -347,8 +490,8 @@ export default component$(() => {
                 <FormField
                   id="task-create-workflow"
                   label="Workflow Definition"
-                  required={state.workflows.length > 0}
-                  hint={state.workflowsLoading ? 'Loading workflows...' : `${state.workflows.length} workflows available`}
+                  required={workflowMatch.totalCount > 0}
+                  hint={workflowHintText}
                 >
                     <div class="flex items-center gap-2">
                       <div class="flex-1 min-w-0">
@@ -362,7 +505,7 @@ export default component$(() => {
                           disabled={state.workflowsLoading}
                         >
                           <option value="">Select workflow definition...</option>
-                          {state.workflows.map((workflow) => (
+                          {workflowMatch.workflows.map((workflow) => (
                             <option key={workflow.id} value={workflow.id}>
                               {`${workflow.name} (${workflow.code})`}
                             </option>
@@ -382,9 +525,15 @@ export default component$(() => {
                     </div>
                 </FormField>
 
-                {state.workflows.length === 0 && !state.workflowsLoading && (
+                {workflowMatch.totalCount === 0 && !state.workflowsLoading && (
                   <Alert variant="warning" class="mb-0">
                     No workflow definitions found. Create one in Workflow Management, then assign it during task creation.
+                  </Alert>
+                )}
+
+                {workflowMatch.usedFallback && workflowMatch.totalCount > 0 && !state.workflowsLoading && (
+                  <Alert variant="info" class="mb-0">
+                    No workflow tagged specifically for {verticalLabel}. Showing all available workflows.
                   </Alert>
                 )}
 
@@ -716,7 +865,7 @@ export default component$(() => {
                 </StatCard>
               </div>
 
-              {(!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id || (state.workflows.length > 0 && !state.selectedWorkflowId)) && (
+              {(!taskForm.code || !taskForm.title || !taskForm.start_node_id || !taskForm.stop_node_id || (workflowMatch.totalCount > 0 && !state.selectedWorkflowId)) && (
                 <Alert variant="warning">
                   Please fill in all required fields (Code, Title, Start Node, Stop Node, Workflow)
                 </Alert>

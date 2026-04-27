@@ -174,6 +174,18 @@ export default component$(() => {
                           <p class="text-sm text-gray-600 mb-4">{workflow.description}</p>
                         )}
 
+                        {((workflow.business_vertical_codes && workflow.business_vertical_codes.length > 0) ||
+                          (workflow.metadata?.business_vertical_codes && workflow.metadata.business_vertical_codes.length > 0)) && (
+                          <div class="mb-4">
+                            <div class="text-xs text-gray-500 font-medium mb-2">Business Verticals</div>
+                            <div class="flex flex-wrap gap-1">
+                              {(workflow.business_vertical_codes || workflow.metadata?.business_vertical_codes || []).map((code) => (
+                                <Badge key={code} variant="info">{code}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Stats */}
                         <div class="grid grid-cols-2 gap-3 mb-4">
                           <div class="bg-blue-50 rounded-lg p-3">

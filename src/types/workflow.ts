@@ -170,6 +170,18 @@ export interface WorkflowDefinition {
   code: string;
   name: string;
   description?: string;
+  business_vertical_id?: string;
+  business_vertical_ids?: string[];
+  business_vertical_code?: string;
+  business_vertical_codes?: string[];
+  tags?: string[];
+  metadata?: {
+    business_vertical_id?: string;
+    business_vertical_ids?: string[];
+    business_vertical_code?: string;
+    business_vertical_codes?: string[];
+    tags?: string[];
+  };
   version: string;
   initial_state: string;
   states: WorkflowState[];
