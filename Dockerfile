@@ -1,22 +1,24 @@
-# Use Node.js with Debian slim as base image for building
-FROM node:18-bullseye-slim AS build-env
+# Use Node.js 20 on Debian 12 (glibc 2.36+) for Linux native bindings
+FROM node:20-bookworm-slim AS build-env
 
-# Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Activate pnpm via Corepack
+RUN corepack enable
+
+WORKDIR /app
+
+# Install dependencies first for better Docker layer caching
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy app source
 COPY . /app
-WORKDIR /app
-
-# Install dependencies with pnpm
-RUN pnpm install
 
 # Build the project
 RUN pnpm run build
 
 
-# Use a lightweight distroless image for production
-FROM gcr.io/distroless/nodejs18-debian11
+# Use distroless Node 20 on Debian 12 for runtime compatibility
+FROM gcr.io/distroless/nodejs20-debian12
 
 WORKDIR /app
 
