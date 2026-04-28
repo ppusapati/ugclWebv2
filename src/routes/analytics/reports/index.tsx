@@ -1,10 +1,10 @@
 // Reports List Screen - Enhanced Professional Design
 import { component$, isServer, useStore, $, useSignal, useTask$ } from '@builder.io/qwik';
-import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
+import { useNavigate, routeLoader$, useLocation } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
-import type { ReportDefinition, ReportListResponse } from '~/types/analytics';
+import type { ReportDefinition, ReportListResponse, ReportTemplate } from '~/types/analytics';
 import { useAuthContext } from '~/contexts/auth-context';
 import { Badge, Btn } from '~/components/ds';
 
@@ -54,19 +54,68 @@ function getCategoryVariant(category?: string): 'info' | 'neutral' | 'success' |
 export default component$(() => {
   const auth = useAuthContext();
   const nav = useNavigate();
+  const loc = useLocation();
   const initialData = useReportsData();
   const draggedItem = useSignal<string | null>(null);
   const dragOverItem = useSignal<string | null>(null);
+  const initialCategory = (loc.url.searchParams.get('category') || 'all').trim();
+
+  const reportDomains = [
+    {
+      id: 'all',
+      title: 'All Reports',
+      description: 'Browse every analytics report and cross-module template from one place.',
+      icon: 'i-heroicons-squares-2x2-solid',
+      accent: 'border-slate-200 bg-slate-50 text-slate-700',
+    },
+    {
+      id: 'DMS',
+      title: 'DMS Reports',
+      description: 'Document compliance, aging, usage, and approval tracking built on Report Builder.',
+      icon: 'i-heroicons-folder-open-solid',
+      accent: 'border-blue-200 bg-blue-50 text-blue-700',
+    },
+    {
+      id: 'PMS',
+      title: 'PMS Reports',
+      description: 'Project health, task execution, budget variance, and workflow bottleneck reporting.',
+      icon: 'i-heroicons-clipboard-document-list-solid',
+      accent: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    },
+  ] as const;
 
   const state = useStore({
     reports: initialData.value.reports as ReportDefinition[],
+    templates: [] as ReportTemplate[],
+    templatesLoading: false,
+    creatingTemplateId: '' as string,
+    templateBusy: false,
+    showCreateTemplateModal: false,
+    showEditTemplateModal: false,
     loading: false,
     error: (initialData.value as any).error || '',
     searchQuery: '',
-    selectedCategory: 'all',
+    selectedCategory: initialCategory,
     viewMode: 'grid' as 'grid' | 'list',
     sortBy: 'recent' as 'recent' | 'name' | 'type',
     showFilters: false,
+  });
+
+  const newTemplateForm = useStore({
+    sourceReportId: '',
+    name: '',
+    description: '',
+    category: initialCategory !== 'all' ? initialCategory : 'Analytics',
+    icon: 'i-heroicons-document-duplicate-solid',
+  });
+
+  const editTemplateForm = useStore({
+    id: '',
+    name: '',
+    description: '',
+    category: '',
+    icon: '',
+    isActive: true,
   });
 
   const permissionState = useStore({
@@ -112,6 +161,22 @@ export default component$(() => {
     });
   });
 
+  const loadTemplates = $(async () => {
+    try {
+      state.templatesLoading = true;
+      const params: { category?: string; is_active?: boolean } = { is_active: true };
+      if (state.selectedCategory !== 'all') {
+        params.category = state.selectedCategory;
+      }
+      const response = await analyticsService.getReportTemplates(params);
+      state.templates = response.templates || [];
+    } catch {
+      state.templates = [];
+    } finally {
+      state.templatesLoading = false;
+    }
+  });
+
   const loadReports = $(async () => {
     try {
       state.loading = true;
@@ -129,6 +194,146 @@ export default component$(() => {
     } finally {
       state.loading = false;
     }
+  });
+
+  const resolveActiveBusinessVerticalId = $((): string | null => {
+    if (isServer) {
+      return auth.user?.business_roles?.[0]?.business_vertical_id || null;
+    }
+
+    const current = window.localStorage.getItem('ugcl_current_business_vertical');
+    if (current) {
+      return current;
+    }
+
+    return auth.user?.business_roles?.[0]?.business_vertical_id || null;
+  });
+
+  const createFromTemplate = $(async (template: ReportTemplate) => {
+    try {
+      const businessVerticalId = await resolveActiveBusinessVerticalId();
+      if (!businessVerticalId) {
+        state.error = 'No active business vertical found. Select a business context and try again.';
+        return;
+      }
+
+      state.creatingTemplateId = template.id;
+      const response = await analyticsService.createReportFromTemplate(template.id, {
+        name: `${template.name} ${new Date().toLocaleDateString('en-CA')}`,
+        description: template.description,
+        category: template.category,
+        business_vertical_id: businessVerticalId,
+      });
+
+      await loadReports();
+      nav(`/analytics/reports/view/${response.report.id}`);
+    } catch (err: any) {
+      state.error = err.message || 'Failed to create report from template';
+    } finally {
+      state.creatingTemplateId = '';
+    }
+  });
+
+  const openCreateTemplateModal = $(() => {
+    state.error = '';
+    state.showCreateTemplateModal = true;
+    if (!newTemplateForm.sourceReportId && state.reports.length > 0) {
+      const defaultReport = state.reports[0];
+      newTemplateForm.sourceReportId = defaultReport.id;
+      newTemplateForm.name = `${defaultReport.name} Template`;
+      newTemplateForm.description = defaultReport.description || '';
+      newTemplateForm.category = defaultReport.category || (state.selectedCategory !== 'all' ? state.selectedCategory : 'Analytics');
+    }
+  });
+
+  const closeCreateTemplateModal = $(() => {
+    state.showCreateTemplateModal = false;
+  });
+
+  const createTemplate = $(async () => {
+    const sourceReportId = String(newTemplateForm.sourceReportId || '').trim();
+    const templateName = String(newTemplateForm.name || '').trim();
+    if (!sourceReportId) {
+      state.error = 'Select a source report to build template payload.';
+      return;
+    }
+    if (!templateName) {
+      state.error = 'Template name is required.';
+      return;
+    }
+
+    try {
+      state.templateBusy = true;
+      state.error = '';
+      await analyticsService.createReportTemplate({
+        report_id: sourceReportId,
+        name: templateName,
+        description: String(newTemplateForm.description || '').trim(),
+        category: String(newTemplateForm.category || '').trim(),
+        icon: String(newTemplateForm.icon || '').trim(),
+      });
+
+      await loadTemplates();
+      state.showCreateTemplateModal = false;
+      newTemplateForm.name = '';
+      newTemplateForm.description = '';
+    } catch (err: any) {
+      state.error = err.message || 'Failed to create template';
+    } finally {
+      state.templateBusy = false;
+    }
+  });
+
+  const openEditTemplateModal = $((template: ReportTemplate) => {
+    state.error = '';
+    editTemplateForm.id = template.id;
+    editTemplateForm.name = template.name || '';
+    editTemplateForm.description = template.description || '';
+    editTemplateForm.category = template.category || '';
+    editTemplateForm.icon = template.icon || 'i-heroicons-document-duplicate-solid';
+    editTemplateForm.isActive = template.is_active !== false;
+    state.showEditTemplateModal = true;
+  });
+
+  const closeEditTemplateModal = $(() => {
+    state.showEditTemplateModal = false;
+  });
+
+  const updateTemplate = $(async () => {
+    const templateId = String(editTemplateForm.id || '').trim();
+    const templateName = String(editTemplateForm.name || '').trim();
+    if (!templateId) {
+      state.error = 'Template not selected for update.';
+      return;
+    }
+    if (!templateName) {
+      state.error = 'Template name is required.';
+      return;
+    }
+
+    try {
+      state.templateBusy = true;
+      state.error = '';
+      await analyticsService.updateReportTemplate(templateId, {
+        name: templateName,
+        description: String(editTemplateForm.description || '').trim(),
+        category: String(editTemplateForm.category || '').trim(),
+        icon: String(editTemplateForm.icon || '').trim(),
+        is_active: !!editTemplateForm.isActive,
+      });
+
+      await loadTemplates();
+      state.showEditTemplateModal = false;
+    } catch (err: any) {
+      state.error = err.message || 'Failed to update template';
+    } finally {
+      state.templateBusy = false;
+    }
+  });
+
+  useTask$(({ track }) => {
+    track(() => state.selectedCategory);
+    void loadTemplates();
   });
 
   const deleteReport = $(async (reportId: string, reportName: string) => {
@@ -198,7 +403,12 @@ export default component$(() => {
     }
   });
 
-  const categories = ['all', ...new Set(state.reports.map(r => r.category).filter(Boolean))];
+  const categories = [
+    'all',
+    'DMS',
+    'PMS',
+    ...new Set(state.reports.map(r => r.category).filter((category): category is string => Boolean(category) && category !== 'DMS' && category !== 'PMS')),
+  ];
   const reportStats = {
     total: state.reports.length,
     favorites: state.reports.filter(r => r.is_favorite).length,
@@ -268,6 +478,38 @@ export default component$(() => {
 
       {/* Search and Filters */}
       <div>
+        <div class="rounded-lg border border-gray-200 bg-white shadow-lg mb-6">
+          <div class="p-6">
+            <div class="mb-4">
+              <h2 class="text-lg font-semibold text-gray-900">Report Domains</h2>
+              <p class="text-sm text-gray-600">DMS and PMS are integrated here as report domains inside the main Reports workspace.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {reportDomains.map((domain) => {
+                const isActive = state.selectedCategory === domain.id;
+                return (
+                  <button
+                    key={domain.id}
+                    type="button"
+                    class={`rounded-xl border p-5 text-left transition-all ${domain.accent} ${isActive ? 'ring-2 ring-offset-2 ring-indigo-500 shadow-md' : 'hover:shadow-sm'}`}
+                    onClick$={() => {
+                      state.selectedCategory = domain.id;
+                    }}
+                  >
+                    <div class="flex items-start gap-3">
+                      <span class={`${domain.icon} h-6 w-6 flex-shrink-0`}></span>
+                      <div>
+                        <div class="text-base font-semibold">{domain.title}</div>
+                        <p class="mt-1 text-sm opacity-90">{domain.description}</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg mb-6">
           <div class="p-6">
             <div class="flex flex-col lg:flex-row gap-4">
@@ -311,7 +553,9 @@ export default component$(() => {
               {categories.map((cat) => (
                 <Btn
                   key={cat || 'all'}
-                  onClick$={() => state.selectedCategory = cat || 'all'}
+                  onClick$={() => {
+                    state.selectedCategory = cat || 'all';
+                  }}
                   size="sm"
                   variant={state.selectedCategory === cat ? 'primary' : 'ghost'}
                 >
@@ -328,6 +572,217 @@ export default component$(() => {
             </div>
           </div>
         </div>
+
+        <div class="rounded-lg border border-gray-200 bg-white shadow-lg mb-6">
+          <div class="p-6">
+            <div class="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Template Quick Start</h2>
+                <p class="text-sm text-gray-600">Create report-builder reports from curated templates, including built-in DMS and PMS reporting packs.</p>
+              </div>
+              <Btn
+                size="sm"
+                variant="primary"
+                onClick$={() => openCreateTemplateModal()}
+              >
+                <i class="i-heroicons-plus-solid h-4 w-4 inline-block" aria-hidden="true"></i>
+                Create Template
+              </Btn>
+            </div>
+
+            {state.templatesLoading ? (
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((skeleton) => (
+                  <div key={skeleton} class="h-36 rounded-lg bg-gray-100 animate-pulse"></div>
+                ))}
+              </div>
+            ) : state.templates.length > 0 ? (
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {state.templates.map((template) => (
+                  <div key={template.id} class="rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-md transition-all">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                      <h3 class="text-sm font-semibold text-gray-900 line-clamp-2">{template.name}</h3>
+                      {template.category ? <Badge variant="info">{template.category}</Badge> : null}
+                    </div>
+                    <p class="text-xs text-gray-600 line-clamp-3 min-h-[3rem]">{template.description || 'Template without description'}</p>
+                    <div class="mt-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Btn
+                          size="sm"
+                          class="w-full"
+                          disabled={state.creatingTemplateId === template.id}
+                          onClick$={() => createFromTemplate(template)}
+                        >
+                          {state.creatingTemplateId === template.id ? 'Creating...' : 'Use Template'}
+                        </Btn>
+                        <Btn
+                          size="sm"
+                          variant="ghost"
+                          class="w-full"
+                          onClick$={() => openEditTemplateModal(template)}
+                        >
+                          Edit
+                        </Btn>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div class="text-sm text-gray-600">No templates found for the selected category.</div>
+            )}
+          </div>
+        </div>
+
+        {state.showCreateTemplateModal && (
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-200">
+              <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">Create Template From Report</h3>
+                  <p class="text-sm text-gray-600">Generate reusable template payload from an existing report definition.</p>
+                </div>
+                <Btn size="sm" variant="ghost" onClick$={() => closeCreateTemplateModal()}>Close</Btn>
+              </div>
+              <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Source Report</label>
+                  <select
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    value={newTemplateForm.sourceReportId}
+                    onChange$={(e: any) => {
+                      const reportId = String(e.target.value || '');
+                      newTemplateForm.sourceReportId = reportId;
+                      const selected = state.reports.find((report) => report.id === reportId);
+                      if (selected && !newTemplateForm.name) {
+                        newTemplateForm.name = `${selected.name} Template`;
+                        newTemplateForm.description = selected.description || '';
+                        newTemplateForm.category = selected.category || newTemplateForm.category;
+                      }
+                    }}
+                  >
+                    <option value="">Select report...</option>
+                    {state.reports.map((report) => (
+                      <option key={report.id} value={report.id}>{report.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
+                  <input
+                    type="text"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    value={newTemplateForm.name}
+                    onInput$={(e: any) => {
+                      newTemplateForm.name = e.target.value;
+                    }}
+                    placeholder="Monthly Compliance Template"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    value={newTemplateForm.category}
+                    onInput$={(e: any) => {
+                      newTemplateForm.category = e.target.value;
+                    }}
+                    placeholder="DMS / PMS / Analytics"
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm min-h-[96px]"
+                    value={newTemplateForm.description}
+                    onInput$={(e: any) => {
+                      newTemplateForm.description = e.target.value;
+                    }}
+                    placeholder="Reusable baseline for document compliance and status analytics"
+                  ></textarea>
+                </div>
+              </div>
+              <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+                <Btn variant="ghost" onClick$={() => closeCreateTemplateModal()} disabled={state.templateBusy}>Cancel</Btn>
+                <Btn onClick$={() => createTemplate()} disabled={state.templateBusy}>
+                  {state.templateBusy ? 'Creating...' : 'Create Template'}
+                </Btn>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {state.showEditTemplateModal && (
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-200">
+              <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">Edit Template</h3>
+                  <p class="text-sm text-gray-600">Update template metadata and active status.</p>
+                </div>
+                <Btn size="sm" variant="ghost" onClick$={() => closeEditTemplateModal()}>Close</Btn>
+              </div>
+              <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
+                  <input
+                    type="text"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    value={editTemplateForm.name}
+                    onInput$={(e: any) => {
+                      editTemplateForm.name = e.target.value;
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    value={editTemplateForm.category}
+                    onInput$={(e: any) => {
+                      editTemplateForm.category = e.target.value;
+                    }}
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm min-h-[96px]"
+                    value={editTemplateForm.description}
+                    onInput$={(e: any) => {
+                      editTemplateForm.description = e.target.value;
+                    }}
+                  ></textarea>
+                </div>
+
+                <div class="md:col-span-2 flex items-center gap-3">
+                  <input
+                    id="template-active"
+                    type="checkbox"
+                    checked={editTemplateForm.isActive}
+                    onChange$={(e: any) => {
+                      editTemplateForm.isActive = !!e.target.checked;
+                    }}
+                  />
+                  <label for="template-active" class="text-sm font-medium text-gray-700">Template is active</label>
+                </div>
+              </div>
+              <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+                <Btn variant="ghost" onClick$={() => closeEditTemplateModal()} disabled={state.templateBusy}>Cancel</Btn>
+                <Btn onClick$={() => updateTemplate()} disabled={state.templateBusy}>
+                  {state.templateBusy ? 'Saving...' : 'Save Changes'}
+                </Btn>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}

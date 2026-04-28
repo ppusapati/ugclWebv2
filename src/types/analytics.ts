@@ -66,7 +66,7 @@ export interface DataSource {
   form_code?: string;
   form_id?: string;
   join_type?: 'INNER' | 'LEFT' | 'RIGHT' | 'FULL';
-  join_condition?: string;
+  join_on?: string;
 }
 
 export interface ReportField {
@@ -160,6 +160,45 @@ export interface ReportListResponse {
   total?: number;
   page?: number;
   page_size?: number;
+}
+
+export interface ReportTemplate {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  category?: string;
+  icon?: string;
+  template?: Record<string, any>;
+  usage_count?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ReportTemplateListResponse {
+  templates: ReportTemplate[];
+  count?: number;
+}
+
+export interface CreateReportTemplateRequest {
+  report_id?: string;
+  name: string;
+  code?: string;
+  description?: string;
+  category?: string;
+  icon?: string;
+  template?: Record<string, any>;
+}
+
+export interface UpdateReportTemplateRequest {
+  name?: string;
+  code?: string;
+  description?: string;
+  category?: string;
+  icon?: string;
+  is_active?: boolean;
+  template?: Record<string, any>;
 }
 
 // Dashboard Types

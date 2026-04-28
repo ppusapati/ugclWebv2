@@ -1,0 +1,181 @@
+{
+  "form_code": "EXP_ACC",
+  "title": "Expenditures",
+  "description": "Capture Expenditures at site level",
+  "version": "1.0.0",
+  "module": "7c4c7c36-b7d3-42dc-ab62-4ca9e7b618a9",
+  "accessible_verticals": [
+    "73be016d-c28f-487a-a1db-cc72cd954c7a"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Expenditures",
+      "description": "Site-level expenditure capture",
+      "fields": [
+        {
+          "id": "employee_id_name",
+          "type": "text",
+          "label": "Employee ID / Name",
+          "placeholder": "Enter employee ID or employee name",
+          "required": true,
+          "hint": "Provide the employee ID or full name of the person incurring the expense"
+        },
+        {
+          "id": "department",
+          "type": "text",
+          "label": "Department",
+          "placeholder": "Enter department",
+          "required": true
+        },
+        {
+          "id": "site_location",
+          "type": "text",
+          "label": "Site Location",
+          "placeholder": "Enter site location",
+          "required": true
+        },
+        {
+          "id": "expense_category",
+          "type": "dropdown",
+          "label": "Expense Category",
+          "required": true,
+          "options": [
+            { "label": "Site Expenditure", "value": "site_expenditure" },
+            { "label": "Travel", "value": "travel" },
+            { "label": "Food", "value": "food" },
+            { "label": "Accommodation", "value": "accommodation" },
+            { "label": "Office Supplies", "value": "office_supplies" },
+            { "label": "Fuel", "value": "fuel" },
+            { "label": "Utilities", "value": "utilities" },
+            { "label": "Repairs & Maintenance", "value": "repairs_maintenance" },
+            { "label": "Miscellaneous", "value": "miscellaneous" }
+          ]
+        },
+        {
+          "id": "expense_date",
+          "type": "date",
+          "label": "Expense Date",
+          "required": true
+        },
+        {
+          "id": "description_purpose_of_expense",
+          "type": "textarea",
+          "label": "Description / Purpose of Expense",
+          "placeholder": "Describe the purpose of the expenditure",
+          "required": true,
+          "rows": 4,
+          "maxLength": 500
+        },
+        {
+          "id": "amount",
+          "type": "number",
+          "label": "Amount",
+          "placeholder": "Enter amount",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "payment_mode",
+          "type": "dropdown",
+          "label": "Payment Mode",
+          "required": true,
+          "options": [
+            { "label": "Credit Card", "value": "credit_card" },
+            { "label": "Cash", "value": "cash" },
+            { "label": "Card", "value": "card" },
+            { "label": "UPI", "value": "upi" },
+            { "label": "Bank Transfer", "value": "bank_transfer" }
+          ]
+        },
+        {
+          "id": "proof_of_payment",
+          "type": "file_upload",
+          "label": "Proof of Payment",
+          "required": true,
+          "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+          "multiple": false,
+          "maxFiles": 1,
+          "maxSizePerFile": 10485760,
+          "hint": "Upload a payment proof document or image"
+        },
+        {
+          "id": "credit_card_number",
+          "type": "text",
+          "label": "Credit Card Number",
+          "placeholder": "Enter masked or reference card number",
+          "required": false,
+          "visible": {
+            "field": "payment_mode",
+            "operator": "equals",
+            "value": "credit_card"
+          },
+          "validation": {
+            "minLength": 4,
+            "maxLength": 25
+          }
+        },
+        {
+          "id": "invoice_receipt_number",
+          "type": "text",
+          "label": "Invoice / Receipt Number",
+          "placeholder": "Enter invoice or receipt number",
+          "required": false
+        },
+        {
+          "id": "upload_invoice",
+          "type": "file_upload",
+          "label": "Upload Invoice",
+          "required": false,
+          "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+          "multiple": false,
+          "maxFiles": 1,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "upload_supporting_documents",
+          "type": "file_upload",
+          "label": "Upload Supporting Documents",
+          "required": false,
+          "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx",
+          "multiple": true,
+          "maxFiles": 5,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "purchase_authorized_by",
+          "type": "text",
+          "label": "Purchase Authorized By",
+          "placeholder": "Enter approver name or designation",
+          "required": false
+        },
+        {
+          "id": "remarks_comments",
+          "type": "textarea",
+          "label": "Remarks / Comments",
+          "placeholder": "Add any additional remarks",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Expenditure",
+    "success_message": "Expenditure captured successfully.",
+    "error_message": "Unable to submit expenditure. Please review the form and try again."
+  }
+}

@@ -86,6 +86,7 @@ const menuItems: MenuItem[] = [
       { id: 'modules', label: 'Modules', href: '/masters/module' },
       { id: 'users', label: 'Users', href: '/users' },
       { id: 'roles', label: 'Roles & Permissions', href: '/roles' },
+      { id: 'reports', label: 'Reports', href: '/analytics/reports' },
       { id: 'settings', label: 'Settings', href: '/settings' },
       { id: 'audit', label: 'Audit Logs', href: '/audit' },
       { id: 'backup', label: 'Backup', href: '/backup' }
@@ -102,7 +103,9 @@ export const MenuProvider = component$(() => {
   const setActiveFromRoute = $((path: string) => {
     // Find matching menu item and sidebar item based on path
     for (const menu of menuItems) {
-      const matchingSubItem = menu.subItems?.find((sub) =>
+      const matchingSubItem = [...(menu.subItems || [])]
+        .sort((left, right) => right.href.length - left.href.length)
+        .find((sub) =>
         sub.href === '/' ? path === '/' : path.startsWith(sub.href)
       );
       if (matchingSubItem) {

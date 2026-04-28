@@ -547,7 +547,7 @@ export default component$<FormBuilderProps>((props) => {
                         
                         return (
                           <FieldEditor
-                            key={field.id}
+                            key={fieldIndex}
                             field={field}
                             onUpdate$={handleFieldUpdate}
                             onDelete$={handleFieldDelete}

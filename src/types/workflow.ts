@@ -288,6 +288,7 @@ export interface AppForm {
   accessible_verticals: string[];
   form_schema?: Record<string, any>;
   steps?: FormStep[];
+  ui_config?: UIConfig;
   core_fields?: any[];
   validations?: Record<string, any>;
   dependencies?: any[];

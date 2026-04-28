@@ -1,13 +1,14 @@
 // src/components/form-builder/renderer/FormRenderer.tsx
 import { component$, useStore, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { formBuilderService } from '~/services';
-import type { FormStep } from '~/types/workflow';
+import type { AppForm, FormStep } from '~/types/workflow';
 import StepNavigation from './StepNavigation';
 import FieldRenderer from './FieldRenderer';
 
 interface FormRendererProps {
   businessCode: string;
   formCode: string;
+  initialForm?: AppForm;
   initialData?: Record<string, any>;
   submissionId?: string;
   onSubmit$: PropFunction<(data: Record<string, any>) => void>;
@@ -37,10 +38,19 @@ export default component$<FormRendererProps>((props) => {
   // which ensures the user's auth token is available in localStorage.
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
+    if (props.initialForm) {
+      formDefinition.title = props.initialForm.title;
+      formDefinition.description = props.initialForm.description;
+      formDefinition.steps = props.initialForm.steps || [];
+      formDefinition.ui_config = props.initialForm.ui_config;
+      error.value = null;
+      loading.value = false;
+      return;
+    }
+
     try {
       loading.value = true;
       const form = await formBuilderService.getFormByCode(props.formCode, props.businessCode);
-
       formDefinition.title = form.title;
       formDefinition.description = form.description;
       formDefinition.steps = form.steps || [];

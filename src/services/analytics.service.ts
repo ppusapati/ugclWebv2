@@ -7,6 +7,10 @@ import { apiClient } from './api-client';
 import type {
   ReportDefinition,
   ReportListResponse,
+  ReportTemplate,
+  ReportTemplateListResponse,
+  CreateReportTemplateRequest,
+  UpdateReportTemplateRequest,
   ReportResult,
   Dashboard,
   DashboardListResponse,
@@ -75,6 +79,58 @@ class AnalyticsService {
    */
   async toggleFavorite(reportId: string): Promise<{ report: ReportDefinition; message: string }> {
     return apiClient.post<{ report: ReportDefinition; message: string }>(`/reports/definitions/${reportId}/favorite`);
+  }
+
+  /**
+   * Get available report templates
+   */
+  async getReportTemplates(params?: { category?: string; is_active?: boolean }): Promise<ReportTemplateListResponse> {
+    return apiClient.get<ReportTemplateListResponse>('/report-templates', params);
+  }
+
+  /**
+   * Create a report definition from a template
+   */
+  async createReportFromTemplate(
+    templateId: string,
+    data: {
+      name: string;
+      business_vertical_id: string;
+      description?: string;
+      category?: string;
+      report_type?: string;
+      chart_type?: string;
+      is_public?: boolean;
+      allowed_roles?: string[];
+    }
+  ): Promise<{ report: ReportDefinition; message: string }> {
+    return apiClient.post<{ report: ReportDefinition; message: string }>(
+      `/report-templates/${encodeURIComponent(templateId)}/create`,
+      data
+    );
+  }
+
+  /**
+   * Create a reusable template from a report or direct template payload
+   */
+  async createReportTemplate(data: CreateReportTemplateRequest): Promise<{ template: ReportTemplate; message: string }> {
+    return apiClient.post<{ template: ReportTemplate; message: string }>(
+      '/report-templates',
+      data
+    );
+  }
+
+  /**
+   * Update an existing template
+   */
+  async updateReportTemplate(
+    templateId: string,
+    data: UpdateReportTemplateRequest
+  ): Promise<{ template: ReportTemplate; message: string }> {
+    return apiClient.put<{ template: ReportTemplate; message: string }>(
+      `/report-templates/${encodeURIComponent(templateId)}`,
+      data
+    );
   }
 
   // ============================================================================

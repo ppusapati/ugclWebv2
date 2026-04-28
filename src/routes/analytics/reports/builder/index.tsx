@@ -143,14 +143,41 @@ const CHART_TYPE_META = [
   { value: 'scatter', label: 'Scatter', icon: 'i-heroicons-sparkles-solid', desc: 'Reveal correlations or distribution between two numeric fields.' },
 ];
 
+const SYSTEM_SCOPE_TOKENS: Record<string, string[]> = {
+  documents: ['documents', 'document', 'dms'],
+  projects: ['projects', 'project', 'pms', 'task', 'tasks'],
+  attendance: ['attendance'],
+  workflow: ['workflow', 'workflows'],
+};
 
-const SYSTEM_MODULE_OPTION_ID = '__SYSTEM_DATA_SOURCES__';
-const SYSTEM_MODULE_OPTION = {
-  id: SYSTEM_MODULE_OPTION_ID,
-  module_id: SYSTEM_MODULE_OPTION_ID,
-  name: 'System Data Sources',
-  module_name: 'System Data Sources',
-  system: true,
+const dedupeTablesByName = (tables: any[]) => {
+  const seen = new Set<string>();
+  return tables.filter((table: any) => {
+    const key = String(table?.table_name || '').trim();
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
+const moduleMatchesSystemScope = (moduleOption: any, moduleId: string, systemScope: string): boolean => {
+  const normalizedScope = normalizeScopeToken(systemScope);
+  if (!normalizedScope) {
+    return false;
+  }
+
+  const moduleTokens = buildModuleTokens(moduleOption, moduleId);
+  const scopeTokens = SYSTEM_SCOPE_TOKENS[normalizedScope] || [normalizedScope];
+
+  return scopeTokens.some((scopeToken) =>
+    moduleTokens.some((moduleToken) =>
+      moduleToken === scopeToken ||
+      moduleToken.includes(scopeToken) ||
+      scopeToken.includes(moduleToken)
+    )
+  );
 };
 
 const tableMatchesModuleHeuristic = (table: any, moduleId: string, moduleTokens: string[]): boolean => {
@@ -200,17 +227,16 @@ const resolveScopedTables = (
   moduleOption?: any
 ): any[] => {
   const systemTables = tables.filter((table: any) => !!table?.system);
-
-  if (String(moduleId || '').trim() === SYSTEM_MODULE_OPTION_ID) {
-    return systemTables;
-  }
+  const scopedSystemTables = systemTables.filter((table: any) =>
+    moduleMatchesSystemScope(moduleOption, moduleId, String(table?.system_scope || ''))
+  );
 
   // For regular modules, exclude system data sources from the dropdown.
   const regularTables = tables.filter((table: any) => !table?.system);
 
   const strictMatches = filterTablesBySelection(regularTables, verticalId, moduleId);
   if (strictMatches.length > 0) {
-    return strictMatches;
+    return dedupeTablesByName([...strictMatches, ...scopedSystemTables]);
   }
 
   const anyMetadataPresent = regularTables.some((table) => hasScopeMetadata(table));
@@ -223,10 +249,10 @@ const resolveScopedTables = (
   );
 
   if (anyMetadataPresent) {
-    return moduleFallbackMatches;
+    return dedupeTablesByName([...moduleFallbackMatches, ...scopedSystemTables]);
   }
 
-  return moduleFallbackMatches;
+  return dedupeTablesByName([...moduleFallbackMatches, ...scopedSystemTables]);
 };
 
 // Load available form tables with SSR support
@@ -350,7 +376,9 @@ export default component$(() => {
 
   const availableTables = useSignal<any[]>([]);
   const tableFields = useSignal<any[]>([]);
+  const tableFieldsBySource = useStore<Record<string, any[]>>({});
   const selectedTable = useSignal('');
+  const activeDataSourceAlias = useSignal('');
   const previewData = useSignal<any>(null);
   const loading = useSignal(false);
   const error = useSignal((initialData.value as any).error || '');
@@ -376,29 +404,48 @@ export default component$(() => {
   const loadingModalData = useSignal(false);
 
   const getModuleOptions = () => {
-    const modules = Array.isArray(availableModules.value) ? [...availableModules.value] : [];
-    const hasSystemOption = modules.some((module: any) => {
-      const moduleId = String(module?.id || module?.module_id || '').trim();
-      return moduleId === SYSTEM_MODULE_OPTION_ID;
-    });
-    if (!hasSystemOption) {
-      modules.push(SYSTEM_MODULE_OPTION);
-    }
-    return modules;
+    return Array.isArray(availableModules.value) ? [...availableModules.value] : [];
+  };
+
+  const encodeFieldSelection = (field: any) => `${String(field?.data_source || '').trim()}::${String(field?.field_name || '').trim()}`;
+
+  const parseFieldSelection = (value: string) => {
+    const [dataSource, ...fieldParts] = String(value || '').split('::');
+    return {
+      dataSource: String(dataSource || '').trim(),
+      fieldName: fieldParts.join('::').trim(),
+    };
+  };
+
+  const getFieldOptionLabel = (field: any) => {
+    const label = field.alias || field.field_name;
+    return field.data_source ? `${label} [${field.data_source}]` : label;
+  };
+
+  const getFieldBySelection = (selection: string) => {
+    const { dataSource, fieldName } = parseFieldSelection(selection);
+    return (reportConfig.fields || []).find((field: any) =>
+      String(field.field_name || '') === fieldName && String(field.data_source || '') === dataSource
+    );
   };
 
   const clearSelectedDataSource = $(() => {
     selectedTable.value = '';
+    activeDataSourceAlias.value = '';
     tableFields.value = [];
+    Object.keys(tableFieldsBySource).forEach((key) => {
+      delete tableFieldsBySource[key];
+    });
     reportConfig.data_sources = [];
     reportConfig.fields = [];
     reportConfig.filters = [];
+    reportConfig.groupings = [];
+    reportConfig.sorting = [];
   });
 
   const loadScopedTables = $(async (verticalId?: string, moduleId?: string) => {
     const normalizedVerticalId = String(verticalId || '').trim();
     const normalizedModuleId = String(moduleId || '').trim();
-    const isSystemModuleSelection = normalizedModuleId === SYSTEM_MODULE_OPTION_ID;
 
     if (!normalizedVerticalId || !normalizedModuleId) {
       availableTables.value = [];
@@ -410,10 +457,8 @@ export default component$(() => {
       const scopedParams: any = {
         business_vertical_id: normalizedVerticalId,
         vertical_id: normalizedVerticalId,
+        module_id: normalizedModuleId,
       };
-      if (!isSystemModuleSelection) {
-        scopedParams.module_id = normalizedModuleId;
-      }
 
       const response: any = await analyticsService.getFormTables(scopedParams);
 
@@ -538,6 +583,17 @@ export default component$(() => {
 
   // Load fields when table is selected
   const loadTableFields = $(async (tableName: string) => {
+    const sourceAlias = activeDataSourceAlias.value;
+    if (!sourceAlias) {
+      tableFields.value = [];
+      return;
+    }
+
+    if (tableFieldsBySource[sourceAlias]?.length) {
+      tableFields.value = tableFieldsBySource[sourceAlias];
+      return;
+    }
+
     try {
       const response: any = await analyticsService.getTableFields(tableName);
       // Use form_fields (human-readable form definitions) as primary source
@@ -549,22 +605,106 @@ export default component$(() => {
         source: 'form' // Indicates these are from form schema with column_name
       }));
       console.log('[REPORT BUILDER] Loaded', enrichedFields.length, 'fields for table:', tableName, 'response:', response);
+      tableFieldsBySource[sourceAlias] = enrichedFields;
       tableFields.value = enrichedFields;
     } catch (err: any) {
       error.value = err.message || 'Failed to load fields';
     }
   });
 
-  const handleTableSelect = $((tableName: string, formCode: string, formId: string) => {
-    selectedTable.value = tableName;
-    reportConfig.data_sources = [{
-      alias: 'data',
+  const handleTableSelect = $(async (tableName: string, formCode: string, formId: string) => {
+    const currentDataSources = (reportConfig.data_sources || []) as any[];
+    const existingSource = currentDataSources.find((source: any) => String(source.table_name) === String(tableName));
+    if (existingSource) {
+      activeDataSourceAlias.value = String(existingSource.alias || '');
+      selectedTable.value = tableName;
+      await loadTableFields(tableName);
+      currentStep.value = 2;
+      return;
+    }
+
+    const normalizedAlias = String(tableName || 'source')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'source';
+
+    const existingAliases = new Set(currentDataSources.map((source: any) => String(source.alias || '').trim()));
+    let alias = normalizedAlias;
+    if (existingAliases.has(alias)) {
+      let counter = 2;
+      while (existingAliases.has(`${normalizedAlias}_${counter}`)) {
+        counter += 1;
+      }
+      alias = `${normalizedAlias}_${counter}`;
+    }
+
+    const nextSource: any = {
+      alias,
       table_name: tableName,
       form_code: formCode,
-      form_id: formId
-    }];
-    loadTableFields(tableName);
+      form_id: formId,
+    };
+
+    if (currentDataSources.length > 0) {
+      nextSource.join_type = 'LEFT';
+      nextSource.join_on = '';
+    }
+
+    selectedTable.value = tableName;
+    activeDataSourceAlias.value = alias;
+    reportConfig.data_sources = [...currentDataSources, nextSource];
+    tableFields.value = [];
+    await loadTableFields(tableName);
     currentStep.value = 2;
+  });
+
+  const selectDataSource = $(async (alias: string) => {
+    const currentDataSources = (reportConfig.data_sources || []) as any[];
+    const source = currentDataSources.find((item: any) => String(item.alias || '') === String(alias || ''));
+    if (!source) {
+      return;
+    }
+    activeDataSourceAlias.value = String(source.alias || '');
+    selectedTable.value = String(source.table_name || '');
+    await loadTableFields(String(source.table_name || ''));
+  });
+
+  const updateDataSourceJoin = $((alias: string, key: 'join_type' | 'join_on', value: string) => {
+    const currentDataSources = (reportConfig.data_sources || []) as any[];
+    reportConfig.data_sources = currentDataSources.map((source: any) =>
+      String(source.alias || '') === String(alias || '')
+        ? { ...source, [key]: value }
+        : source
+    );
+  });
+
+  const removeDataSource = $(async (alias: string) => {
+    const currentDataSources = (reportConfig.data_sources || []) as any[];
+    const remainingSources = currentDataSources.filter((source: any) => String(source.alias || '') !== String(alias || ''));
+    reportConfig.data_sources = remainingSources;
+    reportConfig.fields = (reportConfig.fields || []).filter((field: any) => String(field.data_source || '') !== String(alias || ''));
+    reportConfig.filters = (reportConfig.filters || []).filter((filter: any) => String(filter.data_source || '') !== String(alias || ''));
+    reportConfig.sorting = (reportConfig.sorting || []).filter((item: any) => String(item.data_source || '') !== String(alias || ''));
+    reportConfig.groupings = (reportConfig.groupings || []).filter((item: any) => String(item.data_source || '') !== String(alias || ''));
+    delete tableFieldsBySource[alias];
+
+    if (activeDataSourceAlias.value === alias) {
+      const nextAlias = String(remainingSources[0]?.alias || '');
+      activeDataSourceAlias.value = nextAlias;
+      selectedTable.value = String(remainingSources[0]?.table_name || '');
+      if (nextAlias && selectedTable.value) {
+        await loadTableFields(selectedTable.value);
+      } else {
+        tableFields.value = [];
+      }
+    }
+
+    if (remainingSources.length === 0) {
+      selectedTable.value = '';
+      tableFields.value = [];
+      currentStep.value = 1;
+    }
   });
 
   const WORKFLOW_TIMELINE_FIELDS = [
@@ -576,20 +716,27 @@ export default component$(() => {
   ];
 
   const addField = $((field: any) => {
+    const currentDataSources = (reportConfig.data_sources || []) as any[];
+    const sourceAlias = activeDataSourceAlias.value || String(currentDataSources[0]?.alias || '').trim();
+    if (!sourceAlias) {
+      error.value = 'Select a data source before adding fields.';
+      return;
+    }
+
     // Always use column_name from form schema (backend ensures it's the actual database column)
     // Fall back to id/name only if column_name not available (for legacy db_fields)
     const fieldName = field.column_name || field.id || field.name;
     const fieldLabel = field.label || field.name || field.column_name;
     const fieldType = field.dataType || field.data_type || field.type || 'text';
 
-    const exists = reportConfig.fields?.some(f => f.field_name === fieldName);
+    const exists = reportConfig.fields?.some(f => f.field_name === fieldName && f.data_source === sourceAlias);
     if (!exists) {
       reportConfig.fields = [
         ...(reportConfig.fields || []),
         {
           field_name: fieldName,
           alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-          data_source: 'data',
+          data_source: sourceAlias,
           data_type: fieldType,
           is_visible: true,
           order: (reportConfig.fields?.length || 0) + 1,
@@ -610,7 +757,7 @@ export default component$(() => {
               {
                 field_name: 'submission_id',
                 alias: String(submissionFieldLabel || 'Submission ID').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-                data_source: 'data',
+                data_source: sourceAlias,
                 data_type: submissionFieldType,
                 is_visible: true,
                 order: (reportConfig.fields?.length || 0) + 1,
@@ -622,7 +769,7 @@ export default component$(() => {
 
       if (reportConfig.report_type === 'kpi') {
         if (!kpiMetricField.value) {
-          kpiMetricField.value = fieldName;
+          kpiMetricField.value = `${sourceAlias}::${fieldName}`;
         }
         ensureKpiConfigDefaults();
       }
@@ -643,10 +790,11 @@ export default component$(() => {
 
     reportConfig.fields = (reportConfig.fields || []).filter((_, i) => i !== index);
 
-    if (removedField?.field_name && kpiMetricField.value === removedField.field_name) {
-      kpiMetricField.value = (reportConfig.fields || [])[0]?.field_name || '';
+    if (removedField?.field_name && removedField?.data_source && kpiMetricField.value === `${removedField.data_source}::${removedField.field_name}`) {
+      const nextField = (reportConfig.fields || [])[0] as any;
+      kpiMetricField.value = nextField ? `${nextField.data_source}::${nextField.field_name}` : '';
     }
-    if (removedField?.field_name && kpiGroupByField.value === removedField.field_name) {
+    if (removedField?.field_name && removedField?.data_source && kpiGroupByField.value === `${removedField.data_source}::${removedField.field_name}`) {
       kpiGroupByField.value = '';
     }
 
@@ -657,7 +805,9 @@ export default component$(() => {
 
   const toggleFieldSelection = $((field: any) => {
     const fieldName = field.column_name || field.id || field.name;
-    const selectedIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === fieldName);
+    const currentDataSources = (reportConfig.data_sources || []) as any[];
+    const sourceAlias = activeDataSourceAlias.value || String(currentDataSources[0]?.alias || '').trim();
+    const selectedIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === fieldName && item.data_source === sourceAlias);
 
     if (selectedIndex >= 0) {
       removeField(selectedIndex);
@@ -675,10 +825,13 @@ export default component$(() => {
     reportConfig.fields = fields;
   });
 
-  const addFilter = $((fieldName: string, operator: FilterOperator, value: any, logicalOp: LogicalOperator = 'AND') => {
+  const addFilter = $((fieldSelection: string, operator: FilterOperator, value: any, logicalOp: LogicalOperator = 'AND') => {
+    const [dataSourcePart, ...fieldParts] = String(fieldSelection || '').split('::');
+    const dataSource = String(dataSourcePart || '').trim();
+    const fieldName = fieldParts.join('::').trim();
     reportConfig.filters = [...(reportConfig.filters || []), {
       field_name: fieldName,
-      data_source: 'data',
+      data_source: dataSource,
       operator,
       value,
       logical_op: logicalOp
@@ -689,10 +842,13 @@ export default component$(() => {
     reportConfig.filters = (reportConfig.filters || []).filter((_, i) => i !== index);
   });
 
-  const addSort = $((fieldName: string, direction: 'ASC' | 'DESC') => {
-    if (!fieldName) return;
+  const addSort = $((fieldSelection: string, direction: 'ASC' | 'DESC') => {
+    const [dataSourcePart, ...fieldParts] = String(fieldSelection || '').split('::');
+    const dataSource = String(dataSourcePart || '').trim();
+    const fieldName = fieldParts.join('::').trim();
+    if (!fieldName || !dataSource) return;
     const existing = reportConfig.sorting || [];
-    const already = existing.find((item: any) => item.field_name === fieldName);
+    const already = existing.find((item: any) => item.field_name === fieldName && item.data_source === dataSource);
     if (already) {
       already.direction = direction;
       reportConfig.sorting = [...existing].map((item: any, index: number) => ({
@@ -706,7 +862,7 @@ export default component$(() => {
       ...existing,
       {
         field_name: fieldName,
-        data_source: 'data',
+        data_source: dataSource,
         direction,
         order: existing.length + 1,
       },
@@ -722,17 +878,20 @@ export default component$(() => {
       }));
   });
 
-  const addGroupBy = $((fieldName: string) => {
-    if (!fieldName) return;
+  const addGroupBy = $((fieldSelection: string) => {
+    const [dataSourcePart, ...fieldParts] = String(fieldSelection || '').split('::');
+    const dataSource = String(dataSourcePart || '').trim();
+    const fieldName = fieldParts.join('::').trim();
+    if (!fieldName || !dataSource) return;
     const existing = (reportConfig as any).groupings || [];
-    const already = existing.some((item: any) => item.field_name === fieldName);
+    const already = existing.some((item: any) => item.field_name === fieldName && item.data_source === dataSource);
     if (already) return;
 
     (reportConfig as any).groupings = [
       ...existing,
       {
         field_name: fieldName,
-        data_source: 'data',
+        data_source: dataSource,
         order: existing.length + 1,
       },
     ];
@@ -750,14 +909,13 @@ export default component$(() => {
   const selectedFilterFieldType = (() => {
     if (!filterFieldName.value) return 'text';
 
-    const selected = (reportConfig.fields || []).find(
-      (field: any) => field.field_name === filterFieldName.value
-    );
+    const selected = getFieldBySelection(filterFieldName.value);
     if (selected?.data_type) return String(selected.data_type);
 
+    const parsedSelection = parseFieldSelection(filterFieldName.value);
     const source = (tableFields.value || []).find(
       (field: any) =>
-        String(field.column_name || field.id || field.name || '') === String(filterFieldName.value)
+        String(field.column_name || field.id || field.name || '') === String(parsedSelection.fieldName || '')
     );
 
     return String(source?.dataType || source?.data_type || source?.type || 'text');
@@ -807,17 +965,28 @@ export default component$(() => {
       return;
     }
 
-    const metricFieldName = kpiMetricField.value;
-    if (!metricFieldName) {
+    const [metricDataSourcePart, ...metricFieldParts] = String(kpiMetricField.value || '').split('::');
+    const metricSelection = {
+      dataSource: String(metricDataSourcePart || '').trim(),
+      fieldName: metricFieldParts.join('::').trim(),
+    };
+    if (!metricSelection.fieldName || !metricSelection.dataSource) {
       return;
     }
 
-    const groupByFieldName = kpiGroupByField.value;
-    const shouldBreakout = !!groupByFieldName && groupByFieldName !== metricFieldName;
+    const [breakoutDataSourcePart, ...breakoutFieldParts] = String(kpiGroupByField.value || '').split('::');
+    const breakoutSelection = {
+      dataSource: String(breakoutDataSourcePart || '').trim(),
+      fieldName: breakoutFieldParts.join('::').trim(),
+    };
+    const shouldBreakout = !!breakoutSelection.fieldName && (
+      breakoutSelection.fieldName !== metricSelection.fieldName ||
+      breakoutSelection.dataSource !== metricSelection.dataSource
+    );
 
     const nextFields = [...(reportConfig.fields || [])].map((field: any, index: number) => {
-      const isMetric = field.field_name === metricFieldName;
-      const isGroupBy = shouldBreakout && field.field_name === groupByFieldName;
+      const isMetric = field.field_name === metricSelection.fieldName && field.data_source === metricSelection.dataSource;
+      const isGroupBy = shouldBreakout && field.field_name === breakoutSelection.fieldName && field.data_source === breakoutSelection.dataSource;
 
       return {
         ...field,
@@ -831,19 +1000,19 @@ export default component$(() => {
     (reportConfig as any).aggregations = [];
 
     (reportConfig as any).groupings = shouldBreakout
-      ? [{ field_name: groupByFieldName, data_source: 'data', order: 1 }]
+      ? [{ field_name: breakoutSelection.fieldName, data_source: breakoutSelection.dataSource, order: 1 }]
       : [];
 
     reportConfig.sorting = shouldBreakout
-      ? [{ field_name: metricFieldName, data_source: 'data', direction: 'DESC', order: 1 }]
+      ? [{ field_name: metricSelection.fieldName, data_source: metricSelection.dataSource, direction: 'DESC', order: 1 }]
       : [];
 
     reportConfig.chart_config = {
       ...(reportConfig.chart_config || {}),
       kpi: {
-        metric_field: metricFieldName,
+        metric_field: metricSelection.fieldName,
         aggregation: kpiAggregation.value,
-        breakout_field: shouldBreakout ? groupByFieldName : '',
+        breakout_field: shouldBreakout ? breakoutSelection.fieldName : '',
         target: kpiTargetValue.value ? Number(kpiTargetValue.value) : undefined,
         comparison_mode: kpiComparisonMode.value,
       },
@@ -853,9 +1022,24 @@ export default component$(() => {
   const applyChartConfiguration = $(() => {
     if (reportConfig.report_type !== 'chart') return;
 
-    const xField = chartXAxisField.value;
-    const yField = chartYAxisField.value;
-    const groupField = chartGroupByField.value;
+    const [xDataSourcePart, ...xFieldParts] = String(chartXAxisField.value || '').split('::');
+    const [yDataSourcePart, ...yFieldParts] = String(chartYAxisField.value || '').split('::');
+    const [groupDataSourcePart, ...groupFieldParts] = String(chartGroupByField.value || '').split('::');
+    const xSelection = {
+      dataSource: String(xDataSourcePart || '').trim(),
+      fieldName: xFieldParts.join('::').trim(),
+    };
+    const ySelection = {
+      dataSource: String(yDataSourcePart || '').trim(),
+      fieldName: yFieldParts.join('::').trim(),
+    };
+    const groupSelection = {
+      dataSource: String(groupDataSourcePart || '').trim(),
+      fieldName: groupFieldParts.join('::').trim(),
+    };
+    const xField = xSelection.fieldName;
+    const yField = ySelection.fieldName;
+    const groupField = groupSelection.fieldName;
     const isStackable = ['bar', 'area'].includes(reportConfig.chart_type || '');
 
     reportConfig.chart_config = {
@@ -888,9 +1072,9 @@ export default component$(() => {
 
     // Build groupings so the backend can GROUP BY x-axis / split-by fields
     const newGroupings: any[] = [];
-    if (xField) newGroupings.push({ field_name: xField, data_source: 'data', order: 1 });
+    if (xField && xSelection.dataSource) newGroupings.push({ field_name: xField, data_source: xSelection.dataSource, order: 1 });
     if (groupField && groupField !== xField) {
-      newGroupings.push({ field_name: groupField, data_source: 'data', order: newGroupings.length + 1 });
+      newGroupings.push({ field_name: groupField, data_source: groupSelection.dataSource, order: newGroupings.length + 1 });
     }
     (reportConfig as any).groupings = newGroupings;
 
@@ -898,13 +1082,18 @@ export default component$(() => {
     if (yField) {
       reportConfig.fields = (reportConfig.fields || []).map((field: any) => ({
         ...field,
-        aggregation: field.field_name === yField ? chartYAxisAggregate.value : (field.field_name === xField || field.field_name === groupField ? '' : field.aggregation),
+        aggregation:
+          field.field_name === yField && field.data_source === ySelection.dataSource
+            ? chartYAxisAggregate.value
+            : ((field.field_name === xField && field.data_source === xSelection.dataSource) || (field.field_name === groupField && field.data_source === groupSelection.dataSource)
+              ? ''
+              : field.aggregation),
       }));
     }
 
     // Default sort by X-axis ascending for time-series readability
-    if (xField) {
-      reportConfig.sorting = [{ field_name: xField, data_source: 'data', direction: 'ASC', order: 1 }];
+    if (xField && xSelection.dataSource) {
+      reportConfig.sorting = [{ field_name: xField, data_source: xSelection.dataSource, direction: 'ASC', order: 1 }];
     }
   });
 
@@ -915,7 +1104,7 @@ export default component$(() => {
 
     const fields = reportConfig.fields || [];
     if (!kpiMetricField.value && fields.length > 0) {
-      kpiMetricField.value = fields[0].field_name;
+      kpiMetricField.value = `${String(fields[0]?.data_source || '').trim()}::${String(fields[0]?.field_name || '').trim()}`;
     }
 
     if (kpiGroupByField.value && kpiGroupByField.value === kpiMetricField.value) {
@@ -935,7 +1124,12 @@ export default component$(() => {
       return false;
     }
 
-    const metric = (reportConfig.fields || []).find((field: any) => field.field_name === kpiMetricField.value);
+    const [metricDataSourcePart, ...metricFieldParts] = String(kpiMetricField.value || '').split('::');
+    const metricDataSource = String(metricDataSourcePart || '').trim();
+    const metricFieldName = metricFieldParts.join('::').trim();
+    const metric = (reportConfig.fields || []).find((field: any) =>
+      String(field.field_name || '') === metricFieldName && String(field.data_source || '') === metricDataSource
+    );
     if (!metric) {
       error.value = 'Selected KPI metric field is not available. Please reselect.';
       return false;
@@ -1172,10 +1366,10 @@ export default component$(() => {
               <label class="block text-xs font-medium text-gray-700 mb-1.5">Data Source</label>
               <select
                 class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
-                onChange$={(e: any) => {
+                onChange$={async (e: any) => {
                   const table = availableTables.value.find((t: any) => t.table_name === e.target.value);
                   if (table) {
-                    handleTableSelect(table.table_name, table.form_code, table.form_id);
+                    await handleTableSelect(table.table_name, table.form_code, table.form_id);
                   }
                 }}
                 disabled={!selectedVertical.value || !selectedModule.value || availableTables.value.length === 0}
@@ -1187,7 +1381,7 @@ export default component$(() => {
                 </option>
                 {availableTables.value.map((table: any) => (
                   <option key={table.table_name} value={table.table_name}>
-                    {table.system ? `[System] ${table.form_title}` : table.form_title}
+                    {table.system ? `${table.form_title} [Module Table]` : table.form_title}
                   </option>
                 ))}
               </select>
@@ -1222,12 +1416,73 @@ export default component$(() => {
               No data sources found for the selected business vertical and module.
             </div>
           )}
-          {selectedTable.value && (
-            <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-800 flex items-center gap-2">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Connected: {selectedTable.value}
+          {((reportConfig.data_sources || []) as any[]).length > 0 && (
+            <div class="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-blue-900">Connected Data Sources</p>
+                  <p class="text-xs text-blue-800">Add one table for a single-source report, or attach multiple tables and define joins for a query-builder style report.</p>
+                </div>
+                <Badge variant="info">{((reportConfig.data_sources || []) as any[]).length} sources</Badge>
+              </div>
+
+              <div class="space-y-3">
+                {((reportConfig.data_sources || []) as any[]).map((source: any, index: number) => (
+                  <div key={source.alias} class={`rounded-lg border p-3 ${activeDataSourceAlias.value === source.alias ? 'border-blue-400 bg-white' : 'border-blue-200 bg-white/70'}`}>
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        class="text-left"
+                        onClick$={async () => {
+                          await selectDataSource(source.alias);
+                        }}
+                      >
+                        <div class="text-sm font-semibold text-gray-900">{source.table_name}</div>
+                        <div class="text-xs text-gray-600">Alias: {source.alias}</div>
+                      </button>
+                      <div class="flex items-center gap-2">
+                        {activeDataSourceAlias.value === source.alias ? <Badge variant="success">Active</Badge> : null}
+                        <Btn
+                          size="sm"
+                          variant="ghost"
+                          onClick$={async () => {
+                            await removeDataSource(source.alias);
+                          }}
+                        >
+                          Remove
+                        </Btn>
+                      </div>
+                    </div>
+
+                    {index > 0 && (
+                      <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <FormField id={`join-type-${source.alias}`} label="Join Type">
+                          <select
+                            id={`join-type-${source.alias}`}
+                            class="w-full px-3 py-2 border border-blue-200 rounded-lg bg-white text-sm"
+                            value={source.join_type || 'LEFT'}
+                            onChange$={(e: any) => updateDataSourceJoin(source.alias, 'join_type', e.target.value)}
+                          >
+                            <option value="LEFT">LEFT</option>
+                            <option value="INNER">INNER</option>
+                            <option value="RIGHT">RIGHT</option>
+                          </select>
+                        </FormField>
+                        <FormField id={`join-on-${source.alias}`} label="Join Condition" hint="Example: projects.id = tasks.project_id">
+                          <input
+                            id={`join-on-${source.alias}`}
+                            type="text"
+                            class="w-full px-3 py-2 border border-blue-200 rounded-lg bg-white text-sm"
+                            value={source.join_on || ''}
+                            onInput$={(e: any) => updateDataSourceJoin(source.alias, 'join_on', e.target.value)}
+                            placeholder="base_table.id = joined_table.foreign_key"
+                          />
+                        </FormField>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -1307,15 +1562,15 @@ export default component$(() => {
                         >
                           <option value="">Select field...</option>
                           {(reportConfig.fields || []).map((field: any) => (
-                            <option key={field.field_name} value={field.field_name}>
-                              {field.alias || field.field_name}
+                            <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>
+                              {getFieldOptionLabel(field)}
                             </option>
                           ))}
                         </select>
                       </FormField>
 
                       {chartXAxisField.value && isDateLikeFieldType(
-                        (reportConfig.fields || []).find((f: any) => f.field_name === chartXAxisField.value)?.data_type || ''
+                        (getFieldBySelection(chartXAxisField.value) as any)?.data_type || ''
                       ) && (
                         <FormField
                           id="chart-date-grouping"
@@ -1439,10 +1694,10 @@ export default component$(() => {
                           >
                             <option value="">No split</option>
                             {(reportConfig.fields || [])
-                              .filter((field: any) => field.field_name !== chartXAxisField.value && field.field_name !== chartYAxisField.value)
+                                .filter((field: any) => encodeFieldSelection(field) !== chartXAxisField.value && encodeFieldSelection(field) !== chartYAxisField.value)
                               .map((field: any) => (
-                                <option key={field.field_name} value={field.field_name}>
-                                  {field.alias || field.field_name}
+                                  <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>
+                                    {getFieldOptionLabel(field)}
                                 </option>
                               ))}
                           </select>
@@ -1599,7 +1854,7 @@ export default component$(() => {
                               <span class="font-medium text-gray-900">
                                 {(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Labels' : 'X-Axis'}:
                               </span>{' '}
-                              {(reportConfig.fields || []).find((f: any) => f.field_name === chartXAxisField.value)?.alias || chartXAxisField.value}
+                              {(getFieldBySelection(chartXAxisField.value) as any)?.alias || parseFieldSelection(chartXAxisField.value).fieldName || chartXAxisField.value}
                               {chartXAxisDateGrouping.value ? ` (${chartXAxisDateGrouping.value})` : ''}
                             </div>
                           )}
@@ -1608,13 +1863,13 @@ export default component$(() => {
                               <span class="font-medium text-gray-900">
                                 {(['pie', 'doughnut'] as string[]).includes(reportConfig.chart_type || '') ? 'Values' : 'Y-Axis'}:
                               </span>{' '}
-                              {chartYAxisAggregate.value}({(reportConfig.fields || []).find((f: any) => f.field_name === chartYAxisField.value)?.alias || chartYAxisField.value})
+                              {chartYAxisAggregate.value}({(getFieldBySelection(chartYAxisField.value) as any)?.alias || parseFieldSelection(chartYAxisField.value).fieldName || chartYAxisField.value})
                             </div>
                           )}
                           {chartGroupByField.value && (
                             <div>
                               <span class="font-medium text-gray-900">Split by:</span>{' '}
-                              {(reportConfig.fields || []).find((f: any) => f.field_name === chartGroupByField.value)?.alias || chartGroupByField.value}
+                              {(getFieldBySelection(chartGroupByField.value) as any)?.alias || parseFieldSelection(chartGroupByField.value).fieldName || chartGroupByField.value}
                             </div>
                           )}
                           {(chartStacked.value || chartStacked100.value) && (
@@ -1657,8 +1912,8 @@ export default component$(() => {
                         {(reportConfig.fields || [])
                           .filter((field: any) => isNumericFieldType(field.data_type))
                           .map((field: any) => (
-                            <option key={field.field_name} value={field.field_name}>
-                              {field.alias || field.field_name}
+                            <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>
+                              {getFieldOptionLabel(field)}
                             </option>
                           ))}
                       </select>
@@ -1701,10 +1956,10 @@ export default component$(() => {
                       >
                         <option value="">Single card</option>
                         {(reportConfig.fields || [])
-                          .filter((field: any) => field.field_name !== kpiMetricField.value)
+                          .filter((field: any) => encodeFieldSelection(field) !== kpiMetricField.value)
                           .map((field: any) => (
-                            <option key={field.field_name} value={field.field_name}>
-                              {field.alias || field.field_name}
+                            <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>
+                              {getFieldOptionLabel(field)}
                             </option>
                           ))}
                       </select>
@@ -1755,15 +2010,15 @@ export default component$(() => {
                       <div class="mt-3 space-y-2 text-sm text-gray-700">
                         <div>
                           <span class="font-medium text-gray-900">Metric:</span>{' '}
-                          {kpiMetricField.value || 'Not selected'}
+                          {(getFieldBySelection(kpiMetricField.value) as any)?.alias || parseFieldSelection(kpiMetricField.value).fieldName || 'Not selected'}
                         </div>
                         <div>
                           <span class="font-medium text-gray-900">Calculation:</span>{' '}
-                          {kpiAggregation.value} of {kpiMetricField.value || 'metric field'}
+                          {kpiAggregation.value} of {(getFieldBySelection(kpiMetricField.value) as any)?.alias || parseFieldSelection(kpiMetricField.value).fieldName || 'metric field'}
                         </div>
                         <div>
                           <span class="font-medium text-gray-900">Breakout:</span>{' '}
-                          {kpiGroupByField.value || 'Single KPI card'}
+                          {(getFieldBySelection(kpiGroupByField.value) as any)?.alias || parseFieldSelection(kpiGroupByField.value).fieldName || 'Single KPI card'}
                         </div>
                         <div>
                           <span class="font-medium text-gray-900">Target:</span>{' '}
@@ -1809,7 +2064,7 @@ export default component$(() => {
                 {!selectedTable.value ? (
                   <div class="text-center py-16">
                     <h4 class="text-xl font-semibold text-gray-700 mb-2">No data source selected</h4>
-                    <p class="text-gray-500">Choose a data source above to load its fields.</p>
+                    <p class="text-gray-500">Choose a data source above to load its fields, then add more sources if you need joins.</p>
                   </div>
                 ) : tableFields.value.length === 0 ? (
                   <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -1852,7 +2107,7 @@ export default component$(() => {
                           const fieldKey = String(field.column_name || field.id || field.name || '');
                           const fieldLabel = String(field.label || field.name || field.column_name || '');
                           const fieldType = String(field.dataType || field.data_type || field.type || 'text');
-                          const selected = (reportConfig.fields || []).some((item: any) => item.field_name === fieldKey);
+                          const selected = (reportConfig.fields || []).some((item: any) => item.field_name === fieldKey && item.data_source === activeDataSourceAlias.value);
                           const query = fieldSearch.value.trim().toLowerCase();
 
                           if (showSelectedFieldsOnly.value && !selected) {
@@ -1868,15 +2123,15 @@ export default component$(() => {
                         .sort((left: any, right: any) => {
                           const leftKey = String(left.column_name || left.id || left.name || '');
                           const rightKey = String(right.column_name || right.id || right.name || '');
-                          const leftSelected = (reportConfig.fields || []).some((item: any) => item.field_name === leftKey);
-                          const rightSelected = (reportConfig.fields || []).some((item: any) => item.field_name === rightKey);
+                          const leftSelected = (reportConfig.fields || []).some((item: any) => item.field_name === leftKey && item.data_source === activeDataSourceAlias.value);
+                          const rightSelected = (reportConfig.fields || []).some((item: any) => item.field_name === rightKey && item.data_source === activeDataSourceAlias.value);
 
                           if (leftSelected !== rightSelected) {
                             return leftSelected ? -1 : 1;
                           }
 
-                          const leftIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === leftKey);
-                          const rightIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === rightKey);
+                          const leftIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === leftKey && item.data_source === activeDataSourceAlias.value);
+                          const rightIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === rightKey && item.data_source === activeDataSourceAlias.value);
 
                           if (leftSelected && rightSelected && leftIndex !== rightIndex) {
                             return leftIndex - rightIndex;
@@ -1890,7 +2145,7 @@ export default component$(() => {
                           const fieldKey = field.column_name || field.id || field.name;
                           const fieldLabel = field.label || field.name || field.column_name;
                           const fieldType = field.dataType || field.data_type || field.type || 'text';
-                          const selectedIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === fieldKey);
+                          const selectedIndex = (reportConfig.fields || []).findIndex((item: any) => item.field_name === fieldKey && item.data_source === activeDataSourceAlias.value);
                           const selectedField = selectedIndex >= 0 ? (reportConfig.fields || [])[selectedIndex] : null;
 
                           return (
@@ -1959,6 +2214,7 @@ export default component$(() => {
                                       <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
                                         <span>{fieldKey}</span>
                                         <span class="uppercase tracking-wide">{fieldType}</span>
+                                        {activeDataSourceAlias.value && <span class="uppercase tracking-wide">{activeDataSourceAlias.value}</span>}
                                         {fieldKey === 'submission_id' && (
                                           <Badge variant="info" class="text-[10px] px-2 py-0.5">Timeline key</Badge>
                                         )}
@@ -2015,7 +2271,7 @@ export default component$(() => {
                   {(reportConfig.filters || []).map((filter: any, index: number) => (
                     <div key={index} class="flex items-center gap-3 p-3 bg-cyan-50 border border-cyan-200 rounded-xl">
                       <span class="text-sm font-medium text-gray-900">
-                        {filter.field_name} <span class="text-cyan-600 dark:text-cyan-400">{operatorLabelMap[filter.operator as FilterOperator] || filter.operator}</span> {Array.isArray(filter.value) ? filter.value.join(', ') : String(filter.value ?? '')}
+                        {(reportConfig.fields || []).find((field: any) => field.field_name === filter.field_name && field.data_source === filter.data_source)?.alias || `${filter.field_name} [${filter.data_source}]`} <span class="text-cyan-600 dark:text-cyan-400">{operatorLabelMap[filter.operator as FilterOperator] || filter.operator}</span> {Array.isArray(filter.value) ? filter.value.join(', ') : String(filter.value ?? '')}
                       </span>
                       <Btn
                         size="sm"
@@ -2037,13 +2293,17 @@ export default component$(() => {
                         value={filterFieldName.value}
                         onChange$={(e: any) => {
                           filterFieldName.value = e.target.value;
-                          const selectedFieldName = e.target.value;
+                          const [dataSourcePart, ...fieldParts] = String(e.target.value || '').split('::');
+                          const selectedFieldName = {
+                            dataSource: String(dataSourcePart || '').trim(),
+                            fieldName: fieldParts.join('::').trim(),
+                          };
                           const selectedField = (reportConfig.fields || []).find(
-                            (field: any) => field.field_name === selectedFieldName
+                            (field: any) => field.field_name === selectedFieldName.fieldName && field.data_source === selectedFieldName.dataSource
                           );
                           const sourceField = (tableFields.value || []).find(
                             (field: any) =>
-                              String(field.column_name || field.id || field.name || '') === String(selectedFieldName)
+                              String(field.column_name || field.id || field.name || '') === String(selectedFieldName.fieldName)
                           );
                           const nextFieldType = String(
                             selectedField?.data_type ||
@@ -2069,8 +2329,8 @@ export default component$(() => {
                       >
                         <option value="">Select field...</option>
                         {(reportConfig.fields || []).map((field: any) => (
-                          <option key={field.field_name} value={field.field_name}>
-                            {field.alias}
+                          <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>
+                            {getFieldOptionLabel(field)}
                           </option>
                         ))}
                       </select>
@@ -2156,7 +2416,7 @@ export default component$(() => {
                         >
                           <option value="">Select field...</option>
                           {(reportConfig.fields || []).map((field: any) => (
-                            <option key={field.field_name} value={field.field_name}>{field.alias}</option>
+                            <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>{getFieldOptionLabel(field)}</option>
                           ))}
                         </select>
                       </FormField>
@@ -2191,7 +2451,7 @@ export default component$(() => {
                       <div class="space-y-2">
                         {(reportConfig.sorting || []).map((sort: any, index: number) => (
                           <div key={`${sort.field_name}-${index}`} class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                            <span>{sort.field_name} ({sort.direction})</span>
+                            <span>{(reportConfig.fields || []).find((field: any) => field.field_name === sort.field_name && field.data_source === sort.data_source)?.alias || `${sort.field_name} [${sort.data_source}]`} ({sort.direction})</span>
                             <Btn size="sm" variant="danger" onClick$={() => removeSort(index)}>Remove</Btn>
                           </div>
                         ))}
@@ -2211,7 +2471,7 @@ export default component$(() => {
                         >
                           <option value="">Select field...</option>
                           {(reportConfig.fields || []).map((field: any) => (
-                            <option key={field.field_name} value={field.field_name}>{field.alias}</option>
+                            <option key={`${field.data_source}_${field.field_name}`} value={encodeFieldSelection(field)}>{getFieldOptionLabel(field)}</option>
                           ))}
                         </select>
                       </FormField>
@@ -2231,7 +2491,7 @@ export default component$(() => {
                       <div class="space-y-2">
                         {((reportConfig as any).groupings || []).map((group: any, index: number) => (
                           <div key={`${group.field_name}-${index}`} class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                            <span>{group.field_name}</span>
+                            <span>{(reportConfig.fields || []).find((field: any) => field.field_name === group.field_name && field.data_source === group.data_source)?.alias || `${group.field_name} [${group.data_source}]`}</span>
                             <Btn size="sm" variant="danger" onClick$={() => removeGroupBy(index)}>Remove</Btn>
                           </div>
                         ))}
