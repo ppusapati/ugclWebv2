@@ -152,24 +152,6 @@ export default component$(() => {
     }
   });
 
-  const applyTaskUpdate = $((updatedTask: Task) => {
-    state.tasks = state.tasks.map((task) => task.id === updatedTask.id ? { ...task, ...updatedTask } : task);
-  });
-
-  const handleInlineStatusChange: QRL<(task: Task, nextStatus: TaskStatus) => Promise<void>> = $(async (task, nextStatus) => {
-    try {
-      state.updatingTaskId = task.id;
-      state.actionMessage = '';
-      const response = await taskService.updateTaskStatus(task.id, { status: nextStatus });
-      await applyTaskUpdate(response.task);
-      state.actionMessage = `${task.title} moved to ${nextStatus}.`;
-    } catch (error: any) {
-      state.error = error?.message || 'Failed to update task status';
-    } finally {
-      state.updatingTaskId = '';
-    }
-  });
-
   // Re-fetch on client after hydration to ensure fresh data
   useVisibleTask$(async () => {
     await loadTasks();
@@ -183,18 +165,6 @@ export default component$(() => {
     state.filters.sortOrder = 'desc';
     state.page = 1;
     await loadTasks(1);
-  });
-
-  const previousPage = $(async () => {
-    if (state.page > 1) {
-      await loadTasks(state.page - 1);
-    }
-  });
-
-  const nextPage = $(async () => {
-    if (state.page < Math.ceil((state.total || 0) / state.pageSize)) {
-      await loadTasks(state.page + 1);
-    }
   });
 
   const handleViewTask = $((task: Task) => {
@@ -238,18 +208,6 @@ export default component$(() => {
     } finally {
       state.updatingTaskId = '';
     }
-  });
-
-  const handleOpenAssign$: QRL<(task: Task) => void> = $((task) => {
-    state.assignModal.open = true;
-    state.assignModal.taskId = task.id;
-    state.assignModal.taskTitle = task.title;
-    state.assignForm.user_id = '';
-    state.assignForm.user_type = 'employee';
-    state.assignForm.role = 'worker';
-    state.assignForm.notes = '';
-    state.assignForm.can_edit = false;
-    state.assignForm.can_approve = false;
   });
 
   const handleAssignSubmit$: QRL<() => Promise<void>> = $(async () => {
@@ -300,7 +258,6 @@ export default component$(() => {
     !!state.filters.priority ||
     state.filters.sortBy !== 'created_at' ||
     state.filters.sortOrder !== 'desc';
-  const totalPages = Math.max(1, Math.ceil((state.total || 0) / state.pageSize));
   const startIndex = state.total === 0 ? 0 : ((state.page - 1) * state.pageSize) + 1;
   const endIndex = Math.min(state.page * state.pageSize, state.total || 0);
 

@@ -52,7 +52,7 @@ export default component$<WorkflowDesignerProps>((props) => {
           label: business.name || business.code,
         }))
         .sort((a, b) => a.label.localeCompare(b.label));
-    } catch (adminFetchError) {
+    } catch {
       try {
         const myBusinesses = await businessService.getMyBusinesses();
         businessVerticalOptions.value = (myBusinesses || [])
