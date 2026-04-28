@@ -342,7 +342,10 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
       );
 
       messages.value = next;
-      await chatService.markAsRead(conversationId).catch(() => undefined);
+      const latestMessageId = next[next.length - 1]?.id;
+      if (latestMessageId) {
+        await chatService.markAsRead(conversationId, latestMessageId).catch(() => undefined);
+      }
     } catch (err: any) {
       error.value = err?.message || 'Failed to load messages';
     } finally {
@@ -686,7 +689,9 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                 (a, b) => toMillis(a.created_at) - toMillis(b.created_at)
               );
             }
-            await chatService.markAsRead(eventConversationId).catch(() => undefined);
+            if (msg.id) {
+              await chatService.markAsRead(eventConversationId, msg.id).catch(() => undefined);
+            }
           }
 
           // If active thread changed but payload is partial, force refresh thread to avoid stale UI.

@@ -1,0 +1,186 @@
+{
+  "form_code": "TASKS",
+  "title": "Site Task Assignment Form",
+  "description": "Form to assign and track work tasks with timeline, scope, and location details",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Site Task Assignment Form",
+      "description": "Task assignment and tracking",
+      "fields": [
+        {
+          "id": "label",
+          "type": "text",
+          "label": "Task Title",
+          "hint": "Enter task title",
+          "required": true
+        },
+        {
+          "id": "location",
+          "type": "dropdown",
+          "label": "Task Location",
+          "hint": "Select task location",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "business/{vertical}/sites/my-access",
+          "displayField": "name",
+          "valueField": "id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "measurement",
+          "type": "text",
+          "label": "Measurement / Quantity",
+          "hint": "Enter quantity (e.g., 300 meters, 10 joints)",
+          "required": true
+        },
+        {
+          "id": "task_type",
+          "type": "dropdown",
+          "label": "Task Type",
+          "hint": "Select the type of task",
+          "required": true,
+          "options": [
+            { "label": "INSTALLATION", "value": "installation" },
+            { "label": "INSPECTION", "value": "inspection" },
+            { "label": "MAINTENANCE", "value": "maintenance" },
+            { "label": "REPAIR", "value": "repair" },
+            { "label": "TESTING", "value": "testing" },
+            { "label": " BT ROAD CUTTING", "value": "bt_road_cutting" },
+            { "label": " CC ROAD CUTTING", "value": "cc_road_cutting" },
+            { "label": " CC ROAD RESTORATION", "value": "cc_road_restoration" },
+            { "label": "ENCASEMENT", "value": "encasement" },
+            { "label": "EXCAVATION", "value": "excavation" },
+            { "label": "HYDROTEST", "value": "hydrotest" },
+            { "label": "JCB LAYING WORK", "value": "jcb_laying_work" },
+            { "label": "MANUAL LAYING WORK", "value": "manual_laying_work" },
+            { "label": "SAND BLASTING", "value": "sand_blasting" },
+            { "label": " HARD ROCK BREAKING", "value": "hard_rock_breaking" },
+            { "label": "PAINTING", "value": "painting" },
+            { "label": "WRAPPING", "value": "wrapping" },
+            { "label": "JOINTING", "value": "jointing" },
+            { "label": "MATERIAL TRANSFER", "value": "material_transfer" },
+            { "label": "CONCRETE FOOTING CEMENT WORKS", "value": "concrete_footing_cement_works" },
+            { "label": "CURING", "value": "curing" },
+            { "label": "LOADING OR UNLOADING", "value": "loading_or_unloading" },
+            { "label": "ADMINISTRATIVE WORKS", "value": "administrative_works" },
+            { "label": "OTHERS", "value": "others" }
+          ]
+        },
+        {
+          "id": "expected_completion_days",
+          "type": "number",
+          "label": "Expected Completion (Days)",
+          "hint": "Enter number of working days",
+          "required": true,
+          "min": 1,
+          "step": 1
+        },
+        {
+          "id": "start_date",
+          "type": "date",
+          "label": "Start Date",
+          "hint": "Select start date",
+          "required": true
+        },
+        {
+          "id": "end_date",
+          "type": "date",
+          "label": "End Date",
+          "hint": "Select end date",
+          "required": true
+        },
+        {
+          "id": "description",
+          "type": "textarea",
+          "label": "Task Description",
+          "hint": "Enter description (optional)",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "pipe_material",
+          "type": "dropdown",
+          "label": "Pipe Material",
+          "hint": "Select pipe material (optional)",
+          "required": false,
+          "options": [
+            { "label": "HDPE-PN6", "value": "hdpe_pn6" },
+            { "label": "HDPE-PN8", "value": "hdpe_pn8" },
+            { "label": "HDPE-PN10", "value": "hdpe_pn10" },
+            { "label": "HDPE-12.5", "value": "hdpe_12_5" },
+            { "label": "DI k7", "value": "di_k7" },
+            { "label": "DI-k9", "value": "di_k9" },
+            { "label": "E350", "value": "e350" },
+            { "label": "E250", "value": "e250" }
+          ]
+        },
+        {
+          "id": "pipe_dia",
+          "type": "dropdown",
+          "label": "Pipe Diameter",
+          "hint": "Select pipe diameter (optional)",
+          "required": false,
+          "options": [
+            { "label": "63", "value": "63" },
+            { "label": "75", "value": "75" },
+            { "label": "90", "value": "90" },
+            { "label": "100", "value": "100" },
+            { "label": "110", "value": "110" },
+            { "label": "125", "value": "125" },
+            { "label": "140", "value": "140" },
+            { "label": "150", "value": "150" },
+            { "label": "160", "value": "160" },
+            { "label": "180", "value": "180" },
+            { "label": "200", "value": "200" },
+            { "label": "225", "value": "225" },
+            { "label": "250", "value": "250" },
+            { "label": "273", "value": "273" },
+            { "label": "323.5", "value": "323.5" },
+            { "label": "355", "value": "355" },
+            { "label": "406", "value": "406" },
+            { "label": "457", "value": "457" },
+            { "label": "508", "value": "508" },
+            { "label": "610", "value": "610" },
+            { "label": "NA", "value": "na" }
+          ]
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Enter any remarks (optional)",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Task Assignment",
+    "success_message": "Task assignment submitted successfully.",
+    "error_message": "Unable to submit task assignment. Please check the form and try again."
+  }
+}

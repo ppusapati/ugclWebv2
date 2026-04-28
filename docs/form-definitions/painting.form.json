@@ -1,0 +1,181 @@
+{
+  "form_code": "PAINTING",
+  "title": "Pipe Painting Work Entry",
+  "description": "Form to log pipe painting details including coats, activity, and photos",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Pipe Painting Work Entry",
+      "description": "Pipe painting activity capture",
+      "fields": [
+        {
+          "id": "name_of_yard",
+          "type": "dropdown",
+          "label": "Yard Name",
+          "hint": "Select yard name (optional)",
+          "required": false,
+          "options": [
+            { "label": "Magadi 1", "value": "magadi_1" },
+            { "label": "Magadi 2", "value": "magadi_2" },
+            { "label": "Ramanagar", "value": "ramanagar" },
+            { "label": "VG Doddi", "value": "vg_doddi" }
+          ]
+        },
+        {
+          "id": "contractor_name",
+          "type": "dropdown",
+          "label": "Contractor Name",
+          "hint": "Select contractor name (optional)",
+          "required": false,
+          "options": [
+            { "label": "AK ENTERPRISES", "value": "AK ENTERPRISES" },
+            { "label": "APR NAYAK PROJECTS", "value": "APR NAYAK PROJECTS" },
+            { "label": "AV CONSTRUCTIONS", "value": "AV CONSTRUCTIONS" },
+            { "label": "CHALLA EDUKONDALU", "value": "CHALLA EDUKONDALU" },
+            { "label": "CK CONSTRUCTIONS", "value": "CK CONSTRUCTIONS" },
+            { "label": "CMN ENTERPRISES", "value": "CMN ENTERPRISES" },
+            { "label": "GIRISH TD", "value": "GIRISH TD" },
+            { "label": "SLV ENTERPRISES", "value": "SLV ENTERPRISES" },
+            { "label": "MVR CONSTRUCTIONS", "value": "MVR CONSTRUCTIONS" },
+            { "label": "PARAM BANDAWATH INFRASTRUCTURES", "value": "PARAM BANDAWATH INFRASTRUCTURES" },
+            { "label": "PRAVEEN NAYAK", "value": "PRAVEEN NAYAK" },
+            { "label": "PUTTAMRAJU", "value": "PUTTAMRAJU" },
+            { "label": "RAMU AMBU CHAWAN", "value": "RAMU AMBU CHAWAN" },
+            { "label": "RUDRAPPA", "value": "RUDRAPPA" },
+            { "label": "SKS ENTERPRISES", "value": "SKS ENTERPRISES" },
+            { "label": "SRI LAKSHMI ENTERPRISES", "value": "SRI LAKSHMI ENTERPRISES" },
+            { "label": "KT THIMMARAJU", "value": "KT THIMMARAJU" },
+            { "label": "SRI RAMULU", "value": "SRI RAMULU" },
+            { "label": "UGCL - MAGADI", "value": "UGCL - MAGADI" },
+            { "label": "UGCL- RAMNAGARA", "value": "UGCL- RAMNAGARA" },
+            { "label": "VADDE GOPAL", "value": "VADDE GOPAL" },
+            { "label": "VRHR ENGINEERING PVT LTD", "value": "VRHR ENGINEERING PVT LTD" },
+            { "label": "STAR KARAVALA", "value": "STAR KARAVALA" },
+            { "label": "OTHERS", "value": "OTHERS" }
+          ]
+        },
+        {
+          "id": "work_done_activity",
+          "type": "dropdown",
+          "label": "Work Done Activity",
+          "hint": "Select the painting activity",
+          "required": true,
+          "options": [
+            { "label": "Coating", "value": "coating" },
+            { "label": "Primer", "value": "primer" },
+            { "label": "Finish", "value": "finish" }
+          ]
+        },
+        {
+          "id": "number_of_coats",
+          "type": "dropdown",
+          "label": "Number of Coats",
+          "hint": "Select number of coats applied",
+          "required": true,
+          "options": [
+            { "label": "1", "value": 1 },
+            { "label": "2", "value": 2 },
+            { "label": "3", "value": 3 },
+            { "label": "4", "value": 4 }
+          ]
+        },
+        {
+          "id": "dia_of_pipe",
+          "type": "dropdown",
+          "label": "Diameter of Pipe",
+          "hint": "Select pipe diameter",
+          "required": true,
+          "options": [
+            { "label": "63", "value": "63" },
+            { "label": "75", "value": "75" },
+            { "label": "90", "value": "90" },
+            { "label": "100", "value": "100" },
+            { "label": "110", "value": "110" },
+            { "label": "125", "value": "125" },
+            { "label": "140", "value": "140" },
+            { "label": "150", "value": "150" },
+            { "label": "160", "value": "160" },
+            { "label": "180", "value": "180" },
+            { "label": "200", "value": "200" },
+            { "label": "225", "value": "225" },
+            { "label": "250", "value": "250" },
+            { "label": "273", "value": "273" },
+            { "label": "323.5", "value": "323.5" },
+            { "label": "355", "value": "355" },
+            { "label": "406", "value": "406" },
+            { "label": "457", "value": "457" },
+            { "label": "508", "value": "508" },
+            { "label": "610", "value": "610" },
+            { "label": "NA", "value": "na" }
+          ]
+        },
+        {
+          "id": "pipe_no",
+          "type": "text",
+          "label": "Pipe Number",
+          "hint": "Enter pipe number",
+          "required": true
+        },
+        {
+          "id": "length_of_pipe",
+          "type": "number",
+          "label": "Length of Pipe (meters)",
+          "hint": "Enter length of pipe",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "square_meters",
+          "type": "number",
+          "label": "Square Meters Painted",
+          "hint": "Enter painted surface area",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "photo_of_painted_pipe",
+          "type": "file_upload",
+          "label": "Photo of Painted Pipe",
+          "hint": "Upload photos of painted pipe",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Optional remarks or observations",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Painting Entry",
+    "success_message": "Pipe painting work entry submitted successfully.",
+    "error_message": "Unable to submit pipe painting work entry. Please check the form and try again."
+  }
+}

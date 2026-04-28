@@ -122,8 +122,8 @@ export const LoginForm = component$(() => {
                 document.cookie = `token=${data.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
               document.cookie = `user=${encodeURIComponent(JSON.stringify(enrichedUser))}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
 
-                // Full reload so layout remounts and useVisibleTask$ re-runs with the new auth state
-                window.location.href = '/dashboard';
+                // Full reload so SSR route guards and layout auth state re-run from the app entry point.
+                window.location.href = '/';
             }
         } catch (err: any) {
             state.apiError = 'Network error: ' + err?.message || 'Unknown error';

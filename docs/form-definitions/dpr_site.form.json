@@ -1,0 +1,370 @@
+{
+  "form_code": "DPR_SITE",
+  "title": "DPR Site Work Entry",
+  "description": "Daily Progress Report for pipeline-related works at the site",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "DPR Site Work Entry",
+      "description": "Daily pipeline site progress capture",
+      "fields": [
+        {
+          "id": "name_of_site",
+          "type": "dropdown",
+          "label": "Name of Site",
+          "hint": "Select site",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "business/{vertical}/sites/my-access",
+          "displayField": "name",
+          "valueField": "id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "label_number",
+          "type": "text",
+          "label": "Label Number",
+          "hint": "Enter label number",
+          "required": true
+        },
+        {
+          "id": "class_of_pipes",
+          "type": "dropdown",
+          "label": "Class of Pipe",
+          "hint": "Select pipe class",
+          "required": true,
+          "options": [
+            { "label": "HDPE", "value": "hdpe" },
+            { "label": "DI", "value": "di" },
+            { "label": "MS", "value": "ms" }
+          ]
+        },
+        {
+          "id": "material_of_pipe",
+          "type": "dropdown",
+          "label": "Material of Pipe",
+          "hint": "Select pipe material",
+          "required": true,
+          "options": [
+            { "label": "HDPE-PN6", "value": "hdpe_pn6" },
+            { "label": "HDPE-PN8", "value": "hdpe_pn8" },
+            { "label": "HDPE-PN10", "value": "hdpe_pn10" },
+            { "label": "HDPE-12.5", "value": "hdpe_12_5" },
+            { "label": "DI k7", "value": "di_k7" },
+            { "label": "DI-k9", "value": "di_k9" },
+            { "label": "E350", "value": "e350" },
+            { "label": "E250", "value": "e250" }
+          ]
+        },
+        {
+          "id": "pipe_dia",
+          "type": "dropdown",
+          "label": "Pipe Diameter",
+          "hint": "Select pipe diameter",
+          "required": true,
+          "options": [
+            { "label": "63", "value": "63" },
+            { "label": "75", "value": "75" },
+            { "label": "90", "value": "90" },
+            { "label": "100", "value": "100" },
+            { "label": "110", "value": "110" },
+            { "label": "125", "value": "125" },
+            { "label": "140", "value": "140" },
+            { "label": "150", "value": "150" },
+            { "label": "160", "value": "160" },
+            { "label": "180", "value": "180" },
+            { "label": "200", "value": "200" },
+            { "label": "225", "value": "225" },
+            { "label": "250", "value": "250" },
+            { "label": "273", "value": "273" },
+            { "label": "323.5", "value": "323.5" },
+            { "label": "355", "value": "355" },
+            { "label": "406", "value": "406" },
+            { "label": "457", "value": "457" },
+            { "label": "508", "value": "508" },
+            { "label": "610", "value": "610" },
+            { "label": "NA", "value": "na" }
+          ]
+        },
+        {
+          "id": "type_of_works",
+          "type": "dropdown",
+          "label": "Type of Work",
+          "hint": "Select type of work",
+          "required": true,
+          "options": [
+            { "label": "BT Road Cutting", "value": "bt_road_cutting" },
+            { "label": "CC Road Cutting", "value": "cc_road_cutting" },
+            { "label": "CC Road Restoration", "value": "cc_road_restoration" },
+            { "label": "Encasement", "value": "encasement" },
+            { "label": "Excavation", "value": "excavation" },
+            { "label": "Hydrotest", "value": "hydrotest" },
+            { "label": "JCB Laying Length", "value": "jcb_laying_length" },
+            { "label": "Manual Laying Length", "value": "manual_laying_length" },
+            { "label": "Inspection", "value": "inspection" },
+            { "label": "Others", "value": "others" }
+          ]
+        },
+        {
+          "id": "chainage_from",
+          "type": "text",
+          "label": "Chainage From",
+          "hint": "Enter starting chainage",
+          "required": true
+        },
+        {
+          "id": "chainage_to",
+          "type": "text",
+          "label": "Chainage To",
+          "hint": "Enter ending chainage",
+          "required": true
+        },
+        {
+          "id": "actual_meters_laid_on_day",
+          "type": "number",
+          "label": "Meters Laid Today",
+          "hint": "Enter laid length",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "width",
+          "type": "dropdown",
+          "label": "Width",
+          "hint": "Select trench width",
+          "required": true,
+          "options": [
+            { "label": "0.000-0.40", "value": "0_000_0_40" },
+            { "label": "0.40-0.80", "value": "0_40_0_80" },
+            { "label": "0.80-1.20", "value": "0_80_1_20" }
+          ]
+        },
+        {
+          "id": "line_type",
+          "type": "dropdown",
+          "label": "Line Type",
+          "hint": "Select line type",
+          "required": true,
+          "options": [
+            { "label": "Singleline", "value": "singleline" },
+            { "label": "Doubleline", "value": "doubleline" },
+            { "label": "Triple line", "value": "triple_line" }
+          ]
+        },
+        {
+          "id": "upload_working_site_photo",
+          "type": "file_upload",
+          "label": "Work Site Photo",
+          "hint": "Upload photos of site work",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "dia_of_specials_received",
+          "type": "text",
+          "label": "Dia of Specials Received",
+          "hint": "Enter diameter (optional)",
+          "required": false
+        },
+        {
+          "id": "pipe_specials_quantity_received",
+          "type": "number",
+          "label": "Specials Quantity",
+          "hint": "Enter quantity (optional)",
+          "required": false,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "any_other_materials_received",
+          "type": "text",
+          "label": "Other Materials Received",
+          "hint": "Mention others (optional)",
+          "required": false
+        },
+        {
+          "id": "diesel_issued_in_litres",
+          "type": "number",
+          "label": "Diesel Issued (Litres)",
+          "hint": "Enter diesel issued",
+          "required": false,
+          "min": 0,
+          "step": 0.01,
+          "suffix": "L"
+        },
+        {
+          "id": "amount_in_rs",
+          "type": "number",
+          "label": "Amount (₹)",
+          "hint": "Enter diesel cost (optional)",
+          "required": false,
+          "prefix": "₹",
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "card_number",
+          "type": "dropdown",
+          "label": "Card Number",
+          "hint": "Select card number (optional)",
+          "required": false,
+          "options": [
+            { "label": "CORSREE626500012", "value": "CORSREE626500012" },
+            { "label": "CORSREE626500013", "value": "CORSREE626500013" },
+            { "label": "CORSREE626500014", "value": "CORSREE626500014" },
+            { "label": "CORSREE626500015", "value": "CORSREE626500015" },
+            { "label": "CORSREE626500016", "value": "CORSREE626500016" },
+            { "label": "CORSREE626500017", "value": "CORSREE626500017" },
+            { "label": "CORSREE626500018", "value": "CORSREE626500018" },
+            { "label": "CORSREE626500019", "value": "CORSREE626500019" },
+            { "label": "CORSREE626500020", "value": "CORSREE626500020" },
+            { "label": "CORSREE626500021", "value": "CORSREE626500021" },
+            { "label": "CORSREE626500022", "value": "CORSREE626500022" },
+            { "label": "CORSREE626500023", "value": "CORSREE626500023" },
+            { "label": "CORSREE626500024", "value": "CORSREE626500024" },
+            { "label": "CORSREE626500025", "value": "CORSREE626500025" },
+            { "label": "CORSREE626500026", "value": "CORSREE626500026" },
+            { "label": "CORSREE626500027", "value": "CORSREE626500027" },
+            { "label": "CORSREE626500029", "value": "CORSREE626500029" },
+            { "label": "CORSREE626500030", "value": "CORSREE626500030" },
+            { "label": "CORSREE626500031", "value": "CORSREE626500031" },
+            { "label": "CORSREE626500062", "value": "CORSREE626500062" },
+            { "label": "CORSREE626500063", "value": "CORSREE626500063" },
+            { "label": "CORSREE626500064", "value": "CORSREE626500064" },
+            { "label": "FC8000184793", "value": "FC8000184793" },
+            { "label": "FC8000184794", "value": "FC8000184794" },
+            { "label": "FC8000184795", "value": "FC8000184795" },
+            { "label": "FC8000184796", "value": "FC8000184796" },
+            { "label": "FC8000184797", "value": "FC8000184797" },
+            { "label": "FC8000184798", "value": "FC8000184798" },
+            { "label": "FC8000184799", "value": "FC8000184799" },
+            { "label": "FC8000184800", "value": "FC8000184800" },
+            { "label": "FC8000184801", "value": "FC8000184801" },
+            { "label": "FC8000184802", "value": "FC8000184802" },
+            { "label": "FC3450579447", "value": "FC3450579447" },
+            { "label": "UGCL:2528", "value": "UGCL:2528" },
+            { "label": "OTHERS(IF ANY LOCAL PURCHASE SELECT)", "value": "OTHERS(IF ANY LOCAL PURCHASE SELECT)" }
+          ]
+        },
+        {
+          "id": "upload_the_diesel_bill_photo",
+          "type": "file_upload",
+          "label": "Diesel Bill Photo",
+          "hint": "Upload diesel bill",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Add remarks (optional)",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "name_of_contractor",
+          "type": "dropdown",
+          "label": "Contractor Name",
+          "hint": "Enter contractor name",
+          "required": true,
+          "options": [
+            { "label": "AK ENTERPRISES", "value": "AK ENTERPRISES" },
+            { "label": "APR NAYAK PROJECTS", "value": "APR NAYAK PROJECTS" },
+            { "label": "AV CONSTRUCTIONS", "value": "AV CONSTRUCTIONS" },
+            { "label": "CHALLA EDUKONDALU", "value": "CHALLA EDUKONDALU" },
+            { "label": "CK CONSTRUCTIONS", "value": "CK CONSTRUCTIONS" },
+            { "label": "CMN ENTERPRISES", "value": "CMN ENTERPRISES" },
+            { "label": "GIRISH TD", "value": "GIRISH TD" },
+            { "label": "SLV ENTERPRISES", "value": "SLV ENTERPRISES" },
+            { "label": "MVR CONSTRUCTIONS", "value": "MVR CONSTRUCTIONS" },
+            { "label": "PARAM BANDAWATH INFRASTRUCTURES", "value": "PARAM BANDAWATH INFRASTRUCTURES" },
+            { "label": "PRAVEEN NAYAK", "value": "PRAVEEN NAYAK" },
+            { "label": "PUTTAMRAJU", "value": "PUTTAMRAJU" },
+            { "label": "RAMU AMBU CHAWAN", "value": "RAMU AMBU CHAWAN" },
+            { "label": "RUDRAPPA", "value": "RUDRAPPA" },
+            { "label": "SKS ENTERPRISES", "value": "SKS ENTERPRISES" },
+            { "label": "SRI LAKSHMI ENTERPRISES", "value": "SRI LAKSHMI ENTERPRISES" },
+            { "label": "KT THIMMARAJU", "value": "KT THIMMARAJU" },
+            { "label": "SRI RAMULU", "value": "SRI RAMULU" },
+            { "label": "UGCL - MAGADI", "value": "UGCL - MAGADI" },
+            { "label": "UGCL- RAMNAGARA", "value": "UGCL- RAMNAGARA" },
+            { "label": "VADDE GOPAL", "value": "VADDE GOPAL" },
+            { "label": "VRHR ENGINEERING PVT LTD", "value": "VRHR ENGINEERING PVT LTD" },
+            { "label": "STAR KARAVALA", "value": "STAR KARAVALA" },
+            { "label": "OTHERS", "value": "OTHERS" }
+          ]
+        },
+        {
+          "id": "phone_number_of_contractor",
+          "type": "text",
+          "label": "Contractor Phone",
+          "hint": "Enter contractor phone",
+          "required": true,
+          "validation": {
+            "pattern": "^[0-9+ -]{10,15}$",
+            "message": "Enter a valid phone number"
+          }
+        },
+        {
+          "id": "name_of_site_engineer",
+          "type": "text",
+          "label": "Site Engineer Name",
+          "hint": "Enter site engineer name",
+          "required": true
+        },
+        {
+          "id": "phone_number_of_site_engineer",
+          "type": "text",
+          "label": "Site Engineer Phone",
+          "hint": "Enter engineer phone",
+          "required": true,
+          "validation": {
+            "pattern": "^[0-9+ -]{10,15}$",
+            "message": "Enter a valid phone number"
+          }
+        },
+        {
+          "id": "name_of_supervisor",
+          "type": "text",
+          "label": "Supervisor Name",
+          "hint": "Optional supervisor name",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit DPR Site Entry",
+    "success_message": "DPR site work entry submitted successfully.",
+    "error_message": "Unable to submit DPR site work entry. Please check the form and try again."
+  }
+}

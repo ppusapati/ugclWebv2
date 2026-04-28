@@ -7,14 +7,16 @@ import type { Dashboard, DashboardListResponse, ReportResult, ChartType } from '
 import { P9ETable } from '~/components/table/table';
 import { Alert, Btn } from '~/components/ds';
 
-export const onGet: import('@builder.io/qwik-city').RequestHandler = async ({ cookie, redirect }) => {
+export const useRootAuthGuard = routeLoader$(({ cookie, redirect }) => {
   const token = cookie.get('token')?.value || '';
   const rawUser = cookie.get('user')?.value || '';
 
   if (!token || !rawUser) {
-    throw redirect(302, '/login');
+    throw redirect(302, '/login/');
   }
-};
+
+  return null;
+});
 
 const DASHBOARD_GRID_COLS = 12;
 
@@ -143,6 +145,7 @@ export const useHomeDashboardData = routeLoader$(async (requestEvent) => {
 });
 
 export default component$(() => {
+  useRootAuthGuard();
   const loaderData = useHomeDashboardData();
 
   const dashboard = loaderData.value.dashboard as Dashboard | null;

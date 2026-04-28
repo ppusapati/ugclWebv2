@@ -1,0 +1,200 @@
+{
+  "form_code": "WATER_SUPPLY",
+  "title": "Water Supply Entry Form",
+  "description": "Form for logging daily water supply and tanker usage",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Water Supply Entry Form",
+      "description": "Daily water supply capture",
+      "fields": [
+        {
+          "id": "site_name",
+          "type": "dropdown",
+          "label": "Site Name",
+          "hint": "Select the site",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "business/{vertical}/sites/my-access",
+          "displayField": "name",
+          "valueField": "id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "purpose",
+          "type": "textarea",
+          "label": "Purpose of Water Supply",
+          "hint": "Enter purpose of water usage",
+          "required": true,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "place_of_supply",
+          "type": "text",
+          "label": "Place of Supply",
+          "hint": "Enter supply location (optional)",
+          "required": false
+        },
+        {
+          "id": "tanker_vehicle_number",
+          "type": "dropdown",
+          "label": "Tanker Vehicle Number",
+          "hint": "Select or enter vehicle number",
+          "required": true,
+          "options": [
+            { "label": "MB1-KA05LY4753", "value": "MB1-KA05LY4753" },
+            { "label": "MB2-KA05LZ2674", "value": "MB2-KA05LZ2674" },
+            { "label": "MB3-KA05LZ2670", "value": "MB3-KA05LZ2670" },
+            { "label": "MB4-KA05QA3685", "value": "MB4-KA05QA3685" },
+            { "label": "MB5-KA05QA3686", "value": "MB5-KA05QA3686" },
+            { "label": "MB6-KA05QA3688", "value": "MB6-KA05QA3688" },
+            { "label": "MB7-KA05QA3690", "value": "MB7-KA05QA3690" },
+            { "label": "MB8-KA05QF2208", "value": "MB8-KA05QF2208" },
+            { "label": "MB9-KA41Y2452(OLD)", "value": "MB9-KA41Y2452(OLD)" },
+            { "label": "MB10-KA04JS7512(OLD)", "value": "MB10-KA04JS7512(OLD)" },
+            { "label": "MB11-KA05QF2215", "value": "MB11-KA05QF2215" },
+            { "label": "MB12-KA05QG7491", "value": "MB12-KA05QG7491" },
+            { "label": "MB13-KA05QG7493", "value": "MB13-KA05QG7493" },
+            { "label": "M-OTHERS", "value": "M-OTHERS" },
+            { "label": "PRUTHVI", "value": "PRUTHVI" },
+            { "label": "SATHISH CAR", "value": "SATHISH CAR" },
+            { "label": "MURALI SCORPIO", "value": "MURALI SCORPIO" },
+            { "label": "MGD-OTHERS(DG-HT)", "value": "MGD-OTHERS(DG-HT)" },
+            { "label": "MGD-SUB CONTRACTOR", "value": "MGD-SUB CONTRACTOR" },
+            { "label": "M-CANTER1-KA02AD3901", "value": "M-CANTER1-KA02AD3901" },
+            { "label": "CANTER -KA17AA7084", "value": "CANTER -KA17AA7084" },
+            { "label": "M-CANTER2-KA42B0022", "value": "M-CANTER2-KA42B0022" },
+            { "label": "M-TRACTOR-1-KA42TA1606", "value": "M-TRACTOR-1-KA42TA1606" },
+            { "label": "M-TRACTOR-KA05 2251", "value": "M-TRACTOR-KA05 2251" },
+            { "label": "M-BOLERO-KA05NF1568", "value": "M-BOLERO-KA05NF1568" },
+            { "label": "M-HYDRA-KA55N2204", "value": "M-HYDRA-KA55N2204" },
+            { "label": "M-JCB/BREAKER HIRE", "value": "M-JCB/BREAKER HIRE" },
+            { "label": "M-PICK UP-KA36B2432", "value": "M-PICK UP-KA36B2432" },
+            { "label": "M-TATA ACE-KA37B6078", "value": "M-TATA ACE-KA37B6078" },
+            { "label": "M-HIRED-TRAILOR", "value": "M-HIRED-TRAILOR" },
+            { "label": "RMG BIKE-KA05QF3895", "value": "RMG BIKE-KA05QF3895" },
+            { "label": "R-CAMPER-KA05AP0685", "value": "R-CAMPER-KA05AP0685" },
+            { "label": "RB1-KA05QA3687", "value": "RB1-KA05QA3687" },
+            { "label": "RB2-KA05QA3689", "value": "RB2-KA05QA3689" },
+            { "label": "RB3-KA05LY2452", "value": "RB3-KA05LY2452" },
+            { "label": "RB4--KA05LZ2673", "value": "RB4--KA05LZ2673" },
+            { "label": "RB5-KA05LZ4751", "value": "RB5-KA05LZ4751" },
+            { "label": "RB6-KA05LZ2669", "value": "RB6-KA05LZ2669" },
+            { "label": "RB7-KA05QF3895", "value": "RB7-KA05QF3895" },
+            { "label": "RB8-KA5QF3900", "value": "RB8-KA5QF3900" },
+            { "label": "RB9-KA05QG7568", "value": "RB9-KA05QG7568" },
+            { "label": "RMG-OTHERS", "value": "RMG-OTHERS" },
+            { "label": "RMG-OTHERS-DGHT", "value": "RMG-OTHERS-DGHT" },
+            { "label": "THAR -KA04MC3421", "value": "THAR -KA04MC3421" },
+            { "label": "RMG-RENTAL", "value": "RMG-RENTAL" },
+            { "label": "RMG-PERSONAL", "value": "RMG-PERSONAL" },
+            { "label": "R-HIRED TRACTOR-1", "value": "R-HIRED TRACTOR-1" },
+            { "label": "R-HIRED TRACTOR-2", "value": "R-HIRED TRACTOR-2" },
+            { "label": "R-HIRED TATA-ACE", "value": "R-HIRED TATA-ACE" },
+            { "label": "R-CANTER(KA17AA7084)", "value": "R-CANTER(KA17AA7084)" },
+            { "label": "R-TANKER-1(KA42T6395)", "value": "R-TANKER-1(KA42T6395)" },
+            { "label": "R-HIRED-CANTER", "value": "R-HIRED-CANTER" },
+            { "label": "R-HIRED-HYDRA", "value": "R-HIRED-HYDRA" },
+            { "label": "CRANE/HYDRA KA O6 MB 8982", "value": "CRANE/HYDRA KA O6 MB 8982" },
+            { "label": "R-HIRED-TROLLY", "value": "R-HIRED-TROLLY" },
+            { "label": "R-CAMPER-KA05AP0", "value": "R-CAMPER-KA05AP0" },
+            { "label": "R-OMNI-KA04MH1205", "value": "R-OMNI-KA04MH1205" },
+            { "label": "R-STAFF OLD", "value": "R-STAFF OLD" },
+            { "label": "UGCL-RMG", "value": "UGCL-RMG" },
+            { "label": "EXCAVATOR EX-21 SP2148145", "value": "EXCAVATOR EX-21 SP2148145" },
+            { "label": "CRANE/HYDRA KA 55 M 9976", "value": "CRANE/HYDRA KA 55 M 9976" },
+            { "label": "CRANE/HYDRA KA 51 MM 1914", "value": "CRANE/HYDRA KA 51 MM 1914" },
+            { "label": "TRACTOR KA 42 B 7580", "value": "TRACTOR KA 42 B 7580" },
+            { "label": "TRACTOR KA 42 T 6395", "value": "TRACTOR KA 42 T 6395" },
+            { "label": "TRACTOR KA 42 T 6301", "value": "TRACTOR KA 42 T 6301" },
+            { "label": "MAHENDRA PICUP KA 16 AA 1353", "value": "MAHENDRA PICUP KA 16 AA 1353" },
+            { "label": "KA09MF8194", "value": "KA09MF8194" },
+            { "label": "KA 34 B 8605", "value": "KA 34 B 8605" },
+            { "label": "DG - COMPANY", "value": "DG - COMPANY" },
+            { "label": "DG - HYDROTEST", "value": "DG - HYDROTEST" },
+            { "label": "TATA ACE", "value": "TATA ACE" },
+            { "label": "MH04HS0165", "value": "MH04HS0165" },
+            { "label": "KA02AC1093", "value": "KA02AC1093" },
+            { "label": "KA42MC8027", "value": "KA42MC8027" },
+            { "label": "KA51AF5444", "value": "KA51AF5444" }
+          ]
+        },
+        {
+          "id": "capacity_in_liters",
+          "type": "number",
+          "label": "Capacity (Liters)",
+          "hint": "Enter tank capacity in liters",
+          "required": true,
+          "min": 0,
+          "step": 0.01,
+          "suffix": "L"
+        },
+        {
+          "id": "rate_per_unit",
+          "type": "number",
+          "label": "Rate per Unit (Rs/Ltr)",
+          "hint": "Enter rate per liter (optional)",
+          "required": false,
+          "min": 0,
+          "step": 0.01,
+          "prefix": "₹"
+        },
+        {
+          "id": "photos",
+          "type": "file_upload",
+          "label": "Tanker Photos",
+          "hint": "Upload photos of tanker",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "supplier_name",
+          "type": "text",
+          "label": "Supplier Name",
+          "hint": "Enter water supplier's name",
+          "required": true
+        },
+        {
+          "id": "supplier_phone",
+          "type": "text",
+          "label": "Supplier Phone Number",
+          "hint": "Enter phone number of supplier",
+          "required": true,
+          "validation": {
+            "pattern": "^[0-9+ -]{10,15}$",
+            "message": "Enter a valid phone number"
+          }
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Water Supply Entry",
+    "success_message": "Water supply entry submitted successfully.",
+    "error_message": "Unable to submit water supply entry. Please check the form and try again."
+  }
+}

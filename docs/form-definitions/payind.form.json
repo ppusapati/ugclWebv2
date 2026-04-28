@@ -1,0 +1,151 @@
+{
+  "form_code": "PAYIND",
+  "title": "Payment Indent",
+  "description": "Payment Indent",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Payment Indent",
+      "description": "Payment Indent",
+      "fields": [
+        {
+          "id": "name",
+          "type": "dropdown",
+          "label": "Name of the Site",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "/admin/sites?page=1&limit=100&include=water",
+          "displayField": "data.name",
+          "valueField": "data.id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "request_type",
+          "type": "dropdown",
+          "label": "Request type",
+          "required": true,
+          "options": [
+            { "label": "Material", "value": "material" },
+            { "label": "Service", "value": "service" }
+          ]
+        },
+        {
+          "id": "purpose",
+          "type": "textarea",
+          "label": "Purpose",
+          "required": true,
+          "placeholder": "Enter purpose",
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "beneficiary_name",
+          "type": "text",
+          "label": "Benificiary Name",
+          "required": true,
+          "placeholder": "Enter beneficiary name",
+          "maxLength": 200
+        },
+        {
+          "id": "bill_value",
+          "type": "number",
+          "label": "Bill Value",
+          "required": true,
+          "placeholder": "Enter bill value",
+          "prefix": "₹",
+          "min": 0,
+          "step": 0.01,
+          "validation": {
+            "required": true,
+            "min": 0,
+            "message": "Bill value must be 0 or greater"
+          }
+        },
+        {
+          "id": "payment_type",
+          "type": "dropdown",
+          "label": "Payment Type",
+          "required": true,
+          "options": [
+            { "label": "Against Invoice", "value": "against_invoice" },
+            { "label": "Proforma Invoice/quotation", "value": "proforma_invoice_quotation" },
+            { "label": "Advance Payment", "value": "advance_payment" }
+          ]
+        },
+        {
+          "id": "quotation_files",
+          "type": "file_upload",
+          "label": "Quotation Files",
+          "required": false,
+          "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+          "multiple": true,
+          "maxFiles": 5,
+          "maxSizePerFile": 10485760,
+          "hint": "Upload quotation documents"
+        },
+        {
+          "id": "kyc_bank_proof_files",
+          "type": "file_upload",
+          "label": "KYC/Bank Proof files",
+          "required": false,
+          "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+          "multiple": true,
+          "maxFiles": 5,
+          "maxSizePerFile": 10485760,
+          "hint": "Upload KYC or bank proof documents"
+        },
+        {
+          "id": "priority",
+          "type": "radio",
+          "label": "Priority",
+          "required": true,
+          "options": [
+            { "label": "High", "value": "high" },
+            { "label": "Medium", "value": "medium" },
+            { "label": "Low", "value": "low" }
+          ]
+        },
+        {
+          "id": "due_date",
+          "type": "date",
+          "label": "Due Date",
+          "required": true
+        },
+        {
+          "id": "remarks_comments",
+          "type": "textarea",
+          "label": "Remarks / Comments",
+          "required": false,
+          "placeholder": "Enter remarks or comments",
+          "rows": 4,
+          "maxLength": 1000
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Payment Indent",
+    "success_message": "Payment indent submitted successfully.",
+    "error_message": "Unable to submit payment indent. Please check the form and try again."
+  }
+}

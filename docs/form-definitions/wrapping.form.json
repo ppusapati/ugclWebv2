@@ -1,0 +1,141 @@
+{
+  "form_code": "WRAPPING",
+  "title": "Wrapping Activity Entry",
+  "description": "Form for recording pipe wrapping activities and inspection details",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Wrapping Activity Entry",
+      "description": "Pipe wrapping activity and inspection capture",
+      "fields": [
+        {
+          "id": "yard_name",
+          "type": "dropdown",
+          "label": "Yard Name",
+          "hint": "Select the yard",
+          "required": true,
+          "options": [
+            { "label": "Magadi 1", "value": "magadi_1" },
+            { "label": "Magadi 2", "value": "magadi_2" },
+            { "label": "Ramanagar", "value": "ramanagar" },
+            { "label": "VG Doddi", "value": "vg_doddi" }
+          ]
+        },
+        {
+          "id": "contractor_name",
+          "type": "dropdown",
+          "label": "Contractor Name",
+          "hint": "Select contractor name",
+          "required": true,
+          "options": [
+            { "label": "AK ENTERPRISES", "value": "AK ENTERPRISES" },
+            { "label": "APR NAYAK PROJECTS", "value": "APR NAYAK PROJECTS" },
+            { "label": "AV CONSTRUCTIONS", "value": "AV CONSTRUCTIONS" },
+            { "label": "CHALLA EDUKONDALU", "value": "CHALLA EDUKONDALU" },
+            { "label": "CK CONSTRUCTIONS", "value": "CK CONSTRUCTIONS" },
+            { "label": "CMN ENTERPRISES", "value": "CMN ENTERPRISES" },
+            { "label": "GIRISH TD", "value": "GIRISH TD" },
+            { "label": "SLV ENTERPRISES", "value": "SLV ENTERPRISES" },
+            { "label": "MVR CONSTRUCTIONS", "value": "MVR CONSTRUCTIONS" },
+            { "label": "PARAM BANDAWATH INFRASTRUCTURES", "value": "PARAM BANDAWATH INFRASTRUCTURES" },
+            { "label": "PRAVEEN NAYAK", "value": "PRAVEEN NAYAK" },
+            { "label": "PUTTAMRAJU", "value": "PUTTAMRAJU" },
+            { "label": "RAMU AMBU CHAWAN", "value": "RAMU AMBU CHAWAN" },
+            { "label": "RUDRAPPA", "value": "RUDRAPPA" },
+            { "label": "SKS ENTERPRISES", "value": "SKS ENTERPRISES" },
+            { "label": "SRI LAKSHMI ENTERPRISES", "value": "SRI LAKSHMI ENTERPRISES" },
+            { "label": "KT THIMMARAJU", "value": "KT THIMMARAJU" },
+            { "label": "SRI RAMULU", "value": "SRI RAMULU" },
+            { "label": "UGCL - MAGADI", "value": "UGCL - MAGADI" },
+            { "label": "UGCL- RAMNAGARA", "value": "UGCL- RAMNAGARA" },
+            { "label": "VADDE GOPAL", "value": "VADDE GOPAL" },
+            { "label": "VRHR ENGINEERING PVT LTD", "value": "VRHR ENGINEERING PVT LTD" },
+            { "label": "STAR KARAVALA", "value": "STAR KARAVALA" },
+            { "label": "OTHERS", "value": "OTHERS" }
+          ]
+        },
+        {
+          "id": "activity",
+          "type": "dropdown",
+          "label": "Activity",
+          "hint": "Select the activity type",
+          "required": true,
+          "options": [
+            { "label": "Primer Application", "value": "primer_application" },
+            { "label": "Wrapping", "value": "wrapping" },
+            { "label": "Joint Wrapping", "value": "joint_wrapping" },
+            { "label": "Inspection", "value": "inspection" },
+            { "label": "Repair", "value": "repair" },
+            { "label": "Others", "value": "others" }
+          ]
+        },
+        {
+          "id": "pipe_no",
+          "type": "text",
+          "label": "Pipe Number",
+          "hint": "Enter pipe number",
+          "required": true
+        },
+        {
+          "id": "length_of_pipe",
+          "type": "number",
+          "label": "Length of Pipe (in meters)",
+          "hint": "Enter length of pipe",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "square_meters",
+          "type": "number",
+          "label": "Square Meters",
+          "hint": "Enter area in square meters",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "photos",
+          "type": "file_upload",
+          "label": "Activity Photos",
+          "hint": "Upload photos of the activity",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Enter remarks (optional)",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Wrapping Entry",
+    "success_message": "Wrapping activity entry submitted successfully.",
+    "error_message": "Unable to submit wrapping activity entry. Please check the form and try again."
+  }
+}

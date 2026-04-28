@@ -220,7 +220,7 @@ export class ChatService {
   /**
    * Mark messages as read
    */
-  async markAsRead(conversationId: string, messageId?: string): Promise<void> {
+  async markAsRead(conversationId: string, messageId: string): Promise<void> {
     await apiClient.post(`${this.baseUrl}/conversations/${conversationId}/read`, { message_id: messageId });
   }
 

@@ -1,0 +1,267 @@
+{
+  "form_code": "STOCK",
+  "title": "Stock Entry Form",
+  "description": "Form for recording incoming or outgoing stock details",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Stock Entry Form",
+      "description": "Incoming and outgoing stock capture",
+      "fields": [
+        {
+          "id": "in_out",
+          "type": "dropdown",
+          "label": "In/Out",
+          "hint": "Select In or Out",
+          "required": true,
+          "options": [
+            { "label": "Material Inward", "value": "material_inward" },
+            { "label": "Material Outward", "value": "material_outward" },
+            { "label": "Material Returned", "value": "material_returned" }
+          ]
+        },
+        {
+          "id": "yard_name",
+          "type": "dropdown",
+          "label": "Yard Name",
+          "hint": "Enter yard name",
+          "required": true,
+          "options": [
+            { "label": "Magadi 1", "value": "magadi_1" },
+            { "label": "Magadi 2", "value": "magadi_2" },
+            { "label": "Ramanagar", "value": "ramanagar" },
+            { "label": "VG Doddi", "value": "vg_doddi" }
+          ]
+        },
+        {
+          "id": "invoice_date",
+          "type": "date",
+          "label": "Invoice Date",
+          "hint": "Select invoice date",
+          "required": true
+        },
+        {
+          "id": "company_name",
+          "type": "text",
+          "label": "Company Name",
+          "hint": "Enter company name",
+          "required": true
+        },
+        {
+          "id": "item_description",
+          "type": "dropdown",
+          "label": "Item Description",
+          "hint": "Enter item description",
+          "required": true,
+          "options": [
+            { "label": "HDPE PN 6", "value": "hdpe_pn_6" },
+            { "label": "HDPE PN8", "value": "hdpe_pn8" },
+            { "label": "HDPE PN 10", "value": "hdpe_pn_10" },
+            { "label": "HDPE PN 12.5", "value": "hdpe_pn_12_5" },
+            { "label": "HDPE SPECIALS", "value": "hdpe_specials" },
+            { "label": "DI K7", "value": "di_k7" },
+            { "label": "DI K9", "value": "di_k9" },
+            { "label": "DI SPECIALS", "value": "di_specials" },
+            { "label": "MS E350", "value": "ms_e350" },
+            { "label": "MS E250", "value": "ms_e250" },
+            { "label": "PVC ITEMS", "value": "pvc_items" },
+            { "label": "GI PIPES", "value": "gi_pipes" },
+            { "label": "MS SPECIALS", "value": "ms_specials" },
+            { "label": "BT PRIMER", "value": "bt_primer" },
+            { "label": "WRAPPING ROLLS", "value": "wrapping_rolls" },
+            { "label": "EPOXY PRIMER", "value": "epoxy_primer" },
+            { "label": "SURFACE COAT PAINT", "value": "surface_coat_paint" },
+            { "label": "DG", "value": "dg" },
+            { "label": "FUSION MECHINE", "value": "fusion_mechine" },
+            { "label": "BUD JOINT MECHINE", "value": "bud_joint_mechine" },
+            { "label": "VIBRATOR", "value": "vibrator" },
+            { "label": "CENTRING MATERIAL", "value": "centring_material" },
+            { "label": "STUB ENDS", "value": "stub_ends" },
+            { "label": "PRESSURE GUAGE", "value": "pressure_guage" },
+            { "label": "CEMENT 53 GRADE", "value": "cement_53_grade" },
+            { "label": "CEMENT 43 GRADE", "value": "cement_43_grade" },
+            { "label": "STEEL", "value": "steel" },
+            { "label": "CRUSHER MARERIAL", "value": "crusher_marerial" },
+            { "label": "READY MIX", "value": "ready_mix" },
+            { "label": "SAFETY ITEMS", "value": "safety_items" },
+            { "label": "OTHERS", "value": "others" }
+          ]
+        },
+        {
+          "id": "special_item_description",
+          "type": "dropdown",
+          "label": "Special Item Description",
+          "hint": "Enter special item description (optional)",
+          "required": false,
+          "options": [
+            { "label": "PIPE", "value": "pipe" },
+            { "label": "COUPLER", "value": "coupler" },
+            { "label": "REDUCER", "value": "reducer" },
+            { "label": "BENDS", "value": "bends" },
+            { "label": "TEE", "value": "tee" },
+            { "label": "AIR VALVES", "value": "air_valves" },
+            { "label": "HYDRANT TEE", "value": "hydrant_tee" },
+            { "label": "MECHANICAL JOINT COLLAR", "value": "mechanical_joint_collar" },
+            { "label": "GASKETS", "value": "gaskets" },
+            { "label": "WELDING RODS", "value": "welding_rods" },
+            { "label": "8 MM", "value": "8_mm" },
+            { "label": "10 MM", "value": "10_mm" },
+            { "label": "12 MM", "value": "12_mm" },
+            { "label": "16 MM", "value": "16_mm" },
+            { "label": "20 MM", "value": "20_mm" },
+            { "label": "40 MM", "value": "40_mm" },
+            { "label": "M SAND", "value": "m_sand" },
+            { "label": "GSB", "value": "gsb" },
+            { "label": "WETMIX", "value": "wetmix" },
+            { "label": "M15", "value": "m15" },
+            { "label": "M20", "value": "m20" },
+            { "label": "M25", "value": "m25" },
+            { "label": "M30", "value": "m30" },
+            { "label": "SAFETY HELMETS", "value": "safety_helmets" },
+            { "label": "JACKETS", "value": "jackets" },
+            { "label": "SHOES", "value": "shoes" },
+            { "label": "BARRICAEDS", "value": "barricaeds" },
+            { "label": "CAUTION TAPE", "value": "caution_tape" },
+            { "label": "SAFETY CONES", "value": "safety_cones" },
+            { "label": "OTHERS", "value": "others" }
+          ]
+        },
+        {
+          "id": "pipe_dia",
+          "type": "dropdown",
+          "label": "Pipe Diameter",
+          "hint": "Enter pipe diameter",
+          "required": true,
+          "options": [
+            { "label": "63", "value": "63" },
+            { "label": "75", "value": "75" },
+            { "label": "90", "value": "90" },
+            { "label": "100", "value": "100" },
+            { "label": "110", "value": "110" },
+            { "label": "125", "value": "125" },
+            { "label": "140", "value": "140" },
+            { "label": "150", "value": "150" },
+            { "label": "160", "value": "160" },
+            { "label": "180", "value": "180" },
+            { "label": "200", "value": "200" },
+            { "label": "225", "value": "225" },
+            { "label": "250", "value": "250" },
+            { "label": "273", "value": "273" },
+            { "label": "323.5", "value": "323.5" },
+            { "label": "355", "value": "355" },
+            { "label": "406", "value": "406" },
+            { "label": "457", "value": "457" },
+            { "label": "508", "value": "508" },
+            { "label": "610", "value": "610" },
+            { "label": "NA", "value": "na" }
+          ]
+        },
+        {
+          "id": "total_length",
+          "type": "number",
+          "label": "Total Length",
+          "hint": "Enter total length",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "item_quantity",
+          "type": "number",
+          "label": "Item Quantity",
+          "hint": "Enter item quantity",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "specials_detail",
+          "type": "text",
+          "label": "Specials Detail",
+          "hint": "Enter specials detail (optional)",
+          "required": false
+        },
+        {
+          "id": "defective_material",
+          "type": "text",
+          "label": "Defective Material",
+          "hint": "Enter defective material details (optional)",
+          "required": false
+        },
+        {
+          "id": "defective_photos",
+          "type": "file_upload",
+          "label": "Defective Photos",
+          "hint": "Upload defective photos (optional)",
+          "required": false,
+          "accept": "image/*",
+          "multiple": true,
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "contractor_name",
+          "type": "text",
+          "label": "Contractor Name",
+          "hint": "Enter contractor name",
+          "required": true
+        },
+        {
+          "id": "label_number",
+          "type": "text",
+          "label": "Label Number",
+          "hint": "Enter label number",
+          "required": true
+        },
+        {
+          "id": "vehicle_number",
+          "type": "text",
+          "label": "Vehicle Number",
+          "hint": "Enter vehicle number",
+          "required": true
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Enter remarks (optional)",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "challan_files",
+          "type": "file_upload",
+          "label": "Challan Files",
+          "hint": "Upload challan files",
+          "required": true,
+          "multiple": true,
+          "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Stock Entry",
+    "success_message": "Stock entry submitted successfully.",
+    "error_message": "Unable to submit stock entry. Please check the form and try again."
+  }
+}

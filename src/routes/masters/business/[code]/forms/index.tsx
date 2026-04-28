@@ -64,15 +64,28 @@ export default component$(() => {
     );
   });
 
-  // Group forms by module
-  const groupedForms: Record<string, AppForm[]> = {};
-  filteredForms.forEach(form => {
-    const moduleId = form.module_id || 'Other';
-    if (!groupedForms[moduleId]) {
-      groupedForms[moduleId] = [];
+  const getModuleKey = (form: AppForm): string => {
+    if (typeof form.module === 'string') return form.module;
+    return form.module?.id || form.module_id || 'Other';
+  };
+
+  const getModuleLabel = (form: AppForm): string => {
+    if (typeof form.module === 'string') return form.module;
+    return form.module?.name || form.module?.code || form.module_id || 'Other';
+  };
+
+  // Group forms by module key and keep a human-readable module label for headings
+  const groupedForms = filteredForms.reduce((acc, form) => {
+    const moduleKey = getModuleKey(form);
+    const moduleLabel = getModuleLabel(form);
+
+    if (!acc[moduleKey]) {
+      acc[moduleKey] = { label: moduleLabel, forms: [] as AppForm[] };
     }
-    groupedForms[moduleId].push(form);
-  });
+
+    acc[moduleKey].forms.push(form);
+    return acc;
+  }, {} as Record<string, { label: string; forms: AppForm[] }>);
 
   return (
     <div class="space-y-6">
@@ -146,16 +159,16 @@ export default component$(() => {
             </SectionCard>
           ) : (
             <div class="space-y-8">
-              {Object.entries(groupedForms).map(([moduleId, moduleForms]) => (
-                <div key={moduleId}>
+              {Object.entries(groupedForms).map(([moduleKey, moduleGroup]) => (
+                <div key={moduleKey}>
                   {/* Module Header */}
                   <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                    {moduleId}
+                    {moduleGroup.label}
                   </h2>
 
                   {/* Forms Grid */}
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {moduleForms.map((form) => (
+                    {moduleGroup.forms.map((form) => (
                       <button
                         key={form.code}
                         onClick$={() => handleFormClick(form.code)}

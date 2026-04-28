@@ -17,6 +17,25 @@ import type {
 } from '../types/workflow';
 
 export class WorkflowService {
+  private async getCurrentLocation(): Promise<{ latitude: number; longitude: number }> {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      throw new Error('Geolocation is not available in this browser.');
+    }
+
+    return await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        () => reject(new Error('Unable to fetch current location.')),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    });
+  }
+
   /**
    * Create a new form submission
    */
@@ -26,10 +45,14 @@ export class WorkflowService {
     formData: Record<string, any>,
     siteId?: string
   ): Promise<FormSubmission> {
+    const { latitude, longitude } = await this.getCurrentLocation();
+
     const response = await apiClient.post<SubmissionResponse>(
       `/business/${businessCode}/forms/${formCode}/submissions`,
       {
         form_data: formData,
+        latitude,
+        longitude,
         site_id: siteId,
       }
     );
@@ -78,9 +101,15 @@ export class WorkflowService {
     submissionId: string,
     formData: Record<string, any>
   ): Promise<FormSubmission> {
+    const { latitude, longitude } = await this.getCurrentLocation();
+
     const response = await apiClient.put<SubmissionResponse>(
       `/business/${businessCode}/forms/${formCode}/submissions/${submissionId}`,
-      { form_data: formData }
+      {
+        form_data: formData,
+        latitude,
+        longitude,
+      }
     );
     return response.submission;
   }

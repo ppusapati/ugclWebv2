@@ -1,0 +1,151 @@
+{
+  "form_code": "NMR_VEHICLE",
+  "title": "NMR Vehicle Usage Log",
+  "description": "Form to log NMR vehicle work hours and site activity details",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "NMR Vehicle Usage Log",
+      "description": "NMR vehicle usage and work activity capture",
+      "fields": [
+        {
+          "id": "name_of_site",
+          "type": "dropdown",
+          "label": "Name of Site",
+          "hint": "Select site name",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "business/{vertical}/sites/my-access",
+          "displayField": "name",
+          "valueField": "id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "zone_name",
+          "type": "text",
+          "label": "Zone Name",
+          "hint": "Enter working zone name",
+          "required": true
+        },
+        {
+          "id": "work_description",
+          "type": "textarea",
+          "label": "Work Description",
+          "hint": "Describe the work done",
+          "required": true,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "vehicle_type",
+          "type": "dropdown",
+          "label": "Vehicle Type",
+          "hint": "Select vehicle type (optional)",
+          "required": false,
+          "options": [
+            { "label": "Vehicle", "value": "vehicle" },
+            { "label": "Machinery", "value": "machinery" }
+          ]
+        },
+        {
+          "id": "worked_hours_per_day",
+          "type": "number",
+          "label": "Worked Hours Per Day",
+          "hint": "Enter number of hours",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "uom",
+          "type": "radio",
+          "label": "Unit of Measurement (UOM)",
+          "hint": "Select Hours/Days",
+          "required": true,
+          "options": [
+            { "label": "Hours", "value": "hours" },
+            { "label": "Days", "value": "days" }
+          ]
+        },
+        {
+          "id": "contractor_name",
+          "type": "dropdown",
+          "label": "Contractor Name",
+          "hint": "Select contractor name",
+          "required": true,
+          "options": [
+            { "label": "AK ENTERPRISES", "value": "AK ENTERPRISES" },
+            { "label": "APR NAYAK PROJECTS", "value": "APR NAYAK PROJECTS" },
+            { "label": "AV CONSTRUCTIONS", "value": "AV CONSTRUCTIONS" },
+            { "label": "CHALLA EDUKONDALU", "value": "CHALLA EDUKONDALU" },
+            { "label": "CK CONSTRUCTIONS", "value": "CK CONSTRUCTIONS" },
+            { "label": "CMN ENTERPRISES", "value": "CMN ENTERPRISES" },
+            { "label": "GIRISH TD", "value": "GIRISH TD" },
+            { "label": "SLV ENTERPRISES", "value": "SLV ENTERPRISES" },
+            { "label": "MVR CONSTRUCTIONS", "value": "MVR CONSTRUCTIONS" },
+            { "label": "PARAM BANDAWATH INFRASTRUCTURES", "value": "PARAM BANDAWATH INFRASTRUCTURES" },
+            { "label": "PRAVEEN NAYAK", "value": "PRAVEEN NAYAK" },
+            { "label": "PUTTAMRAJU", "value": "PUTTAMRAJU" },
+            { "label": "RAMU AMBU CHAWAN", "value": "RAMU AMBU CHAWAN" },
+            { "label": "RUDRAPPA", "value": "RUDRAPPA" },
+            { "label": "SKS ENTERPRISES", "value": "SKS ENTERPRISES" },
+            { "label": "SRI LAKSHMI ENTERPRISES", "value": "SRI LAKSHMI ENTERPRISES" },
+            { "label": "KT THIMMARAJU", "value": "KT THIMMARAJU" },
+            { "label": "SRI RAMULU", "value": "SRI RAMULU" },
+            { "label": "UGCL - MAGADI", "value": "UGCL - MAGADI" },
+            { "label": "UGCL- RAMNAGARA", "value": "UGCL- RAMNAGARA" },
+            { "label": "VADDE GOPAL", "value": "VADDE GOPAL" },
+            { "label": "VRHR ENGINEERING PVT LTD", "value": "VRHR ENGINEERING PVT LTD" },
+            { "label": "STAR KARAVALA", "value": "STAR KARAVALA" },
+            { "label": "OTHERS", "value": "OTHERS" }
+          ]
+        },
+        {
+          "id": "work_photos",
+          "type": "file_upload",
+          "label": "Work Photos",
+          "hint": "Upload work photos",
+          "required": false,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Add remarks (optional)",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit NMR Vehicle Log",
+    "success_message": "NMR vehicle usage log submitted successfully.",
+    "error_message": "Unable to submit NMR vehicle usage log. Please check the form and try again."
+  }
+}

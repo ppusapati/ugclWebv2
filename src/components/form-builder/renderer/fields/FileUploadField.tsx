@@ -20,6 +20,16 @@ export default component$<FileUploadFieldProps>((props) => {
   const isCameraField = props.field.type === 'camera';
   const acceptedTypes = props.field.accept || (isCameraField ? 'image/*' : undefined);
 
+  // Treat maxSizePerFile as MB; keep compatibility for legacy byte-based values.
+  const maxSizeInMB = (() => {
+    if (!props.field.maxSizePerFile || props.field.maxSizePerFile <= 0) return undefined;
+    return props.field.maxSizePerFile > 1024
+      ? props.field.maxSizePerFile / (1024 * 1024)
+      : props.field.maxSizePerFile;
+  })();
+
+  const maxSizeInBytes = maxSizeInMB ? maxSizeInMB * 1024 * 1024 : undefined;
+
   const handleFileSelect = $(async (e: Event) => {
     const files = (e.target as HTMLInputElement).files;
     if (!files || files.length === 0) return;
@@ -32,8 +42,8 @@ export default component$<FileUploadFieldProps>((props) => {
 
     // Validate file sizes
     for (const file of Array.from(files)) {
-      if (props.field.maxSizePerFile && file.size > props.field.maxSizePerFile) {
-        alert(`File ${file.name} exceeds maximum size of ${props.field.maxSizePerFile / 1024 / 1024}MB`);
+      if (maxSizeInBytes && file.size > maxSizeInBytes) {
+        alert(`File ${file.name} exceeds maximum size of ${maxSizeInMB}MB`);
         return;
       }
     }
@@ -117,9 +127,9 @@ export default component$<FileUploadFieldProps>((props) => {
                 Accepted: {acceptedTypes}
               </p>
             )}
-            {props.field.maxSizePerFile && (
+            {maxSizeInMB && (
               <p class="text-xs text-gray-500">
-                Max size: {props.field.maxSizePerFile / 1024 / 1024}MB
+                Max size: {maxSizeInMB}MB
               </p>
             )}
           </div>

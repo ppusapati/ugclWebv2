@@ -1,0 +1,185 @@
+{
+  "form_code": "VEHICLE_LOG",
+  "title": "Vehicle Log Entry",
+  "description": "Form to log vehicle usage, fuel, driver info, and work details for the day",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Vehicle Log Entry",
+      "description": "Daily vehicle usage and work log capture",
+      "fields": [
+        {
+          "id": "email",
+          "type": "text",
+          "label": "Email",
+          "hint": "Enter email of person logging",
+          "required": true,
+          "validation": {
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            "message": "Enter a valid email address"
+          }
+        },
+        {
+          "id": "site_location",
+          "type": "dropdown",
+          "label": "Site Location",
+          "hint": "Select site location",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "business/{vertical}/sites/my-access",
+          "displayField": "name",
+          "valueField": "id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "working_zone",
+          "type": "text",
+          "label": "Working Zone",
+          "hint": "Enter working zone name",
+          "required": true
+        },
+        {
+          "id": "date_time",
+          "type": "date",
+          "label": "Log Date",
+          "hint": "Pick the log date",
+          "required": true
+        },
+        {
+          "id": "vehicle_type",
+          "type": "dropdown",
+          "label": "Vehicle Type",
+          "hint": "Select type of vehicle",
+          "required": true,
+          "options": [
+            { "label": "Vehicle", "value": "vehicle" },
+            { "label": "Machinery", "value": "machinery" }
+          ]
+        },
+        {
+          "id": "registration_number",
+          "type": "text",
+          "label": "Registration Number",
+          "hint": "Enter vehicle registration number",
+          "required": true
+        },
+        {
+          "id": "owner_name",
+          "type": "text",
+          "label": "Owner Name",
+          "hint": "Enter vehicle owner's name",
+          "required": true
+        },
+        {
+          "id": "driver_name",
+          "type": "text",
+          "label": "Driver Name",
+          "hint": "Enter driver's name",
+          "required": true
+        },
+        {
+          "id": "starting_reading_files",
+          "type": "file_upload",
+          "label": "Starting Reading Photo",
+          "hint": "Upload meter reading photo at start",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "closing_reading_files",
+          "type": "file_upload",
+          "label": "Closing Reading Photo",
+          "hint": "Upload meter reading photo at end",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "reading_total_km_hrs",
+          "type": "text",
+          "label": "Total Km/Hrs",
+          "hint": "Enter total distance or hours",
+          "required": true
+        },
+        {
+          "id": "total_working_hours",
+          "type": "number",
+          "label": "Total Working Hours",
+          "hint": "Enter working hours",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "diesel_issued_litres",
+          "type": "number",
+          "label": "Diesel Issued (Litres)",
+          "hint": "Enter diesel quantity",
+          "required": true,
+          "min": 0,
+          "step": 0.01,
+          "suffix": "L"
+        },
+        {
+          "id": "work_description",
+          "type": "textarea",
+          "label": "Work Description",
+          "hint": "Enter description of work done",
+          "required": true,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "work_images",
+          "type": "file_upload",
+          "label": "Work Images",
+          "hint": "Upload images of work completed",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "remarks",
+          "type": "textarea",
+          "label": "Remarks",
+          "hint": "Any remarks",
+          "required": false,
+          "rows": 3,
+          "maxLength": 500
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Vehicle Log",
+    "success_message": "Vehicle log entry submitted successfully.",
+    "error_message": "Unable to submit vehicle log entry. Please check the form and try again."
+  }
+}

@@ -94,7 +94,14 @@ export default component$(() => {
     return matchesSearch && matchesModule;
   });
 
-  const uniqueModules = Array.from(new Set((forms.value || []).map(f => getModuleId(f)).filter(Boolean)));
+  const moduleFilterOptions = Array.from(
+    (forms.value || []).reduce((acc, form) => {
+      const id = getModuleId(form);
+      if (!id || acc.has(id)) return acc;
+      acc.set(id, getModuleLabel(form));
+      return acc;
+    }, new Map<string, string>())
+  );
 
   return (
     <div class="py-4">
@@ -126,8 +133,8 @@ export default component$(() => {
               class="form-input w-full"
             >
               <option value="">All Modules</option>
-              {uniqueModules.map((moduleId) => (
-                <option key={moduleId} value={moduleId}>{moduleId}</option>
+              {moduleFilterOptions.map(([moduleId, moduleLabel]) => (
+                <option key={moduleId} value={moduleId}>{moduleLabel}</option>
               ))}
             </select>
           </FormField>

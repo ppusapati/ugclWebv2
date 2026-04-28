@@ -1,0 +1,138 @@
+{
+  "form_code": "MATERIAL",
+  "title": "Material or Service Request",
+  "description": "Form to request materials or services for a site with priority and cost estimates",
+  "version": "1.0.0",
+  "module": "accounts",
+  "accessible_verticals": [
+    "WATER"
+  ],
+  "type": "single_page",
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Material or Service Request",
+      "description": "Material and service request capture",
+      "fields": [
+        {
+          "id": "name_of_site",
+          "type": "dropdown",
+          "label": "Site Name",
+          "hint": "Select the site",
+          "placeholder": "Site Name",
+          "required": true,
+          "dataSource": "api",
+          "apiEndpoint": "business/{vertical}/sites/my-access",
+          "displayField": "name",
+          "valueField": "id",
+          "validation": {
+            "required": true,
+            "message": "Please select a site"
+          }
+        },
+        {
+          "id": "material_or_service",
+          "type": "radio",
+          "label": "Material/Service Required",
+          "hint": "Select required items or services",
+          "required": true,
+          "options": [
+            { "label": "Material", "value": "material" },
+            { "label": "Service", "value": "service" }
+          ]
+        },
+        {
+          "id": "description",
+          "type": "textarea",
+          "label": "Description",
+          "hint": "Provide description of material/service",
+          "required": true,
+          "rows": 3,
+          "maxLength": 500
+        },
+        {
+          "id": "qty_required_now",
+          "type": "number",
+          "label": "Quantity Required Now",
+          "hint": "Enter quantity needed",
+          "required": true,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "estimated_cost",
+          "type": "number",
+          "label": "Estimated Cost (₹)",
+          "hint": "Enter estimated cost (optional)",
+          "required": false,
+          "prefix": "₹",
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "quotation_photos",
+          "type": "file_upload",
+          "label": "Quotation Photos",
+          "hint": "Upload quotations if available",
+          "required": true,
+          "multiple": true,
+          "accept": "image/*",
+          "maxFiles": 10,
+          "maxSizePerFile": 10485760
+        },
+        {
+          "id": "qty_present_stock",
+          "type": "number",
+          "label": "Quantity in Stock",
+          "hint": "Mention available quantity (optional)",
+          "required": false,
+          "min": 0,
+          "step": 0.01
+        },
+        {
+          "id": "expected_completion_date",
+          "type": "date",
+          "label": "Expected Completion Date",
+          "hint": "Select expected date (optional)",
+          "required": false
+        },
+        {
+          "id": "priority",
+          "type": "dropdown",
+          "label": "Priority",
+          "hint": "Select priority (optional)",
+          "required": false,
+          "options": [
+            { "label": "in one day", "value": "in_one_day" },
+            { "label": "three days", "value": "three_days" },
+            { "label": "one week", "value": "one_week" },
+            { "label": "fifteen days", "value": "fifteen_days" },
+            { "label": "before one month", "value": "before_one_month" }
+          ]
+        },
+        {
+          "id": "due_date",
+          "type": "date",
+          "label": "Due Date",
+          "hint": "Select due date for delivery",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "validations": {},
+  "permissions": {
+    "create": "*",
+    "read": "*",
+    "update": "*",
+    "delete": "*",
+    "approve": "*"
+  },
+  "ui_config": {
+    "show_progress": false,
+    "allow_save_draft": true,
+    "submit_button_text": "Submit Material Request",
+    "success_message": "Material or service request submitted successfully.",
+    "error_message": "Unable to submit material or service request. Please check the form and try again."
+  }
+}
