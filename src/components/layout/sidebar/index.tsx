@@ -9,6 +9,7 @@ import { getUser, isSuperAdminUser } from '~/utils/auth';
 import { analyticsService } from '~/services/analytics.service';
 import { menuCacheService } from '~/services/menu-cache.service';
 import { STORAGE_KEYS } from '~/config/storage-keys';
+import { ADMIN_MENU_ITEMS } from '~/config/admin-menu';
 
 interface SidebarFormItem {
   code: string;
@@ -24,20 +25,6 @@ interface SidebarReportItem {
   module_id?: string;
   business_vertical_id?: string;
   report_type?: string;
-}
-
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: string;
-  subItems?: SubMenuItem[];
-}
-
-interface SubMenuItem {
-  id: string;
-  label: string;
-  href: string;
-  icon: string;
 }
 
 function resolveBusinessCodeForForm(
@@ -88,34 +75,6 @@ export const Sidebar = component$(() => {
   const currentBusinessCode = useSignal('');
   const currentBusinessId = useSignal('');
   const isSuperAdmin = isSuperAdminUser(effectiveUser);
-
-  const menuItems: MenuItem[] = [
-    {
-      id: 'admin',
-      label: 'Admin',
-      icon: 'i-heroicons-lock-closed-solid',
-      subItems: [
-        { id: 'dashboard', label: 'Home', href: '/', icon: 'i-heroicons-home-solid' },
-        { id: 'modules', label: 'Modules', href: '/masters/module', icon: 'i-streamline-module-three-solid' },
-        { id: 'business-vertical', label: 'Business - Vertical', href: '/masters/business', icon: 'i-heroicons-building-office-solid' },
-        { id: 'sites', label: 'Sites', href: '/masters/sites', icon: 'i-heroicons-map-pin-solid' },
-        { id: 'roles', label: 'Roles & Permissions', href: '/rbac/roles', icon: 'i-icon-park-permissions' },
-        { id: 'attributes', label: 'Attributes', href: '/attributes', icon: 'i-heroicons-tag-solid' },
-        { id: 'policies', label: 'ABAC Policies', href: '/policies', icon: 'i-heroicons-shield-check-solid' },
-        { id: 'users', label: 'Users', href: '/users', icon: 'i-heroicons-user-solid' },
-        { id: 'forms', label: 'Forms', href: '/forms', icon: 'i-heroicons-document-text-solid' },
-        { id: 'workflow', label: 'Work Flows', href: '/workflows', icon: 'i-heroicons-document-text-solid' },
-        { id: 'projects', label: 'Projects', href: '/projects', icon: 'i-heroicons-document-text-solid' },
-        { id: 'documents', label: 'Documents', href: '/documents', icon: 'i-heroicons-server-solid' },
-        { id: 'attendance', label: 'Attendance', href: '/masters/attendance', icon: 'i-heroicons-clipboard-document-list-solid' },
-        { id: 'reports', label: 'Reports', href: '/analytics/reports', icon: 'i-heroicons-document-chart-bar-solid' },
-        { id: 'dashboards', label: 'Dashboards', href: '/analytics/dashboards', icon: 'i-heroicons-document-chart-bar-solid' },
-        { id: 'chat', label: 'Chat', href: '/chat', icon: 'i-heroicons-chat-bubble-left-right-solid' },
-        { id: 'notifications', label: 'Notifications', href: '/notifications', icon: 'i-heroicons-document-chart-bar-solid' },
-        { id: 'integrations', label: 'Integrations', href: '/integrations', icon: 'i-heroicons-arrows-right-left-solid' }
-      ]
-    }
-  ];
 
   const handleSidebarItemClick = $((itemId: string) => {
     activeSidebarItem.value = itemId;
@@ -329,7 +288,7 @@ export const Sidebar = component$(() => {
     }
   }, { strategy: 'document-ready' });
 
-  const adminSubItems = (menuItems.find(item => item.id === 'admin')?.subItems || []).filter((item) => item.id !== 'dashboard');
+  const adminSubItems = ADMIN_MENU_ITEMS.filter((item) => item.id !== 'dashboard');
 
   const formSubItems = moduleForms.value.map((form) => ({
     id: form.code,
@@ -372,6 +331,18 @@ export const Sidebar = component$(() => {
             >
               <span class="i-heroicons-home-solid w-5 h-5 flex-shrink-0"></span>
               <span>Home</span>
+            </Link>
+            <Link
+              href="/help"
+              class={`flex items-center gap-3 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 border-l-4 ${
+                menuContext.activeSidebarItem.value === 'help-center'
+                  ? 'bg-primary-50 text-primary-700 border-primary-500 pl-2 pr-3'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent pl-3 pr-3'
+              }`}
+              onClick$={() => handleSidebarItemClick('help-center')}
+            >
+              <span class="i-heroicons-question-mark-circle-solid w-5 h-5 flex-shrink-0"></span>
+              <span>Help Center</span>
             </Link>
           </nav>
         </div>

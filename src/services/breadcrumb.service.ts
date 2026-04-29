@@ -45,6 +45,7 @@ class BreadcrumbService {
     { path: '/attributes', label: 'Attributes', icon: 'i-heroicons-tag-solid', parent: '/' },
 
     { path: '/dashboard/admin/roles', label: 'Roles & Permissions', icon: 'i-heroicons-key-solid', parent: '/dashboard' },
+    { path: '/help', label: 'Help Center', icon: 'i-heroicons-question-mark-circle-solid', parent: '/' },
     { path: '/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth-solid', parent: '/' },
     { path: '/audit', label: 'Audit Logs', icon: 'i-heroicons-document-text-solid', parent: '/' },
     { path: '/backup', label: 'Backup', icon: 'i-heroicons-cloud-arrow-down-solid', parent: '/' },

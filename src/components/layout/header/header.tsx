@@ -5,6 +5,7 @@ import { useThemeContext } from '~/contexts/theme-context';
 import { useMenuContext } from '~/contexts/menu-context';
 import { TenantSwitcher } from '~/components/tenant/tenant-switcher';
 import { NotificationBell } from '~/components/notifications/notification-bell';
+import { HelpDrawer } from '~/components/help/help-drawer';
 import ImgLogo from '~/media/logo.png?jsx';
 import { Btn } from '~/components/ds';
 import { chatService } from '~/services/chat.service';
@@ -136,6 +137,8 @@ export const Header = component$(() => {
             <TenantSwitcher />
 
             {/* Individual Header Icons */}
+
+            <HelpDrawer />
 
             <div class="relative">
               <Btn
