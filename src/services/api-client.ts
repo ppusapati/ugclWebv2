@@ -6,6 +6,9 @@
  */
 
 import { resolveApiBaseUrl } from '~/config/api';
+import { resolveCacheTTL } from '~/config/cache-config';
+import { STORAGE_KEYS } from '~/config/storage-keys';
+import { requestCacheService } from '~/services/request-cache.service';
 
 export interface ApiError {
   message: string;
@@ -19,6 +22,8 @@ export interface ApiRequestOptions extends RequestInit {
   serverToken?: string;
   serverBaseUrl?: string;
   skipContentType?: boolean;
+  cacheTTL?: number;
+  skipCache?: boolean;
 }
 
 const DEFAULT_TIMEOUT = 30000;
@@ -48,18 +53,18 @@ function getBaseUrl(): string {
  */
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token') || localStorage.getItem('auth_token');
+  return localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 }
 
 function getClientId(): string | null {
   if (typeof window === 'undefined') return null;
 
-  let clientId = localStorage.getItem('ugcl_client_id');
+  let clientId = localStorage.getItem(STORAGE_KEYS.CLIENT_ID);
   if (!clientId) {
     clientId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `web-${Date.now()}`;
-    localStorage.setItem('ugcl_client_id', clientId);
+    localStorage.setItem(STORAGE_KEYS.CLIENT_ID, clientId);
   }
 
   return clientId;
@@ -69,15 +74,15 @@ function getBusinessContext(): { businessId?: string; businessCode?: string } {
   if (typeof window === 'undefined') return {};
 
   const businessId =
-    localStorage.getItem('business_vertical_id') ||
-    localStorage.getItem('business_id') ||
-    localStorage.getItem('active_business_id') ||
+    localStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID_LEGACY) ||
+    localStorage.getItem(STORAGE_KEYS.BUSINESS_ID) ||
+    localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID) ||
     undefined;
 
   const businessCode =
-    localStorage.getItem('business_code') ||
-    localStorage.getItem('businessCode') ||
-    localStorage.getItem('active_business_code') ||
+    localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE) ||
+    localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE_LEGACY) ||
+    localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_CODE) ||
     undefined;
 
   return { businessId, businessCode };
@@ -149,8 +154,9 @@ async function handleError(response: Response): Promise<never> {
   }
 
   if (response.status === 401 && typeof window !== 'undefined') {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER);
     window.location.href = '/login';
   }
 
@@ -241,33 +247,60 @@ async function request<T>(
  * Public API Methods
  */
 export const apiClient = {
-  get<T>(endpoint: string, params?: Record<string, any>) {
-    return request<T>(endpoint, { method: 'GET', params });
+  async get<T>(endpoint: string, params?: Record<string, any>, options?: Pick<ApiRequestOptions, 'cacheTTL' | 'skipCache'>) {
+    const shouldUseCache = typeof window !== 'undefined' && options?.skipCache !== true;
+
+    if (shouldUseCache) {
+      const cachedValue = requestCacheService.get<T>(endpoint, params);
+      if (cachedValue !== null) {
+        debugTrace('[API Cache Hit]', endpoint, params);
+        return cachedValue;
+      }
+    }
+
+    const response = await request<T>(endpoint, { method: 'GET', params });
+
+    if (shouldUseCache) {
+      const ttl = options?.cacheTTL ?? resolveCacheTTL(endpoint);
+      requestCacheService.set(endpoint, params, response, ttl);
+    }
+
+    return response;
   },
 
-  post<T>(endpoint: string, data?: any) {
-    return request<T>(endpoint, { method: 'POST', body: JSON.stringify(data) });
+  async post<T>(endpoint: string, data?: any) {
+    const response = await request<T>(endpoint, { method: 'POST', body: JSON.stringify(data) });
+    requestCacheService.invalidateByEndpoint(endpoint);
+    return response;
   },
 
-  put<T>(endpoint: string, data?: any) {
-    return request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) });
+  async put<T>(endpoint: string, data?: any) {
+    const response = await request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) });
+    requestCacheService.invalidateByEndpoint(endpoint);
+    return response;
   },
 
-  delete<T>(endpoint: string) {
-    return request<T>(endpoint, { method: 'DELETE' });
+  async delete<T>(endpoint: string) {
+    const response = await request<T>(endpoint, { method: 'DELETE' });
+    requestCacheService.invalidateByEndpoint(endpoint);
+    return response;
   },
 
-  patch<T>(endpoint: string, data?: any) {
-    return request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
+  async patch<T>(endpoint: string, data?: any) {
+    const response = await request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
+    requestCacheService.invalidateByEndpoint(endpoint);
+    return response;
   },
 
-  upload<T>(endpoint: string, formData: FormData) {
+  async upload<T>(endpoint: string, formData: FormData) {
     // Skip Content-Type header to let browser set multipart/form-data with boundary
-    return request<T>(endpoint, {
+    const response = await request<T>(endpoint, {
       method: 'POST',
       body: formData,
       skipContentType: true,
     });
+    requestCacheService.invalidateByEndpoint(endpoint);
+    return response;
   },
 
   async download(

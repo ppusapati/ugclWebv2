@@ -1,21 +1,35 @@
-import { component$, Slot, useStore, useVisibleTask$ } from '@builder.io/qwik';
-import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
+import { component$, Slot, useTask$ } from '@builder.io/qwik';
+import { routeLoader$, useLocation } from '@builder.io/qwik-city';
 import { Header } from '~/components/layout/header/header';
 import { Sidebar } from '~/components/layout/sidebar';
 import { Breadcrumb } from '~/components/breadcrumb';
-import { getUser } from '~/utils/auth';
+import { createSSRApiClient } from '~/services/api-client';
+import { extractModules } from '~/services/form.service';
+import type { Module } from '~/services/types';
+import { useMenuContext } from '~/contexts/menu-context';
 
-export const useLayoutAuth = routeLoader$(({ cookie }) => {
+export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
+  const path = url.pathname;
+  const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+  if (isAuthRoute) {
+    return {
+      hasToken: false,
+      user: null,
+    };
+  }
+
   const token = cookie.get('token')?.value || '';
   const rawUser = cookie.get('user')?.value || '';
 
+  if (!token || !rawUser) {
+    throw redirect(302, '/login/');
+  }
+
   let user: any = null;
-  if (rawUser) {
-    try {
-      user = JSON.parse(decodeURIComponent(rawUser));
-    } catch {
-      user = null;
-    }
+  try {
+    user = JSON.parse(decodeURIComponent(rawUser));
+  } catch {
+    throw redirect(302, '/login/');
   }
 
   return {
@@ -24,44 +38,34 @@ export const useLayoutAuth = routeLoader$(({ cookie }) => {
   };
 });
 
+export const useLayoutMenuData = routeLoader$(async (requestEvent) => {
+  try {
+    const apiClient = createSSRApiClient(requestEvent);
+    const modulesResponse = await apiClient.get<unknown>('/modules');
+    return {
+      modules: extractModules(modulesResponse),
+    };
+  } catch {
+    return {
+      modules: [] as Module[],
+    };
+  }
+});
+
 export default component$(() => {
-  const auth = useLayoutAuth();
-  const nav = useNavigate();
+  useLayoutAuth();
+  const layoutMenuData = useLayoutMenuData();
+  const moduleDefinitions = useMenuContext().moduleDefinitions;
   const loc = useLocation();
-  const state = useStore({
-    user: (auth.value.user || null) as any,
-    checked: true,
-  });
-  const isLandingRoute = loc.url.pathname === '/';
   const isAuthRoute =
     loc.url.pathname.startsWith('/login') ||
     loc.url.pathname.startsWith('/register');
   const hideBreadcrumb = loc.url.pathname === '/' || loc.url.pathname.startsWith('/analytics/dashboards/view/');
-  const isPublicRoute =
-    isLandingRoute ||
-    isAuthRoute;
 
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(() => {
-    const u = getUser();
-    if (u) {
-      state.user = u;
-      return;
-    }
-
-    if (auth.value.user) {
-      state.user = auth.value.user;
-      try {
-        localStorage.setItem('user', JSON.stringify(auth.value.user));
-      } catch {
-        // Ignore storage sync errors.
-      }
-      return;
-    }
-
-    state.user = null;
-    if (!u && !isPublicRoute) {
-      void nav('/login');
+  useTask$(({ track }) => {
+    const modules = track(() => layoutMenuData.value.modules);
+    if (modules.length > 0) {
+      moduleDefinitions.value = modules;
     }
   });
 

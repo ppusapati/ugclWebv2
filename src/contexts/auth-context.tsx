@@ -11,12 +11,14 @@ import {
 } from '@builder.io/qwik';
 import { TenantDetectionService } from '~/types/multitenant';
 import { authService } from '~/services';
+import { STORAGE_KEYS } from '~/config/storage-keys';
 import type {
   User,
   AuthContextType,
   AuthState,
   TenantAuthState
 } from '~/types/auth';
+import type { ProfileResponse } from '~/services/types';
 import type { UserTenant } from '~/types/multitenant';
 
 // Safe localStorage access that works in both browser and server environments
@@ -87,7 +89,7 @@ export const AuthProvider = component$(() => {
         const userData = await response.json();
         authState.user = userData.user;
         authState.isAuthenticated = true;
-        safeLocalStorage.setItem('auth_token', userData.token);
+        safeLocalStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userData.token);
 
         // Detect and set tenant after successful login
         await detectAndSetTenant(userData.user.tenants);
@@ -109,8 +111,8 @@ export const AuthProvider = component$(() => {
     tenantState.currentTenant = null;
     tenantState.availableTenants = [];
     tenantState.requiresTenantSelection = false;
-    safeLocalStorage.removeItem('auth_token');
-    safeLocalStorage.removeItem('ugcl_current_tenant_id');
+    safeLocalStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    safeLocalStorage.removeItem(STORAGE_KEYS.TENANT_ID);
   });
 
   // Tenant detection and management
@@ -169,7 +171,7 @@ export const AuthProvider = component$(() => {
     }
 
     // Store tenant selection and update context
-    safeLocalStorage.setItem('ugcl_current_tenant_id', tenantId);
+    safeLocalStorage.setItem(STORAGE_KEYS.TENANT_ID, tenantId);
 
     // Find the tenant in available tenants
     const tenant = tenantState.availableTenants.find(t => t.id === tenantId);
@@ -235,7 +237,7 @@ export const AuthProvider = component$(() => {
     }
 
     // Store the selected business vertical in localStorage
-    safeLocalStorage.setItem('ugcl_current_business_vertical', businessVerticalId);
+    safeLocalStorage.setItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID, businessVerticalId);
 
 	    await authService.setActiveBusinessContextById(businessVerticalId);
 
@@ -246,7 +248,7 @@ export const AuthProvider = component$(() => {
   const getCurrentBusinessVertical = $(() => {
     if (!authState.user || !authState.user.business_roles) return null;
 
-    const storedBusinessId = safeLocalStorage.getItem('ugcl_current_business_vertical');
+    const storedBusinessId = safeLocalStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
 
     if (storedBusinessId) {
       const businessRole = authState.user.business_roles.find(
@@ -262,7 +264,7 @@ export const AuthProvider = component$(() => {
   const hasBusinessPermission = $((permission: string) => {
     if (!authState.user || !authState.user.business_roles) return false;
 
-    const storedBusinessId = safeLocalStorage.getItem('ugcl_current_business_vertical');
+    const storedBusinessId = safeLocalStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
     let currentBusiness = null;
 
     if (storedBusinessId) {
@@ -283,7 +285,7 @@ export const AuthProvider = component$(() => {
   const isBusinessAdmin = $(() => {
     if (!authState.user || !authState.user.business_roles) return false;
 
-    const storedBusinessId = safeLocalStorage.getItem('ugcl_current_business_vertical');
+    const storedBusinessId = safeLocalStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
     let currentBusiness = null;
 
     if (storedBusinessId) {
@@ -321,66 +323,56 @@ export const AuthProvider = component$(() => {
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     // Check for existing auth token on mount (client-side only)
-    const token = safeLocalStorage.getItem('auth_token');
+    const token = safeLocalStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     if (token) {
       const verifyAuth = import.meta.env.PROD && import.meta.env.VITE_VERIFY_AUTH === 'true';
 
-      // Fast-path in dev: trust stored user to avoid noisy proxy errors when API is down.
-      if (!verifyAuth) {
-        const userStr = safeLocalStorage.getItem('user');
-        if (userStr) {
-          try {
-            authState.user = JSON.parse(userStr);
-            authState.isAuthenticated = true;
-          } catch {
-            safeLocalStorage.removeItem('user');
-          }
+      const userStr = safeLocalStorage.getItem(STORAGE_KEYS.USER);
+      if (userStr) {
+        try {
+          authState.user = JSON.parse(userStr);
+          authState.isAuthenticated = true;
+        } catch {
+          safeLocalStorage.removeItem(STORAGE_KEYS.USER);
         }
-        authState.isLoading = false;
-        return;
       }
 
-      // Network verification path intentionally disabled in dev to avoid proxy noise.
-      // If strict verification is needed, rely on backend-protected route loaders and API clients.
-      const mockUser: User = {
-        id: '1',
-        name: 'System Administrator',
-        email: 'admin@company.com',
-        role: 'admin',
-        permissions: ['read', 'write', 'admin'],
-        tenants: [
-          {
-            tenantId: 'tenant-1',
-            tenantName: 'UGCL Main',
-            tenantSlug: 'ugcl-main',
-            role: 'admin',
-            permissions: ['read', 'write', 'admin'],
-            isDefault: true,
-            isOwner: true,
-            joinedAt: new Date(),
-            lastAccessedAt: new Date(),
-          },
-          {
-            tenantId: 'tenant-2',
-            tenantName: 'UGCL North',
-            tenantSlug: 'ugcl-north',
-            role: 'manager',
-            permissions: ['read', 'write'],
-            isDefault: false,
-            isOwner: false,
-            joinedAt: new Date(),
-            lastAccessedAt: new Date(),
-          },
-        ],
-      };
-      authState.user = mockUser;
-      authState.isAuthenticated = true;
+      if (verifyAuth) {
+        try {
+          const profile = await authService.getProfile();
+          const existingUser = authState.user;
+          const normalizedProfile = profile as ProfileResponse;
+          const mergedUser: User = {
+            id: String(normalizedProfile.id || normalizedProfile.userID || existingUser?.id || ''),
+            name: normalizedProfile.name || existingUser?.name || '',
+            email: normalizedProfile.email || existingUser?.email || '',
+            phone: normalizedProfile.phone || existingUser?.phone,
+            role: normalizedProfile.global_role || normalizedProfile.role || existingUser?.role || '',
+            permissions: normalizedProfile.permissions || existingUser?.permissions || [],
+            tenants: existingUser?.tenants || [],
+            business_roles: normalizedProfile.business_roles as any || existingUser?.business_roles,
+            is_super_admin: normalizedProfile.is_super_admin ?? existingUser?.is_super_admin,
+            is_active: normalizedProfile.is_active ?? existingUser?.is_active,
+          };
 
-      // Detect tenant after setting mock user
-      await detectAndSetTenant(mockUser.tenants);
+          authState.user = mergedUser;
+          authState.isAuthenticated = true;
+          safeLocalStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
+          if (mergedUser.tenants.length > 0) {
+            await detectAndSetTenant(mergedUser.tenants);
+          }
+        } catch (error) {
+          console.warn('Auth profile verification failed:', error);
+          authState.user = null;
+          authState.isAuthenticated = false;
+          safeLocalStorage.removeItem(STORAGE_KEYS.USER);
+          safeLocalStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+          safeLocalStorage.removeItem(STORAGE_KEYS.TOKEN);
+        }
+      }
     }
     authState.isLoading = false;
-  });
+  }, { strategy: 'document-ready' });
 
   useContextProvider(AuthContext, contextValue);
 

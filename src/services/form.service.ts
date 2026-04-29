@@ -13,7 +13,7 @@ import type {
   PaginatedResponse,
 } from './types';
 
-function extractModules(payload: unknown): Module[] {
+export function extractModules(payload: unknown): Module[] {
   if (Array.isArray(payload)) {
     return payload as Module[];
   }

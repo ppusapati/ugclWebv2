@@ -1,10 +1,13 @@
 import { createContextId, useContext, useContextProvider, useSignal, component$, Slot, useVisibleTask$, $ } from '@builder.io/qwik';
 import type { Signal } from '@builder.io/qwik';
 import { useLocation } from '@builder.io/qwik-city';
+import { STORAGE_KEYS } from '~/config/storage-keys';
+import type { Module } from '~/services/types';
 
 export interface MenuContextType {
   activeMainMenu: Signal<string>;
   activeSidebarItem: Signal<string>;
+  moduleDefinitions: Signal<Module[]>;
   setActiveFromRoute: (path: string) => void;
 }
 
@@ -98,6 +101,7 @@ export const MenuProvider = component$(() => {
   const location = useLocation();
   const activeMainMenu = useSignal<string>('admin');
   const activeSidebarItem = useSignal<string>('');
+  const moduleDefinitions = useSignal<Module[]>([]);
 
   // Function to determine active menu from route
   const setActiveFromRoute = $((path: string) => {
@@ -114,8 +118,8 @@ export const MenuProvider = component$(() => {
 
         // Persist to localStorage
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('activeMainMenu', menu.id);
-          localStorage.setItem('activeSidebarItem', matchingSubItem.id);
+          localStorage.setItem(STORAGE_KEYS.ACTIVE_MAIN_MENU, menu.id);
+          localStorage.setItem(STORAGE_KEYS.ACTIVE_SIDEBAR_ITEM, matchingSubItem.id);
         }
         return;
       }
@@ -127,7 +131,7 @@ export const MenuProvider = component$(() => {
     if (matchingMenu) {
       activeMainMenu.value = matchingMenu.id;
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('activeMainMenu', matchingMenu.id);
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_MAIN_MENU, matchingMenu.id);
       }
     }
   });
@@ -137,8 +141,8 @@ export const MenuProvider = component$(() => {
   useVisibleTask$(async () => {
     try {
       if (typeof localStorage !== 'undefined') {
-        const savedMainMenu = localStorage.getItem('activeMainMenu');
-        const savedSidebarItem = localStorage.getItem('activeSidebarItem');
+        const savedMainMenu = localStorage.getItem(STORAGE_KEYS.ACTIVE_MAIN_MENU);
+        const savedSidebarItem = localStorage.getItem(STORAGE_KEYS.ACTIVE_SIDEBAR_ITEM);
 
         if (savedMainMenu) {
           activeMainMenu.value = savedMainMenu;
@@ -153,18 +157,19 @@ export const MenuProvider = component$(() => {
 
     // Sync with current route
     await setActiveFromRoute(location.url.pathname);
-  });
+  }, { strategy: 'document-ready' });
 
   // Watch for route changes
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async ({ track }) => {
     track(() => location.url.pathname);
     await setActiveFromRoute(location.url.pathname);
-  });
+  }, { strategy: 'document-ready' });
 
   const contextValue: MenuContextType = {
     activeMainMenu,
     activeSidebarItem,
+    moduleDefinitions,
     setActiveFromRoute,
   };
 

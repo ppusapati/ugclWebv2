@@ -8,7 +8,7 @@ import { NotificationBell } from '~/components/notifications/notification-bell';
 import ImgLogo from '~/media/logo.png?jsx';
 import { Btn } from '~/components/ds';
 import { chatService } from '~/services/chat.service';
-import { formService } from '~/services/form.service';
+import { STORAGE_KEYS } from '~/config/storage-keys';
 import type { Module } from '~/services/types';
 import { getUser, isSuperAdminUser } from '~/utils/auth';
 
@@ -44,8 +44,7 @@ export const Header = component$(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const showUserMenu = useSignal(false);
   const isMenuOpen = useSignal<boolean>(false);
-  const availableModules = useSignal<Module[]>([]);
-  const modulesLoaded = useSignal(false);
+  const availableModules = menuContext.moduleDefinitions;
   const effectiveUser = auth.user || getUser();
   const isSuperAdmin = isSuperAdminUser(effectiveUser);
 
@@ -55,7 +54,7 @@ export const Header = component$(() => {
 
     const getCurrentUserId = (): string => {
       try {
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem(STORAGE_KEYS.USER);
         if (!userStr) return '';
         const parsed = JSON.parse(userStr);
         return String(parsed?.id || parsed?.user_id || '');
@@ -80,11 +79,12 @@ export const Header = component$(() => {
     cleanup(() => {
       close();
     });
-  });
+  }, { strategy: 'document-ready' });
 
   const handleLogout = $(() => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     // Full reload ensures layout state is cleared (prevents stale auth shell showing on /login)
     window.location.href = '/login';
   });
@@ -108,30 +108,12 @@ export const Header = component$(() => {
     isMenuOpen.value = !isMenuOpen.value;
   });
 
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async ({ track }) => {
-    track(() => isMenuOpen.value);
-    if (!isMenuOpen.value || typeof window === 'undefined') return;
-
-    if (modulesLoaded.value) {
-      return;
-    }
-
-    try {
-      availableModules.value = await formService.getModules();
-    } catch {
-      availableModules.value = [];
-    } finally {
-      modulesLoaded.value = true;
-    }
-  });
-
   const handleMainMenuClick = $((menuId: string) => {
     activeMainMenu.value = menuId;
     activeSidebarItem.value = '';
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('activeMainMenu', menuId);
-      localStorage.removeItem('activeSidebarItem');
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_MAIN_MENU, menuId);
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_SIDEBAR_ITEM);
     }
     isMenuOpen.value = false;
   });

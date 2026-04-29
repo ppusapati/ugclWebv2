@@ -7,6 +7,8 @@ import { formService } from '~/services/form.service';
 import type { Module } from '~/services/types';
 import { getUser, isSuperAdminUser } from '~/utils/auth';
 import { analyticsService } from '~/services/analytics.service';
+import { menuCacheService } from '~/services/menu-cache.service';
+import { STORAGE_KEYS } from '~/config/storage-keys';
 
 interface SidebarFormItem {
   code: string;
@@ -79,7 +81,7 @@ export const Sidebar = component$(() => {
   const effectiveUser = auth.user || getUser();
   const activeMainMenu = menuContext.activeMainMenu;
   const activeSidebarItem = menuContext.activeSidebarItem;
-  const moduleDefinitions = useSignal<Module[]>([]);
+  const moduleDefinitions = menuContext.moduleDefinitions;
   const moduleForms = useSignal<SidebarFormItem[]>([]);
   const moduleReports = useSignal<SidebarReportItem[]>([]);
   const dynamicMenuLabel = useSignal('');
@@ -118,12 +120,29 @@ export const Sidebar = component$(() => {
   const handleSidebarItemClick = $((itemId: string) => {
     activeSidebarItem.value = itemId;
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('activeSidebarItem', itemId);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SIDEBAR_ITEM, itemId);
     }
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async ({ track }) => {
+    const ensureModuleDefinitions = async (): Promise<Module[]> => {
+      if (moduleDefinitions.value.length > 0) {
+        menuCacheService.setModules(moduleDefinitions.value);
+        return moduleDefinitions.value;
+      }
+
+      const cachedModules = menuCacheService.getModules();
+      if (cachedModules.length > 0) {
+        moduleDefinitions.value = cachedModules;
+        return cachedModules;
+      }
+
+      const loadedModules = await menuCacheService.getOrLoadModules(() => formService.getModules());
+      moduleDefinitions.value = loadedModules;
+      return loadedModules;
+    };
+
     track(() => activeMainMenu.value);
     track(() => auth.user?.business_roles?.length || 0);
     track(() => auth.user?.is_super_admin);
@@ -142,11 +161,11 @@ export const Sidebar = component$(() => {
       userPermissions.includes('report:*') ||
       userPermissions.includes('read_reports');
 
-    const storedBusinessId = localStorage.getItem('ugcl_current_business_vertical');
+    const storedBusinessId = localStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
     const storedBusinessCode =
-      localStorage.getItem('business_code') ||
-      localStorage.getItem('businessCode') ||
-      localStorage.getItem('active_business_code') ||
+      localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE) ||
+      localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE_LEGACY) ||
+      localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_CODE) ||
       '';
     const firstBusinessRole = user?.business_roles?.[0];
     if (storedBusinessId) {
@@ -182,15 +201,13 @@ export const Sidebar = component$(() => {
 
     if (activeMenuId === 'admin') {
       if (!isSuperAdmin) {
-        if (moduleDefinitions.value.length === 0) {
-          moduleDefinitions.value = await formService.getModules();
-        }
+        const resolvedModules = await ensureModuleDefinitions();
 
-        const fallbackModuleId = moduleDefinitions.value[0]?.id || '';
+        const fallbackModuleId = resolvedModules[0]?.id || '';
         if (fallbackModuleId && fallbackModuleId !== activeMenuId) {
           activeMainMenu.value = fallbackModuleId;
           if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('activeMainMenu', fallbackModuleId);
+            localStorage.setItem(STORAGE_KEYS.ACTIVE_MAIN_MENU, fallbackModuleId);
           }
           effectiveMenuId = fallbackModuleId;
         } else {
@@ -198,7 +215,7 @@ export const Sidebar = component$(() => {
           effectiveMenuId = '';
         }
 
-        dynamicMenuLabel.value = moduleDefinitions.value[0]?.name || 'Module';
+        dynamicMenuLabel.value = resolvedModules[0]?.name || 'Module';
       } else {
         dynamicMenuLabel.value = 'Admin';
         moduleForms.value = [];
@@ -208,9 +225,7 @@ export const Sidebar = component$(() => {
     }
 
     try {
-      if (moduleDefinitions.value.length === 0) {
-        moduleDefinitions.value = await formService.getModules();
-      }
+      await ensureModuleDefinitions();
 
       const selectedModule = moduleDefinitions.value.find((module) => module.id === effectiveMenuId);
       dynamicMenuLabel.value = selectedModule?.name || 'Module';
@@ -312,7 +327,7 @@ export const Sidebar = component$(() => {
       moduleForms.value = [];
       moduleReports.value = [];
     }
-  });
+  }, { strategy: 'document-ready' });
 
   const adminSubItems = (menuItems.find(item => item.id === 'admin')?.subItems || []).filter((item) => item.id !== 'dashboard');
 

@@ -4,6 +4,7 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
 import type { Dashboard, DashboardListResponse, ReportResult, ChartType } from '~/types/analytics';
+import { getWidgetExecutionErrorMessage, getWidgetResult, groupWidgetExecutionErrors, hasWidgetResult, normalizeDashboardWidgetResults } from '~/utils/dashboard-results';
 import { P9ETable } from '~/components/table';
 import { Alert, Badge, Btn } from '~/components/ds';
 
@@ -194,7 +195,7 @@ export default component$(() => {
 
       try {
         const response = await analyticsService.executeDashboard(dashboard.id);
-        results = response.results || {};
+        results = normalizeDashboardWidgetResults(response, dashboard.widgets || []);
       } catch (dashboardExecError: any) {
         const message = String(dashboardExecError?.message || '').toLowerCase();
         const isNotFound = message.includes('404') || message.includes('not found');
@@ -235,6 +236,14 @@ export default component$(() => {
     if (!firstKey) return null;
     const value = firstRow[firstKey];
     return value === null || value === undefined ? '-' : String(value);
+  };
+
+  const getGroupedWidgetErrors = () => {
+    if (!dashboard?.widgets || dashboard.widgets.length === 0) {
+      return [];
+    }
+
+    return groupWidgetExecutionErrors(widgetResults.value, dashboard.widgets);
   };
 
   // eslint-disable-next-line qwik/no-use-visible-task
@@ -281,6 +290,19 @@ export default component$(() => {
         {executionError.value && (
           <Alert variant="warning" class="mb-6">
             <span>{executionError.value}</span>
+          </Alert>
+        )}
+
+        {getGroupedWidgetErrors().length > 0 && (
+          <Alert variant="warning" class="mb-6">
+            <div class="space-y-2">
+              {getGroupedWidgetErrors().map((item) => (
+                <div key={item.message} class="text-sm">
+                  <div class="font-semibold">{item.message}</div>
+                  <div class="text-xs text-gray-700">Affects {item.widgetIds.length} widget(s): {item.widgetTitles.join(', ')}</div>
+                </div>
+              ))}
+            </div>
           </Alert>
         )}
 
@@ -363,13 +385,22 @@ export default component$(() => {
                           Position: x={widget.position.x}, y={widget.position.y}, w={widget.position.w}, h={widget.position.h}
                         </p>
 
-                        {widgetResults.value[widget.id] ? (
+                                {hasWidgetResult(widgetResults.value, widget.id) ? (
                           (() => {
-                            const reportResult = getNormalizedReportResult(widgetResults.value[widget.id]);
+                                    const reportResult = getNormalizedReportResult(getWidgetResult(widgetResults.value, widget.id));
                             if (!reportResult) {
+                              const widgetExecutionError = getWidgetExecutionErrorMessage(getWidgetResult(widgetResults.value, widget.id));
+                              if (widgetExecutionError) {
+                                return (
+                                  <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                                    {widgetExecutionError}
+                                  </div>
+                                );
+                              }
+
                               return (
                                 <div class="text-xs bg-gray-50 dark:bg-gray-900 rounded p-2 max-h-28 overflow-auto">
-                                  {JSON.stringify(widgetResults.value[widget.id])}
+                                          {JSON.stringify(getWidgetResult(widgetResults.value, widget.id))}
                                 </div>
                               );
                             }
