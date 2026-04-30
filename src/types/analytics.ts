@@ -79,6 +79,7 @@ export interface ReportField {
   is_visible: boolean;
   order: number;
   format?: string;
+  options_source?: string;
 }
 
 export interface ReportFilter {

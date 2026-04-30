@@ -815,14 +815,14 @@ export default component$(() => {
           </div>
         )}
 
-      {/* Loading State */}
+      {/* Loading State — skeleton grid matches card layout to prevent CLS */}
       {state.loading && (
-        <div class="flex flex-col items-center justify-center py-20">
-          <div class="relative">
-            <div class="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
-            <div class="w-16 h-16 border-4 border-blue-600 rounded-full animate-spin border-t-transparent absolute top-0 left-0"></div>
+        <div class="py-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <div key={n} class="rounded-2xl bg-gray-100 animate-pulse h-64"></div>
+            ))}
           </div>
-          <p class="mt-4 text-gray-600 font-medium">Loading reports...</p>
         </div>
       )}
 

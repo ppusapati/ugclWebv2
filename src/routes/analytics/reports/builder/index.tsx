@@ -731,17 +731,18 @@ export default component$(() => {
 
     const exists = reportConfig.fields?.some(f => f.field_name === fieldName && f.data_source === sourceAlias);
     if (!exists) {
-      reportConfig.fields = [
-        ...(reportConfig.fields || []),
-        {
-          field_name: fieldName,
-          alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-          data_source: sourceAlias,
-          data_type: fieldType,
-          is_visible: true,
-          order: (reportConfig.fields?.length || 0) + 1,
-        },
-      ];
+      const fieldEntry: any = {
+        field_name: fieldName,
+        alias: fieldLabel.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        data_source: sourceAlias,
+        data_type: fieldType,
+        is_visible: true,
+        order: (reportConfig.fields?.length || 0) + 1,
+      };
+      if (field.apiEndpoint) {
+        fieldEntry.options_source = field.apiEndpoint;
+      }
+      reportConfig.fields = [...(reportConfig.fields || []), fieldEntry];
 
       if (WORKFLOW_TIMELINE_FIELDS.includes(String(fieldName || ''))) {
         const alreadySelected = (reportConfig.fields || []).some((item: any) => item.field_name === 'submission_id');
@@ -2223,6 +2224,11 @@ export default component$(() => {
                                         )}
                                         {selectedField?.is_visible === false && (
                                           <Badge variant="neutral" class="text-[10px] px-2 py-0.5">Hidden</Badge>
+                                        )}
+                                        {field.apiEndpoint && (
+                                          <Badge variant="success" class="text-[10px] px-2 py-0.5">
+                                            Resolves from {String(field.apiEndpoint).split('/').filter(Boolean).pop()}
+                                          </Badge>
                                         )}
                                       </div>
                                     </div>

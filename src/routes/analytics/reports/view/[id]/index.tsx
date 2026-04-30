@@ -1,8 +1,8 @@
 // Report Viewer Screen
-import { component$, isServer, useStore, useResource$, Resource, $, useTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, useResource$, Resource, $, useTask$, useVisibleTask$ } from '@builder.io/qwik';
 import { useLocation, useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
-import { createSSRApiClient } from '~/services/api-client';
+import { createSSRApiClient, apiClient } from '~/services/api-client';
 import { analyticsService } from '~/services/analytics.service';
 import type { ReportDefinition, ReportResult, ReportFilter, ChartType } from '~/types/analytics';
 import { P9ETable, type ActionButton } from '~/components/table';
@@ -282,6 +282,70 @@ export default component$(() => {
     permissionState.canExport = allPermissions.has('report:export') || !!auth.user?.is_super_admin;
   });
 
+  // For any dropdown field that still holds a raw UUID (e.g. view not yet regenerated),
+  // fetch the reference endpoint and resolve the label client-side.
+  const resolveDropdownLabels = $(async () => {
+    if (!state.reportData?.data?.length || !state.report?.fields) return;
+
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const dropdownFields = (state.report.fields as any[]).filter((f: any) => f.options_source);
+    if (dropdownFields.length === 0) return;
+
+    const labelMaps: Record<string, Record<string, string>> = {};
+
+    await Promise.all(
+      [...new Set(dropdownFields.map((f: any) => f.options_source as string))].map(async (endpoint) => {
+        try {
+          const response: any = await apiClient.get(endpoint);
+          const items: any[] = Array.isArray(response)
+            ? response
+            : (response.data ?? response.items ?? response.results ?? []);
+          const map: Record<string, string> = {};
+          for (const item of items) {
+            const id = item.id ?? item.ID;
+            const label = item.name ?? item.label ?? item.title ?? item.display_name ?? item.full_name;
+            if (id != null && label != null) {
+              map[String(id)] = String(label);
+            }
+          }
+          labelMaps[endpoint] = map;
+        } catch {
+          // Silently skip — backend SQL view is the primary resolver; this is a best-effort fallback.
+        }
+      })
+    );
+
+    const needsResolution = (val: any) => val && uuidPattern.test(String(val));
+
+    const resolvedData = state.reportData.data.map((row: any) => {
+      let changed = false;
+      const resolved = { ...row };
+      for (const field of dropdownFields) {
+        const map = labelMaps[field.options_source];
+        if (!map) continue;
+        const val = resolved[field.field_name];
+        if (needsResolution(val)) {
+          const label = map[String(val)];
+          if (label) {
+            resolved[field.field_name] = label;
+            changed = true;
+          }
+        }
+      }
+      return changed ? resolved : row;
+    });
+
+    state.reportData = { ...state.reportData, data: resolvedData } as any;
+  });
+
+  useVisibleTask$(async () => {
+    if (!state.reportData) {
+      await executeReport();
+    } else {
+      await resolveDropdownLabels();
+    }
+  }, { strategy: 'document-ready' });
+
   const chartComponent = useResource$(async () => {
     const mod = await import('~/components/echarts');
     return mod.EChart;
@@ -295,6 +359,7 @@ export default component$(() => {
       const response = await analyticsService.executeReport(reportId, state.runtimeFilters);
       state.report = response.report;
       state.reportData = response.result;
+      await resolveDropdownLabels();
     } catch (err: any) {
       state.error = err.message || 'Failed to execute report';
     } finally {

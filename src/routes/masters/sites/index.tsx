@@ -45,24 +45,7 @@ export default component$(() => {
   const siteToDelete = useSignal<Site | null>(null);
   const deleting = useSignal(false);
   const total = useSignal(initialTotal);
-  const apiDebug = useSignal(
-    (initialData.value as any)?.response
-      ? [
-          `base: ${resolveApiBaseUrl()}`,
-          `SSR GET /admin/sites?page=1&limit=100&include=business_vertical`,
-          `keys: ${Object.keys((initialData.value as any).response).join(', ') || 'none'}`,
-          `data.length: ${Array.isArray((initialData.value as any).response?.data) ? (initialData.value as any).response.data.length : -1}`,
-          `sites.length: ${Array.isArray((initialData.value as any).response?.sites) ? (initialData.value as any).response.sites.length : -1}`,
-          `resolved sites.length: ${initialSites.length}`,
-          `resolved total: ${initialTotal}`,
-        ].join(' | ')
-      : [
-          `base: ${resolveApiBaseUrl()}`,
-          `SSR GET /admin/sites?page=1&limit=100&include=business_vertical`,
-          `error: ${(initialData.value as any)?.error || 'Failed to fetch'}`,
-          `status: ${(initialData.value as any)?.status ?? 'n/a'}`,
-        ].join(' | ')
-  );
+  
 
   const confirmDelete = $((site: Site) => {
     siteToDelete.value = site;
@@ -115,12 +98,6 @@ export default component$(() => {
           <Alert variant="error" class="mb-6 border-l-4">
             <p class="text-error-800">{error.value}</p>
           </Alert>
-        )}
-
-        {apiDebug.value && (
-          <div class="rounded-lg p-3 mb-6 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-900 break-words">
-            <strong>API Debug:</strong> {apiDebug.value}
-          </div>
         )}
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
