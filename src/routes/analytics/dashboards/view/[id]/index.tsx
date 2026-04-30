@@ -178,8 +178,9 @@ export default component$(() => {
       try {
         const reportResponse = await analyticsService.executeReport(String(widget.report_id));
         resultMap[widget.id] = reportResponse.result;
-      } catch {
-        // Continue collecting from other widgets even if one fails.
+      } catch (err: any) {
+        // Store the error so per-widget error UI can surface it.
+        resultMap[widget.id] = { error: err?.message || 'Report execution failed' };
       }
     }
 
@@ -211,7 +212,10 @@ export default component$(() => {
       widgetResults.value = results;
 
       if (Object.keys(results).length === 0 && (dashboard.widgets || []).length > 0) {
-        executionError.value = 'No widget data available yet. Link widgets to reports to auto-load data.';
+        const anyLinked = (dashboard.widgets || []).some((w: any) => !!w.report_id);
+        executionError.value = anyLinked
+          ? 'Widget data could not be loaded. Check that the linked reports execute without errors.'
+          : 'No widget data available yet. Link widgets to reports to auto-load data.';
       }
     } catch (err: any) {
       executionError.value = err?.message || 'Failed to execute dashboard widgets';

@@ -1,3 +1,5 @@
+import { resolveHelpRouteContext } from '~/config/route-registry';
+
 export interface HelpSection {
   title: string;
   bullets: string[];
@@ -624,106 +626,40 @@ export const helpTopics: HelpTopic[] = [
   },
 ];
 
-function normalizePath(pathname: string): string {
-  if (!pathname) {
-    return '/';
-  }
-
-  if (pathname === '/') {
-    return pathname;
-  }
-
-  return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-}
-
-function escapeRegex(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function patternToRegex(pattern: string): RegExp {
-  if (pattern === '/') {
-    return /^\/$/;
-  }
-
-  const normalizedPattern = normalizePath(pattern);
-  const escapedPattern = escapeRegex(normalizedPattern);
-  const regexSource = escapedPattern
-    .replace(/\\:([A-Za-z0-9_]+)/g, '[^/]+')
-    .replace(/\\\*/g, '.*');
-
-  return new RegExp(`^${regexSource}$`);
-}
-
-function getBestPatternScore(pathname: string, patterns: string[]): number {
-  let bestScore = -1;
-
-  for (const pattern of patterns) {
-    const regex = patternToRegex(pattern);
-    if (regex.test(pathname)) {
-      const score = pattern.length;
-      if (score > bestScore) {
-        bestScore = score;
-      }
-    }
-  }
-
-  return bestScore;
-}
-
-function resolveBestVariant(pathname: string, topic: HelpTopic): { variant?: HelpVariant; score: number } {
-  const variants = topic.variants || [];
-  let matchedVariant: HelpVariant | undefined;
-  let bestScore = -1;
-
-  for (const variant of variants) {
-    const score = getBestPatternScore(pathname, variant.routePatterns);
-    if (score > bestScore) {
-      bestScore = score;
-      matchedVariant = variant;
-    }
-  }
-
-  return {
-    variant: bestScore >= 0 ? matchedVariant : undefined,
-    score: bestScore,
-  };
-}
-
 function buildHelpAnchor(topicId: string, variantId?: string): string {
   return variantId ? `${topicId}-${variantId}` : topicId;
 }
 
 export function resolveHelpContext(pathname: string): ResolvedHelpContext {
-  const normalizedPath = normalizePath(pathname);
-  const candidates = helpTopics
-    .map((topic) => {
-      const topicScore = getBestPatternScore(normalizedPath, topic.routePatterns);
-      const variantMatch = resolveBestVariant(normalizedPath, topic);
-      const effectiveScore = Math.max(topicScore, variantMatch.score);
+  const matchedRoute = resolveHelpRouteContext(pathname);
+  if (matchedRoute) {
+    const topic = helpTopics.find((item) => item.id === matchedRoute.topicId);
+    const variant = topic?.variants?.find((item) => item.id === matchedRoute.variantId);
 
+    if (topic) {
       return {
         topic,
-        variant: variantMatch.variant,
-        score: effectiveScore,
+        variant,
+        anchor: buildHelpAnchor(topic.id, variant?.id),
       };
-    })
-    .filter((entry) => entry.score >= 0)
-    .sort((left, right) => right.score - left.score);
+    }
+  }
 
-  const selected = candidates[0];
-  if (selected) {
+  const fallback = helpTopics.find((topic) => topic.id === 'general');
+  if (fallback) {
     return {
-      topic: selected.topic,
-      variant: selected.variant,
-      anchor: buildHelpAnchor(selected.topic.id, selected.variant?.id),
+      topic: fallback,
+      variant: undefined,
+      anchor: buildHelpAnchor(fallback.id),
     };
   }
 
-  const fallback = helpTopics.find((topic) => topic.id === 'general')!;
+  // The content set always includes a general fallback topic.
+  const firstTopic = helpTopics[0];
   return {
-    topic: fallback,
+    topic: firstTopic,
     variant: undefined,
-    anchor: buildHelpAnchor(fallback.id),
+    anchor: buildHelpAnchor(firstTopic.id),
   };
 }
 

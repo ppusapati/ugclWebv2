@@ -1,5 +1,5 @@
 // Reports List Screen - Enhanced Professional Design
-import { component$, isServer, useStore, $, useSignal, useTask$ } from '@builder.io/qwik';
+import { component$, isServer, useStore, $, useSignal, useTask$, useVisibleTask$ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$, useLocation } from '@builder.io/qwik-city';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { createSSRApiClient } from '~/services/api-client';
@@ -334,6 +334,15 @@ export default component$(() => {
   useTask$(({ track }) => {
     track(() => state.selectedCategory);
     void loadTemplates();
+  });
+
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
+    // SSR routeLoader may fail when auth token is not available in cookies.
+    // Retry client-side with the token from localStorage.
+    if (state.reports.length === 0 || (initialData.value as any).error) {
+      await loadReports();
+    }
   });
 
   const deleteReport = $(async (reportId: string, reportName: string) => {

@@ -48,6 +48,7 @@ export const MenuProvider = component$(() => {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_KEYS.ACTIVE_SIDEBAR_ITEM, activeSidebarItem.value);
       }
+      return;
     }
 
     const reportRouteMatch = path.match(/^\/analytics\/reports\/view\/([^/]+)/i);
@@ -56,6 +57,7 @@ export const MenuProvider = component$(() => {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_KEYS.ACTIVE_SIDEBAR_ITEM, activeSidebarItem.value);
       }
+      return;
     }
 
     const mainSection = path.split('/')[1];
@@ -110,15 +112,6 @@ export const MenuProvider = component$(() => {
       console.warn('Menu state restore failed:', error);
     }
 
-    // Sync with current route
-    await setActiveFromRoute(location.url.pathname);
-  }, { strategy: 'document-ready' });
-
-  // Watch for route changes
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async ({ track }) => {
-    track(() => location.url.pathname);
-    await setActiveFromRoute(location.url.pathname);
   }, { strategy: 'document-ready' });
 
   const contextValue: MenuContextType = {

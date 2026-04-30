@@ -53,8 +53,10 @@ function extractRawResults(payload: any): WidgetResultMap {
   const candidates = [
     payload?.results,
     payload?.widget_results,
+    payload?.widgets,          // backend: { widgets: [{ widget_id, result }] }
     payload?.data?.results,
     payload?.data?.widget_results,
+    payload?.data?.widgets,
     payload,
   ];
 

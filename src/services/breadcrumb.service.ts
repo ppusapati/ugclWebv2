@@ -1,4 +1,5 @@
 // src/services/breadcrumb.service.ts
+import { getBreadcrumbRouteConfigs, getRoutePatternScore } from '~/config/route-registry';
 
 export interface BreadcrumbItem {
   label: string;
@@ -14,76 +15,8 @@ export interface RouteConfig {
 }
 
 class BreadcrumbService {
-  // Define route configurations for breadcrumb generation
-  private routeConfigs: RouteConfig[] = [
-    // Project management routes
-    { path: '/projects', label: 'Projects', icon: 'i-heroicons-folder-open-solid', parent: '/' },
-    { path: '/projects/create', label: 'New Project', icon: 'i-heroicons-plus-circle-solid', parent: '/projects' },
-    { path: '/tasks', label: 'Tasks', icon: 'i-heroicons-clipboard-document-list-solid', parent: '/projects' },
-
-    // Dashboard
-    { path: '/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },
-    { path: '/dashboard', label: 'Dashboard', icon: 'i-heroicons-home-solid' },
-
-    // Admin routes
-    { path: '/', label: 'Admin', icon: 'i-heroicons-shield-check-solid' },
-    { path: '/masters', label: 'Masters', icon: 'i-heroicons-cube-solid', parent: '/' },
-    { path: '/masters/module', label: 'Modules', icon: 'i-streamline-module-three-solid', parent: '/masters' },
-    { path: '/masters/sites', label: 'Sites', icon: 'i-heroicons-map-pin-solid', parent: '/masters' },
-    { path: '/masters/attendance', label: 'Attendance', icon: 'i-heroicons-clipboard-document-list-solid', parent: '/masters' },
-    { path: '/masters/business', label: 'Business Verticals', icon: 'i-heroicons-building-office-solid', parent: '/masters' },
-    { path: '/masters/sites/new', label: 'New Site', icon: 'i-heroicons-plus-circle-solid', parent: '/masters/sites' },
-    { path: '/users', label: 'Users', icon: 'i-heroicons-users-solid', parent: '/' },
-    { path: '/rbac', label: 'RBAC', icon: 'i-heroicons-shield-check-solid', parent: '/' },
-    { path: '/rbac/global-roles', label: 'Global Roles', icon: 'i-heroicons-shield-check-solid', parent: '/rbac' },
-    { path: '/rbac/business-roles', label: 'Business Roles', icon: 'i-heroicons-building-office-solid', parent: '/rbac' },
-    { path: '/rbac/permissions', label: 'Permissions', icon: 'i-heroicons-key-solid', parent: '/rbac' },
-
-    // ABAC Policy routes
-    { path: '/policies', label: 'ABAC Policies', icon: 'i-heroicons-shield-check-solid', parent: '/' },
-    { path: '/policies/create', label: 'Create Policy', icon: 'i-heroicons-plus-circle-solid', parent: '/policies' },
-    { path: '/attributes', label: 'Attributes', icon: 'i-heroicons-tag-solid', parent: '/' },
-
-    { path: '/dashboard/admin/roles', label: 'Roles & Permissions', icon: 'i-heroicons-key-solid', parent: '/dashboard' },
-    { path: '/help', label: 'Help Center', icon: 'i-heroicons-question-mark-circle-solid', parent: '/' },
-    { path: '/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth-solid', parent: '/' },
-    { path: '/audit', label: 'Audit Logs', icon: 'i-heroicons-document-text-solid', parent: '/' },
-    { path: '/backup', label: 'Backup', icon: 'i-heroicons-cloud-arrow-down-solid', parent: '/' },
-
-    // HR routes
-    { path: '/hr', label: 'HR', icon: 'i-heroicons-users-solid' },
-    { path: '/hr/employees', label: 'Employees', icon: 'i-heroicons-user-group-solid', parent: '/hr' },
-    { path: '/hr/recruitment', label: 'Recruitment', icon: 'i-heroicons-user-plus-solid', parent: '/hr' },
-    { path: '/hr/payroll', label: 'Payroll', icon: 'i-heroicons-banknotes-solid', parent: '/hr' },
-    { path: '/hr/performance', label: 'Performance', icon: 'i-heroicons-chart-bar-solid', parent: '/hr' },
-    { path: '/hr/training', label: 'Training', icon: 'i-heroicons-academic-cap-solid', parent: '/hr' },
-    { path: '/hr/policies', label: 'Policies', icon: 'i-heroicons-document-text-solid', parent: '/hr' },
-
-    // Finance routes
-    { path: '/finance', label: 'Finance', icon: 'i-heroicons-currency-rupee-solid' },
-    { path: '/finance/accounts', label: 'Accounts', icon: 'i-heroicons-building-library-solid', parent: '/finance' },
-    { path: '/finance/invoices', label: 'Invoices', icon: 'i-heroicons-document-duplicate-solid', parent: '/finance' },
-    { path: '/finance/expenses', label: 'Expenses', icon: 'i-heroicons-receipt-percent-solid', parent: '/finance' },
-    { path: '/finance/budgets', label: 'Budgets', icon: 'i-heroicons-calculator-solid', parent: '/finance' },
-    { path: '/finance/reports', label: 'Reports', icon: 'i-heroicons-chart-pie-solid', parent: '/finance' },
-    { path: '/finance/taxes', label: 'Taxes', icon: 'i-heroicons-clipboard-document-check-solid', parent: '/finance' },
-
-    // Operations routes
-    { path: '/operations', label: 'Operations', icon: 'i-heroicons-cog-solid' },
-    { path: '/operations/projects', label: 'Projects', icon: 'i-heroicons-folder-open-solid', parent: '/operations' },
-    { path: '/operations/inventory', label: 'Inventory', icon: 'i-heroicons-cube-transparent-solid', parent: '/operations' },
-    { path: '/operations/suppliers', label: 'Suppliers', icon: 'i-heroicons-truck-solid', parent: '/operations' },
-    { path: '/operations/quality', label: 'Quality Control', icon: 'i-heroicons-shield-check-solid', parent: '/operations' },
-    { path: '/operations/maintenance', label: 'Maintenance', icon: 'i-heroicons-wrench-screwdriver-solid', parent: '/operations' },
-
-    // Sales routes
-    { path: '/sales', label: 'Sales', icon: 'i-heroicons-currency-dollar-solid' },
-    { path: '/sales/leads', label: 'Leads', icon: 'i-heroicons-funnel-solid', parent: '/sales' },
-    { path: '/sales/customers', label: 'Customers', icon: 'i-heroicons-user-group-solid', parent: '/sales' },
-    { path: '/sales/orders', label: 'Orders', icon: 'i-heroicons-shopping-cart-solid', parent: '/sales' },
-    { path: '/sales/pipeline', label: 'Pipeline', icon: 'i-heroicons-arrow-trending-up-solid', parent: '/sales' },
-    { path: '/sales/analytics', label: 'Analytics', icon: 'i-heroicons-chart-bar-square-solid', parent: '/sales' },
-  ];
+  // Route definitions are centralized in route-registry.
+  private routeConfigs: RouteConfig[] = getBreadcrumbRouteConfigs();
 
   /**
    * Get breadcrumb items for a given path
@@ -125,20 +58,38 @@ class BreadcrumbService {
    * Find route configuration for a given path
    */
   private findRouteConfig(path: string): RouteConfig | undefined {
-    // Try exact match first
-    let route = this.routeConfigs.find(r => r.path === path);
+    // Try direct best-match first (supports dynamic patterns).
+    let route = this.getBestMatchingRoute(path);
+    if (route) {
+      return route;
+    }
 
-    if (route) return route;
-
-    // Try to find the closest matching parent path
+    // Try to find the closest matching parent path.
     const segments = path.split('/').filter(Boolean);
     for (let i = segments.length; i > 0; i--) {
       const partialPath = '/' + segments.slice(0, i).join('/');
-      route = this.routeConfigs.find(r => r.path === partialPath);
-      if (route) return route;
+      route = this.getBestMatchingRoute(partialPath);
+      if (route) {
+        return route;
+      }
     }
 
     return undefined;
+  }
+
+  private getBestMatchingRoute(path: string): RouteConfig | undefined {
+    let bestRoute: RouteConfig | undefined;
+    let bestScore = -1;
+
+    for (const route of this.routeConfigs) {
+      const score = getRoutePatternScore(path, route.path);
+      if (score > bestScore) {
+        bestScore = score;
+        bestRoute = route;
+      }
+    }
+
+    return bestScore >= 0 ? bestRoute : undefined;
   }
 
   /**
