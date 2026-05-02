@@ -310,7 +310,6 @@ export default component$(() => {
 
   // Handle drag over canvas
   const handleDragOver = $((e: DragEvent) => {
-    e.preventDefault();
     state.isCanvasDragActive = true;
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = state.draggedWidgetId ? 'move' : 'copy';
@@ -327,8 +326,6 @@ export default component$(() => {
 
   // Handle drop on canvas
   const handleDrop = $(async (e: DragEvent) => {
-    e.preventDefault();
-
     const rawText = e.dataTransfer?.getData('text/plain') || '';
     const draggedWidgetIdFromPayload = rawText.startsWith('widget:') ? rawText.slice('widget:'.length) : '';
     const droppedWidgetId = state.draggedWidgetId || draggedWidgetIdFromPayload;
@@ -702,8 +699,10 @@ export default component$(() => {
 
                   <div
                     onDragOver$={handleDragOver}
+                    preventdefault:dragover
                     onDragLeave$={handleDragLeave}
                     onDrop$={handleDrop}
+                    preventdefault:drop
                     class={`border-2 border-dashed rounded-xl p-3 lg:p-4 relative overflow-x-auto min-h-[var(--dashboard-canvas-min-height)] transition-all ${
                       state.isCanvasDragActive
                         ? 'border-indigo-500 bg-indigo-50/60 shadow-[0_0_0_3px_rgba(99,102,241,0.12)] dark:border-indigo-400 dark:bg-indigo-900/20'
@@ -748,6 +747,7 @@ export default component$(() => {
                             onDragStart$={(e) => handleWidgetDragStart(e, widget.id)}
                             onDragEnd$={handleWidgetDragEnd}
                             onDragOver$={handleDragOver}
+                            preventdefault:dragover
                             onClick$={() => {
                               state.selectedWidget = widget;
                               state.showWidgetConfig = true;

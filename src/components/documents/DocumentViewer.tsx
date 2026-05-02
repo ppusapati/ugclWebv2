@@ -234,6 +234,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
     }
   });
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     await loadDocument();
     await loadVersions();
@@ -242,6 +243,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
     await loadWorkflow();
   });
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(({ track }) => {
     if (typeof localStorage === 'undefined') {
       return;
@@ -337,6 +339,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
     }
   });
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async ({ track }) => {
     const activeTab = track(() => state.activeTab);
     track(() => state.document?.id);
@@ -646,7 +649,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
 
               {!state.previewLoading && state.previewKind === 'image' && state.previewObjectUrl && (
                 <div class="rounded-lg border border-gray-200 bg-white p-4">
-                  <img src={state.previewObjectUrl} alt={doc.title} class="max-h-[65vh] mx-auto object-contain" />
+                  <img src={state.previewObjectUrl} alt={doc.title} width={1200} height={900} class="max-h-[65vh] mx-auto object-contain" />
                 </div>
               )}
 
@@ -959,7 +962,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
 
             {!state.previewLoading && state.previewKind === 'image' && state.previewObjectUrl && (
               <div class="rounded-lg border border-gray-200 bg-white p-4">
-                <img src={state.previewObjectUrl} alt={doc.title} class="preview-image max-h-[65vh] mx-auto object-contain" />
+                <img src={state.previewObjectUrl} alt={doc.title} width={1200} height={900} class="preview-image max-h-[65vh] mx-auto object-contain" />
               </div>
             )}
 

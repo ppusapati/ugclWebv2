@@ -48,8 +48,6 @@ export default component$<SelectFieldProps>((props) => {
       const storedBusinessCode = String(
         props.businessCode ||
         localStorage.getItem('business_code') ||
-        localStorage.getItem('businessCode') ||
-        localStorage.getItem('active_business_code') ||
         ''
       )
         .trim()

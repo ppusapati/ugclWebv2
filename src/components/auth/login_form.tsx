@@ -3,6 +3,7 @@ import { Btn } from '~/components/ds/btn';
 import { isValidPhone } from "~/utils/validations";
 import ImgLogo from '~/media/logo.png?jsx';
 import { buildApiUrl } from '~/config/api';
+import { authService } from '~/services';
 
 const API_KEY = '87339ea3-1add-4689-ae57-3128ebd03c4f';
 
@@ -45,8 +46,7 @@ export const LoginForm = component$(() => {
             state.passwordError = '';
         }
     });
-    const handleSubmit = $(async (e: Event) => {
-        e.preventDefault();
+    const handleSubmit = $(async () => {
         state.touched = true;
         if (!isValidPhone(state.phone)) {
             state.phoneError = 'Phone number must be exactly 10 digits';
@@ -90,37 +90,7 @@ export const LoginForm = component$(() => {
               }
 
                 state.apiSuccess = true;
-                // Store in localStorage for client-side
-              localStorage.setItem('user', JSON.stringify(enrichedUser));
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('auth_token', data.token);
-
-              const firstBusinessRole = Array.isArray(enrichedUser?.business_roles)
-                ? enrichedUser.business_roles[0]
-                : null;
-              const verticalCode =
-                firstBusinessRole?.vertical_code ||
-                firstBusinessRole?.business_vertical_code ||
-                firstBusinessRole?.business_vertical?.code ||
-                '';
-              const verticalId =
-                firstBusinessRole?.vertical_id ||
-                firstBusinessRole?.business_vertical_id ||
-                firstBusinessRole?.business_vertical?.id ||
-                '';
-
-              if (verticalCode) {
-                localStorage.setItem('active_business_code', verticalCode);
-                localStorage.setItem('business_code', verticalCode);
-                localStorage.setItem('businessCode', verticalCode);
-              }
-              if (verticalId) {
-                localStorage.setItem('ugcl_current_business_vertical', verticalId);
-              }
-
-                // Also store in cookies for SSR (routeLoader$ access)
-                document.cookie = `token=${data.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
-              document.cookie = `user=${encodeURIComponent(JSON.stringify(enrichedUser))}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+              authService.persistSession(data.token, enrichedUser);
 
                 // Full reload so SSR route guards and layout auth state re-run from the app entry point.
                 window.location.href = '/';

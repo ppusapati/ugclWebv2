@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from './api-client';
+import { safeStorage } from '~/utils/safe-storage';
 import type {
   LoginRequest,
   LoginResponse,
@@ -17,17 +18,64 @@ import type {
 } from './types';
 
 class AuthService {
+  private readonly sessionMaxAgeSeconds = 30 * 24 * 60 * 60;
+
+  persistSession(token: string, user: User): void {
+    if (typeof window === 'undefined' || !token) return;
+
+    safeStorage.setItem('token', token);
+    safeStorage.setItem('user', JSON.stringify(user));
+
+    const firstBusinessRole = Array.isArray(user?.business_roles)
+      ? user.business_roles[0]
+      : null;
+    const roleRecord = (firstBusinessRole || {}) as Record<string, unknown>;
+    const verticalCode = String(
+      roleRecord.vertical_code ||
+      roleRecord.business_vertical_code ||
+      firstBusinessRole?.business_vertical?.code ||
+      ''
+    );
+    const verticalId = String(
+      roleRecord.vertical_id ||
+      firstBusinessRole?.business_vertical_id ||
+      firstBusinessRole?.business_vertical?.id ||
+      ''
+    );
+
+    if (verticalCode) {
+      safeStorage.setItem('business_code', verticalCode);
+    }
+    if (verticalId) {
+      safeStorage.setItem('ugcl_current_business_vertical', verticalId);
+    }
+
+    safeStorage.setCookie('token', token, {
+      maxAge: this.sessionMaxAgeSeconds,
+      sameSite: 'Lax',
+    });
+    safeStorage.setCookie('user', JSON.stringify(user), {
+      maxAge: this.sessionMaxAgeSeconds,
+      sameSite: 'Lax',
+    });
+  }
+
+  clearSession(): void {
+    if (typeof window === 'undefined') return;
+
+    safeStorage.clear();
+
+    safeStorage.clearAllCookies();
+  }
+
   /**
    * Login user with phone and password
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>('/login', credentials);
 
-    // Store token and user in localStorage
-    if (typeof window !== 'undefined' && response.token) {
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+    if (response.token) {
+      this.persistSession(response.token, response.user);
     }
 
     return response;
@@ -39,11 +87,8 @@ class AuthService {
   async register(data: RegisterRequest): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>('/register', data);
 
-    // Auto-login after successful registration
-    if (typeof window !== 'undefined' && response.token) {
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+    if (response.token) {
+      this.persistSession(response.token, response.user);
     }
 
     return response;
@@ -64,7 +109,7 @@ class AuthService {
 
     // Update stored user info
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      safeStorage.setItem('user', JSON.stringify(updatedUser));
     }
 
     return updatedUser;
@@ -101,7 +146,7 @@ class AuthService {
   async setActiveBusinessContextById(businessId: string): Promise<void> {
     await apiClient.put('/context/business', { business_id: businessId });
     if (typeof window !== 'undefined') {
-      localStorage.setItem('ugcl_current_business_vertical', businessId);
+      safeStorage.setItem('ugcl_current_business_vertical', businessId);
     }
   }
 
@@ -110,16 +155,13 @@ class AuthService {
   }
 
   /**
-   * Logout user
+   * Logout user - clear both localStorage and cookies
    */
   logout(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('selectedBusiness');
-      localStorage.removeItem('ugcl_current_business_vertical');
-      window.location.href = '/login';
+      this.clearSession();
+
+      window.location.href = '/login/';
     }
   }
 
@@ -128,7 +170,7 @@ class AuthService {
    */
   getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token') || localStorage.getItem('auth_token');
+    return safeStorage.getItem('token');
   }
 
   /**
@@ -136,14 +178,14 @@ class AuthService {
    */
   getUser(): User | null {
     if (typeof window === 'undefined') return null;
-    const userStr = localStorage.getItem('user');
+    const userStr = safeStorage.getItem('user');
     if (!userStr) return null;
 
     try {
       return JSON.parse(userStr) as User;
     } catch (error) {
       console.error('Failed to parse stored user data:', error);
-      localStorage.removeItem('user');
+      safeStorage.removeItem('user');
       return null;
     }
   }

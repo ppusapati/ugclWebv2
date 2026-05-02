@@ -134,8 +134,7 @@ export const ProjectCreateForm = component$<ProjectCreateFormProps>(({
     }
   });
 
-  const handleSubmit = $(async (e: Event) => {
-    e.preventDefault();
+  const handleSubmit = $(async () => {
     console.debug('[ProjectCreateForm] Submit clicked');
 
     // Mark all as touched

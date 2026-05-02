@@ -63,9 +63,7 @@ export const ReportForm = component$<ReportFormProps>(({ reportType, reportId, b
     return Object.keys(newErrors).length === 0;
   });
 
-  const handleSubmit = $(async (e: Event) => {
-    e.preventDefault();
-
+  const handleSubmit = $(async () => {
     if (!(await validate())) {
       return;
     }

@@ -262,8 +262,7 @@ export default component$(() => {
     }
   });
 
-  const handleSubmit = $(async (event: Event) => {
-    event.preventDefault();
+  const handleSubmit = $(async () => {
     success.value = '';
     error.value = '';
 
@@ -296,8 +295,7 @@ export default component$(() => {
     }
   });
 
-  const handleChangePassword = $(async (event: Event) => {
-    event.preventDefault();
+  const handleChangePassword = $(async () => {
     success.value = '';
     error.value = '';
 
@@ -329,6 +327,7 @@ export default component$(() => {
     }
   });
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     if (loc.url.searchParams.get('section') === 'password') {
       showPasswordForm.value = true;

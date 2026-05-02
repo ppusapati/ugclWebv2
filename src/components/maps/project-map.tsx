@@ -46,6 +46,7 @@ export const ProjectMap = component$<ProjectMapProps>(({
   const mapInstance = useSignal<any>(null);
   const errorMsg = useSignal<string>('');
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async ({ track, cleanup }) => {
     if (isServer) return;
     // Track changes to data

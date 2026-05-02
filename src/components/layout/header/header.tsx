@@ -83,11 +83,9 @@ export const Header = component$(() => {
   }, { strategy: 'document-ready' });
 
   const handleLogout = $(() => {
-    localStorage.removeItem(STORAGE_KEYS.USER);
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    auth.logout();
     // Full reload ensures layout state is cleared (prevents stale auth shell showing on /login)
-    window.location.href = '/login';
+    window.location.href = '/login/';
   });
   const menuItems: MenuItem[] = [
     {

@@ -12,6 +12,7 @@ import {
 import { TenantDetectionService } from '~/types/multitenant';
 import { authService } from '~/services';
 import { STORAGE_KEYS } from '~/config/storage-keys';
+import { safeStorage } from '~/utils/safe-storage';
 import type {
   User,
   AuthContextType,
@@ -20,35 +21,6 @@ import type {
 } from '~/types/auth';
 import type { ProfileResponse } from '~/services/types';
 import type { UserTenant } from '~/types/multitenant';
-
-// Safe localStorage access that works in both browser and server environments
-const safeLocalStorage = {
-  getItem: (key: string): string | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return window.localStorage.getItem(key);
-    } catch (error) {
-      console.warn('localStorage access failed:', error);
-      return null;
-    }
-  },
-  setItem: (key: string, value: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(key, value);
-    } catch (error) {
-      console.warn('localStorage setItem failed:', error);
-    }
-  },
-  removeItem: (key: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.removeItem(key);
-    } catch (error) {
-      console.warn('localStorage removeItem failed:', error);
-    }
-  },
-};
 
 // Types are now imported from ~/types/auth.ts
 
@@ -89,7 +61,7 @@ export const AuthProvider = component$(() => {
         const userData = await response.json();
         authState.user = userData.user;
         authState.isAuthenticated = true;
-        safeLocalStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userData.token);
+        authService.persistSession(userData.token, userData.user);
 
         // Detect and set tenant after successful login
         await detectAndSetTenant(userData.user.tenants);
@@ -111,8 +83,7 @@ export const AuthProvider = component$(() => {
     tenantState.currentTenant = null;
     tenantState.availableTenants = [];
     tenantState.requiresTenantSelection = false;
-    safeLocalStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    safeLocalStorage.removeItem(STORAGE_KEYS.TENANT_ID);
+    authService.clearSession();
   });
 
   // Tenant detection and management
@@ -171,7 +142,7 @@ export const AuthProvider = component$(() => {
     }
 
     // Store tenant selection and update context
-    safeLocalStorage.setItem(STORAGE_KEYS.TENANT_ID, tenantId);
+    safeStorage.setItem(STORAGE_KEYS.TENANT_ID, tenantId);
 
     // Find the tenant in available tenants
     const tenant = tenantState.availableTenants.find(t => t.id === tenantId);
@@ -237,7 +208,7 @@ export const AuthProvider = component$(() => {
     }
 
     // Store the selected business vertical in localStorage
-    safeLocalStorage.setItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID, businessVerticalId);
+    safeStorage.setItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID, businessVerticalId);
 
 	    await authService.setActiveBusinessContextById(businessVerticalId);
 
@@ -248,7 +219,7 @@ export const AuthProvider = component$(() => {
   const getCurrentBusinessVertical = $(() => {
     if (!authState.user || !authState.user.business_roles) return null;
 
-    const storedBusinessId = safeLocalStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
+    const storedBusinessId = safeStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
 
     if (storedBusinessId) {
       const businessRole = authState.user.business_roles.find(
@@ -264,7 +235,7 @@ export const AuthProvider = component$(() => {
   const hasBusinessPermission = $((permission: string) => {
     if (!authState.user || !authState.user.business_roles) return false;
 
-    const storedBusinessId = safeLocalStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
+    const storedBusinessId = safeStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
     let currentBusiness = null;
 
     if (storedBusinessId) {
@@ -285,7 +256,7 @@ export const AuthProvider = component$(() => {
   const isBusinessAdmin = $(() => {
     if (!authState.user || !authState.user.business_roles) return false;
 
-    const storedBusinessId = safeLocalStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
+    const storedBusinessId = safeStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
     let currentBusiness = null;
 
     if (storedBusinessId) {
@@ -323,17 +294,17 @@ export const AuthProvider = component$(() => {
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     // Check for existing auth token on mount (client-side only)
-    const token = safeLocalStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    const token = safeStorage.getItem(STORAGE_KEYS.TOKEN);
     if (token) {
       const verifyAuth = import.meta.env.PROD && import.meta.env.VITE_VERIFY_AUTH === 'true';
 
-      const userStr = safeLocalStorage.getItem(STORAGE_KEYS.USER);
+      const userStr = safeStorage.getItem(STORAGE_KEYS.USER);
       if (userStr) {
         try {
           authState.user = JSON.parse(userStr);
           authState.isAuthenticated = true;
         } catch {
-          safeLocalStorage.removeItem(STORAGE_KEYS.USER);
+          safeStorage.removeItem(STORAGE_KEYS.USER);
         }
       }
 
@@ -357,7 +328,7 @@ export const AuthProvider = component$(() => {
 
           authState.user = mergedUser;
           authState.isAuthenticated = true;
-          safeLocalStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
+          safeStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
           if (mergedUser.tenants.length > 0) {
             await detectAndSetTenant(mergedUser.tenants);
           }
@@ -365,9 +336,8 @@ export const AuthProvider = component$(() => {
           console.warn('Auth profile verification failed:', error);
           authState.user = null;
           authState.isAuthenticated = false;
-          safeLocalStorage.removeItem(STORAGE_KEYS.USER);
-          safeLocalStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          safeLocalStorage.removeItem(STORAGE_KEYS.TOKEN);
+          safeStorage.removeItem(STORAGE_KEYS.USER);
+          safeStorage.removeItem(STORAGE_KEYS.TOKEN);
         }
       }
     }

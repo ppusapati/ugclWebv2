@@ -86,12 +86,10 @@ export default component$(() => {
   });
 
   const handleDragOver = $((e: DragEvent, dashboardId?: string) => {
-    e.preventDefault();
     dragOverItem.value = dashboardId || null;
   });
 
   const handleDrop = $((e: DragEvent, targetId: string) => {
-    e.preventDefault();
     if (draggedItem.value && draggedItem.value !== targetId) {
       const fromIndex = state.dashboards.findIndex(d => d.id === draggedItem.value);
       const toIndex = state.dashboards.findIndex(d => d.id === targetId);
@@ -365,7 +363,9 @@ export default component$(() => {
                         draggable
                         onDragStart$={() => handleDragStart(dashboard.id)}
                         onDragOver$={(e) => handleDragOver(e, dashboard.id)}
+                        preventdefault:dragover
                         onDrop$={(e) => handleDrop(e, dashboard.id)}
+                        preventdefault:drop
                         onDragEnd$={handleDragEnd}
                         class={`dashboard-card group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-move border-2 ${
                           isDragging ? 'opacity-50 scale-95' : ''
@@ -479,7 +479,9 @@ export default component$(() => {
                         draggable
                         onDragStart$={() => handleDragStart(dashboard.id)}
                         onDragOver$={(e) => handleDragOver(e, dashboard.id)}
+                        preventdefault:dragover
                         onDrop$={(e) => handleDrop(e, dashboard.id)}
+                        preventdefault:drop
                         onDragEnd$={handleDragEnd}
                         class={`dashboard-card group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-move border-2 ${
                           isDragging ? 'opacity-50 scale-98' : ''

@@ -395,7 +395,7 @@ export class ChatService {
     const base = resolveApiBaseUrl();
     const url = new URL(`${base}/chat/events`);
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       if (token) url.searchParams.set('token', token);
     }
     return url.toString();

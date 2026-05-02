@@ -75,8 +75,7 @@ export default component$(() => {
     geofence.value = newGeofence;
   });
 
-  const handleSubmit = $(async (e: Event) => {
-    e.preventDefault();
+  const handleSubmit = $(async () => {
     if (!(await validate())) return;
 
     loading.value = true;

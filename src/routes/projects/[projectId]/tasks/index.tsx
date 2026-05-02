@@ -153,6 +153,7 @@ export default component$(() => {
   });
 
   // Re-fetch on client after hydration to ensure fresh data
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     await loadTasks();
   }, { strategy: 'document-ready' });

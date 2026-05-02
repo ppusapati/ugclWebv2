@@ -114,7 +114,7 @@ export class NotificationService {
     // EventSource does not support custom Authorization headers.
     // If backend accepts token query fallback, include it for token-auth environments.
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       if (token) {
         url.searchParams.set('token', token);
       }

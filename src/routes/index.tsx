@@ -103,6 +103,11 @@ const transformToChartOption = (
 };
 
 export const useHomeDashboardData = routeLoader$(async (requestEvent) => {
+  const token = requestEvent.cookie.get('token')?.value || '';
+  if (!token) {
+    return { dashboard: null, error: null };
+  }
+
   const ssrApiClient = createSSRApiClient(requestEvent);
 
   try {

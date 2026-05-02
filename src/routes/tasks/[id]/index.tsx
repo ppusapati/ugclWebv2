@@ -218,6 +218,7 @@ export default component$(() => {
     await loadWorkflow();
   });
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     if (!state.task) {
       await reloadTask();

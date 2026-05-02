@@ -375,7 +375,6 @@ export default component$(() => {
   });
 
   const handleDragOver = $((event: DragEvent, reportId: string) => {
-    event.preventDefault();
     dragOverItem.value = reportId;
   });
 
@@ -867,6 +866,7 @@ export default component$(() => {
                     draggable
                     onDragStart$={() => handleDragStart(report.id)}
                     onDragOver$={(e: DragEvent) => handleDragOver(e, report.id)}
+                    preventdefault:dragover
                     onDragEnd$={handleDragEnd}
                     class={`report-card group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-move border-2 ${
                       isDragging ? 'opacity-50 scale-95' : ''
@@ -1009,6 +1009,7 @@ export default component$(() => {
                     draggable
                     onDragStart$={() => handleDragStart(report.id)}
                     onDragOver$={(e: DragEvent) => handleDragOver(e, report.id)}
+                    preventdefault:dragover
                     onDragEnd$={handleDragEnd}
                     class={`report-card group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-move border-2 ${
                       isDragging ? 'opacity-50 scale-98' : ''

@@ -338,6 +338,7 @@ export default component$(() => {
     state.reportData = { ...state.reportData, data: resolvedData } as any;
   });
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     if (!state.reportData) {
       await executeReport();

@@ -48,6 +48,7 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
 
   const fileInputRef = useSignal<HTMLInputElement>();
 
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     if (workflowId) {
       return;
@@ -64,18 +65,15 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
     }
   });
 
-  const handleDragOver = $((event: DragEvent) => {
-    event.preventDefault();
+  const handleDragOver = $(() => {
     state.isDragging = true;
   });
 
-  const handleDragLeave = $((event: DragEvent) => {
-    event.preventDefault();
+  const handleDragLeave = $(() => {
     state.isDragging = false;
   });
 
   const handleDrop = $((event: DragEvent) => {
-    event.preventDefault();
     state.isDragging = false;
 
     const files = event.dataTransfer?.files;
@@ -198,8 +196,10 @@ export const DocumentUpload = component$<DocumentUploadProps>((props) => {
           ${state.isUploading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
         `}
         onDragOver$={handleDragOver}
+        preventdefault:dragover
         onDragLeave$={handleDragLeave}
         onDrop$={handleDrop}
+        preventdefault:drop
         onClick$={(event) => {
           // Prevent click if target is the input itself to avoid infinite loop
           if ((event.target as HTMLElement).tagName !== 'INPUT') {

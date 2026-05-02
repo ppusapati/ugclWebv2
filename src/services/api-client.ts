@@ -53,7 +53,7 @@ function getBaseUrl(): string {
  */
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  return localStorage.getItem(STORAGE_KEYS.TOKEN);
 }
 
 function getClientId(): string | null {
@@ -81,8 +81,6 @@ function getBusinessContext(): { businessId?: string; businessCode?: string } {
 
   const businessCode =
     localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE) ||
-    localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE_LEGACY) ||
-    localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_CODE) ||
     undefined;
 
   return { businessId, businessCode };
@@ -155,7 +153,6 @@ async function handleError(response: Response): Promise<never> {
 
   if (response.status === 401 && typeof window !== 'undefined') {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
     window.location.href = '/login';
   }
@@ -362,12 +359,11 @@ export function createSSRApiClient(requestEvent: any) {
   debugLog('[createSSRApiClient] Base URL:', serverBaseUrl);
   debugLog('[createSSRApiClient] Request URL:', requestEvent.url.pathname);
 
-  // Helper to handle 401 errors in SSR by throwing redirect
+  // In SSR, do NOT throw redirects from inside the API client.
+  // Each loader has its own try/catch that returns safe empty data on error.
+  // Auth guard loaders (useLayoutAuth, useRootAuthGuard) handle the actual redirect.
+  // Throwing a redirect here conflicts with those guards and causes 404.
   const handleSSRUnauthorized = (error: any) => {
-    if (error.status === 401) {
-      debugLog('[SSR] 401 Unauthorized - redirecting to login');
-      throw requestEvent.redirect(302, '/login');
-    }
     throw error;
   };
 

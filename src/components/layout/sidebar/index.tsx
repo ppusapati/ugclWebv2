@@ -123,8 +123,6 @@ export const Sidebar = component$(() => {
     const storedBusinessId = localStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
     const storedBusinessCode =
       localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE) ||
-      localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE_LEGACY) ||
-      localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_CODE) ||
       '';
     const firstBusinessRole = user?.business_roles?.[0];
     if (storedBusinessId) {

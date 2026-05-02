@@ -42,7 +42,7 @@ interface User {
 const API_KEY = "87339ea3-1add-4689-ae57-3128ebd03c4f";
 
 const buildHeaders = () => {
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("auth_token") : "";
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("token") : "";
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token ?? ""}`,

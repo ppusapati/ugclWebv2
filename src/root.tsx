@@ -1,4 +1,4 @@
-import { component$, isDev, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, isDev, useOnWindow } from "@builder.io/qwik";
 import { QwikCityProvider, RouterOutlet } from "@builder.io/qwik-city";
 import { RouterHead } from "./components/router-head/router-head";
 import { AuthProvider } from "./contexts/auth-context";
@@ -10,40 +10,37 @@ import 'virtual:uno.css';
 import "./global.css";
 
 export default component$(() => {
-  useVisibleTask$(() => {
-    const syncExistingPermission = async () => {
-      if (!("Notification" in window)) return;
+  useOnWindow('load', $(() => {
+    const path = window.location.pathname;
+    const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
 
-      const path = window.location.pathname;
-      const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
-      if (isAuthRoute) return;
-
-      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-      if (!token) return;
-
-      if (Notification.permission === "granted") {
-        void notificationService.ensureWebPushSubscription().catch(() => {
-          // non-blocking best effort
-        });
+    if (!isAuthRoute) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login/';
+        return;
       }
-    };
+    }
+
+    if (!("Notification" in window) || isAuthRoute) return;
+    const token = localStorage.getItem('token');
+    if (!token || Notification.permission !== "granted") return;
+
     const browserWindow = window as Window & {
       requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
       cancelIdleCallback?: (handle: number) => void;
     };
 
     if (browserWindow.requestIdleCallback) {
-      const idleId = browserWindow.requestIdleCallback(() => {
-        void syncExistingPermission();
+      browserWindow.requestIdleCallback(() => {
+        void notificationService.ensureWebPushSubscription().catch(() => {});
       }, { timeout: 3000 });
-      return () => browserWindow.cancelIdleCallback?.(idleId);
+    } else {
+      globalThis.setTimeout(() => {
+        void notificationService.ensureWebPushSubscription().catch(() => {});
+      }, 1500);
     }
-
-    const timeoutId = globalThis.setTimeout(() => {
-      void syncExistingPermission();
-    }, 1500);
-    return () => globalThis.clearTimeout(timeoutId);
-  });
+  }));
   /**
    * The root of a QwikCity site always start with the <QwikCityProvider> component,
    * immediately followed by the document's <head> and <body>.

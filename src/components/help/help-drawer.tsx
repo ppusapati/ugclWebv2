@@ -15,26 +15,6 @@ export const HelpDrawer = component$(() => {
     isOpen.value = false;
   });
 
-  // Close drawer with Escape while it is open.
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(({ track, cleanup }) => {
-    track(() => isOpen.value);
-    if (!isOpen.value) {
-      return;
-    }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        isOpen.value = false;
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    cleanup(() => {
-      document.removeEventListener('keydown', handleEscape);
-    });
-  });
-
   const openDrawer = $(() => {
     isOpen.value = true;
   });
@@ -58,9 +38,10 @@ export const HelpDrawer = component$(() => {
 
       {isOpen.value ? (
         <>
-          <div
+          <button
+            type="button"
             class="fixed inset-0 z-40 bg-slate-950/30"
-            aria-hidden="true"
+            aria-label="Close help drawer"
             onClick$={closeDrawer}
           />
           <aside class="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-gray-200 bg-gray-50 shadow-2xl">

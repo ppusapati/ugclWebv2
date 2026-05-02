@@ -11,6 +11,7 @@ import { useMenuContext } from '~/contexts/menu-context';
 export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
   const path = url.pathname;
   const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+
   if (isAuthRoute) {
     return {
       hasToken: false,
@@ -39,11 +40,25 @@ export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
 });
 
 export const useLayoutMenuData = routeLoader$(async (requestEvent) => {
+  const path = requestEvent.url.pathname;
+  const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+
+  if (isAuthRoute) {
+    return { modules: [] as Module[] };
+  }
+
+  const token = requestEvent.cookie.get('token')?.value || '';
+  if (!token) {
+    return { modules: [] as Module[] };
+  }
+
   try {
     const apiClient = createSSRApiClient(requestEvent);
     const modulesResponse = await apiClient.get<unknown>('/modules');
+    const modules = extractModules(modulesResponse);
+
     return {
-      modules: extractModules(modulesResponse),
+      modules,
     };
   } catch {
     return {
@@ -60,6 +75,7 @@ export default component$(() => {
   const isAuthRoute =
     loc.url.pathname.startsWith('/login') ||
     loc.url.pathname.startsWith('/register');
+
   const hideBreadcrumb = loc.url.pathname === '/' || loc.url.pathname.startsWith('/analytics/dashboards/view/');
 
   useTask$(({ track }) => {

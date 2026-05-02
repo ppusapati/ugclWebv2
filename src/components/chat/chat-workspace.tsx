@@ -956,6 +956,8 @@ export default component$<ChatWorkspaceProps>(({ initialConversationId }) => {
                                         <img
                                           src={attachment.dms_file_url}
                                           alt={attachment.file_name}
+                                          width={176}
+                                          height={176}
                                           class="max-h-44 rounded-md border border-gray-200 object-cover"
                                         />
                                       ) : null}
