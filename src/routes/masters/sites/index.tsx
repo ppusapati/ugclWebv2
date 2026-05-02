@@ -2,7 +2,6 @@
 import { component$, useSignal, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { Site } from '~/services';
-import { resolveApiBaseUrl } from '~/config/api';
 import { createSSRApiClient } from '~/services';
 import { Alert, Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, PageHeader, SectionCard } from '~/components/ds';
 
