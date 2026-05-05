@@ -61,10 +61,14 @@ export interface FormField {
   visible?: VisibilityCondition;
 
   // For API-driven dropdowns
-  dataSource?: 'static' | 'api';
+  dataSource?: 'static' | 'api' | 'integration';
   apiEndpoint?: string;
   displayField?: string;
   valueField?: string;
+
+  // For integration-proxied dropdowns (dataSource === 'integration')
+  integrationId?: string;
+  integrationPath?: string;
 
   // For file uploads
   accept?: string;

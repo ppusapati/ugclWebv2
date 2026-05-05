@@ -37,6 +37,13 @@ export class IntegrationService {
   async toggleStatus(id: string, status: 'active' | 'inactive' | 'suspended'): Promise<ThirdPartyIntegration> {
     return apiClient.patch<ThirdPartyIntegration>(`${BASE}/${id}`, { status });
   }
+
+  /** Forward a GET to the external API through the backend proxy.
+   *  The backend appends the stored auth header (e.g. X-Api-Key) before forwarding. */
+  async proxyGet<T = any>(integrationId: string, path: string): Promise<T> {
+    const encodedPath = encodeURIComponent(path.startsWith('/') ? path : `/${path}`);
+    return apiClient.get<T>(`${BASE}/${integrationId}/proxy?path=${encodedPath}`);
+  }
 }
 
 export const integrationService = new IntegrationService();

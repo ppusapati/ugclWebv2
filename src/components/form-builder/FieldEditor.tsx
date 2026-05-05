@@ -1,7 +1,24 @@
 // src/components/form-builder/FieldEditor.tsx
-import { component$, useSignal, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { Badge, Btn, FormField } from '~/components/ds';
+import { integrationService } from '~/services/integration.service';
 import type { FormField as WorkflowFormField, FieldOption, FieldType } from '~/types/workflow';
+import type { ThirdPartyIntegration } from '~/types/integration';
+
+const UGCL_MOBILE_PATHS = [
+  { path: '/api/v1/masters/projects', label: 'Projects' },
+  { path: '/api/v1/masters/uoms', label: 'Units of Measure' },
+  { path: '/api/v1/masters/materials', label: 'Materials' },
+  { path: '/api/v1/masters/vendors', label: 'Vendors' },
+  { path: '/api/v1/masters/subcontractors', label: 'Subcontractors' },
+  { path: '/api/v1/masters/others', label: 'Others (Masters)' },
+  { path: '/api/v1/masters/employee-contracts', label: 'Employee Contracts' },
+  { path: '/api/v1/purchase-orders', label: 'Purchase Orders' },
+  { path: '/api/v1/work-orders', label: 'Work Orders' },
+  { path: '/api/v1/hire-orders', label: 'Hire Orders' },
+  { path: '/api/v1/professional-service-orders', label: 'Professional Service Orders' },
+  { path: '/api/v1/general-service-orders', label: 'General Service Orders' },
+];
 
 interface FieldEditorProps {
   field: WorkflowFormField;
@@ -32,6 +49,20 @@ export default component$<FieldEditorProps>((props) => {
   const expanded = useSignal(false);
   const showAdvanced = useSignal(false);
   const showConditions = useSignal(false);
+  const availableIntegrations = useSignal<ThirdPartyIntegration[]>([]);
+
+  // Load active integrations with dropdown proxy scope
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
+    try {
+      const res = await integrationService.list();
+      availableIntegrations.value = (res.integrations || []).filter(
+        (i) => i.status === 'active' && i.data_scopes.includes('integration.dropdown.proxy')
+      );
+    } catch {
+      // non-critical
+    }
+  });
 
   const field = props.field;
 
@@ -206,16 +237,101 @@ export default component$<FieldEditorProps>((props) => {
                   <select
                     id={`editor-${field.id}-datasource`}
                     value={field.dataSource || 'static'}
-                    onChange$={(e) => updateField({ dataSource: (e.target as HTMLSelectElement).value as 'static' | 'api' })}
+                    onChange$={(e) => {
+                      const v = (e.target as HTMLSelectElement).value as 'static' | 'api' | 'integration';
+                      updateField({ dataSource: v, apiEndpoint: '', integrationId: '', integrationPath: '' });
+                    }}
                     class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
                   >
                     <option value="static">Static Options</option>
                     <option value="api">API Endpoint</option>
+                    <option value="integration">External integration (3rd party)</option>
                   </select>
                 </FormField>
               </div>
 
-              {field.dataSource === 'api' ? (
+              {field.dataSource === 'integration' ? (
+                <div class="space-y-3 bg-blue-50 p-3 rounded">
+                  <div>
+                    <FormField id={`editor-${field.id}-integration`} label="Integration">
+                      {availableIntegrations.value.length === 0 ? (
+                        <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                          No active integrations with "External Dropdown Proxy Access" scope found.
+                        </p>
+                      ) : (
+                        <select
+                          id={`editor-${field.id}-integration`}
+                          value={field.integrationId || ''}
+                          onChange$={(e) => updateField({ integrationId: (e.target as HTMLSelectElement).value, integrationPath: '' })}
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                        >
+                          <option value="">— select integration —</option>
+                          {availableIntegrations.value.map((intg) => (
+                            <option key={intg.id} value={intg.id}>{intg.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </FormField>
+                  </div>
+                  {field.integrationId && (
+                    <div>
+                      <FormField id={`editor-${field.id}-path`} label="API Path">
+                        {availableIntegrations.value.find((i) => i.id === field.integrationId)?.endpoint_url?.includes('4.240.123.52') ||
+                         availableIntegrations.value.find((i) => i.id === field.integrationId)?.name?.toLowerCase().includes('ugcl') ? (
+                          <select
+                            id={`editor-${field.id}-path`}
+                            value={field.integrationPath || ''}
+                            onChange$={(e) => updateField({ integrationPath: (e.target as HTMLSelectElement).value })}
+                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                          >
+                            <option value="">— choose endpoint —</option>
+                            {UGCL_MOBILE_PATHS.map((p) => (
+                              <option key={p.path} value={p.path}>{p.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            id={`editor-${field.id}-path`}
+                            type="text"
+                            value={field.integrationPath || ''}
+                            onInput$={(e) => updateField({ integrationPath: (e.target as HTMLInputElement).value })}
+                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+                            placeholder="/api/v1/masters/projects"
+                          />
+                        )}
+                      </FormField>
+                    </div>
+                  )}
+                  {field.integrationId && (
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <FormField id={`editor-${field.id}-disp-field-intg`} label="Display Field">
+                          <input
+                            id={`editor-${field.id}-disp-field-intg`}
+                            type="text"
+                            value={field.displayField || ''}
+                            onInput$={(e) => updateField({ displayField: (e.target as HTMLInputElement).value })}
+                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            placeholder="name"
+                          />
+                        </FormField>
+                      </div>
+                      <div>
+                        <FormField id={`editor-${field.id}-val-field-intg`} label="Value Field">
+                          <input
+                            id={`editor-${field.id}-val-field-intg`}
+                            type="text"
+                            value={field.valueField || ''}
+                            onInput$={(e) => updateField({ valueField: (e.target as HTMLInputElement).value })}
+                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            placeholder="id"
+                          />
+                        </FormField>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : field.dataSource === 'api' ? (
                 <div class="space-y-3 bg-blue-50 p-3 rounded">
                   <div>
                     <FormField id={`editor-${field.id}-api-endpoint`} label="API Endpoint">

@@ -1,8 +1,26 @@
 // src/components/form-builder/workflow/FieldEditorComplete.tsx
-import { component$, useStore, useSignal, $, type PropFunction } from '@builder.io/qwik';
+import { component$, useStore, useSignal, $, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
 import type { FormField, FieldType, FieldOption } from '~/types/workflow';
 import { FormField as DSFormField } from '~/components/ds';
 import { Btn } from '~/components/ds';
+import { integrationService } from '~/services/integration.service';
+import type { ThirdPartyIntegration } from '~/types/integration';
+
+// Known UGCL Mobile API endpoint paths for the preset picker
+const UGCL_MOBILE_PATHS = [
+  { path: '/api/v1/masters/projects', label: 'Projects' },
+  { path: '/api/v1/masters/uoms', label: 'Units of Measure' },
+  { path: '/api/v1/masters/materials', label: 'Materials' },
+  { path: '/api/v1/masters/vendors', label: 'Vendors' },
+  { path: '/api/v1/masters/subcontractors', label: 'Subcontractors' },
+  { path: '/api/v1/masters/others', label: 'Others (Masters)' },
+  { path: '/api/v1/masters/employee-contracts', label: 'Employee Contracts' },
+  { path: '/api/v1/purchase-orders', label: 'Purchase Orders' },
+  { path: '/api/v1/work-orders', label: 'Work Orders' },
+  { path: '/api/v1/hire-orders', label: 'Hire Orders' },
+  { path: '/api/v1/professional-service-orders', label: 'Professional Service Orders' },
+  { path: '/api/v1/general-service-orders', label: 'General Service Orders' },
+];
 
 interface FieldEditorCompleteProps {
   field: FormField;
@@ -33,6 +51,20 @@ const FIELD_TYPES: { value: FieldType; label: string; icon: string }[] = [
 export default component$<FieldEditorCompleteProps>((props) => {
   const editingField = useStore<FormField>({ ...props.field });
   const showAdvanced = useSignal(false);
+  const availableIntegrations = useSignal<ThirdPartyIntegration[]>([]);
+
+  // Load active integrations that have dropdown proxy scope
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
+    try {
+      const res = await integrationService.list();
+      availableIntegrations.value = (res.integrations || []).filter(
+        (i) => i.status === 'active' && i.data_scopes.includes('integration.dropdown.proxy')
+      );
+    } catch {
+      // non-critical – dropdown integration picker just stays empty
+    }
+  });
 
   const handleUpdate = $(async (updates: Partial<FormField>) => {
     Object.assign(editingField, updates);
@@ -372,19 +404,26 @@ export default component$<FieldEditorCompleteProps>((props) => {
               </div>
             )}
 
-            {/* API-driven dropdown */}
+            {/* Data source picker for dropdown / select */}
             {(editingField.type === 'dropdown' || editingField.type === 'select') && (
-              <div class="mt-4 pt-4 border-t border-green-300">
-                <label class="flex items-center mb-3">
-                  <input
-                    type="checkbox"
-                    checked={editingField.dataSource === 'api'}
-                    onChange$={(e) => handleUpdate({ dataSource: (e.target as HTMLInputElement).checked ? 'api' : 'static' })}
-                    class="h-4 w-4 text-green-600 rounded"
-                  />
-                  <span class="ml-2 text-sm font-medium text-gray-900">Load options from API</span>
-                </label>
+              <div class="mt-4 pt-4 border-t border-green-300 space-y-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Data Source</label>
+                  <select
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                    value={editingField.dataSource || 'static'}
+                    onChange$={(e) => {
+                      const v = (e.target as HTMLSelectElement).value as 'static' | 'api' | 'integration';
+                      handleUpdate({ dataSource: v, apiEndpoint: '', integrationId: '', integrationPath: '' });
+                    }}
+                  >
+                    <option value="static">Static options</option>
+                    <option value="api">Internal API endpoint</option>
+                    <option value="integration">External integration (3rd party)</option>
+                  </select>
+                </div>
 
+                {/* Internal API endpoint */}
                 {editingField.dataSource === 'api' && (
                   <div class="space-y-2 bg-white p-3 rounded border border-gray-200">
                     <div>
@@ -419,6 +458,84 @@ export default component$<FieldEditorCompleteProps>((props) => {
                         />
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* External integration proxy */}
+                {editingField.dataSource === 'integration' && (
+                  <div class="space-y-2 bg-white p-3 rounded border border-blue-200">
+                    <div>
+                      <label class="block text-xs font-medium text-gray-700 mb-1">Integration</label>
+                      {availableIntegrations.value.length === 0 ? (
+                        <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                          No active integrations with "External Dropdown Proxy Access" scope found. Configure one under Admin → Integrations.
+                        </p>
+                      ) : (
+                        <select
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                          value={editingField.integrationId || ''}
+                          onChange$={(e) => handleUpdate({ integrationId: (e.target as HTMLSelectElement).value, integrationPath: '' })}
+                        >
+                          <option value="">— select integration —</option>
+                          {availableIntegrations.value.map((intg) => (
+                            <option key={intg.id} value={intg.id}>{intg.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {editingField.integrationId && (
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">API Path</label>
+                        {/* Show preset paths if we recognise the UGCL Mobile API, else free-text */}
+                        {availableIntegrations.value.find((i) => i.id === editingField.integrationId)?.endpoint_url?.includes('4.240.123.52') ||
+                         availableIntegrations.value.find((i) => i.id === editingField.integrationId)?.name?.toLowerCase().includes('ugcl') ? (
+                          <select
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                            value={editingField.integrationPath || ''}
+                            onChange$={(e) => handleUpdate({ integrationPath: (e.target as HTMLSelectElement).value })}
+                          >
+                            <option value="">— choose endpoint —</option>
+                            {UGCL_MOBILE_PATHS.map((p) => (
+                              <option key={p.path} value={p.path}>{p.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={editingField.integrationPath || ''}
+                            onInput$={(e) => handleUpdate({ integrationPath: (e.target as HTMLInputElement).value })}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                            placeholder="/api/v1/masters/projects"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {editingField.integrationId && (
+                      <div class="grid grid-cols-2 gap-2">
+                        <div>
+                          <label class="block text-xs font-medium text-gray-700 mb-1">Display Field</label>
+                          <input
+                            type="text"
+                            value={editingField.displayField || ''}
+                            onInput$={(e) => handleUpdate({ displayField: (e.target as HTMLInputElement).value })}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            placeholder="name"
+                          />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-medium text-gray-700 mb-1">Value Field</label>
+                          <input
+                            type="text"
+                            value={editingField.valueField || ''}
+                            onInput$={(e) => handleUpdate({ valueField: (e.target as HTMLInputElement).value })}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            placeholder="id"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

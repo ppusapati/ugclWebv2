@@ -2,6 +2,7 @@
 import { component$, useSignal, useVisibleTask$, $, type PropFunction } from '@builder.io/qwik';
 import { FormField } from '~/components/ds';
 import { apiClient } from '~/services';
+import { integrationService } from '~/services/integration.service';
 import type { FormField as WorkflowFormField, FieldOption } from '~/types/workflow';
 
 interface SelectFieldProps {
@@ -22,6 +23,36 @@ export default component$<SelectFieldProps>((props) => {
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     const dataSource = props.field.dataSource;
+
+    // ── Integration proxy path ──────────────────────────────────────────────
+    if (dataSource === 'integration') {
+      const integrationId = props.field.integrationId;
+      const integrationPath = props.field.integrationPath;
+      if (!integrationId || !integrationPath) return;
+      try {
+        loading.value = true;
+        const data: any = await integrationService.proxyGet(integrationId, integrationPath);
+        const items: any[] = Array.isArray(data)
+          ? data
+          : (data?.data ?? data?.items ?? data?.results ?? data?.records ?? []);
+        const labelKey = props.field.displayField || 'name';
+        const valueKey = props.field.valueField || 'id';
+        options.value = items
+          .filter((item: any) => item != null)
+          .map((item: any) => ({
+            label: String(item[labelKey] ?? item.name ?? item.label ?? item.title ?? item.code ?? ''),
+            value: String(item[valueKey] ?? item.id ?? item.value ?? item.code ?? ''),
+          }))
+          .filter((opt) => opt.value !== '');
+      } catch (err) {
+        console.error('[SelectField] Failed to load integration options', err);
+      } finally {
+        loading.value = false;
+      }
+      return;
+    }
+
+    // ── Internal API path ───────────────────────────────────────────────────
     const rawEndpoint = props.field.apiEndpoint;
     if (dataSource !== 'api' || !rawEndpoint) return;
 
