@@ -308,6 +308,9 @@ export const AuthProvider = component$(() => {
         }
       }
 
+      // Do not block first paint on profile verification.
+      authState.isLoading = false;
+
       if (verifyAuth) {
         try {
           const profile = await authService.getProfile();
@@ -340,9 +343,10 @@ export const AuthProvider = component$(() => {
           safeStorage.removeItem(STORAGE_KEYS.TOKEN);
         }
       }
+    } else {
+      authState.isLoading = false;
     }
-    authState.isLoading = false;
-  }, { strategy: 'document-ready' });
+  });
 
   useContextProvider(AuthContext, contextValue);
 

@@ -241,7 +241,7 @@ export default component$(() => {
   const state = useStore({
     report: initialData.value.report as ReportDefinition | null,
     reportData: initialData.value.reportData as ReportResult | null,
-    loading: false,
+    loading: !initialData.value.reportData && !(initialData.value as any).error,
     error: (initialData.value as any).error || '',
     runtimeFilters: [] as ReportFilter[],
     timeline: {
@@ -345,7 +345,7 @@ export default component$(() => {
     } else {
       await resolveDropdownLabels();
     }
-  }, { strategy: 'document-ready' });
+  });
 
   const chartComponent = useResource$(async () => {
     const mod = await import('~/components/echarts');
@@ -565,7 +565,7 @@ export default component$(() => {
       )}
 
       {/* Loading State */}
-      {state.loading && (
+      {state.loading && !state.reportData && (
         <div class="flex flex-col items-center justify-center py-20 animate-fade-in">
           <div class="relative">
             <div class="w-20 h-20 border-4 border-purple-200 dark:border-purple-800 rounded-full"></div>
@@ -575,8 +575,16 @@ export default component$(() => {
         </div>
       )}
 
+      {state.loading && state.reportData && (
+        <div class="container mx-auto px-4 py-2 animate-fade-in">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
+            Refreshing report data...
+          </div>
+        </div>
+      )}
+
       {/* Report Content */}
-      {!state.loading && state.reportData && (
+      {state.reportData && (
         <div class="py-8 space-y-6">
           {/* Statistics Cards */}
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -52,7 +52,7 @@ export const ThemeProvider = component$(() => {
     } catch (error) {
       console.warn('Theme initialization failed:', error);
     }
-  }, { strategy: 'document-ready' });
+  });
 
   useContextProvider(ThemeContext, contextValue);
 

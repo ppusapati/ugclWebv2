@@ -71,6 +71,8 @@ export const Sidebar = component$(() => {
   const moduleDefinitions = menuContext.moduleDefinitions;
   const moduleForms = useSignal<SidebarFormItem[]>([]);
   const moduleReports = useSignal<SidebarReportItem[]>([]);
+  const formsLoading = useSignal(true);
+  const reportsLoading = useSignal(true);
   const dynamicMenuLabel = useSignal('');
   const currentBusinessCode = useSignal('');
   const currentBusinessId = useSignal('');
@@ -181,6 +183,9 @@ export const Sidebar = component$(() => {
       }
     }
 
+    formsLoading.value = true;
+    reportsLoading.value = true;
+
     try {
       await ensureModuleDefinitions();
 
@@ -234,6 +239,7 @@ export const Sidebar = component$(() => {
       try {
         if (!canReadReportDefinitions) {
           moduleReports.value = [];
+          reportsLoading.value = false;
           return;
         }
 
@@ -275,16 +281,21 @@ export const Sidebar = component$(() => {
             business_vertical_id: report.business_vertical_id,
             report_type: report.report_type,
           }));
+        reportsLoading.value = false;
       } catch {
         // Keep forms visible even when report APIs are forbidden for this user.
         moduleReports.value = [];
+        reportsLoading.value = false;
       }
     } catch {
       dynamicMenuLabel.value = 'Module';
       moduleForms.value = [];
       moduleReports.value = [];
+      reportsLoading.value = false;
+    } finally {
+      formsLoading.value = false;
     }
-  }, { strategy: 'document-ready' });
+  });
 
   const adminSubItems = ADMIN_MENU_ITEMS.filter((item) => item.id !== 'dashboard');
 
@@ -376,6 +387,12 @@ export const Sidebar = component$(() => {
             <div>
               <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Forms</p>
               <nav class="space-y-1">
+                {formsLoading.value && (
+                  <div class="px-3 py-2 text-sm text-gray-500">Loading forms...</div>
+                )}
+                {!formsLoading.value && formSubItems.length === 0 && (
+                  <div class="px-3 py-2 text-sm text-gray-500">No forms available</div>
+                )}
                 {formSubItems.map((subItem) => (
                   <Link
                     key={subItem.id}
@@ -397,6 +414,12 @@ export const Sidebar = component$(() => {
             <div>
               <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Reports</p>
               <nav class="space-y-1">
+                {reportsLoading.value && (
+                  <div class="px-3 py-2 text-sm text-gray-500">Loading reports...</div>
+                )}
+                {!reportsLoading.value && reportSubItems.length === 0 && (
+                  <div class="px-3 py-2 text-sm text-gray-500">No reports available</div>
+                )}
                 {reportSubItems.map((subItem) => (
                   <Link
                     key={subItem.id}

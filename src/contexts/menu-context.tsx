@@ -93,9 +93,9 @@ export const MenuProvider = component$(() => {
     void setActiveFromRoute(location.url.pathname);
   });
 
-  // Restore from localStorage and sync with current route on mount
+  // Restore from localStorage without waiting for document-ready.
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
+  useVisibleTask$(() => {
     try {
       if (typeof localStorage !== 'undefined') {
         const savedMainMenu = localStorage.getItem(STORAGE_KEYS.ACTIVE_MAIN_MENU);
@@ -111,8 +111,7 @@ export const MenuProvider = component$(() => {
     } catch (error) {
       console.warn('Menu state restore failed:', error);
     }
-
-  }, { strategy: 'document-ready' });
+  });
 
   const contextValue: MenuContextType = {
     activeMainMenu,

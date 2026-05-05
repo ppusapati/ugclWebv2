@@ -37,7 +37,6 @@
 
 import { component$, isServer, Slot, useSignal, useTask$, type QRL } from '@builder.io/qwik';
 import { authService } from '~/services/auth-enhanced.service';
-import { buildApiUrl } from '~/config/api';
 
 interface PermissionGuardProps {
   // Single permission check
@@ -79,39 +78,12 @@ export const PermissionGuard = component$<PermissionGuardProps>((props) => {
       return;
     }
 
-    let user = authService.getUser();
+    const user = authService.getUser();
 
     if (!user) {
       hasAccess.value = false;
       isChecking.value = false;
       return;
-    }
-
-    // If user doesn't have role info, optionally fetch from API when strict auth verification is enabled
-    const verifyAuth = import.meta.env.VITE_VERIFY_AUTH === 'true';
-    if (verifyAuth && user.role === undefined && user.is_super_admin === undefined) {
-      try {
-        const response = await fetch(buildApiUrl('/profile'), {
-          headers: {
-            'Authorization': `Bearer ${authService.getToken()}`,
-            'x-api-key': '87339ea3-1add-4689-ae57-3128ebd03c4f',
-            'Content-Type': 'application/json',
-          },
-        });
-        if (response.ok) {
-          const profile = await response.json();
-          // Update stored user with role info
-          const updatedUser = {
-            ...user,
-            role: profile.global_role,
-            is_super_admin: profile.global_role === 'super_admin',
-          };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          user = updatedUser;
-        }
-      } catch (e) {
-        console.error('Failed to fetch user profile:', e);
-      }
     }
 
     let allowed = false;

@@ -54,6 +54,20 @@ export default component$(() => {
     <QwikCityProvider>
       <head>
         <meta charset="utf-8" />
+        <script
+          dangerouslySetInnerHTML={`
+            (function () {
+              try {
+                var savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch (e) {
+                // Ignore localStorage access errors.
+              }
+            })();
+          `}
+        ></script>
         {!isDev && (
           <link
             rel="manifest"
