@@ -148,8 +148,8 @@ export default component$(() => {
     <div class="bg-gray-50">
       {/* Header */}
       <div class="bg-white border-b border-gray-200 p-6">
-        <PageHeader title="Create New Form" subtitle="Design a new dynamic form with workflow" class="mb-0">
-          <Btn q:slot="actions" variant="secondary" onClick$={handleCancel} title="Back to forms" class="flex items-center gap-1">
+        <PageHeader title="Create New Form" subtitle="Design a new dynamic form with workflow" class="mb-0" tourId="forms-create-header">
+          <Btn q:slot="actions" variant="secondary" onClick$={handleCancel} title="Back to forms" class="flex items-center gap-1" data-tour-id="forms-back-button">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -194,7 +194,8 @@ export default component$(() => {
 
         {/* Form Builder */}
         {!loading.value && !error.value && (
-          <FormBuilderComplete
+          <div data-tour-id="forms-builder-canvas">
+            <FormBuilderComplete
             modules={modules.value}
             workflows={workflows.value}
             permissions={permissions.value}
@@ -202,7 +203,8 @@ export default component$(() => {
             sites={sites.value}
             onSave$={handleSave}
             onCancel$={handleCancel}
-          />
+            />
+          </div>
         )}
       </div>
     </div>

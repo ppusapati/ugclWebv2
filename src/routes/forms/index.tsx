@@ -105,15 +105,15 @@ export default component$(() => {
 
   return (
     <div class="py-4">
-      <PageHeader title="Form Builder" subtitle="Create and manage dynamic forms">
-        <Btn q:slot="actions" onClick$={handleCreateNew}>
+      <PageHeader title="Form Builder" subtitle="Create and manage dynamic forms" tourId="forms-page-header">
+        <Btn q:slot="actions" onClick$={handleCreateNew} data-tour-id="forms-create-button">
           <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
           Create New Form
         </Btn>
       </PageHeader>
 
       {/* Filters */}
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6" data-tour-id="forms-filters">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <FormField id="form-search" label="Search">
             <input
@@ -158,7 +158,7 @@ export default component$(() => {
 
       {/* Forms Table */}
       {!loading.value && !error.value && (
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200" data-tour-id="forms-table">
           <div class="overflow-x-auto">
             {filteredForms.length === 0 ? (
               <div class="text-center py-12">

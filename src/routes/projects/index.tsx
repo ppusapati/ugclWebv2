@@ -169,10 +169,11 @@ export default component$(() => {
 
   return (
     <div class="project-route-shell">
-      <PageHeader title="Projects" subtitle="Manage your construction projects">
+      <PageHeader title="Projects" subtitle="Manage your construction projects" tourId="projects-page-header">
         <Btn
           q:slot="actions"
           onClick$={handleCreateProject}
+          data-tour-id="projects-create-button"
         >
           <i class="i-heroicons-plus-circle-solid w-4 h-4 inline-block text-white mr-2"></i>
           New Project
@@ -203,7 +204,7 @@ export default component$(() => {
       </section>
 
       {/* Filters */}
-      <section class="project-surface project-toolbar">
+      <section class="project-surface project-toolbar" data-tour-id="projects-filters">
         <div class="project-toolbar-grid">
           {/* Search */}
           <FormField label="Search">
@@ -293,7 +294,7 @@ export default component$(() => {
 
       {/* Projects Grid */}
       {!state.loading && filteredProjects.length > 0 && (
-        <div class="project-grid">
+        <div class="project-grid" data-tour-id="projects-grid">
             {filteredProjects.map(project => (
               <ProjectCard
                 key={project.id}

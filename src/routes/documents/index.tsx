@@ -98,6 +98,7 @@ export default component$(() => {
         title="Document Management"
         subtitle="Upload, organize, and manage your documents with version control and permissions."
         class="mb-8"
+        tourId="documents-page-header"
       >
         <Link
           q:slot="actions"
@@ -112,7 +113,7 @@ export default component$(() => {
       {/* Main Layout with Sidebar */}
       <div class="flex gap-6">
         {/* Category Sidebar */}
-        <div class="w-64 flex-shrink-0">
+        <div class="w-64 flex-shrink-0" data-tour-id="documents-category-sidebar">
           <Resource
             value={categorySidebarComponent}
             onPending={() => <div class="h-64 rounded-lg bg-gray-100 animate-pulse" />}
@@ -137,10 +138,11 @@ export default component$(() => {
           )}
 
           {/* Action Bar */}
-          <div class="mb-6 flex gap-4">
+          <div class="mb-6 flex gap-4" data-tour-id="documents-action-bar">
             <Btn
               variant={state.showUpload ? 'secondary' : 'primary'}
               onClick$={() => (state.showUpload = !state.showUpload)}
+              data-tour-id="documents-upload-button"
             >
               <i class="i-heroicons-arrow-up-tray-solid h-4 w-4" aria-hidden="true"></i>
               {state.showUpload ? 'Cancel Upload' : 'Upload Document'}
@@ -186,7 +188,7 @@ export default component$(() => {
 
           {/* Upload Section */}
           {state.showUpload && (
-            <div class="mb-6">
+            <div class="mb-6" data-tour-id="documents-upload-panel">
               <Resource
                 value={documentUploadComponent}
                 onPending={() => <div class="h-48 rounded-lg bg-gray-100 animate-pulse" />}
@@ -208,7 +210,8 @@ export default component$(() => {
           )}
 
           {/* Document List */}
-          <Resource
+          <div data-tour-id="documents-list">
+            <Resource
             value={documentListComponent}
             onPending={() => <div class="h-96 rounded-lg bg-gray-100 animate-pulse" />}
             onResolved={(DocumentListComponent) => (
@@ -226,7 +229,8 @@ export default component$(() => {
                 allowSelection={true}
               />
             )}
-          />
+            />
+          </div>
         </div>
       </div>
     </div>

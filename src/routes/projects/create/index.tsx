@@ -169,7 +169,7 @@ export default component$(() => {
   return (
     <div class="project-route-shell">
       {/* Header */}
-      <PageHeader title="Create New Project" subtitle="Add a new project and optionally upload KMZ file">
+      <PageHeader title="Create New Project" subtitle="Add a new project and optionally upload KMZ file" tourId="projects-create-header">
         <Btn q:slot="actions" variant="secondary" onClick$={handleCancel} class="flex items-center gap-1">
           <i class="i-heroicons-arrow-left-solid h-4 w-4 inline-block"></i>
           Back to Projects
@@ -201,7 +201,7 @@ export default component$(() => {
       {/* Form */}
       {!state.loading && (
         <div class="project-detail-grid">
-          <SectionCard class="project-surface">
+          <SectionCard class="project-surface" data-tour-id="projects-create-form">
             <ProjectCreateForm
               businessVerticals={state.businessVerticals}
               onSubmit$={handleSubmit}

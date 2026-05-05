@@ -1,8 +1,10 @@
 import { $, component$, isDev, useOnWindow } from "@builder.io/qwik";
 import { QwikCityProvider, RouterOutlet } from "@builder.io/qwik-city";
 import { RouterHead } from "./components/router-head/router-head";
+import { TourOverlay } from './components/tour/tour-overlay';
 import { AuthProvider } from "./contexts/auth-context";
 import { MenuProvider } from "./contexts/menu-context";
+import { TourProvider } from './contexts/tour-context';
 import { ThemeProvider } from "./contexts/theme-context";
 import { notificationService } from "./services/notification.service";
 import "./styles/tokens.css";
@@ -71,7 +73,10 @@ export default component$(() => {
         <AuthProvider>
           <ThemeProvider>
             <MenuProvider>
-              <RouterOutlet />
+              <TourProvider>
+                <RouterOutlet />
+                <TourOverlay />
+              </TourProvider>
             </MenuProvider>
           </ThemeProvider>
         </AuthProvider>

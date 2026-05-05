@@ -11,4 +11,6 @@ export const STORAGE_KEYS = {
   CLIENT_ID: 'ugcl_client_id',
   SELECTED_BUSINESS: 'selectedBusiness',
   TENANT_ID: 'ugcl_current_tenant_id',
+  TOUR_STATE: 'ugcl_tour_state',
+  TOUR_EVENTS: 'ugcl_tour_events',
 } as const;

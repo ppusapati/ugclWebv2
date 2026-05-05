@@ -99,9 +99,9 @@ export default component$(() => {
 
   return (
     <div class="space-y-6">
-      <PageHeader title="Workflow Management" subtitle="Create and manage workflow state machines">
+      <PageHeader title="Workflow Management" subtitle="Create and manage workflow state machines" tourId="workflows-page-header">
         {!showDesigner.value && (
-          <Btn q:slot="actions" onClick$={handleCreateNew} class="flex items-center gap-2">
+          <Btn q:slot="actions" onClick$={handleCreateNew} class="flex items-center gap-2" data-tour-id="workflows-create-button">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -112,7 +112,7 @@ export default component$(() => {
 
       {/* Show Designer or List */}
       {showDesigner.value ? (
-        <SectionCard class="p-0 overflow-hidden">
+        <SectionCard class="p-0 overflow-hidden" data-tour-id="workflows-designer">
           <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900">
               {isEditing.value ? `Edit: ${selectedWorkflow.value?.name}` : 'Create New Workflow'}
@@ -144,7 +144,7 @@ export default component$(() => {
 
           {/* Workflows Grid */}
           {!loading.value && !error.value && (
-            <>
+            <div data-tour-id="workflows-content">
               {workflows.value.length === 0 ? (
                 <SectionCard class="p-12 text-center">
                   <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +156,7 @@ export default component$(() => {
                   </p>
                 </SectionCard>
               ) : (
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour-id="workflows-grid">
                   {workflows.value.map((workflow) => (
                     <SectionCard
                       key={workflow.id}
@@ -239,7 +239,7 @@ export default component$(() => {
                   {workflows.value.length} workflow{workflows.value.length !== 1 ? 's' : ''} total
                 </div>
               )}
-            </>
+            </div>
           )}
         </>
       )}

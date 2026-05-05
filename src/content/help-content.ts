@@ -28,6 +28,37 @@ export interface ResolvedHelpContext {
   anchor: string;
 }
 
+export interface GuidedTourStep {
+  id: string;
+  title: string;
+  path: string;
+  selector: string;
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
+  padding?: number;
+  waitForMs?: number;
+  purpose: string;
+  fieldLevelGuidance: string[];
+  generatedOutputUsage: string[];
+}
+
+export interface GuidedHelpTour {
+  id: string;
+  title: string;
+  summary: string;
+  topicId: string;
+  /**
+   * If set, only users with at least one of these roles will see this tour.
+   * Omit or leave empty to show to all users.
+   */
+  requiredRoles?: string[];
+  /**
+   * If set, only users with at least one of these permissions will see this tour.
+   * Omit or leave empty to show to all users.
+   */
+  requiredPermissions?: string[];
+  steps: GuidedTourStep[];
+}
+
 export const helpTopics: HelpTopic[] = [
   {
     id: 'dashboard',
@@ -761,6 +792,309 @@ export const helpTopics: HelpTopic[] = [
   },
 ];
 
+export const guidedHelpTours: GuidedHelpTour[] = [
+  {
+    id: 'form-builder-tour',
+    title: 'Guided Tour: Form Builder',
+    summary: 'Design, validate, and publish forms with permission and workflow alignment.',
+    topicId: 'forms',
+    steps: [
+      {
+        id: 'forms-catalog',
+        title: 'Step 1: Open Form Catalog',
+        path: '/forms',
+        selector: '[data-tour-id="forms-page-header"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Review existing form definitions before creating a new one to avoid duplicate schemas.',
+        fieldLevelGuidance: [
+          'Check form code and title consistency across similar business processes.',
+          'Inspect module and business scope before cloning or editing any definition.',
+        ],
+        generatedOutputUsage: [
+          'Catalog entries represent reusable form schemas used by submission screens and reports.',
+        ],
+      },
+      {
+        id: 'forms-create',
+        title: 'Step 2: Create Form Definition',
+        path: '/forms/new',
+        selector: '[data-tour-id="forms-builder-canvas"]',
+        position: 'top',
+        waitForMs: 12000,
+        purpose: 'Capture form identity, module mapping, and core field structure.',
+        fieldLevelGuidance: [
+          'Use stable field keys and meaningful labels because downstream analytics rely on them.',
+          'Choose field types by validation need, not by visual appearance.',
+          'Mark required fields only when operationally mandatory.',
+        ],
+        generatedOutputUsage: [
+          'Generated schema drives runtime form rendering for data-entry users.',
+          'Field metadata feeds export/report layers and integration payloads.',
+        ],
+      },
+      {
+        id: 'forms-edit',
+        title: 'Step 3: Edit Existing Form Safely',
+        path: '/forms',
+        selector: '[data-tour-id="forms-table"]',
+        position: 'top',
+        waitForMs: 12000,
+        purpose: 'Update definitions with backward-compatible changes when submissions already exist.',
+        fieldLevelGuidance: [
+          'Avoid renaming existing field codes without a migration plan.',
+          'Retest conditional logic paths after editing dependencies or default values.',
+        ],
+        generatedOutputUsage: [
+          'Schema changes directly affect future submissions and validation behavior.',
+        ],
+      },
+      {
+        id: 'forms-preview-publish',
+        title: 'Step 4: Preview And Publish',
+        path: '/forms',
+        selector: '[data-tour-id="forms-create-button"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Validate user flow before enabling the form in production.',
+        fieldLevelGuidance: [
+          'Test required fields, date/number validation, and dependent dropdowns.',
+          'Verify help text clarity for first-time users and approvers.',
+        ],
+        generatedOutputUsage: [
+          'Published forms become available to end users and produce workflow-trackable submissions.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'workflow-builder-tour',
+    title: 'Guided Tour: Workflow Builder',
+    summary: 'Build state transitions, permission gates, and audit-ready approval flows.',
+    topicId: 'workflows',
+    steps: [
+      {
+        id: 'workflow-overview',
+        title: 'Step 1: Workflow Management Overview',
+        path: '/workflows',
+        selector: '[data-tour-id="workflows-page-header"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'This is the central hub for all workflow definitions on the platform. Every form submission or approval process is governed by a workflow state machine defined here.',
+        fieldLevelGuidance: [
+          'Each workflow controls how a record moves through draft, review, approval, and final states.',
+          'Workflows are reusable — one definition can be bound to multiple forms.',
+          'Keep workflow names descriptive so operators can identify which process each one covers.',
+        ],
+        generatedOutputUsage: [
+          'Workflow definitions power the action buttons, status badges, and transition history in submission screens.',
+          'Once published, workflows generate audit-trail entries for every state change.',
+        ],
+      },
+      {
+        id: 'workflow-create',
+        title: 'Step 2: Create a New Workflow',
+        path: '/workflows',
+        selector: '[data-tour-id="workflows-create-button"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Use the Create button to open the Workflow Designer where you define states, transitions, and permission gates for a new approval process.',
+        fieldLevelGuidance: [
+          'Workflow code must be unique and stable — it is referenced by forms and integrations.',
+          'Plan your states (e.g. Draft → Submitted → Approved) before entering the designer.',
+          'Identify which roles or permissions own each transition before you start.',
+        ],
+        generatedOutputUsage: [
+          'Each new workflow becomes available to bind to form definitions in the Form Builder.',
+          'The designer generates the state machine schema that drives runtime approval behavior.',
+        ],
+      },
+      {
+        id: 'workflow-library',
+        title: 'Step 3: Your Workflow Library',
+        path: '/workflows',
+        selector: '[data-tour-id="workflows-content"]',
+        position: 'top',
+        waitForMs: 12000,
+        purpose: 'This area lists all existing workflow definitions. Each card shows the workflow name, code, and bound business verticals. Open any card to edit or extend it.',
+        fieldLevelGuidance: [
+          'Review state count and transition rules before modifying a live workflow.',
+          'Avoid removing states that are currently in use by in-flight submissions.',
+          'Check which forms reference a workflow before renaming its code.',
+        ],
+        generatedOutputUsage: [
+          'Workflow cards link directly to the designer for full state and transition editing.',
+          'Usage metadata on each card shows which business verticals the workflow is active in.',
+        ],
+      },
+      {
+        id: 'workflow-designer',
+        title: 'Step 4: Working in the Designer',
+        path: '/workflows',
+        selector: '[data-tour-id="workflows-page-header"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'After clicking Create (or opening an existing workflow), the designer appears below the header. Build states first, then transitions, then set permission requirements on each transition.',
+        fieldLevelGuidance: [
+          'Add a clearly named initial state (e.g. "Draft") and at least one final state (e.g. "Approved").',
+          'Each transition needs an action label (user-facing) and a permission key (access control).',
+          'Enable "Requires comment" on Reject and Revise transitions to enforce decision rationale.',
+          'Test reject and revision loops as carefully as the happy approval path.',
+        ],
+        generatedOutputUsage: [
+          'Saved workflow definitions immediately become available for binding in the Form Builder.',
+          'Every transition executed at runtime creates an immutable audit record with user, timestamp, and comment.',
+          'Configured states feed pending-approval dashboards and bottleneck analytics.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'project-management-tour',
+    title: 'Guided Tour: Project Management',
+    summary: 'Create project masters, execute project tasks, and monitor progress with context integrity.',
+    topicId: 'projects',
+    steps: [
+      {
+        id: 'projects-list',
+        title: 'Step 1: Project Portfolio View',
+        path: '/projects',
+        selector: '[data-tour-id="projects-page-header"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Use the project list as the command center for active and historical projects.',
+        fieldLevelGuidance: [
+          'Filter by status, date range, and owner to isolate actionable projects.',
+          'Verify project code and site context before opening details.',
+        ],
+        generatedOutputUsage: [
+          'Portfolio data feeds project summary dashboards and execution tracking reports.',
+        ],
+      },
+      {
+        id: 'projects-create',
+        title: 'Step 2: Create Project Master',
+        path: '/projects/create',
+        selector: '[data-tour-id="projects-create-form"]',
+        position: 'top',
+        waitForMs: 12000,
+        purpose: 'Register new project identity and execution metadata.',
+        fieldLevelGuidance: [
+          'Use unique project code and clear naming for long-term retrieval.',
+          'Set business vertical, site, owner, and timeline fields accurately at creation.',
+        ],
+        generatedOutputUsage: [
+          'Project master becomes parent context for tasks, documents, and reporting filters.',
+        ],
+      },
+      {
+        id: 'projects-task-list',
+        title: 'Step 3: Manage Project Tasks',
+        path: '/projects',
+        selector: '[data-tour-id="projects-grid"]',
+        position: 'top',
+        waitForMs: 12000,
+        purpose: 'Move from project context into task planning and execution control.',
+        fieldLevelGuidance: [
+          'Define assignee, due date, priority, and workflow state for each task.',
+          'Track remarks and evidence to support review and closure actions.',
+        ],
+        generatedOutputUsage: [
+          'Task progress rolls up to project health indicators and timeline variance reports.',
+        ],
+      },
+      {
+        id: 'projects-monitoring',
+        title: 'Step 4: Monitor Progress And Decisions',
+        path: '/projects',
+        selector: '[data-tour-id="projects-filters"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Validate project execution using report and dashboard outputs.',
+        fieldLevelGuidance: [
+          'Cross-check delayed tasks, blockers, and approval bottlenecks by project.',
+          'Use consistent status updates so KPI views remain trustworthy.',
+        ],
+        generatedOutputUsage: [
+          'Project-level dashboards support planning reviews, governance meetings, and escalations.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'document-management-tour',
+    title: 'Guided Tour: Document Management',
+    summary: 'Organize, retrieve, and apply project and workflow evidence through document governance.',
+    topicId: 'documents',
+    steps: [
+      {
+        id: 'documents-library',
+        title: 'Step 1: Open Document Library',
+        path: '/documents',
+        selector: '[data-tour-id="documents-page-header"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Use the central library to browse all uploaded operational documents.',
+        fieldLevelGuidance: [
+          'Start with category and keyword filters before deep browsing.',
+          'Validate project or record mapping from metadata before usage.',
+        ],
+        generatedOutputUsage: [
+          'Library indexing enables quick retrieval during approvals, audits, and field verification.',
+        ],
+      },
+      {
+        id: 'documents-classification',
+        title: 'Step 2: Classify Documents Correctly',
+        path: '/documents',
+        selector: '[data-tour-id="documents-category-sidebar"]',
+        position: 'right',
+        waitForMs: 12000,
+        purpose: 'Maintain consistency in naming, tags, and context linkage.',
+        fieldLevelGuidance: [
+          'Use descriptive titles and standardized tags for repeatable search outcomes.',
+          'Map each file to the correct project, task, or submission context.',
+        ],
+        generatedOutputUsage: [
+          'Proper classification improves report quality and reduces audit turnaround time.',
+        ],
+      },
+      {
+        id: 'documents-usage-in-workflow',
+        title: 'Step 3: Use Documents In Review Workflows',
+        path: '/documents',
+        selector: '[data-tour-id="documents-action-bar"]',
+        position: 'bottom',
+        waitForMs: 12000,
+        purpose: 'Apply uploaded files as evidence in submission and approval decisions.',
+        fieldLevelGuidance: [
+          'Verify file version and upload timestamp before using it for final decisions.',
+          'Capture remarks when evidence is missing or not acceptable.',
+        ],
+        generatedOutputUsage: [
+          'Evidence-linked decisions strengthen auditability and compliance posture.',
+        ],
+      },
+      {
+        id: 'documents-traceability',
+        title: 'Step 4: Ensure Traceability',
+        path: '/documents',
+        selector: '[data-tour-id="documents-list"]',
+        position: 'top',
+        waitForMs: 12000,
+        purpose: 'Confirm that document lineage remains clear across lifecycle events.',
+        fieldLevelGuidance: [
+          'Retain previous versions when updates occur for historical trace support.',
+          'Keep ownership and linkage metadata complete for governance checks.',
+        ],
+        generatedOutputUsage: [
+          'Traceable document history supports dispute resolution, compliance audits, and root-cause analysis.',
+        ],
+      },
+    ],
+  },
+];
+
 function normalizePath(pathname: string): string {
   if (!pathname) {
     return '/';
@@ -866,4 +1200,13 @@ export function resolveHelpContext(pathname: string): ResolvedHelpContext {
 
 export function getHelpTopicByPath(pathname: string): HelpTopic {
   return resolveHelpContext(pathname).topic;
+}
+
+/**
+ * Returns guided tours whose topicId matches the resolved topic for the given pathname.
+ * Used by the help drawer to surface contextual "Start tour" actions.
+ */
+export function getToursForPath(pathname: string): GuidedHelpTour[] {
+  const { topic } = resolveHelpContext(pathname);
+  return guidedHelpTours.filter((tour) => tour.topicId === topic.id);
 }
