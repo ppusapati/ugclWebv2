@@ -59,7 +59,7 @@ export const helpTopics: HelpTopic[] = [
   {
     id: 'projects',
     title: 'Projects',
-    summary: 'Manage project records, ownership, scheduling context, and project-level task access.',
+    summary: 'Manage project master records that drive task planning, execution ownership, reporting scope, and operational visibility.',
     routePatterns: ['/projects', '/projects/create', '/projects/:projectId', '/projects/:projectId/tasks', '/projects/:projectId/tasks/create'],
     quickActions: [
       'Create a project before assigning project-scoped tasks or documents.',
@@ -68,18 +68,35 @@ export const helpTopics: HelpTopic[] = [
     ],
     sections: [
       {
-        title: 'What this page is for',
+        title: 'Purpose',
         bullets: [
-          'Maintains the master list of active and historical projects.',
-          'Acts as the starting point for project-specific workflows and task tracking.',
+          'Maintains the authoritative list of projects used across tasks, submissions, dashboards, and analytics.',
+          'Defines project identity and ownership so work can be correctly routed and audited.',
         ],
       },
       {
-        title: 'Common actions',
+        title: 'How to use',
         bullets: [
-          'Create a new project with core identifiers and operational metadata.',
-          'Open a project to review its related tasks and execution progress.',
-          'Use filters to narrow the list when handling a large project portfolio.',
+          'Create the project first, then add project-scoped tasks from the project context.',
+          'Use list filters to find active projects by status, owner, or timeline before opening details.',
+          'Keep project metadata current so downstream forms and reports reflect accurate context.',
+        ],
+      },
+      {
+        title: 'Field-level guidance',
+        bullets: [
+          'Project name and code: use unique, searchable naming patterns that teams can recognize quickly.',
+          'Business vertical and site context: set these correctly to keep access and reporting scoped properly.',
+          'Dates and status: treat start date, target completion, and status as operational controls, not optional notes.',
+          'Owner or responsible role: assign clear accountability so escalations and workflow tasks resolve correctly.',
+        ],
+      },
+      {
+        title: 'Generated output and usage',
+        bullets: [
+          'Project records become the parent context for task lists, progress tracking, and project dashboards.',
+          'Project metadata is reused by reporting filters, analytics slices, and operational summaries.',
+          'Accurate project setup reduces rework in task assignment, approval routing, and audit investigations.',
         ],
       },
     ],
@@ -103,6 +120,16 @@ export const helpTopics: HelpTopic[] = [
           'Capture required metadata and validate values before saving.',
           'Add optional artifacts only after core project fields are complete.',
         ],
+        sections: [
+          {
+            title: 'Field checklist before save',
+            bullets: [
+              'Use a stable project code that can be referenced in reports and integrations.',
+              'Select the correct business and site context so downstream access behaves correctly.',
+              'Set realistic date windows to support meaningful delay and progress analysis.',
+            ],
+          },
+        ],
       },
       {
         id: 'project-task-list',
@@ -121,7 +148,7 @@ export const helpTopics: HelpTopic[] = [
   {
     id: 'forms',
     title: 'Form Builder',
-    summary: 'Define dynamic forms, submission rules, and workflow-enabled data capture without duplicating implementation logic.',
+    summary: 'Design metadata-driven forms that standardize data capture, enforce permissions, and connect directly to workflow approvals.',
     routePatterns: ['/forms', '/forms/new', '/forms/:formCode', '/forms/:formCode/preview', '/masters/business/:code/forms', '/masters/business/:code/forms/:formCode'],
     quickActions: [
       'Use consistent naming for form code, title, and module assignment.',
@@ -130,17 +157,36 @@ export const helpTopics: HelpTopic[] = [
     ],
     sections: [
       {
-        title: 'What this page is for',
+        title: 'Purpose',
         bullets: [
-          'Creates and manages metadata-driven forms used throughout the platform.',
-          'Connects form structure with permissions, vertical access, and workflow behavior.',
+          'Creates reusable form definitions used by operations, submissions, and approvals.',
+          'Separates form schema from implementation code so business changes can ship faster and safer.',
         ],
       },
       {
-        title: 'Workflow guidance',
+        title: 'How to use',
         bullets: [
-          'Use permissions as the primary access control rather than hard-coding roles into the form design.',
-          'Treat workflow transitions as approval logic and the form definition as submission logic.',
+          'Start with a clear form purpose, then model sections and fields in the order users execute work.',
+          'Attach required permission and workflow mapping before publishing to avoid unsecured submissions.',
+          'Always preview and test with realistic user roles before enabling the form for production use.',
+        ],
+      },
+      {
+        title: 'Field-level guidance',
+        bullets: [
+          'Field label and code: use stable, human-readable labels and machine-safe keys for reporting and integrations.',
+          'Field type: pick type by validation need (number/date/select/file), not by visual preference.',
+          'Required and validation rules: mark fields required only when operationally mandatory to avoid user friction.',
+          'Default value and help text: provide only when it reduces entry errors; avoid hidden assumptions in defaults.',
+          'Dynamic options and dependencies: use conditional logic for context-aware forms, and test every branch in preview.',
+        ],
+      },
+      {
+        title: 'Generated output and usage',
+        bullets: [
+          'Published form definitions generate submission-ready interfaces for end users.',
+          'Each submission creates structured records used by workflow transitions, review screens, and audit history.',
+          'Field schema is reused by analytics and export layers, so stable field keys are critical for long-term reports.',
         ],
       },
     ],
@@ -156,12 +202,31 @@ export const helpTopics: HelpTopic[] = [
         title: 'Create Form',
         routePatterns: ['/forms/new'],
         summary: 'Design a new form and align it with workflow and permission strategy.',
+        sections: [
+          {
+            title: 'Create flow',
+            bullets: [
+              'Define title, code, and module first so navigation and ownership are clear.',
+              'Add fields from core data to optional data, then configure validation and display logic.',
+              'Bind required permission and workflow before final publish.',
+            ],
+          },
+        ],
       },
       {
         id: 'edit',
         title: 'Edit Form',
         routePatterns: ['/forms/:formCode', '/masters/business/:code/forms/:formCode'],
         summary: 'Update an existing form carefully to avoid breaking active operational usage.',
+        sections: [
+          {
+            title: 'Safe edit guidance',
+            bullets: [
+              'Avoid renaming field codes used by existing reports unless migration is planned.',
+              'For major schema changes, validate against in-flight submissions and workflow states.',
+            ],
+          },
+        ],
       },
       {
         id: 'preview',
@@ -335,7 +400,7 @@ export const helpTopics: HelpTopic[] = [
   {
     id: 'documents',
     title: 'Documents',
-    summary: 'Browse and organize uploaded files, supporting records, and document categories needed for operations.',
+    summary: 'Manage operational documents so teams can upload evidence, find files quickly, and maintain record traceability.',
     routePatterns: ['/documents'],
     quickActions: [
       'Use category filters first when a large document library is loaded.',
@@ -344,17 +409,52 @@ export const helpTopics: HelpTopic[] = [
     ],
     sections: [
       {
-        title: 'What this page is for',
+        title: 'Purpose',
         bullets: [
-          'Centralizes document discovery and category-based browsing.',
-          'Supports traceability between uploaded files and business records.',
+          'Centralizes document intake and retrieval across projects and business processes.',
+          'Preserves traceability between uploaded files and related operational records.',
         ],
       },
       {
-        title: 'Common actions',
+        title: 'How to use',
         bullets: [
-          'Search or filter by category to reduce navigation time.',
-          'Review document metadata before using a file as operational evidence.',
+          'Use category and search filters first, then narrow by project or context when needed.',
+          'Review metadata and ownership before treating a document as evidence in approvals.',
+          'Keep naming and tags consistent so documents remain discoverable over time.',
+        ],
+      },
+      {
+        title: 'Field-level guidance',
+        bullets: [
+          'Document title and filename: use descriptive names with project or activity context.',
+          'Category and tags: select accurate categories to support fast retrieval and reporting.',
+          'Linked entity reference: map document to the right project, task, or submission to preserve traceability.',
+          'Version or upload time: use latest approved files in operational decisions and keep older versions for audit context.',
+        ],
+      },
+      {
+        title: 'Generated output and usage',
+        bullets: [
+          'Uploaded files become accessible evidence for tasks, submissions, and review decisions.',
+          'Document metadata supports compliance trails, search indexing, and operational reporting.',
+          'Well-categorized documents reduce turnaround time during audits and issue investigations.',
+        ],
+      },
+    ],
+    variants: [
+      {
+        id: 'library',
+        title: 'Document Library',
+        routePatterns: ['/documents'],
+        summary: 'Browse, filter, and open documents from a centralized library view.',
+        sections: [
+          {
+            title: 'Library usage',
+            bullets: [
+              'Use category filters and keyword search together for precise retrieval.',
+              'Verify linked context before using a file in approvals or field operations.',
+            ],
+          },
         ],
       },
     ],
@@ -389,7 +489,7 @@ export const helpTopics: HelpTopic[] = [
   {
     id: 'workflows',
     title: 'Workflow Management',
-    summary: 'Configure state machines, transitions, and approval logic that govern operational review cycles.',
+    summary: 'Design approval state machines that govern submission lifecycle, decision controls, and audit-ready transition history.',
     routePatterns: ['/workflows'],
     quickActions: [
       'Define states and transitions before binding the workflow to live forms.',
@@ -398,17 +498,54 @@ export const helpTopics: HelpTopic[] = [
     ],
     sections: [
       {
-        title: 'What this page is for',
+        title: 'Purpose',
         bullets: [
-          'Controls how submissions move through review and approval stages.',
-          'Provides the authoritative configuration for status changes and review actions.',
+          'Defines how records move across draft, review, approval, rejection, and revision stages.',
+          'Provides controlled transitions so approvals are policy-driven and auditable.',
         ],
       },
       {
-        title: 'Workflow design guidance',
+        title: 'How to use',
         bullets: [
-          'Model explicit states for draft, submitted, review, approved, rejected, and revised flows.',
-          'Require comments on reject and revision transitions where auditability matters.',
+          'Model states first, then transitions, then transition permissions in that exact order.',
+          'Bind workflow only after testing normal path, reject path, and revise path with realistic scenarios.',
+          'Use required comments on review actions where decision rationale must be audited.',
+        ],
+      },
+      {
+        title: 'Field-level guidance',
+        bullets: [
+          'State code and label: keep state codes stable and labels user-friendly for status displays.',
+          'Transition action and label: action names should be machine-consistent, labels should match user language.',
+          'Permission binding: map transition permissions to capabilities, not person names or temporary roles.',
+          'Final state flag: mark terminal states correctly so records cannot re-enter closed flows accidentally.',
+          'Requires comment flag: enable on reject or revise transitions to improve accountability and rework quality.',
+        ],
+      },
+      {
+        title: 'Generated output and usage',
+        bullets: [
+          'Workflow definitions generate valid transition rules used by submissions and task detail actions.',
+          'Runtime transition history becomes an audit trail for who changed what, when, and why.',
+          'Configured statuses feed dashboards and reports for pending approvals and bottleneck analysis.',
+        ],
+      },
+    ],
+    variants: [
+      {
+        id: 'builder',
+        title: 'Workflow Builder',
+        routePatterns: ['/workflows'],
+        summary: 'Build and maintain workflow definitions used by form submission and approval processes.',
+        sections: [
+          {
+            title: 'Builder checklist',
+            bullets: [
+              'Create clear state progression from draft to final states.',
+              'Validate each transition with its permission before publishing.',
+              'Test revision loops to ensure submitters can recover cleanly.',
+            ],
+          },
         ],
       },
     ],
