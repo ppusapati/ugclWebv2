@@ -1,5 +1,5 @@
 // src/components/form-builder/renderer/FieldRenderer.tsx
-import { component$, useSignal, type PropFunction } from '@builder.io/qwik';
+import { component$, useSignal, useTask$, type PropFunction } from '@builder.io/qwik';
 import type { FormField } from '~/types/workflow';
 import TextField from './fields/TextField';
 import TextAreaField from './fields/TextAreaField';
@@ -20,8 +20,15 @@ interface FieldRendererProps {
 export default component$<FieldRendererProps>((props) => {
   const isVisible = useSignal(true);
 
-  // Check visibility condition
-  if (props.field.visible) {
+  useTask$(({ track }) => {
+    track(() => props.allFormData);
+    track(() => props.field.visible);
+
+    if (!props.field.visible) {
+      isVisible.value = true;
+      return;
+    }
+
     const condition = props.field.visible;
     const fieldValue = props.allFormData[condition.field];
 
@@ -44,7 +51,7 @@ export default component$<FieldRendererProps>((props) => {
       default:
         isVisible.value = true;
     }
-  }
+  });
 
   if (!isVisible.value) {
     return null;

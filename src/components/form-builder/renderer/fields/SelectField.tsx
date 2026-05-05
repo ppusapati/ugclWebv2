@@ -13,6 +13,102 @@ interface SelectFieldProps {
   businessCode?: string;
 }
 
+// Strip everything that isn't a letter or digit so "full_Name", "fullName",
+// "full name", "FullName" all normalise to the same string "fullname".
+const normalizeKey = (key: string): string =>
+  String(key || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase();
+
+// Build a normalised-key → original-key reverse map for a single object.
+const buildNormMap = (item: Record<string, any>): Map<string, string> => {
+  const map = new Map<string, string>();
+  for (const key of Object.keys(item)) {
+    const nk = normalizeKey(key);
+    // First key wins (preserves insertion order, top-level wins over deep)
+    if (!map.has(nk)) map.set(nk, key);
+  }
+  return map;
+};
+
+// Resolve a configured key against any object, regardless of casing/separators.
+// Returns undefined when the key is not found at all.
+const resolveKey = (item: Record<string, any>, key: string): any => {
+  if (!key || !item || typeof item !== 'object') return undefined;
+  // 1. Exact match — fastest path
+  if (Object.prototype.hasOwnProperty.call(item, key)) return item[key];
+  // 2. Normalised match — handles mixed-case / different separators
+  const normMap = buildNormMap(item);
+  const originalKey = normMap.get(normalizeKey(key));
+  return originalKey !== undefined ? item[originalKey] : undefined;
+};
+
+// Hints used for auto-detection, in priority order.
+// Matching is done on the normalised key, so partial matches work
+// (e.g. "employeeid", "busid", "busnumber" still resolve).
+const LABEL_HINTS = ['fullname', 'displayname', 'name', 'title', 'description', 'label', 'text', 'code'];
+const VALUE_HINTS = ['id', 'uuid', 'code', 'key', 'number', 'no', 'num', 'ref'];
+
+// When no displayField is configured, pick the most human-readable string field.
+const autoLabel = (item: Record<string, any>): string => {
+  const normMap = buildNormMap(item);
+  for (const hint of LABEL_HINTS) {
+    for (const [nk, original] of normMap) {
+      if (nk.includes(hint) && typeof item[original] === 'string' && item[original]) {
+        return item[original];
+      }
+    }
+  }
+  // Last resort: first non-empty primitive that isn't purely numeric
+  for (const key of Object.keys(item)) {
+    const v = item[key];
+    if (v !== null && v !== undefined && typeof v !== 'object' && isNaN(Number(v))) {
+      return String(v);
+    }
+  }
+  return '';
+};
+
+// When no valueField is configured, pick the most appropriate identifier field.
+const autoValue = (item: Record<string, any>): string => {
+  const normMap = buildNormMap(item);
+  for (const hint of VALUE_HINTS) {
+    for (const [nk, original] of normMap) {
+      if (nk === hint || nk.startsWith(hint) || nk.endsWith(hint)) {
+        const v = item[original];
+        if (v !== null && v !== undefined && typeof v !== 'object') return String(v);
+      }
+    }
+  }
+  // Fallback: first primitive value
+  for (const key of Object.keys(item)) {
+    const v = item[key];
+    if (v !== null && v !== undefined && typeof v !== 'object') return String(v);
+  }
+  return '';
+};
+
+// Map a raw API item to a { label, value } option pair using configured keys
+// (case-insensitive) and falling back to auto-detection when not configured.
+const mapToOption = (
+  item: any,
+  configuredLabelKey: string,
+  configuredValueKey: string
+): FieldOption => {
+  if (!item || typeof item !== 'object') return { label: '', value: '' };
+
+  const label = configuredLabelKey
+    ? String(resolveKey(item, configuredLabelKey) ?? autoLabel(item))
+    : autoLabel(item);
+
+  const value = configuredValueKey
+    ? String(resolveKey(item, configuredValueKey) ?? autoValue(item))
+    : autoValue(item);
+
+  return { label, value };
+};
+
 export default component$<SelectFieldProps>((props) => {
   const options = useSignal<FieldOption[]>(props.field.options || []);
   const loading = useSignal(false);
@@ -35,14 +131,11 @@ export default component$<SelectFieldProps>((props) => {
         const items: any[] = Array.isArray(data)
           ? data
           : (data?.data ?? data?.items ?? data?.results ?? data?.records ?? []);
-        const labelKey = props.field.displayField || 'name';
-        const valueKey = props.field.valueField || 'id';
+        const labelKey = props.field.displayField || '';
+        const valueKey = props.field.valueField || '';
         options.value = items
           .filter((item: any) => item != null)
-          .map((item: any) => ({
-            label: String(item[labelKey] ?? item.name ?? item.label ?? item.title ?? item.code ?? ''),
-            value: String(item[valueKey] ?? item.id ?? item.value ?? item.code ?? ''),
-          }))
+          .map((item: any) => mapToOption(item, labelKey, valueKey))
           .filter((opt) => opt.value !== '');
       } catch (err) {
         console.error('[SelectField] Failed to load integration options', err);
@@ -166,15 +259,12 @@ export default component$<SelectFieldProps>((props) => {
         return idMatch || codeMatch;
       });
 
-      const labelKey = props.field.displayField || 'name';
-      const valueKey = props.field.valueField || 'id';
+      const labelKey = props.field.displayField || '';
+      const valueKey = props.field.valueField || '';
 
       options.value = scopedItems
         .filter((item: any) => item != null)
-        .map((item: any) => ({
-          label: String(item[labelKey] ?? item.name ?? item.label ?? item.title ?? item.code ?? ''),
-          value: String(item[valueKey] ?? item.id ?? item.value ?? item.code ?? ''),
-        }))
+        .map((item: any) => mapToOption(item, labelKey, valueKey))
         .filter((opt) => opt.value !== '');
     } catch (err) {
       console.error('[SelectField] Failed to load options from', endpoint, err);

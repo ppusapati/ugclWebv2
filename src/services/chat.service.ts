@@ -379,8 +379,13 @@ export class ChatService {
     });
 
     eventSource.onerror = (err) => {
-      console.error('Chat SSE stream error:', err);
-      onError?.(new Error('Chat stream connection error'));
+      // readyState 2 = CLOSED; EventSource will auto-reconnect for transient drops
+      if ((err.target as EventSource)?.readyState === EventSource.CLOSED) {
+        onError?.(new Error('Chat stream connection closed'));
+      } else {
+        console.error('Chat SSE stream error:', err);
+        onError?.(new Error('Chat stream connection error'));
+      }
     };
 
     return () => {

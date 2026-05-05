@@ -141,7 +141,16 @@ export const useHomeDashboardData = routeLoader$(async (requestEvent) => {
       };
     }
 
-    return { dashboard: selectedDashboard };
+    // Execute dashboard widgets server-side so the first-paint HTML already has data.
+    let ssrWidgetResults: Record<string, any> = {};
+    try {
+      const execResponse = await ssrApiClient.post(`/dashboards/${selectedDashboard.id}/execute`, {});
+      ssrWidgetResults = normalizeDashboardWidgetResults(execResponse, selectedDashboard.widgets || []);
+    } catch {
+      // Fallback: client-side execution will run on mount.
+    }
+
+    return { dashboard: selectedDashboard, widgetResults: ssrWidgetResults };
   } catch (error: any) {
     return {
       dashboard: null,
@@ -159,8 +168,9 @@ export default component$(() => {
 
   const executionLoading = useSignal(false);
   const executionError = useSignal('');
-  const widgetResults = useSignal<Record<string, any>>({});
-  const autoLoadDone = useSignal(false);
+  const initialWidgetResults = (loaderData.value as any).widgetResults as Record<string, any> ?? {};
+  const widgetResults = useSignal<Record<string, any>>(initialWidgetResults);
+  const autoLoadDone = useSignal(Object.keys(initialWidgetResults).length > 0);
   const chartComponent = useResource$(async () => {
     const mod = await import('~/components/echarts');
     return mod.EChart;
@@ -171,20 +181,22 @@ export default component$(() => {
       return {} as Record<string, any>;
     }
 
-    const resultMap: Record<string, any> = {};
     const executableWidgets = dashboard.widgets.filter((widget) => !!widget.report_id);
 
-    for (const widget of executableWidgets) {
-      try {
-        const reportResponse = await analyticsService.executeReport(String(widget.report_id));
-        resultMap[widget.id] = reportResponse.result;
-      } catch (err: any) {
-        // Store the error so per-widget error UI can surface it.
-        resultMap[widget.id] = { error: err?.message || 'Report execution failed' };
-      }
-    }
+    // Run all widget fetches in parallel; update the signal as each one settles
+    // so the UI shows results progressively rather than waiting for the slowest widget.
+    await Promise.all(
+      executableWidgets.map(async (widget) => {
+        try {
+          const reportResponse = await analyticsService.executeReport(String(widget.report_id));
+          widgetResults.value = { ...widgetResults.value, [widget.id]: reportResponse.result };
+        } catch (err: any) {
+          widgetResults.value = { ...widgetResults.value, [widget.id]: { error: err?.message || 'Report execution failed' } };
+        }
+      })
+    );
 
-    return resultMap;
+    return widgetResults.value;
   });
 
   const executeDashboard = $(async () => {
