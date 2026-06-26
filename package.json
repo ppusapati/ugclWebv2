@@ -28,6 +28,7 @@
     "ssr": "vite build && vite build --ssr src/entry.ssr.tsx",
     "start": "node dist/server.js",
     "test:unit": "vitest run src/config/route-registry.test.ts",
+    "test:form-builder": "vitest run -c vitest.form-builder.config.ts",
     "qwik": "qwik"
   },
   "devDependencies": {

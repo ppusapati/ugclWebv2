@@ -62,9 +62,12 @@ export interface FormField {
 
   // For API-driven dropdowns
   dataSource?: 'static' | 'api' | 'integration';
+  selectionMode?: 'single' | 'multiple';
   apiEndpoint?: string;
   displayField?: string;
   valueField?: string;
+  dependsOn?: string;
+  dependsOnParam?: string;
 
   // For integration-proxied dropdowns (dataSource === 'integration')
   integrationId?: string;

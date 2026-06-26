@@ -404,6 +404,50 @@ export default component$<FieldEditorCompleteProps>((props) => {
               </div>
             )}
 
+            {(editingField.type === 'dropdown' || editingField.type === 'select') && (
+              <div class="mt-4 pt-4 border-t border-green-300 space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Selection Mode</label>
+                    <select
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                      value={editingField.selectionMode || 'single'}
+                      onChange$={(e) => handleUpdate({ selectionMode: (e.target as HTMLSelectElement).value as 'single' | 'multiple' })}
+                    >
+                      <option value="single">Single select</option>
+                      <option value="multiple">Multi-select</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Parent Query Param</label>
+                    <input
+                      type="text"
+                      value={editingField.dependsOnParam || 'parent_value'}
+                      onInput$={(e) => handleUpdate({ dependsOnParam: (e.target as HTMLInputElement).value })}
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                      placeholder="parent_value"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Depends On (parent field ID)</label>
+                  <input
+                    type="text"
+                    value={editingField.dependsOn || ''}
+                    onInput$={(e) => handleUpdate({ dependsOn: (e.target as HTMLInputElement).value })}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                    placeholder="parent_field_id"
+                  />
+                </div>
+
+                <p class="text-xs text-gray-500">
+                  Chain dependent selects by setting each child field to depend on the field immediately above it.
+                </p>
+              </div>
+            )}
+
             {/* Data source picker for dropdown / select */}
             {(editingField.type === 'dropdown' || editingField.type === 'select') && (
               <div class="mt-4 pt-4 border-t border-green-300 space-y-3">

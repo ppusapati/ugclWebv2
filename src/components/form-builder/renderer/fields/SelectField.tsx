@@ -4,6 +4,7 @@ import { FormField } from '~/components/ds';
 import { apiClient } from '~/services';
 import { integrationService } from '~/services/integration.service';
 import type { FormField as WorkflowFormField, FieldOption } from '~/types/workflow';
+import { appendQueryParam, filterInvalidSelection, resolveApiRequest } from './select-field.utils';
 
 interface SelectFieldProps {
   field: WorkflowFormField;
@@ -11,6 +12,7 @@ interface SelectFieldProps {
   error?: string;
   onChange$: PropFunction<(value: any) => void>;
   businessCode?: string;
+  allFormData?: Record<string, any>;
 }
 
 // Strip everything that isn't a letter or digit so "full_Name", "fullName",
@@ -112,13 +114,47 @@ const mapToOption = (
 export default component$<SelectFieldProps>((props) => {
   const options = useSignal<FieldOption[]>(props.field.options || []);
   const loading = useSignal(false);
+  const dependencyValue = useSignal<any>(undefined);
+
+  const isMultiple = props.field.selectionMode === 'multiple';
+  const dependencyFieldId = props.field.dependsOn || '';
+  const dependencyParam = props.field.dependsOnParam || 'parent_value';
 
   // Load API options client-side only.
   // Inlined (no nested $() QRL) so props.businessCode is read at task-run
   // time — not captured at component-creation time when it may be empty.
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
+  useVisibleTask$(async ({ track }) => {
     const dataSource = props.field.dataSource;
+    track(() => props.field.dataSource);
+    track(() => props.field.apiEndpoint);
+    track(() => props.field.integrationId);
+    track(() => props.field.integrationPath);
+    track(() => props.field.displayField);
+    track(() => props.field.valueField);
+    track(() => props.field.selectionMode);
+    track(() => props.field.dependsOn);
+    track(() => props.field.dependsOnParam);
+    if (dependencyFieldId && props.allFormData) {
+      track(() => props.allFormData?.[dependencyFieldId]);
+      dependencyValue.value = props.allFormData?.[dependencyFieldId];
+    } else {
+      dependencyValue.value = undefined;
+    }
+
+    const parentValue = String(dependencyValue.value ?? '').trim();
+    const hasDependency = !!dependencyFieldId;
+    const dependencyReady = !hasDependency || parentValue !== '';
+
+    if (hasDependency && !dependencyReady) {
+      options.value = [];
+      loading.value = false;
+      return;
+    }
+
+    const dependencyQuery = hasDependency && parentValue
+      ? { key: dependencyParam, value: parentValue }
+      : null;
 
     // ── Integration proxy path ──────────────────────────────────────────────
     if (dataSource === 'integration') {
@@ -127,7 +163,10 @@ export default component$<SelectFieldProps>((props) => {
       if (!integrationId || !integrationPath) return;
       try {
         loading.value = true;
-        const data: any = await integrationService.proxyGet(integrationId, integrationPath);
+        const resolvedPath = dependencyQuery
+          ? appendQueryParam(integrationPath, dependencyQuery.key, dependencyQuery.value)
+          : integrationPath;
+        const data: any = await integrationService.proxyGet(integrationId, resolvedPath);
         const items: any[] = Array.isArray(data)
           ? data
           : (data?.data ?? data?.items ?? data?.results ?? data?.records ?? []);
@@ -185,26 +224,17 @@ export default component$<SelectFieldProps>((props) => {
           }
         : undefined;
 
-      const hasQuery = endpoint.includes('?');
-      const siteParamPairs = endpointParams
-        ? Object.entries(endpointParams).filter(([, value]) => !!value)
-        : [];
+      const dependencyParams = dependencyQuery
+        ? { [dependencyQuery.key]: dependencyQuery.value }
+        : undefined;
 
-      let resolvedEndpoint = endpoint;
-      if (hasQuery && siteParamPairs.length > 0) {
-        const extra = new URLSearchParams(
-          siteParamPairs as Array<[string, string]>
-        ).toString();
-        if (extra) {
-          resolvedEndpoint = `${endpoint}&${extra}`;
-        }
-      }
+      const { resolvedEndpoint, requestParams } = resolveApiRequest(endpoint, endpointParams, dependencyParams);
 
       let data: any;
       try {
         data = await apiClient.get(
           resolvedEndpoint,
-          hasQuery ? undefined : endpointParams
+          requestParams
         ) as any;
       } catch (err: any) {
         const isForbidden = Number(err?.status) === 403;
@@ -266,6 +296,11 @@ export default component$<SelectFieldProps>((props) => {
         .filter((item: any) => item != null)
         .map((item: any) => mapToOption(item, labelKey, valueKey))
         .filter((opt) => opt.value !== '');
+
+      const normalizedSelection = filterInvalidSelection(props.value, isMultiple, options.value);
+      if (normalizedSelection.changed) {
+        await props.onChange$(normalizedSelection.value);
+      }
     } catch (err) {
       console.error('[SelectField] Failed to load options from', endpoint, err);
     } finally {
@@ -286,23 +321,47 @@ export default component$<SelectFieldProps>((props) => {
         >
           <select
             id={props.field.id}
-            value={props.value || ''}
-            onChange$={async (e) => await props.onChange$((e.target as HTMLSelectElement).value)}
+            multiple={isMultiple}
+            value={isMultiple ? undefined : (props.value || '')}
+            onChange$={async (e) => {
+              const target = e.target as HTMLSelectElement;
+              if (isMultiple) {
+                await props.onChange$(Array.from(target.selectedOptions).map((option) => option.value));
+              } else {
+                await props.onChange$(target.value);
+              }
+            }}
             required={props.field.required}
             disabled={loading.value}
             class={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
               props.error ? 'border-red-500' : 'border-gray-300'
-            }`}
+            } ${isMultiple ? 'min-h-36' : ''}`}
           >
-            <option value="">
-              {loading.value ? 'Loading...' : (props.field.placeholder || 'Select an option...')}
-            </option>
+            {!isMultiple && (
+              <option value="">
+                {loading.value
+                  ? 'Loading...'
+                  : (dependencyFieldId && String(dependencyValue.value ?? '').trim() === '')
+                    ? 'Select the parent field first...'
+                    : (props.field.placeholder || 'Select an option...')}
+              </option>
+            )}
             {options.value.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
+          {isMultiple && (
+            <p class="mt-1 text-xs text-gray-500">
+              Hold Ctrl or Cmd to select multiple options.
+            </p>
+          )}
+          {dependencyFieldId && String(dependencyValue.value ?? '').trim() === '' && (
+            <p class="mt-1 text-xs text-amber-600">
+              This field depends on {dependencyFieldId}. Select the parent value first.
+            </p>
+          )}
         </FormField>
       </div>
     );

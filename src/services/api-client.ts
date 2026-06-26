@@ -24,6 +24,8 @@ export interface ApiRequestOptions extends RequestInit {
   skipContentType?: boolean;
   cacheTTL?: number;
   skipCache?: boolean;
+  cachedValue?: unknown;
+  afterResponse?: (response: Response, parsedBody: unknown) => void;
 }
 
 const DEFAULT_TIMEOUT = 30000;
@@ -174,6 +176,8 @@ async function request<T>(
     serverBaseUrl,
     signal,
     skipContentType,
+    cachedValue,
+    afterResponse,
   }: ApiRequestOptions = {}
 ): Promise<T> {
   const baseUrl = serverBaseUrl || getBaseUrl();
@@ -222,17 +226,25 @@ async function request<T>(
 
     clearTimeout(timeoutId);
 
+    if (response.status === 304 && typeof cachedValue !== 'undefined') {
+      requestCacheService.touch(endpoint, params);
+      return cachedValue as T;
+    }
+
     if (!response.ok) {
       await handleError(response);
     }
 
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
-      return await response.json();
+      const parsed = await response.json();
+      afterResponse?.(response, parsed);
+      return parsed;
     }
     // Fallback: return response text when JSON isn't provided
-  const text = await response.text();
-  return (text as unknown as T);
+    const text = await response.text();
+    afterResponse?.(response, text);
+    return (text as unknown as T);
   } catch (err: any) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') throw { message: 'Request timeout', status: 408 } as ApiError;
@@ -246,20 +258,34 @@ async function request<T>(
 export const apiClient = {
   async get<T>(endpoint: string, params?: Record<string, any>, options?: Pick<ApiRequestOptions, 'cacheTTL' | 'skipCache'>) {
     const shouldUseCache = typeof window !== 'undefined' && options?.skipCache !== true;
+    const cachedValue = shouldUseCache ? requestCacheService.get<T>(endpoint, params) : null;
+    const cachedEtag = shouldUseCache ? requestCacheService.getEtag(endpoint, params) : null;
 
-    if (shouldUseCache) {
-      const cachedValue = requestCacheService.get<T>(endpoint, params);
-      if (cachedValue !== null) {
-        debugTrace('[API Cache Hit]', endpoint, params);
-        return cachedValue;
-      }
+    const customHeaders: Record<string, string> = {};
+    if (cachedEtag && cachedValue !== null) {
+      customHeaders['If-None-Match'] = cachedEtag;
     }
 
-    const response = await request<T>(endpoint, { method: 'GET', params });
+    if (shouldUseCache && cachedValue !== null && !cachedEtag) {
+      debugTrace('[API Cache Hit]', endpoint, params);
+      return cachedValue;
+    }
 
-    if (shouldUseCache) {
-      const ttl = options?.cacheTTL ?? resolveCacheTTL(endpoint);
-      requestCacheService.set(endpoint, params, response, ttl);
+    const ttl = options?.cacheTTL ?? resolveCacheTTL(endpoint);
+    const response = await request<T>(endpoint, {
+      method: 'GET',
+      params,
+      customHeaders: Object.keys(customHeaders).length > 0 ? customHeaders : undefined,
+      cachedValue: cachedValue ?? undefined,
+      afterResponse: (response, parsedBody) => {
+        if (shouldUseCache && response.status === 200) {
+          requestCacheService.set(endpoint, params, parsedBody as T, ttl, response.headers.get('etag') || undefined);
+        }
+      },
+    });
+
+    if (shouldUseCache && cachedValue !== null && cachedEtag) {
+      debugTrace('[API Cache Revalidated]', endpoint, params);
     }
 
     return response;

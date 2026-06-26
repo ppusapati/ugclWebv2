@@ -11,6 +11,7 @@ import type {
   CreateFormRequest,
   UpdateFormAccessRequest,
   PaginatedResponse,
+  FormSubmissionPageResponse,
 } from './types';
 
 export function extractModules(payload: unknown): Module[] {
@@ -88,6 +89,57 @@ class FormService {
    */
   async getFormByCode(businessCode: string, formCode: string): Promise<AppForm> {
     return apiClient.get<AppForm>(`/business/${businessCode}/forms/${formCode}`);
+  }
+
+  async getFormSubmissionsPage(
+    businessCode: string,
+    formCode: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      cursor?: string;
+      pagination?: 'cursor' | 'legacy' | 'on' | 'off';
+      legacy_pagination?: boolean;
+      include_resolved?: boolean;
+    }
+  ): Promise<FormSubmissionPageResponse> {
+    const response = await apiClient.get<FormSubmissionPageResponse>(
+      `/business/${businessCode}/forms/${formCode}/submissions`,
+      options
+    );
+
+    if (Array.isArray((response as any).submissions)) {
+      return response;
+    }
+
+    if (Array.isArray(response as any)) {
+      const submissions = response as unknown as Record<string, any>[];
+      return {
+        submissions,
+        count: submissions.length,
+      };
+    }
+
+    return {
+      submissions: [],
+      count: 0,
+    };
+  }
+
+  async getFormSubmissions(
+    businessCode: string,
+    formCode: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      cursor?: string;
+      pagination?: 'cursor' | 'legacy' | 'on' | 'off';
+      legacy_pagination?: boolean;
+      include_resolved?: boolean;
+    }
+  ): Promise<Record<string, any>[]> {
+    const response = await this.getFormSubmissionsPage(businessCode, formCode, options);
+    return response.submissions;
   }
 
   /**

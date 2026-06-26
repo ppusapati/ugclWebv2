@@ -284,6 +284,15 @@ export interface AppForm {
   updated_at?: string;
 }
 
+export interface FormSubmissionPageResponse<T = Record<string, any>> {
+  submissions: T[];
+  count: number;
+  limit?: number;
+  has_more?: boolean;
+  next_cursor?: string;
+  resolved_submissions?: Array<Record<string, any>>;
+}
+
 export interface CreateFormRequest {
   code: string;
   title: string;

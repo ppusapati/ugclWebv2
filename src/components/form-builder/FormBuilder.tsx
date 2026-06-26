@@ -540,6 +540,15 @@ export default component$<FormBuilderProps>((props) => {
                         const handleFieldUpdate = $((updatedField: WorkflowFormField) => {
                           updateField(currentStepIndex.value, fieldIndex, updatedField);
                         });
+
+                        const availableCascadeParents = form.steps
+                          .flatMap((step, stepIndex) =>
+                            step.fields.map((candidate) => ({
+                              id: candidate.id,
+                              label: `${candidate.label || candidate.id} (${step.title || `Step ${stepIndex + 1}`})`,
+                            }))
+                          )
+                          .filter((candidate) => candidate.id !== field.id);
                         
                         const handleFieldDelete = $(() => {
                           deleteField(currentStepIndex.value, fieldIndex);
@@ -551,6 +560,7 @@ export default component$<FormBuilderProps>((props) => {
                             field={field}
                             onUpdate$={handleFieldUpdate}
                             onDelete$={handleFieldDelete}
+                            availableCascadeParents={availableCascadeParents}
                           />
                         );
                       })}

@@ -24,6 +24,7 @@ interface FieldEditorProps {
   field: WorkflowFormField;
   onUpdate$: PropFunction<(field: WorkflowFormField) => void>;
   onDelete$: PropFunction<() => void>;
+  availableCascadeParents?: Array<{ id: string; label: string }>;
 }
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -89,6 +90,7 @@ export default component$<FieldEditorProps>((props) => {
   });
 
   const needsOptions = ['radio', 'checkbox', 'dropdown', 'select'].includes(field.type);
+  const availableCascadeParents = (props.availableCascadeParents || []).filter((parent) => parent.id !== field.id);
 
 
   return (
@@ -405,6 +407,60 @@ export default component$<FieldEditorProps>((props) => {
                       No options added. Click "Add Option" to create one.
                     </div>
                   )}
+                </div>
+              )}
+
+              {(field.type === 'dropdown' || field.type === 'select') && (
+                <div class="mt-4 space-y-3 border-t pt-4">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Selection Mode</label>
+                    <select
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                      value={field.selectionMode || 'single'}
+                      onChange$={(e) => updateField({ selectionMode: (e.target as HTMLSelectElement).value as 'single' | 'multiple' })}
+                    >
+                      <option value="single">Single select</option>
+                      <option value="multiple">Multi-select</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <FormField id={`editor-${field.id}-depends-on`} label="Depends On (parent field)">
+                      <select
+                        id={`editor-${field.id}-depends-on`}
+                        value={field.dependsOn || ''}
+                        onChange$={(e) => updateField({ dependsOn: (e.target as HTMLSelectElement).value })}
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                      >
+                        <option value="">No parent (independent)</option>
+                        {field.dependsOn && !availableCascadeParents.some((parent) => parent.id === field.dependsOn) && (
+                          <option value={field.dependsOn}>{`Current: ${field.dependsOn}`}</option>
+                        )}
+                        {availableCascadeParents.map((parent) => (
+                          <option key={parent.id} value={parent.id}>
+                            {parent.label}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+
+                  <div>
+                    <FormField id={`editor-${field.id}-depends-param`} label="Parent Query Param">
+                      <input
+                        id={`editor-${field.id}-depends-param`}
+                        type="text"
+                        value={field.dependsOnParam || 'parent_value'}
+                        onInput$={(e) => updateField({ dependsOnParam: (e.target as HTMLInputElement).value })}
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded"
+                        placeholder="parent_value"
+                      />
+                    </FormField>
+                  </div>
+
+                  <p class="text-xs text-gray-500">
+                    Cascade fields by chaining each child to the field above it. The runtime clears dependent selections automatically.
+                  </p>
                 </div>
               )}
             </div>

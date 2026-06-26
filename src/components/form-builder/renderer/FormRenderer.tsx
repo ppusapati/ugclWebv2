@@ -4,6 +4,7 @@ import { formBuilderService } from '~/services';
 import type { AppForm, FormStep } from '~/types/workflow';
 import StepNavigation from './StepNavigation';
 import FieldRenderer from './FieldRenderer';
+import { clearDependentValues, isMissingValue } from './form-dependency.utils';
 
 interface FormRendererProps {
   businessCode: string;
@@ -34,8 +35,6 @@ export default component$<FormRendererProps>((props) => {
   const formData = useStore<Record<string, any>>(props.initialData || {});
   const errors = useStore<Record<string, string>>({});
 
-  // Load form definition — useVisibleTask$ runs only client-side after mount,
-  // which ensures the user's auth token is available in localStorage.
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     if (props.initialForm) {
@@ -71,14 +70,12 @@ export default component$<FormRendererProps>((props) => {
     for (const field of step.fields) {
       const value = formData[field.id];
 
-      // Required validation
-      if (field.required && (!value || value === '')) {
+      if (field.required && isMissingValue(value)) {
         errors[field.id] = field.validation?.message || `${field.label} is required`;
         isValid = false;
         continue;
       }
 
-      // Type-specific validation
       if (field.type === 'number' && value !== undefined && value !== '') {
         const numValue = parseFloat(value);
         if (field.min !== undefined && numValue < field.min) {
@@ -91,13 +88,18 @@ export default component$<FormRendererProps>((props) => {
         }
       }
 
-      // Clear error if valid
       if (isValid) {
         delete errors[field.id];
       }
     }
 
     return isValid;
+  });
+
+  const handleFieldChange = $((fieldId: string, value: any) => {
+    formData[fieldId] = value;
+    delete errors[fieldId];
+    clearDependentValues(formDefinition.steps, formData, errors, fieldId);
   });
 
   const handleNext = $(async () => {
@@ -116,7 +118,6 @@ export default component$<FormRendererProps>((props) => {
   });
 
   const handleSubmit = $(async () => {
-    // Validate all steps
     for (let i = 0; i < formDefinition.steps.length; i++) {
       const isValid = await validateStep(i);
       if (!isValid) {
@@ -132,13 +133,6 @@ export default component$<FormRendererProps>((props) => {
     if (props.onSaveDraft$) {
       await props.onSaveDraft$(formData);
     }
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleFieldChange = $((fieldId: string, value: any) => {
-    formData[fieldId] = value;
-    // Clear error when field changes
-    delete errors[fieldId];
   });
 
   if (loading.value) {
@@ -165,14 +159,12 @@ export default component$<FormRendererProps>((props) => {
   return (
     <div class="form-renderer min-h-screen bg-gray-50 py-8">
       <div class="max-w-3xl mx-auto px-4">
-        {/* Header */}
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h1 class="text-2xl font-bold text-gray-900">{formDefinition.title}</h1>
           {formDefinition.description && (
             <p class="text-gray-600 mt-2">{formDefinition.description}</p>
           )}
 
-          {/* Progress Indicator */}
           {formDefinition.ui_config?.show_progress && formDefinition.steps.length > 1 && (
             <div class="mt-4">
               <div class="flex justify-between text-sm text-gray-600 mb-2">
@@ -183,43 +175,33 @@ export default component$<FormRendererProps>((props) => {
                 <div
                   class="bg-blue-600 h-2 rounded-full transition-all duration-300 w-[var(--progress-width)]"
                   style={{ '--progress-width': `${((currentStep.value + 1) / formDefinition.steps.length) * 100}%` }}
-                ></div>
+                />
               </div>
             </div>
           )}
         </div>
 
-        {/* Current Step */}
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h2 class="text-xl font-bold mb-2">{currentStepData?.title}</h2>
           {currentStepData?.description && (
             <p class="text-gray-600 mb-6">{currentStepData.description}</p>
           )}
 
-          {/* Fields */}
           <div class="space-y-6">
-            {currentStepData?.fields.map((field) => {
-              const onChange = $((value: any) => {
-                formData[field.id] = value;
-                delete errors[field.id];
-              });
-              
-              return (
-                <FieldRenderer
-                  key={field.id}
-                  field={field}
-                  value={formData[field.id]}
-                  error={errors[field.id]}
-                  onChange$={onChange}
-                  allFormData={formData}
-                  businessCode={props.businessCode}
-                />
-              );
-            })}
+            {currentStepData?.fields.map((field) => (
+              <FieldRenderer
+                key={field.id}
+                field={field}
+                value={formData[field.id]}
+                error={errors[field.id]}
+                onChange$={$((value: any) => handleFieldChange(field.id, value))}
+                allFormData={formData}
+                businessCode={props.businessCode}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Navigation */}
         <StepNavigation
           currentStep={currentStep.value}
           totalSteps={formDefinition.steps.length}

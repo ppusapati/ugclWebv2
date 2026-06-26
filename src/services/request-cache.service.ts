@@ -2,6 +2,7 @@ interface CacheEntry<T = unknown> {
   value: T;
   storedAt: number;
   ttlMs: number;
+  etag?: string;
 }
 
 function normalizeEndpoint(endpoint: string): string {
@@ -22,6 +23,7 @@ function stableSerializeParams(params?: Record<string, any>): string {
 
 class RequestCacheService {
   private entries = new Map<string, CacheEntry>();
+  private etags = new Map<string, string>();
 
   private buildKey(endpoint: string, params?: Record<string, any>): string {
     const normalizedEndpoint = normalizeEndpoint(endpoint);
@@ -46,13 +48,53 @@ class RequestCacheService {
     return entry.value as T;
   }
 
-  set<T>(endpoint: string, params: Record<string, any> | undefined, value: T, ttlMs: number): void {
+  getEtag(endpoint: string, params?: Record<string, any>): string | null {
+    const key = this.buildKey(endpoint, params);
+    return this.etags.get(key) || null;
+  }
+
+  set<T>(
+    endpoint: string,
+    params: Record<string, any> | undefined,
+    value: T,
+    ttlMs: number,
+    etag?: string
+  ): void {
     const key = this.buildKey(endpoint, params);
     this.entries.set(key, {
       value,
       storedAt: Date.now(),
       ttlMs,
+      etag,
     });
+
+    if (etag) {
+      this.etags.set(key, etag);
+    }
+  }
+
+  setEtag(endpoint: string, params: Record<string, any> | undefined, etag?: string | null): void {
+    const key = this.buildKey(endpoint, params);
+    if (!etag) {
+      this.etags.delete(key);
+      return;
+    }
+
+    this.etags.set(key, etag);
+    const entry = this.entries.get(key);
+    if (entry) {
+      entry.etag = etag;
+      this.entries.set(key, entry);
+    }
+  }
+
+  touch(endpoint: string, params?: Record<string, any>): void {
+    const key = this.buildKey(endpoint, params);
+    const entry = this.entries.get(key);
+    if (entry) {
+      entry.storedAt = Date.now();
+      this.entries.set(key, entry);
+    }
   }
 
   invalidateByEndpoint(endpoint: string): void {
@@ -66,12 +108,14 @@ class RequestCacheService {
 
       if (isRelated) {
         this.entries.delete(key);
+        this.etags.delete(key);
       }
     }
   }
 
   clear(): void {
     this.entries.clear();
+    this.etags.clear();
   }
 }
 
