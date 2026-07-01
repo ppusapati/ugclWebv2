@@ -54,7 +54,13 @@ export const useLayoutMenuData = routeLoader$(async (requestEvent) => {
 
   try {
     const apiClient = createSSRApiClient(requestEvent);
-    const modulesResponse = await apiClient.get<unknown>('/modules');
+    const modulesResponse = await Promise.race([
+      apiClient.get<unknown>('/modules'),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+    ]);
+    if (!modulesResponse) {
+      return { modules: [] as Module[] };
+    }
     const modules = extractModules(modulesResponse);
 
     return {

@@ -52,18 +52,25 @@ export const LoginForm = component$(() => {
             state.phoneError = 'Phone number must be exactly 10 digits';
             return;
         }
+        state.loading = true;
+        state.apiError = '';
         // Proceed with form submission (API call, etc.)
         try {
-            const resp = await fetch(buildApiUrl('/login'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    phone: state.phone,
-                    password: state.password,
-                }),
-            });
+            const loginAbortController = new AbortController();
+            const loginTimeout = globalThis.setTimeout(() => loginAbortController.abort(), 12000);
+          const resp = await fetch(buildApiUrl('/login'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              phone: state.phone,
+              password: state.password,
+            }),
+            signal: loginAbortController.signal,
+          }).finally(() => {
+            globalThis.clearTimeout(loginTimeout);
+          });
 
             if (!resp.ok) {
                 const error = await resp.text();
@@ -74,12 +81,17 @@ export const LoginForm = component$(() => {
 
               // Hydrate full user context (permissions + business roles) for sidebar/form visibility.
               try {
+                const profileAbortController = new AbortController();
+                const profileTimeout = globalThis.setTimeout(() => profileAbortController.abort(), 4000);
                 const profileResp = await fetch(buildApiUrl('/profile'), {
                   method: 'GET',
                   headers: {
                     'Authorization': `Bearer ${data.token}`,
                     'x-api-key': API_KEY,
                   },
+                  signal: profileAbortController.signal,
+                }).finally(() => {
+                  globalThis.clearTimeout(profileTimeout);
                 });
 
                 if (profileResp.ok) {
@@ -96,7 +108,11 @@ export const LoginForm = component$(() => {
                 window.location.href = '/';
             }
         } catch (err: any) {
-            state.apiError = 'Network error: ' + err?.message || 'Unknown error';
+          if (err?.name === 'AbortError') {
+            state.apiError = 'Login request timed out. Please try again.';
+          } else {
+            state.apiError = 'Network error: ' + (err?.message || 'Unknown error');
+          }
         } finally {
             state.loading = false;
         }

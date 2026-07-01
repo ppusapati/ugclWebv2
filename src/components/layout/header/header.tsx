@@ -1,4 +1,4 @@
-import { $, component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import { $, component$, useSignal } from '@builder.io/qwik';
 import { useNavigate } from '@builder.io/qwik-city';
 import { useAuthContext } from '~/contexts/auth-context';
 import { useThemeContext } from '~/contexts/theme-context';
@@ -8,7 +8,6 @@ import { NotificationBell } from '~/components/notifications/notification-bell';
 import { HelpDrawer } from '~/components/help/help-drawer';
 import ImgLogo from '~/media/logo.png?jsx';
 import { Btn } from '~/components/ds';
-import { chatService } from '~/services/chat.service';
 import { STORAGE_KEYS } from '~/config/storage-keys';
 import type { Module } from '~/services/types';
 import { getUser, isSuperAdminUser } from '~/utils/auth';
@@ -48,39 +47,6 @@ export const Header = component$(() => {
   const availableModules = menuContext.moduleDefinitions;
   const effectiveUser = auth.user || getUser();
   const isSuperAdmin = isSuperAdminUser(effectiveUser);
-
-  // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(({ cleanup }) => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
-
-    const getCurrentUserId = (): string => {
-      try {
-        const userStr = localStorage.getItem(STORAGE_KEYS.USER);
-        if (!userStr) return '';
-        const parsed = JSON.parse(userStr);
-        return String(parsed?.id || parsed?.user_id || '');
-      } catch {
-        return '';
-      }
-    };
-
-    const close = chatService.subscribeToChatEvents((event) => {
-      if (event.type !== 'new_message' || !event.message) return;
-      if (Notification.permission !== 'granted') return;
-
-      const me = getCurrentUserId();
-      if (me && String(event.message.sender_id) === me) {
-        return;
-      }
-
-      // Browser/system notifications are delivered via Web Push (service worker)
-      // to avoid duplicate popups when both SSE and push events arrive.
-    });
-
-    cleanup(() => {
-      close();
-    });
-  }, { strategy: 'document-ready' });
 
   const handleLogout = $(() => {
     auth.logout();

@@ -141,16 +141,8 @@ export const useHomeDashboardData = routeLoader$(async (requestEvent) => {
       };
     }
 
-    // Execute dashboard widgets server-side so the first-paint HTML already has data.
-    let ssrWidgetResults: Record<string, any> = {};
-    try {
-      const execResponse = await ssrApiClient.post(`/dashboards/${selectedDashboard.id}/execute`, {});
-      ssrWidgetResults = normalizeDashboardWidgetResults(execResponse, selectedDashboard.widgets || []);
-    } catch {
-      // Fallback: client-side execution will run on mount.
-    }
-
-    return { dashboard: selectedDashboard, widgetResults: ssrWidgetResults };
+    // Keep SSR response fast: widget execution runs on client after first paint.
+    return { dashboard: selectedDashboard, widgetResults: {} as Record<string, any> };
   } catch (error: any) {
     return {
       dashboard: null,
