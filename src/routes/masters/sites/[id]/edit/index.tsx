@@ -8,7 +8,6 @@ import { Alert, Btn, FormField, PageHeader, SectionCard } from '~/components/ds'
 export default component$(() => {
   const loc = useLocation();
   const nav = useNavigate();
-  const businessCode = loc.params.code;
   const siteId = loc.params.id;
 
   const site = useSignal<Site | null>(null);
@@ -36,7 +35,7 @@ export default component$(() => {
       // const foundSite = response //.find(s => s.id === siteId);
       console.log('Found site:', foundSite);
       if (!foundSite) {
-        nav(`/masters/business/${businessCode}/sites`);
+        nav('/masters/sites');
         return;
       }
 
@@ -51,7 +50,7 @@ export default component$(() => {
       };
     } catch (error) {
       console.error('Failed to load site:', error);
-      nav(`/masters/business/${businessCode}/sites`);
+      nav('/masters/sites');
     } finally {
       initialLoading.value = false;
     }
@@ -87,14 +86,14 @@ export default component$(() => {
           }
         : undefined;
 
-      await siteService.updateSite(businessCode, siteId, {
+      await siteService.updateSite('', siteId, {
         name: formData.value.name,
         description: formData.value.description || undefined,
         location,
         is_active: formData.value.is_active,
       });
 
-      nav(`/masters/business/${businessCode}/sites`);
+      nav('/masters/sites');
     } catch (error: any) {
       errors.value = { submit: error.message || 'Failed to update site' };
     } finally {
@@ -116,7 +115,7 @@ export default component$(() => {
   return (
     <div class="space-y-6 py-2">
         <PageHeader title="Edit Site" subtitle="Update site information">
-          <Btn q:slot="actions" variant="ghost" onClick$={() => nav(`/masters/business/${businessCode}/sites`)}>
+          <Btn q:slot="actions" variant="ghost" onClick$={() => nav('/masters/sites')}>
             <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
             Back to Sites
           </Btn>
@@ -216,7 +215,7 @@ export default component$(() => {
                   <Btn type="submit" disabled={loading.value}>
                     {loading.value ? 'Saving...' : 'Save Changes'}
                   </Btn>
-                  <Btn type="button" variant="secondary" onClick$={() => nav(`/masters/business/${businessCode}/sites`)}>
+                  <Btn type="button" variant="secondary" onClick$={() => nav('/masters/sites')}>
                     Cancel
                   </Btn>
                 </div>

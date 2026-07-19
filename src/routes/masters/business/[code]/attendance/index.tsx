@@ -36,7 +36,7 @@ function parseAnomalyFlags(raw?: string): string[] {
 export default component$(() => {
   const loc = useLocation();
   const nav = useNavigate();
-  const businessCode = loc.params.code;
+  const businessCode = (loc.params.code || '').toUpperCase();
 
   const loading = useSignal(true);
   const refreshing = useSignal(false);
@@ -56,16 +56,40 @@ export default component$(() => {
   const loadDashboard = $(async () => {
     try {
       error.value = '';
-      const [activeRes, logRes, headcountRes] = await Promise.all([
+      const [activeRes, logRes, headcountRes] = await Promise.allSettled([
         attendanceService.getActiveSessions(businessCode, { page: 1, limit: 100 }),
         attendanceService.getLogs(businessCode, { page: 1, limit: 100 }),
         attendanceService.getHeadcount(businessCode),
       ]);
 
-      activeSessions.value = activeRes.data || [];
-      attendanceLogs.value = logRes.data || [];
-      headcountBySite.value = headcountRes.sites || [];
-      totalActive.value = headcountRes.totalActive || 0;
+      const loadErrors: string[] = [];
+
+      if (activeRes.status === 'fulfilled') {
+        activeSessions.value = activeRes.value.data || [];
+      } else {
+        activeSessions.value = [];
+        loadErrors.push(`Live sessions: ${activeRes.reason?.message || 'failed to load'}`);
+      }
+
+      if (logRes.status === 'fulfilled') {
+        attendanceLogs.value = logRes.value.data || [];
+      } else {
+        attendanceLogs.value = [];
+        loadErrors.push(`Attendance logs: ${logRes.reason?.message || 'failed to load'}`);
+      }
+
+      if (headcountRes.status === 'fulfilled') {
+        headcountBySite.value = headcountRes.value.sites || [];
+        totalActive.value = headcountRes.value.totalActive || 0;
+      } else {
+        headcountBySite.value = [];
+        totalActive.value = 0;
+        loadErrors.push(`Headcount: ${headcountRes.reason?.message || 'failed to load'}`);
+      }
+
+      if (loadErrors.length > 0) {
+        error.value = loadErrors.join(' | ');
+      }
     } catch (err: any) {
       error.value = err.message || 'Failed to load attendance monitoring data';
     } finally {

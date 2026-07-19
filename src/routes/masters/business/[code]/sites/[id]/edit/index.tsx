@@ -30,7 +30,8 @@ export default component$(() => {
       return;
     }
     try {
-      const sites = await siteService.getMySites(businessCode);
+      const response = await siteService.getBusinessSites(businessCode, { page: 1, limit: 200 } as any);
+      const sites = response.data || [];
       const foundSite = sites.find((s: Site) => s.id === siteId);
 
       if (!foundSite) {

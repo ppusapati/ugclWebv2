@@ -16,6 +16,30 @@ import type {
 } from './types';
 
 class SiteService {
+  private normalizeSitePayload(data: Record<string, any>): Record<string, any> {
+    const payload: Record<string, any> = { ...data };
+
+    if (payload.business_vertical_id !== undefined && payload.businessVerticalId === undefined) {
+      payload.businessVerticalId = payload.business_vertical_id;
+      delete payload.business_vertical_id;
+    }
+
+    if (payload.is_active !== undefined && payload.isActive === undefined) {
+      payload.isActive = payload.is_active;
+      delete payload.is_active;
+    }
+
+    if (payload.location && typeof payload.location !== 'string') {
+      payload.location = JSON.stringify(payload.location);
+    }
+
+    if (payload.geofence && typeof payload.geofence !== 'string') {
+      payload.geofence = JSON.stringify(payload.geofence);
+    }
+
+    return payload;
+  }
+
   /**
    * Get all sites across all business verticals (Admin only)
    */
@@ -78,14 +102,16 @@ class SiteService {
    * Create new site
    */
   async createSite(businessCode: string, data: CreateSiteRequest): Promise<Site> {
-    return apiClient.post<Site>(`/admin/sites`, data);
+    const payload = this.normalizeSitePayload(data as Record<string, any>);
+    return apiClient.post<Site>(`/admin/sites`, payload);
   }
 
   /**
    * Update site
    */
   async updateSite(businessCode: string, siteId: string, data: UpdateSiteRequest): Promise<Site> {
-    return apiClient.put<Site>(`/business/${businessCode}/sites/${siteId}`, data);
+    const payload = this.normalizeSitePayload(data as Record<string, any>);
+    return apiClient.put<Site>(`/admin/sites/${siteId}`, payload);
   }
 
   /**
@@ -99,10 +125,10 @@ class SiteService {
    * Get users with access to a site
    */
   async getSiteUsers(businessCode: string, siteId: string): Promise<UserSiteAccess[]> {
-    const response = await apiClient.get<{ users: UserSiteAccess[] }>(
+    const response = await apiClient.get<{ users?: UserSiteAccess[]; data?: UserSiteAccess[] }>(
       `/business/${businessCode}/sites/${siteId}/users`
     );
-    return response.users;
+    return response.users || response.data || [];
   }
 
   /**
