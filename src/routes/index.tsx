@@ -109,10 +109,17 @@ export const useHomeDashboardData = routeLoader$(async (requestEvent) => {
   }
 
   const ssrApiClient = createSSRApiClient(requestEvent);
+  // Use function declaration to avoid generic arrow-function JSX ambiguity in .tsx
+  function rejectAfter(ms: number): Promise<never> {
+    return new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+  }
 
   try {
-    const response = await ssrApiClient.get<DashboardListResponse | any>('/dashboards');
-    const dashboards = response?.dashboards || response?.data || response || [];
+    const response = await Promise.race([
+      ssrApiClient.get<DashboardListResponse | any>('/dashboards'),
+      rejectAfter(2500),
+    ]);
+    const dashboards = (response as any)?.dashboards || (response as any)?.data || response || [];
 
     const selectedDashboard = Array.isArray(dashboards)
       ? dashboards.find((item: any) => item?.is_default) || dashboards[0]
@@ -120,8 +127,11 @@ export const useHomeDashboardData = routeLoader$(async (requestEvent) => {
 
     if (selectedDashboard) {
       try {
-        const widgetResponse = await ssrApiClient.get<any>(`/dashboards/${selectedDashboard.id}/widgets`);
-        const widgets = widgetResponse?.widgets || widgetResponse?.data || widgetResponse || [];
+        const widgetResponse = await Promise.race([
+          ssrApiClient.get<any>(`/dashboards/${selectedDashboard.id}/widgets`),
+          rejectAfter(2000),
+        ]);
+        const widgets = (widgetResponse as any)?.widgets || (widgetResponse as any)?.data || widgetResponse || [];
         if (Array.isArray(widgets)) {
           selectedDashboard.widgets = widgets;
         }

@@ -15,7 +15,7 @@
     "build.preview": "vite build --ssr src/entry.preview.tsx",
     "build.server": "vite build -c adapters/cloud-run/vite.config.ts",
     "build.types": "tsc --incremental --noEmit",
-    "deploy": "gcloud run deploy ugcl-web --source . --project=ugcl-461407",
+    "deploy": "gcloud run deploy ugcl-web --source . --project=ugcl-461407 --min-instances=1",
     "dev": "vite --mode ssr",
     "dev.debug": "node --inspect-brk ./node_modules/vite/bin/vite.js --mode ssr --force",
     "fmt": "prettier --write .",

@@ -61,6 +61,15 @@ export const ProjectMap = component$<ProjectMapProps>(({
       const maplibreModule: any = await import('maplibre-gl');
       const maplibregl = maplibreModule?.default || maplibreModule;
 
+      // Inject MapLibre CSS only when a map is actually rendered
+      if (!document.getElementById('maplibre-css')) {
+        const link = document.createElement('link');
+        link.id = 'maplibre-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css';
+        document.head.appendChild(link);
+      }
+
       // Initialize map if not already done
       if (!mapInstance.value) {
         mapInstance.value = new maplibregl.Map({

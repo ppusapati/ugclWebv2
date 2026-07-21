@@ -1,5 +1,4 @@
 import { component$, useStore, useTask$, useVisibleTask$, $, type QRL } from '@builder.io/qwik';
-import * as XLSX from 'xlsx';
 import { Btn } from '~/components/ds/btn';
 import { documentService } from '~/services/document.service';
 import type {
@@ -311,6 +310,7 @@ export const DocumentViewer = component$<DocumentViewerProps>((props) => {
         state.previewKind = 'excel';
 
         const arrayBuffer = await blob.arrayBuffer();
+        const XLSX = await import('xlsx');
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         state.previewExcelSheets = workbook.SheetNames.map((name) => {
           const worksheet = workbook.Sheets[name];
