@@ -205,6 +205,9 @@ export default component$(() => {
     selectedVertical: "",
     error: "",
     success: "",
+    resetPassword: "",
+    resetPasswordConfirm: "",
+    resetCredentialsLoading: false,
   });
 
   const getRoleNameById = (roleId?: string, businessRoles?: BusinessRole[], globalRole?: string) => {
@@ -250,6 +253,9 @@ export default component$(() => {
   const resetForm = $(() => {
     state.showCreateModal = false;
     state.editingUser = null;
+    state.resetPassword = "";
+    state.resetPasswordConfirm = "";
+    state.resetCredentialsLoading = false;
     state.newUser = {
       name: "",
       email: "",
@@ -259,6 +265,56 @@ export default component$(() => {
       business_vertical_id: "",
       is_active: true,
     };
+  });
+
+  const handleResetCredentials = $(async () => {
+    if (!state.editingUser?.id) return;
+
+    const nextPassword = state.resetPassword.trim();
+    const confirmPassword = state.resetPasswordConfirm.trim();
+
+    if (!nextPassword) {
+      state.error = "Enter a new password to reset credentials.";
+      state.success = "";
+      return;
+    }
+
+    if (nextPassword.length < 6) {
+      state.error = "New password must be at least 6 characters.";
+      state.success = "";
+      return;
+    }
+
+    if (nextPassword !== confirmPassword) {
+      state.error = "Password and confirm password do not match.";
+      state.success = "";
+      return;
+    }
+
+    state.resetCredentialsLoading = true;
+    state.error = "";
+    state.success = "";
+
+    try {
+      // Prefer explicit password update key; fallback for APIs expecting new_password.
+      try {
+        await apiClient.put<any>(`/admin/users/${state.editingUser.id}`, {
+          password: nextPassword,
+        });
+      } catch {
+        await apiClient.put<any>(`/admin/users/${state.editingUser.id}`, {
+          new_password: nextPassword,
+        });
+      }
+
+      state.resetPassword = "";
+      state.resetPasswordConfirm = "";
+      state.success = `Credentials reset successfully for ${state.editingUser.name}.`;
+    } catch (error: any) {
+      state.error = error.message || "Failed to reset user credentials";
+    } finally {
+      state.resetCredentialsLoading = false;
+    }
   });
 
   const handleCreate = $(async () => {
@@ -606,6 +662,47 @@ export default component$(() => {
                   </select>
                 </FormField>
               </div>
+
+              {state.editingUser && (
+                <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <h4 class="font-semibold text-amber-900">Reset Credentials</h4>
+                  <p class="mt-1 text-sm text-amber-800">
+                    Use this if the user forgot their password. This will overwrite the current password.
+                  </p>
+                  <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField id="reset-user-password" label="New Password" required>
+                      <input
+                        id="reset-user-password"
+                        type="password"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2"
+                        placeholder="Enter new password"
+                        value={state.resetPassword}
+                        onInput$={(e) => (state.resetPassword = (e.target as HTMLInputElement).value)}
+                      />
+                    </FormField>
+                    <FormField id="reset-user-password-confirm" label="Confirm Password" required>
+                      <input
+                        id="reset-user-password-confirm"
+                        type="password"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2"
+                        placeholder="Confirm new password"
+                        value={state.resetPasswordConfirm}
+                        onInput$={(e) => (state.resetPasswordConfirm = (e.target as HTMLInputElement).value)}
+                      />
+                    </FormField>
+                  </div>
+                  <div class="mt-4 flex justify-end">
+                    <Btn
+                      variant="danger"
+                      onClick$={handleResetCredentials}
+                      disabled={state.resetCredentialsLoading}
+                    >
+                      {state.resetCredentialsLoading ? "Resetting..." : "Reset Credentials"}
+                    </Btn>
+                  </div>
+                </div>
+              )}
+
               <div class="flex justify-end gap-3 mt-6">
                 <Btn variant="secondary" onClick$={resetForm}>Cancel</Btn>
                 <Btn onClick$={state.editingUser ? handleUpdate : handleCreate}>

@@ -25,7 +25,7 @@ export const LoginForm = component$(() => {
         state.phone = value;
         state.touched = true;
         if (!value.trim()) {
-            state.phoneError = 'Password is required';
+        state.phoneError = 'Phone number is required';
         } else if (!isValidPhone(value)) {
             state.phoneError = 'Phone number must be only numerics and exactly 10 digits';
         } else {
@@ -47,13 +47,27 @@ export const LoginForm = component$(() => {
         }
     });
     const handleSubmit = $(async () => {
+      if (state.loading) {
+        return;
+      }
+
         state.touched = true;
         if (!isValidPhone(state.phone)) {
             state.phoneError = 'Phone number must be exactly 10 digits';
             return;
         }
+      if (!state.password.trim()) {
+        state.passwordError = 'Password is required';
+        return;
+      }
+      if (state.password.length < 6) {
+        state.passwordError = 'Password must be at least 6 characters';
+        return;
+      }
+
         state.loading = true;
         state.apiError = '';
+      state.apiSuccess = false;
         // Proceed with form submission (API call, etc.)
         try {
             const loginAbortController = new AbortController();
@@ -73,8 +87,24 @@ export const LoginForm = component$(() => {
           });
 
             if (!resp.ok) {
-                const error = await resp.text();
-                state.apiError = `Login failed: ${error}`;
+                const contentType = resp.headers.get('content-type') || '';
+                let message = `Login failed (${resp.status}). Please check your credentials and try again.`;
+
+                if (contentType.includes('application/json')) {
+                  const errorBody = await resp.json().catch(() => null) as any;
+                  const apiMessage = errorBody?.message || errorBody?.error || errorBody?.detail;
+                  if (typeof apiMessage === 'string' && apiMessage.trim()) {
+                    message = apiMessage;
+                  }
+                } else {
+                  const rawError = await resp.text();
+                  const cleanedError = rawError.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                  if (cleanedError) {
+                    message = cleanedError;
+                  }
+                }
+
+                state.apiError = message;
             } else {
                 const data = await resp.json();
               let enrichedUser = data.user;
@@ -177,12 +207,17 @@ export const LoginForm = component$(() => {
             <span class="form-error">{state.passwordError}</span>
           )}
         </div>
+        {state.apiError && (
+          <div class="rounded-lg border border-danger-300 bg-danger-50 px-3 py-2 text-sm text-danger-700" role="alert" aria-live="polite">
+            {state.apiError}
+          </div>
+        )}
         <Btn
           type="submit"
           class="w-full shadow-md hover:scale-105 active:scale-98 transition-transform font-semibold"
-          disabled={!!state.phoneError || !!state.passwordError || !state.phone}
+          disabled={state.loading || !!state.phoneError || !!state.passwordError || !state.phone || !state.password}
         >
-          Sign In
+          {state.loading ? 'Signing in...' : 'Sign In'}
         </Btn>
       </form>
       <div class="px-8 py-4 text-center  rounded-b-2xl">
