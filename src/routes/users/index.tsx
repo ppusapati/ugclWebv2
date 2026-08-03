@@ -296,20 +296,21 @@ export default component$(() => {
     state.success = "";
 
     try {
-      // Prefer explicit password update key; fallback for APIs expecting new_password.
-      try {
-        await apiClient.put<any>(`/admin/users/${state.editingUser.id}`, {
-          password: nextPassword,
-        });
-      } catch {
-        await apiClient.put<any>(`/admin/users/${state.editingUser.id}`, {
-          new_password: nextPassword,
-        });
-      }
+      const resetResponse = await apiClient.post<any>(`/admin/users/${state.editingUser.id}/reset-password`, {
+        new_password: nextPassword,
+      });
 
       state.resetPassword = "";
       state.resetPasswordConfirm = "";
-      state.success = `Credentials reset successfully for ${state.editingUser.name}.`;
+      const responseMessage = String(
+        resetResponse?.message || resetResponse?.status || ""
+      ).toLowerCase();
+      const backendConfirmedReset =
+        responseMessage.includes("password") || responseMessage.includes("credential");
+
+      state.success = backendConfirmedReset
+        ? `Credentials reset successfully for ${state.editingUser.name}.`
+        : `Reset request submitted for ${state.editingUser.name}. Please verify by logging in with the new password.`;
     } catch (error: any) {
       state.error = error.message || "Failed to reset user credentials";
     } finally {
