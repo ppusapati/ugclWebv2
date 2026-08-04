@@ -3,6 +3,7 @@ import { component$, useSignal, $ } from '@builder.io/qwik';
 import { useNavigate, routeLoader$ } from '@builder.io/qwik-city';
 import type { Site } from '~/services';
 import { createSSRApiClient } from '~/services';
+import { normalizeSite } from '~/services/site.service';
 import { Alert, Badge, Btn, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeaderCell, DataTableRow, PageHeader, SectionCard } from '~/components/ds';
 
 export const useAdminSitesData = routeLoader$(async (requestEvent) => {
@@ -29,7 +30,7 @@ export default component$(() => {
   const initialData = useAdminSitesData();
 
   const initialResponse = (initialData.value as any)?.response;
-  const initialSites = initialResponse?.data || initialResponse?.sites || [];
+  const initialSites = (initialResponse?.data || initialResponse?.sites || []).map(normalizeSite);
   const initialTotal =
     initialResponse?.total ??
     initialResponse?.pagination?.total ??

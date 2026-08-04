@@ -15,6 +15,64 @@ import type {
   PaginationParams,
 } from './types';
 
+type RawSiteLocation = {
+  lat?: number | string;
+  lng?: number | string;
+  address?: string;
+};
+
+const parseSiteLocation = (rawLocation: unknown): Site['location'] | undefined => {
+  if (!rawLocation) {
+    return undefined;
+  }
+
+  let location: RawSiteLocation | null = null;
+
+  if (typeof rawLocation === 'string') {
+    try {
+      location = JSON.parse(rawLocation) as RawSiteLocation;
+    } catch {
+      return undefined;
+    }
+  } else if (typeof rawLocation === 'object') {
+    location = rawLocation as RawSiteLocation;
+  }
+
+  if (!location) {
+    return undefined;
+  }
+
+  const parsedLat = typeof location.lat === 'string' ? Number(location.lat) : location.lat;
+  const parsedLng = typeof location.lng === 'string' ? Number(location.lng) : location.lng;
+
+  if (typeof parsedLat !== 'number' || typeof parsedLng !== 'number') {
+    return undefined;
+  }
+
+  if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
+    return undefined;
+  }
+
+  return {
+    lat: parsedLat,
+    lng: parsedLng,
+    address: location.address,
+  };
+};
+
+export const normalizeSite = (rawSite: any): Site => ({
+  ...rawSite,
+  business_vertical_id: rawSite?.business_vertical_id || rawSite?.businessVerticalId || '',
+  business_vertical: rawSite?.business_vertical || rawSite?.businessVertical,
+  is_active: rawSite?.is_active ?? rawSite?.isActive,
+  created_at: rawSite?.created_at || rawSite?.createdAt,
+  updated_at: rawSite?.updated_at || rawSite?.updatedAt,
+  location: parseSiteLocation(rawSite?.location),
+});
+
+const normalizeSiteList = (sites: any[] | undefined): Site[] =>
+  Array.isArray(sites) ? sites.map(normalizeSite) : [];
+
 class SiteService {
   private normalizeSitePayload(data: Record<string, any>): Record<string, any> {
     const payload: Record<string, any> = { ...data };
@@ -52,18 +110,22 @@ class SiteService {
     if (Array.isArray(response?.sites) && !Array.isArray(response?.data)) {
       return {
         ...response,
-        data: response.sites,
+        data: normalizeSiteList(response.sites),
       } as PaginatedResponse<Site>;
     }
 
-    return response as PaginatedResponse<Site>;
+    return {
+      ...response,
+      data: normalizeSiteList(response?.data),
+    } as PaginatedResponse<Site>;
   }
 
   /**
    * Get site by ID
    */
   async getSitebyID(siteId: string): Promise<Site> {
-    return apiClient.get<Site>(`/admin/sites/${siteId}`);
+    const response = await apiClient.get<any>(`/admin/sites/${siteId}`);
+    return normalizeSite(response?.site || response);
   }
 
   /**
@@ -73,7 +135,7 @@ class SiteService {
     const response = await apiClient.get<{ data?: Site[]; sites?: Site[] }>(
       `/business/${businessCode}/sites/my-access`
     );
-    return response.data || response.sites || [];
+    return normalizeSiteList(response.data || response.sites);
   }
 
   /**
@@ -91,11 +153,14 @@ class SiteService {
     if (Array.isArray(response?.sites) && !Array.isArray(response?.data)) {
       return {
         ...response,
-        data: response.sites,
+        data: normalizeSiteList(response.sites),
       } as PaginatedResponse<Site>;
     }
 
-    return response as PaginatedResponse<Site>;
+    return {
+      ...response,
+      data: normalizeSiteList(response?.data),
+    } as PaginatedResponse<Site>;
   }
 
   /**
