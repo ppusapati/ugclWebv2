@@ -71,7 +71,6 @@ export default component$(() => {
     permissions: initialData.value.permissions,
 
     // Filters
-    filterType: 'all' as 'all' | 'global' | 'business_vertical',
     filterVerticalId: '',
     searchQuery: '',
 
@@ -128,16 +127,24 @@ export default component$(() => {
     state.showModal = true;
   });
 
-  const openEditModal = $((role: Role) => {
-    state.editingRole = role;
+  const openEditModal = $(async (role: Role) => {
+    state.error = '';
+    let roleToEdit = role;
+    try {
+      roleToEdit = await apiClient.get<Role>(`/admin/rbac/roles/${role.id}`);
+    } catch (error) {
+      console.error('Failed to load fresh role details, falling back to list data:', error);
+    }
+
+    state.editingRole = roleToEdit;
     state.newRole = {
-      name: role.name,
-      display_name: role.display_name || '',
-      description: role.description || '',
-      level: role.level,
-      scope_type: role.scope_type,
-      business_vertical_id: role.business_vertical_id || '',
-      permission_ids: role.permissions?.map(p => p.id) || [],
+      name: roleToEdit.name,
+      display_name: roleToEdit.display_name || '',
+      description: roleToEdit.description || '',
+      level: roleToEdit.level,
+      scope_type: roleToEdit.scope_type,
+      business_vertical_id: roleToEdit.business_vertical_id || '',
+      permission_ids: roleToEdit.permissions?.map(p => p.id) || [],
     };
     state.showModal = true;
   });
@@ -193,15 +200,8 @@ export default component$(() => {
   const getFilteredRoles = () => {
     let filtered = state.roles;
 
-    // Filter by type
-    if (state.filterType === 'global') {
-      filtered = filtered.filter(r => r.scope_type === 'global');
-    } else if (state.filterType === 'business_vertical') {
-      filtered = filtered.filter(r => r.scope_type === 'business_vertical');
-    }
-
     // Filter by vertical (for business roles)
-    if (state.filterVerticalId && state.filterType !== 'global') {
+    if (state.filterVerticalId) {
       filtered = filtered.filter(r => r.business_vertical_id === state.filterVerticalId);
     }
 
@@ -245,27 +245,9 @@ export default component$(() => {
 
         {/* Filters */}
         <SectionCard class="mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Type Filter */}
-            <div>
-              <label class="block text-sm font-medium text-neutral-700 mb-2">Role Type</label>
-              <select
-                value={state.filterType}
-                onChange$={(e) => {
-                  state.filterType = (e.target as HTMLSelectElement).value as any;
-                  if (state.filterType === 'global') {
-                    state.filterVerticalId = '';
-                  }
-                }}
-                class="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-              >
-                <option value="all">All Roles</option>
-                <option value="global">Global Roles Only</option>
-                <option value="business_vertical">Business Roles Only</option>
-              </select>
-            </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            {/* Vertical Filter (only for business roles) */}
+            {/* Vertical Filter */}
             <div>
               <label class="block text-sm font-medium text-neutral-700 mb-2">Business Vertical</label>
               <select
@@ -273,8 +255,7 @@ export default component$(() => {
                 onChange$={(e) => {
                   state.filterVerticalId = (e.target as HTMLSelectElement).value;
                 }}
-                disabled={state.filterType === 'global'}
-                class="w-full px-4 py-2 border border-neutral-300 rounded-lg disabled:opacity-50 disabled:bg-gray-100"
+                class="w-full px-4 py-2 border border-neutral-300 rounded-lg"
               >
                 <option value="">All Verticals</option>
                 {state.verticals.map(v => (
@@ -302,11 +283,6 @@ export default component$(() => {
           <div class="mt-4 flex items-center gap-2 text-sm text-neutral-600">
             <span class="font-medium">Showing:</span>
             <span>{filteredRoles.length} role{filteredRoles.length !== 1 ? 's' : ''}</span>
-            {state.filterType !== 'all' && (
-              <Badge variant="info">
-                {state.filterType === 'global' ? 'Global Only' : 'Business Only'}
-              </Badge>
-            )}
             {state.filterVerticalId && (
               <Badge variant="neutral">
                 {state.verticals.find(v => v.id === state.filterVerticalId)?.name}
@@ -327,11 +303,11 @@ export default component$(() => {
               <i class="i-heroicons-users-solid h-16 w-16 inline-block text-light-300 mb-4" aria-hidden="true"></i>
               <h3 class="text-xl font-semibold text-neutral-800 mb-2">No Roles Found</h3>
               <p class="text-neutral-600 mb-6">
-                {state.searchQuery || state.filterType !== 'all' || state.filterVerticalId
+                {state.searchQuery || state.filterVerticalId
                   ? 'Try adjusting your filters'
                   : 'Create your first role'}
               </p>
-              {!state.searchQuery && state.filterType === 'all' && !state.filterVerticalId && (
+              {!state.searchQuery && !state.filterVerticalId && (
                 <Btn variant="primary" onClick$={openCreateModal}>Create Role</Btn>
               )}
             </div>
@@ -341,7 +317,6 @@ export default component$(() => {
                 <thead class="bg-neutral-50">
                   <tr>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Role Name</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Type</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Vertical</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Level</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase">Permissions</th>
@@ -359,13 +334,8 @@ export default component$(() => {
                         </div>
                       </td>
                       <td class="px-6 py-4">
-                        <Badge variant={role.scope_type === 'global' ? 'success' : 'info'}>
-                          {role.scope_type === 'global' ? 'Global' : 'Business'}
-                        </Badge>
-                      </td>
-                      <td class="px-6 py-4 text-sm text-neutral-700">
                         {role.scope_type === 'global' ? (
-                          <span class="text-gray-400">-</span>
+                          <span class="text-gray-400">System-wide</span>
                         ) : (
                           role.business_vertical?.name || 'Unknown'
                         )}
