@@ -15,6 +15,7 @@ import type {
   User,
   ProfileResponse,
   BusinessVertical,
+  RoleAssignment,
 } from './types';
 
 class AuthService {
@@ -26,20 +27,16 @@ class AuthService {
     safeStorage.setItem('token', token);
     safeStorage.setItem('user', JSON.stringify(user));
 
-    const firstBusinessRole = Array.isArray(user?.business_roles)
-      ? user.business_roles[0]
-      : null;
-    const roleRecord = (firstBusinessRole || {}) as Record<string, unknown>;
+    const firstBusinessAssignment = user.role_assignments?.find(
+      assignment => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+    const roleRecord = (firstBusinessAssignment?.role || {}) as Record<string, unknown>;
     const verticalCode = String(
-      roleRecord.vertical_code ||
-      roleRecord.business_vertical_code ||
-      firstBusinessRole?.business_vertical?.code ||
+      firstBusinessAssignment?.role.business_vertical?.code ||
       ''
     );
     const verticalId = String(
-      roleRecord.vertical_id ||
-      firstBusinessRole?.business_vertical_id ||
-      firstBusinessRole?.business_vertical?.id ||
+      roleRecord.business_vertical_id ||
       ''
     );
 
@@ -76,6 +73,9 @@ class AuthService {
 
     if (response.token) {
       this.persistSession(response.token, response.user);
+      const profile = await apiClient.get<User>('/token');
+      response.user = profile;
+      this.persistSession(response.token, profile);
     }
 
     return response;
@@ -212,18 +212,9 @@ class AuthService {
     const user = this.getUser();
     if (!user) return false;
 
-    // Check global role
-    if (user.role === role) return true;
-
-    // Check business-specific role
-    if (businessId && user.business_roles) {
-      const businessRole = user.business_roles.find(
-        br => br.business_vertical_id === businessId
-      );
-      return businessRole?.roles.includes(role) || false;
-    }
-
-    return false;
+    const activeBusinessId = businessId || safeStorage.getItem('ugcl_current_business_vertical') || undefined;
+    return this.assignmentsForContext(user.role_assignments || [], activeBusinessId)
+      .some(assignment => assignment.role.name === role);
   }
 
   /**
@@ -236,15 +227,9 @@ class AuthService {
     // Super admins have all permissions
     if (user.is_super_admin) return true;
 
-    // Check business-specific permission
-    if (businessId && user.business_roles) {
-      const businessRole = user.business_roles.find(
-        br => br.business_vertical_id === businessId
-      );
-      return businessRole?.permissions.includes(permission) || false;
-    }
-
-    return false;
+    const activeBusinessId = businessId || safeStorage.getItem('ugcl_current_business_vertical') || undefined;
+    return this.assignmentsForContext(user.role_assignments || [], activeBusinessId)
+      .some(assignment => assignment.role.permissions?.some(granted => this.permissionMatches(granted.name, permission)));
   }
 
   /**
@@ -258,8 +243,10 @@ class AuthService {
     if (user.is_super_admin) return true;
 
     // Check if user has any business role for this business
-    return user.business_roles?.some(
-      br => br.business_vertical_id === businessId
+    return user.role_assignments?.some(assignment =>
+      assignment.is_active && assignment.role.is_active &&
+      assignment.role.scope_type === 'business_vertical' &&
+      assignment.role.business_vertical_id === businessId
     ) || false;
   }
 
@@ -273,14 +260,8 @@ class AuthService {
     // Super admins are admins everywhere
     if (user.is_super_admin) return true;
 
-    if (businessId && user.business_roles) {
-      const businessRole = user.business_roles.find(
-        br => br.business_vertical_id === businessId
-      );
-      return businessRole?.is_admin || false;
-    }
-
-    return false;
+    const permissions = this.getUserPermissions(businessId);
+    return permissions.some(permission => this.permissionMatches(permission, 'business_admin'));
   }
 
   /**
@@ -322,28 +303,10 @@ class AuthService {
     const user = this.getUser();
     if (!user) return [];
 
-    // Super admins have all permissions (return common ones)
-    if (user.is_super_admin) {
-      return [
-        'read_users', 'create_users', 'update_users', 'delete_users',
-        'read_roles', 'create_roles', 'update_roles', 'delete_roles',
-        'read_permissions', 'create_permissions',
-        'manage_businesses', 'manage_sites',
-        'read_reports', 'create_reports', 'update_reports', 'delete_reports',
-        'read_materials', 'create_materials', 'update_materials', 'delete_materials',
-        'read_payments', 'create_payments', 'update_payments', 'delete_payments',
-        'read_kpis', 'business_view_analytics',
-      ];
-    }
-
-    if (businessId && user.business_roles) {
-      const businessRole = user.business_roles.find(
-        br => br.business_vertical_id === businessId
-      );
-      return businessRole?.permissions || [];
-    }
-
-    return [];
+    if (user.is_super_admin) return ['*:*:*'];
+    const activeBusinessId = businessId || safeStorage.getItem('ugcl_current_business_vertical') || undefined;
+    return [...new Set(this.assignmentsForContext(user.role_assignments || [], activeBusinessId)
+      .flatMap(assignment => assignment.role.permissions?.map(permission => permission.name) || []))];
   }
 
   /**
@@ -357,22 +320,25 @@ class AuthService {
 
     const roles: string[] = [];
 
-    // Add global role
-    if (user.role) {
-      roles.push(user.role);
-    }
-
-    // Add business-specific roles
-    if (businessId && user.business_roles) {
-      const businessRole = user.business_roles.find(
-        br => br.business_vertical_id === businessId
-      );
-      if (businessRole?.roles) {
-        roles.push(...businessRole.roles);
-      }
-    }
+    const activeBusinessId = businessId || safeStorage.getItem('ugcl_current_business_vertical') || undefined;
+    roles.push(...this.assignmentsForContext(user.role_assignments || [], activeBusinessId)
+      .map(assignment => assignment.role.name));
 
     return roles;
+  }
+
+  private assignmentsForContext(assignments: RoleAssignment[], businessId?: string): RoleAssignment[] {
+    return assignments.filter(assignment => {
+      if (!assignment.is_active || !assignment.role.is_active) return false;
+      if (assignment.role.scope_type === 'global') return true;
+      return !!businessId && assignment.role.business_vertical_id === businessId;
+    });
+  }
+
+  private permissionMatches(granted: string, required: string): boolean {
+    if (granted === required || granted === '*:*:*' || granted === '*') return true;
+    const escaped = granted.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return new RegExp(`^${escaped}$`).test(required);
   }
 }
 

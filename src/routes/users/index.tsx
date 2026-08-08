@@ -10,7 +10,7 @@ interface Role {
   name: string;
   display_name?: string;
   level?: number;
-  is_global?: boolean;
+  scope_type: 'global' | 'business_vertical';
   business_vertical_id?: string;
   business_vertical_name?: string;
 }
@@ -42,6 +42,7 @@ interface User {
   is_active: boolean;
   created_at?: string;
   business_roles?: BusinessRole[];
+  role_assignments?: Array<{ id: string; role_id: string; role: Role }>;
 }
 
 const normalizeRole = (role: any): Role => {
@@ -53,7 +54,7 @@ const normalizeRole = (role: any): Role => {
     name: role?.name || role?.Name || role?.display_name || role?.DisplayName || "Unnamed Role",
     display_name: role?.display_name || role?.DisplayName,
     level: Number.isFinite(parsedLevel) ? parsedLevel : undefined,
-    is_global: role?.is_global ?? role?.IsGlobal,
+    scope_type: role?.scope_type,
     business_vertical_id: role?.business_vertical_id || role?.BusinessVerticalID,
     business_vertical_name: role?.business_vertical?.name || role?.BusinessVertical?.Name,
   };
@@ -119,6 +120,7 @@ const normalizeUser = (user: any): User => {
     business_roles: Array.isArray(businessRolesRaw)
       ? businessRolesRaw.map(normalizeBusinessRole)
       : [],
+    role_assignments: Array.isArray(user?.role_assignments) ? user.role_assignments : [],
   };
 };
 
@@ -130,10 +132,6 @@ const buildUserUpdatePayload = (user: User) => {
     is_active: user.is_active,
   };
 
-  if (typeof user.role_id !== "undefined") {
-    payload.role_id = user.role_id || "";
-  }
-
   if (typeof user.business_vertical_id !== "undefined") {
     payload.business_vertical_id = user.business_vertical_id || "";
   }
@@ -144,7 +142,7 @@ const buildUserUpdatePayload = (user: User) => {
 const getRoleOptionLabel = (role: Role) => {
   const roleName = role.display_name || role.name;
   const roleLevel = typeof role.level === "number" ? `Level ${role.level}` : "Level not set";
-  const scope = role.is_global ? "Global" : (role.business_vertical_name || "Business");
+  const scope = role.scope_type === 'global' ? "Global" : (role.business_vertical_name || "Business");
   return `${roleName} (${roleLevel} • ${scope})`;
 };
 
@@ -154,7 +152,7 @@ export const useUsersData = routeLoader$(async (requestEvent) => {
   try {
     const [usersResponse, rolesData, verticalsData] = await Promise.all([
       ssrApiClient.get<any>("/admin/users", { page: 1, limit: 1000 }),
-      ssrApiClient.get<any>("/admin/roles/unified?include_business=true"),
+      ssrApiClient.get<any>("/admin/rbac/roles?limit=200"),
       ssrApiClient.get<any>("/admin/businesses"),
     ]);
 
@@ -320,8 +318,18 @@ export default component$(() => {
 
   const handleCreate = $(async () => {
     try {
-      const created = await apiClient.post<any>("/register", state.newUser);
-      state.users.push(normalizeUser(created.user || created));
+      const payload = {
+        name: state.newUser.name,
+        email: state.newUser.email,
+        phone: state.newUser.phone,
+        password: state.newUser.password,
+        business_vertical_id: state.newUser.business_vertical_id || null,
+        role_ids: state.newUser.role_id ? [state.newUser.role_id] : [],
+      };
+      await apiClient.post<any>("/admin/users", payload);
+      const usersResponse = await apiClient.get<any>("/admin/users", { page: 1, limit: 1000 });
+      const users = usersResponse?.data || usersResponse?.users || usersResponse || [];
+      state.users = Array.isArray(users) ? users.map(normalizeUser).filter((user) => user.id) : [];
       state.success = "User created successfully";
       await resetForm();
     } catch (error: any) {
@@ -333,43 +341,11 @@ export default component$(() => {
     if (!state.editingUser) return;
 
     try {
-      const selectedRole = state.roles.find((role) => role.id === (state.editingUser?.role_id || ""));
-      const isBusinessRoleSelection = !!selectedRole && selectedRole.is_global === false;
-
       const updatePayload = buildUserUpdatePayload(state.editingUser);
-      if (isBusinessRoleSelection) {
-        delete (updatePayload as any).role_id;
-      }
-
       const updated = await apiClient.put<any>(
         `/admin/users/${state.editingUser.id}`,
         updatePayload
       );
-
-      if (isBusinessRoleSelection && selectedRole) {
-        const selectedVerticalId =
-          state.editingUser.business_vertical_id || selectedRole.business_vertical_id || "";
-
-        if (selectedVerticalId) {
-          const existingAssignment = (state.editingUser.business_roles || []).find(
-            (assignment) => assignment.business_vertical_id === selectedVerticalId
-          );
-
-          if (existingAssignment && existingAssignment.business_role_id !== selectedRole.id) {
-            await apiClient.delete<any>(`/users/${state.editingUser.id}/roles/${existingAssignment.id}`);
-          }
-        }
-
-        const alreadyAssigned = (state.editingUser.business_roles || []).some(
-          (assignment) => assignment.business_role_id === selectedRole.id
-        );
-
-        if (!alreadyAssigned) {
-          await apiClient.post<any>(`/users/${state.editingUser.id}/roles/assign`, {
-            business_role_id: selectedRole.id,
-          });
-        }
-      }
 
       const reloadedUserData = await apiClient.get<any>(`/admin/users/${state.editingUser.id}`);
       const normalizedUpdatedUser = normalizeUser(reloadedUserData.user || reloadedUserData || updated.user || updated);
@@ -445,21 +421,24 @@ export default component$(() => {
       u.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
       u.phone?.includes(state.searchTerm);
 
-    const hasBusinessRole = (u.business_roles || []).some((br) => br.business_role_id === state.selectedRole);
-    const matchesRole = !state.selectedRole || u.role_id === state.selectedRole || hasBusinessRole;
-    const matchesVertical = !state.selectedVertical || u.business_vertical_id === state.selectedVertical;
+    const matchesRole = !state.selectedRole || (u.role_assignments || []).some(
+      assignment => assignment.role_id === state.selectedRole
+    );
+    const matchesVertical = !state.selectedVertical || (u.role_assignments || []).some(
+      assignment => assignment.role.business_vertical_id === state.selectedVertical
+    );
 
     return matchesSearch && matchesRole && matchesVertical;
   });
 
   const getRolesForVertical = (businessVerticalId?: string) => {
-    const globalRoles = state.roles.filter((role) => role.is_global !== false);
+    const globalRoles = state.roles.filter((role) => role.scope_type === 'global');
     if (!businessVerticalId) {
       return globalRoles;
     }
 
     const businessRoles = state.roles.filter(
-      (role) => role.is_global === false && role.business_vertical_id === businessVerticalId
+      (role) => role.scope_type === 'business_vertical' && role.business_vertical_id === businessVerticalId
     );
 
     return [...globalRoles, ...businessRoles];
@@ -628,23 +607,22 @@ export default component$(() => {
                     />
                   </FormField>
                 )}
-                <FormField id="user-role" label="Role">
+                {!state.editingUser && <FormField id="user-role" label="Initial Role">
                   <select
                     id="user-role"
                     class="w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={state.editingUser ? state.editingUser.role_id || "" : state.newUser.role_id}
+                    value={state.newUser.role_id}
                     onChange$={(e) => {
                       const value = (e.target as HTMLSelectElement).value;
-                      if (state.editingUser) state.editingUser.role_id = value;
-                      else state.newUser.role_id = value;
+                      state.newUser.role_id = value;
                     }}
                   >
                     <option value="">Select a role</option>
-                    {getRolesForVertical(state.editingUser ? state.editingUser.business_vertical_id : state.newUser.business_vertical_id).map((role) => (
+                    {getRolesForVertical(state.newUser.business_vertical_id).map((role) => (
                       <option key={role.id} value={role.id}>{getRoleOptionLabel(role)}</option>
                     ))}
                   </select>
-                </FormField>
+                </FormField>}
                 <FormField id="user-business-vertical" label="Business Vertical">
                   <select
                     id="user-business-vertical"

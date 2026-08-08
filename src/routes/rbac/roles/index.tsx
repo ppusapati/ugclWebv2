@@ -29,8 +29,8 @@ interface Role {
   description?: string;
   level: number;
   is_active: boolean;
-  is_global: boolean;
-  business_vertical_id?: string;
+  scope_type: 'global' | 'business_vertical';
+  business_vertical_id?: string | null;
   business_vertical?: BusinessVertical;
   permissions?: Permission[];
   user_count?: number;
@@ -71,7 +71,7 @@ export default component$(() => {
     permissions: initialData.value.permissions,
 
     // Filters
-    filterType: 'all' as 'all' | 'global' | 'business',
+    filterType: 'all' as 'all' | 'global' | 'business_vertical',
     filterVerticalId: '',
     searchQuery: '',
 
@@ -84,7 +84,7 @@ export default component$(() => {
       display_name: '',
       description: '',
       level: 3,
-      is_global: true,
+      scope_type: 'global' as 'global' | 'business_vertical',
       business_vertical_id: '',
       permission_ids: [] as string[],
     },
@@ -96,10 +96,10 @@ export default component$(() => {
   const loadAllRoles = $(async () => {
     state.loading = true;
     try {
-      const response = await apiClient.get<{ roles: Role[]; total: number }>(
-        '/admin/roles/unified?include_business=true'
+      const response = await apiClient.get<{ data: Role[]; total: number }>(
+        '/admin/rbac/roles?limit=200'
       );
-      state.roles = response.roles || [];
+      state.roles = response.data || [];
     } catch (error: any) {
       state.error = error.message || 'Failed to load roles';
       console.error('Failed to load roles:', error);
@@ -121,7 +121,7 @@ export default component$(() => {
       display_name: '',
       description: '',
       level: 3,
-      is_global: true,
+      scope_type: 'global',
       business_vertical_id: '',
       permission_ids: [],
     };
@@ -135,7 +135,7 @@ export default component$(() => {
       display_name: role.display_name || '',
       description: role.description || '',
       level: role.level,
-      is_global: role.is_global,
+      scope_type: role.scope_type,
       business_vertical_id: role.business_vertical_id || '',
       permission_ids: role.permissions?.map(p => p.id) || [],
     };
@@ -147,42 +147,20 @@ export default component$(() => {
     state.error = '';
 
     try {
-      if (state.newRole.is_global) {
-        // Save global role
-        if (state.editingRole) {
-          await apiClient.put(`/admin/roles/${state.editingRole.id}`, state.newRole);
-        } else {
-          await apiClient.post('/admin/roles', state.newRole);
-        }
+      const payload = {
+        ...state.newRole,
+        business_vertical_id: state.newRole.scope_type === 'global'
+          ? null
+          : state.newRole.business_vertical_id,
+      };
+      if (payload.scope_type === 'business_vertical' && !payload.business_vertical_id) {
+        throw new Error('Business vertical is required for business roles');
+      }
+
+      if (state.editingRole) {
+        await apiClient.put(`/admin/rbac/roles/${state.editingRole.id}`, payload);
       } else {
-        // Save business role
-        let verticalCode = '';
-
-        if (state.editingRole) {
-          // Business vertical is immutable for existing business roles.
-          // Use the role's original vertical code to avoid cross-vertical updates.
-          verticalCode =
-            state.editingRole.business_vertical?.code ||
-            state.verticals.find(v => v.id === state.editingRole?.business_vertical_id)?.code ||
-            '';
-        } else {
-          if (!state.newRole.business_vertical_id) {
-            throw new Error('Business vertical is required for business roles');
-          }
-          const vertical = state.verticals.find(v => v.id === state.newRole.business_vertical_id);
-          if (!vertical) throw new Error('Vertical not found');
-          verticalCode = vertical.code;
-        }
-
-        if (!verticalCode) {
-          throw new Error('Could not resolve business vertical for this role');
-        }
-
-        if (state.editingRole) {
-          await apiClient.put(`/business/${verticalCode}/roles/${state.editingRole.id}`, state.newRole);
-        } else {
-          await apiClient.post(`/business/${verticalCode}/roles`, state.newRole);
-        }
+        await apiClient.post('/admin/rbac/roles', payload);
       }
 
       await loadAllRoles();
@@ -198,18 +176,8 @@ export default component$(() => {
     if (!confirm(`Are you sure you want to delete the role "${role.display_name || role.name}"?`)) return;
 
     try {
-      if (role.is_global) {
-        await apiClient.delete(`/admin/roles/${role.id}`);
-      } else {
-        const verticalCode =
-          role.business_vertical?.code ||
-          state.verticals.find(v => v.id === role.business_vertical_id)?.code ||
-          '';
-        if (!verticalCode) throw new Error('Vertical not found');
-        await apiClient.delete(`/business/${verticalCode}/roles/${role.id}`);
-      }
-
-      state.roles = state.roles.filter(r => r.id !== role.id);
+      await apiClient.delete(`/admin/rbac/roles/${role.id}`);
+      await loadAllRoles();
     } catch (err: any) {
       state.error = err.message || 'Failed to delete role';
     }
@@ -221,9 +189,9 @@ export default component$(() => {
 
     // Filter by type
     if (state.filterType === 'global') {
-      filtered = filtered.filter(r => r.is_global);
-    } else if (state.filterType === 'business') {
-      filtered = filtered.filter(r => !r.is_global);
+      filtered = filtered.filter(r => r.scope_type === 'global');
+    } else if (state.filterType === 'business_vertical') {
+      filtered = filtered.filter(r => r.scope_type === 'business_vertical');
     }
 
     // Filter by vertical (for business roles)
@@ -287,7 +255,7 @@ export default component$(() => {
               >
                 <option value="all">All Roles</option>
                 <option value="global">Global Roles Only</option>
-                <option value="business">Business Roles Only</option>
+                <option value="business_vertical">Business Roles Only</option>
               </select>
             </div>
 
@@ -385,12 +353,12 @@ export default component$(() => {
                         </div>
                       </td>
                       <td class="px-6 py-4">
-                        <Badge variant={role.is_global ? 'success' : 'info'}>
-                          {role.is_global ? 'Global' : 'Business'}
+                        <Badge variant={role.scope_type === 'global' ? 'success' : 'info'}>
+                          {role.scope_type === 'global' ? 'Global' : 'Business'}
                         </Badge>
                       </td>
                       <td class="px-6 py-4 text-sm text-neutral-700">
-                        {role.is_global ? (
+                        {role.scope_type === 'global' ? (
                           <span class="text-gray-400">-</span>
                         ) : (
                           role.business_vertical?.name || 'Unknown'
@@ -448,9 +416,9 @@ export default component$(() => {
                       <label class="flex items-center cursor-pointer">
                         <input
                           type="radio"
-                          checked={state.newRole.is_global}
+                          checked={state.newRole.scope_type === 'global'}
                           onChange$={() => {
-                            state.newRole.is_global = true;
+                            state.newRole.scope_type = 'global';
                             state.newRole.business_vertical_id = '';
                           }}
                           class="mr-2"
@@ -460,9 +428,9 @@ export default component$(() => {
                       <label class="flex items-center cursor-pointer">
                         <input
                           type="radio"
-                          checked={!state.newRole.is_global}
+                          checked={state.newRole.scope_type === 'business_vertical'}
                           onChange$={() => {
-                            state.newRole.is_global = false;
+                            state.newRole.scope_type = 'business_vertical';
                           }}
                           class="mr-2"
                         />
@@ -473,7 +441,7 @@ export default component$(() => {
                 )}
 
                 {/* Business Vertical (only for business roles) */}
-                {!state.newRole.is_global && (
+                {state.newRole.scope_type === 'business_vertical' && (
                   <FormField id="role-business-vertical" label="Business Vertical" required>
                     <select
                       id="role-business-vertical"

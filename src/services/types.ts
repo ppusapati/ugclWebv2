@@ -22,6 +22,7 @@ export interface User {
   business_vertical_id?: string;
   business_vertical_name?: string;
   business_roles?: BusinessRole[];
+  role_assignments?: RoleAssignment[];
   permissions?: string[];
   tenants?: any[]; // For multi-tenant support
 }
@@ -78,6 +79,7 @@ export interface ProfileResponse {
   access_scope?: string;
   permission_count?: number;
   business_roles?: Array<Record<string, any>>;
+  role_assignments?: RoleAssignment[];
   recent_logins?: LoginHistoryEntry[];
 }
 
@@ -208,33 +210,43 @@ export interface Permission {
 export interface Role {
   id: string;
   name: string;
-  display_name?: string;
+  display_name: string;
   description?: string;
   level: number;
-  is_global: boolean;
-  business_vertical_id?: string;
+  scope_type: RoleScopeType;
+  business_vertical_id?: string | null;
+  business_vertical?: BusinessVertical;
+  is_active: boolean;
   permissions?: Permission[];
   user_count?: number;
   created_at?: string;
   updated_at?: string;
 }
 
+export type RoleScopeType = 'global' | 'business_vertical';
+
 export interface CreateRoleRequest {
   name: string;
-  display_name?: string;
+  display_name: string;
   description?: string;
   level: number;
-  is_global: boolean;
-  business_vertical_id?: string;
-  permission_ids?: string[];
+  scope_type: RoleScopeType;
+  business_vertical_id: string | null;
+  permission_ids: string[];
+  is_active?: boolean;
 }
 
-export interface UpdateRoleRequest {
-  name?: string;
-  display_name?: string;
-  description?: string;
-  level?: number;
-  permission_ids?: string[];
+export type UpdateRoleRequest = CreateRoleRequest;
+
+export interface RoleAssignment {
+  id: string;
+  user_id: string;
+  role_id: string;
+  scope_key: string;
+  is_active: boolean;
+  assigned_at: string;
+  assigned_by?: string | null;
+  role: Role;
 }
 
 export interface BusinessRole {
@@ -248,7 +260,6 @@ export interface BusinessRole {
 export interface AssignRoleRequest {
   user_id: string;
   role_id: string;
-  business_vertical_id?: string;
 }
 
 // ============================================================================

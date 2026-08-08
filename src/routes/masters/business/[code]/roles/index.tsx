@@ -24,7 +24,6 @@ export default component$(() => {
       description: string;
       level: number;
       permission_ids: string[];
-      is_global: boolean;
     };
     saving: boolean;
   }>({
@@ -41,7 +40,6 @@ export default component$(() => {
       description: '',
       level: 3,
       permission_ids: [],
-      is_global: false,
     },
     saving: false,
   });
@@ -59,7 +57,16 @@ export default component$(() => {
   const loadRoles = $(async () => {
     state.loading = true;
     try {
-      state.roles = await roleService.getBusinessRoles(businessCode);
+      if (!state.business) {
+        state.roles = [];
+        return;
+      }
+      const response = await roleService.getRoles({
+        scope_type: 'business_vertical',
+        business_vertical_id: state.business.id,
+        limit: 200,
+      });
+      state.roles = response.data;
     } catch (error: any) {
       state.error = error.message || 'Failed to load roles';
     } finally {
@@ -80,7 +87,8 @@ export default component$(() => {
       return;
     }
 
-    await Promise.all([loadBusiness(), loadRoles(), loadPermissions()]);
+    await loadBusiness();
+    await Promise.all([loadRoles(), loadPermissions()]);
   });
 
   const openCreateModal = $(() => {
@@ -91,7 +99,6 @@ export default component$(() => {
       description: '',
       level: 3,
       permission_ids: [],
-      is_global: false,
     };
     state.showModal = true;
   });
@@ -104,7 +111,6 @@ export default component$(() => {
       description: role.description || '',
       level: role.level,
       permission_ids: role.permissions?.map(p => p.id) || [],
-      is_global: role.is_global || false,
     };
     state.showModal = true;
   });
@@ -114,15 +120,18 @@ export default component$(() => {
     state.error = '';
 
     try {
+      if (!state.business) {
+        throw new Error('Business vertical not found');
+      }
+      const payload = {
+        ...state.roleForm,
+        scope_type: 'business_vertical' as const,
+        business_vertical_id: state.business.id,
+      };
       if (state.editingRole) {
-        await roleService.updateBusinessRole(
-          businessCode,
-          state.editingRole.id,
-          state.roleForm
-          
-        );
+        await roleService.updateRole(state.editingRole.id, payload);
       } else {
-        await roleService.createBusinessRole(businessCode, state.roleForm);
+        await roleService.createRole(payload);
       }
 
       await loadRoles();
@@ -138,7 +147,7 @@ export default component$(() => {
     if (!confirm('Are you sure you want to delete this role?')) return;
 
     try {
-      await roleService.deleteBusinessRole(businessCode, roleId);
+      await roleService.deactivateRole(roleId);
       await loadRoles();
     } catch (error: any) {
       state.error = error.message || 'Failed to delete role';

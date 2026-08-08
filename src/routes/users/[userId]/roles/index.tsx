@@ -1,446 +1,217 @@
-import { component$, useStore, useTask$, $, isServer } from "@builder.io/qwik";
-import { useLocation, useNavigate, routeLoader$ } from "@builder.io/qwik-city";
-import PermissionGuard from "~/components/auth/PermissionGuard";
-import { apiClient, createSSRApiClient } from "~/services";
-import { Badge, Btn, FormField } from '~/components/ds';
+import { $, component$, useStore } from '@builder.io/qwik';
+import { routeLoader$, useLocation, useNavigate } from '@builder.io/qwik-city';
+import PermissionGuard from '~/components/auth/PermissionGuard';
+import { Alert, Badge, Btn, FormField, PageHeader, SectionCard } from '~/components/ds';
+import { apiClient, createSSRApiClient } from '~/services';
+import type { Role, RoleAssignment, User } from '~/services/types';
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  level: number;
-  is_global: boolean;
-}
-
-interface BusinessVertical {
-  id: string;
-  name: string;
-  code: string;
-}
-
-interface BusinessRole {
-  id: string;
-  name: string;
-  description: string;
-  level: number;
-  business_vertical_id: string;
-}
-
-interface UserBusinessRole {
-  id: string;
-  user_id: string;
-  business_role_id: string;
-  business_vertical_id: string;
-  assigned_at: string;
-  business_role?: BusinessRole;
-  vertical_name?: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role_id?: string;
-  global_role?: string;
-  business_roles?: UserBusinessRole[];
-}
-
-// Load user and role data with SSR support
-export const useUserRolesData = routeLoader$(async (requestEvent) => {
-  const ssrApiClient = createSSRApiClient(requestEvent);
+export const useUserRolesData = routeLoader$(async requestEvent => {
+  const api = createSSRApiClient(requestEvent);
   const userId = requestEvent.params.userId;
 
   try {
-    const [userData, rolesData, verticalsData] = await Promise.all([
-      ssrApiClient.get<any>(`/admin/users/${userId}`),
-      ssrApiClient.get<any>('/admin/roles'),
-      ssrApiClient.get<any>('/admin/businesses'),
+    const [userResponse, roleResponse, assignments] = await Promise.all([
+      api.get<{ user?: User } & User>(`/admin/users/${userId}`),
+      api.get<{ data: Role[] }>('/admin/rbac/roles?limit=200'),
+      api.get<RoleAssignment[]>(`/admin/rbac/users/${userId}/assignments`),
     ]);
-
     return {
-      user: userData.user || userData,
-      globalRoles: rolesData.data || rolesData.roles || [],
-      businessVerticals: verticalsData.businesses || verticalsData.data || [],
+      user: userResponse.user || userResponse,
+      roles: roleResponse.data || [],
+      assignments,
+      error: '',
     };
   } catch (error: any) {
-    console.error('Failed to load user roles data:', error);
     return {
       user: null,
-      globalRoles: [],
-      businessVerticals: [],
+      roles: [] as Role[],
+      assignments: [] as RoleAssignment[],
+      error: error.message || 'Failed to load role assignments',
     };
   }
 });
 
 export default component$(() => {
   const location = useLocation();
-  const nav = useNavigate();
+  const navigate = useNavigate();
+  const initial = useUserRolesData();
   const userId = location.params.userId;
-  const initialData = useUserRolesData();
-
   const state = useStore({
-    user: initialData.value.user as User | null,
-    globalRoles: initialData.value.globalRoles as Role[],
-    businessVerticals: initialData.value.businessVerticals as BusinessVertical[],
-    businessRoles: [] as BusinessRole[],
-    userBusinessRoles: (initialData.value.user?.business_roles || []) as UserBusinessRole[],
-    showAssignModal: false,
-    selectedVertical: "",
-    selectedBusinessRole: "",
-    error: "",
-    success: "",
+    user: initial.value.user as User | null,
+    roles: initial.value.roles as Role[],
+    assignments: initial.value.assignments as RoleAssignment[],
+    selectedRoleId: '',
+    filterScope: 'all' as 'all' | 'global' | 'business_vertical',
+    saving: false,
+    error: initial.value.error,
+    success: '',
   });
 
-  // Load business roles when vertical is selected
-  useTask$(({ track }) => {
-    if (isServer) return;
-    track(() => state.selectedVertical);
-
-    const loadBusinessRoles = async () => {
-      if (!state.selectedVertical) {
-        state.businessRoles = [];
-        return;
-      }
-
-      try {
-        const vertical = state.businessVerticals.find(
-          (v) => v.id === state.selectedVertical
-        );
-        if (!vertical) return;
-
-        const data = await apiClient.get<any>(`/business/${vertical.code}/roles`);
-        state.businessRoles = data.roles || data.data || [];
-      } catch (error) {
-        console.error("Failed to load business roles:", error);
-      }
-    };
-
-    if (state.selectedVertical) {
-      loadBusinessRoles();
-    }
-  });
-
-  // Update global role
-  const handleUpdateGlobalRole = $(async (roleId: string) => {
-    try {
-      const updated = await apiClient.put<any>(`/admin/users/${userId}`, {
-        ...state.user,
-        role_id: roleId,
-      });
-
-      state.user = updated.user || updated;
-      state.success = "Global role updated successfully";
-      setTimeout(() => (state.success = ""), 3000);
-    } catch (error: any) {
-      state.error = error.message || "Failed to update global role";
-    }
-  });
-
-  // Assign business role
-  const handleAssignBusinessRole = $(async () => {
-    if (!state.selectedBusinessRole || !state.selectedVertical) {
-      state.error = "Please select both vertical and role";
-      return;
-    }
-
-    try {
-      const assigned = await apiClient.post<any>(`/users/${userId}/roles/assign`, {
-        business_role_id: state.selectedBusinessRole,
-        business_vertical_id: state.selectedVertical,
-      });
-
-      state.userBusinessRoles.push(assigned);
-      state.showAssignModal = false;
-      state.selectedVertical = "";
-      state.selectedBusinessRole = "";
-      state.success = "Business role assigned successfully";
-      setTimeout(() => (state.success = ""), 3000);
-
-      // Reload user data
-      const userData = await apiClient.get<any>(`/admin/users/${userId}`);
-      state.user = userData.user || userData;
-      state.userBusinessRoles = state.user?.business_roles || [];
-    } catch (error: any) {
-      state.error = error.message || "Failed to assign business role";
-    }
-  });
-
-  // Remove business role
-  const handleRemoveBusinessRole = $(async (roleAssignmentId: string) => {
-    if (!confirm("Are you sure you want to remove this business role?"))
-      return;
-
-    try {
-      await apiClient.delete<any>(`/users/${userId}/roles/${roleAssignmentId}`);
-
-      state.userBusinessRoles = state.userBusinessRoles.filter(
-        (r) => r.id !== roleAssignmentId
-      );
-      state.success = "Business role removed successfully";
-      setTimeout(() => (state.success = ""), 3000);
-    } catch (error: any) {
-      state.error = error.message || "Failed to remove business role";
-    }
-  });
-
-  if (!state.user) {
-    return (
-      <PermissionGuard superAdminOnly>
-        <div class="p-6">
-          <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            User not found
-          </div>
-        </div>
-      </PermissionGuard>
+  const reloadAssignments = $(async () => {
+    state.assignments = await apiClient.get<RoleAssignment[]>(
+      `/admin/rbac/users/${userId}/assignments`
     );
-  }
+  });
+
+  const assignRole = $(async () => {
+    if (!state.selectedRoleId || state.saving) return;
+    state.saving = true;
+    state.error = '';
+    state.success = '';
+    try {
+      await apiClient.post(`/admin/rbac/users/${userId}/assignments`, {
+        role_id: state.selectedRoleId,
+      });
+      await reloadAssignments();
+      state.selectedRoleId = '';
+      state.success = 'Role assignment saved';
+    } catch (error: any) {
+      state.error = error.message || 'Failed to assign role';
+    } finally {
+      state.saving = false;
+    }
+  });
+
+  const removeAssignment = $(async (assignment: RoleAssignment) => {
+    if (!confirm(`Remove ${assignment.role.display_name} from this user?`)) return;
+    state.error = '';
+    state.success = '';
+    try {
+      await apiClient.delete(
+        `/admin/rbac/users/${userId}/assignments/${assignment.id}`
+      );
+      await reloadAssignments();
+      state.success = 'Role assignment removed';
+    } catch (error: any) {
+      state.error = error.message || 'Failed to remove role assignment';
+    }
+  });
+
+  const assignedRoleIds = new Set(state.assignments.map(assignment => assignment.role_id));
+  const availableRoles = state.roles.filter(role => {
+    if (!role.is_active || assignedRoleIds.has(role.id)) return false;
+    return state.filterScope === 'all' || role.scope_type === state.filterScope;
+  });
 
   return (
-    <PermissionGuard superAdminOnly>
+    <PermissionGuard permission="manage_roles">
       <div class="space-y-6 p-6">
-        {/* Header */}
-        <div class="flex items-center justify-between">
-          <div>
-            <button
-              class="text-blue-600 hover:text-blue-800 mb-2 flex items-center"
-              onClick$={() => nav("/users")}
-            >
-              <i class="i-heroicons-arrow-left-solid mr-1 h-4 w-4 inline-block" aria-hidden="true"></i>
+        <PageHeader
+          title="Role Assignments"
+          subtitle={state.user ? `${state.user.name} (${state.user.email})` : 'User not found'}
+        >
+          <div q:slot="actions" class="flex gap-2">
+            <Btn variant="secondary" onClick$={() => navigate(`/users/${userId}/sites`)}>
+              Manage Sites
+            </Btn>
+            <Btn variant="secondary" onClick$={() => navigate('/users')}>
               Back to Users
-            </button>
-            <h1 class="text-2xl font-bold">Role Assignment</h1>
-            <p class="text-gray-600 text-sm mt-1">
-              Managing roles for: <strong>{state.user.name}</strong> (
-              {state.user.email})
-            </p>
-          </div>
-          <Btn
-            variant="secondary"
-            class="rounded"
-            onClick$={() => nav(`/users/${userId}/sites`)}
-          >
-            Manage Sites
-          </Btn>
-        </div>
-
-        {/* Success/Error Messages */}
-        {state.success && (
-          <div class="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-            {state.success}
-          </div>
-        )}
-        {state.error && (
-          <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {state.error}
-          </div>
-        )}
-
-        {/* Global Role Section */}
-        <div class="bg-white border rounded-lg p-6 shadow">
-          <h2 class="text-lg font-semibold mb-4">Global Role</h2>
-          <div class="max-w-md">
-            <FormField id="user-global-role" label="Assign Global Role">
-              <select
-                id="user-global-role"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={state.user.role_id || ""}
-                onChange$={(e) => {
-                  const roleId = (e.target as HTMLSelectElement).value;
-                  handleUpdateGlobalRole(roleId);
-                }}
-              >
-                <option value="">No Global Role</option>
-                {state.globalRoles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {`${role.name}${role.level ? ` (Level ${role.level})` : ''}`}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            {state.user.global_role && (
-              <p class="text-sm text-gray-600 mt-2">
-                Current: <strong>{state.user.global_role}</strong>
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Business Roles Section */}
-        <div class="bg-white border rounded-lg shadow">
-          <div class="px-6 py-4 border-b flex items-center justify-between">
-            <div>
-              <h2 class="text-lg font-semibold">Business Role Assignments</h2>
-              <p class="text-sm text-gray-600 mt-1">
-                Vertical-specific roles for this user
-              </p>
-            </div>
-            <Btn
-              class="rounded"
-              onClick$={() => {
-                state.showAssignModal = true;
-              }}
-            >
-              + Assign Business Role
             </Btn>
           </div>
+        </PageHeader>
 
-          {state.userBusinessRoles.length > 0 ? (
-            <table class="w-full">
-              <thead class="bg-gray-50 border-b">
+        {state.error && <Alert variant="error">{state.error}</Alert>}
+        {state.success && <Alert variant="success">{state.success}</Alert>}
+
+        {state.user && (
+          <SectionCard>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-[180px_1fr_auto] md:items-end">
+              <FormField id="assignment-scope" label="Scope">
+                <select
+                  id="assignment-scope"
+                  value={state.filterScope}
+                  onChange$={event => {
+                    state.filterScope = (event.target as HTMLSelectElement).value as typeof state.filterScope;
+                    state.selectedRoleId = '';
+                  }}
+                  class="w-full rounded border border-neutral-300 px-3 py-2"
+                >
+                  <option value="all">All scopes</option>
+                  <option value="global">Global</option>
+                  <option value="business_vertical">Business vertical</option>
+                </select>
+              </FormField>
+
+              <FormField id="assignment-role" label="Role">
+                <select
+                  id="assignment-role"
+                  value={state.selectedRoleId}
+                  onChange$={event => {
+                    state.selectedRoleId = (event.target as HTMLSelectElement).value;
+                  }}
+                  class="w-full rounded border border-neutral-300 px-3 py-2"
+                >
+                  <option value="">Select a role</option>
+                  {availableRoles.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {`${role.display_name} - ${role.scope_type === 'global'
+                        ? 'Global'
+                        : role.business_vertical?.name || 'Business vertical'} (Level ${role.level})`}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <Btn
+                variant="primary"
+                disabled={!state.selectedRoleId || state.saving}
+                onClick$={assignRole}
+              >
+                {state.saving ? 'Assigning...' : 'Assign Role'}
+              </Btn>
+            </div>
+          </SectionCard>
+        )}
+
+        <SectionCard>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+              <thead class="bg-neutral-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vertical
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Level
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned At
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-neutral-600">Role</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-neutral-600">Scope</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-neutral-600">Vertical</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-neutral-600">Level</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-neutral-600">Assigned</th>
+                  <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-neutral-600">Action</th>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                {state.userBusinessRoles.map((assignment) => (
-                  <tr key={assignment.id} class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="info">
-                        {assignment.vertical_name ||
-                          state.businessVerticals.find(
-                            (v) => v.id === assignment.business_vertical_id
-                          )?.name ||
-                          "Unknown"}
+              <tbody class="divide-y divide-neutral-200 bg-white">
+                {state.assignments.map(assignment => (
+                  <tr key={assignment.id}>
+                    <td class="px-5 py-4 font-medium text-neutral-900">
+                      {assignment.role.display_name}
+                    </td>
+                    <td class="px-5 py-4">
+                      <Badge variant={assignment.role.scope_type === 'global' ? 'success' : 'info'}>
+                        {assignment.role.scope_type === 'global' ? 'Global' : 'Business'}
                       </Badge>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900">
-                        {assignment.business_role?.name || "Unknown Role"}
-                      </div>
-                      {assignment.business_role?.description && (
-                        <div class="text-xs text-gray-500">
-                          {assignment.business_role.description}
-                        </div>
-                      )}
+                    <td class="px-5 py-4 text-neutral-700">
+                      {assignment.role.business_vertical?.name || '-'}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="info">
-                        Level {assignment.business_role?.level || "N/A"}
-                      </Badge>
+                    <td class="px-5 py-4 text-neutral-700">{assignment.role.level}</td>
+                    <td class="px-5 py-4 text-neutral-700">
+                      {new Date(assignment.assigned_at).toLocaleDateString()}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-gray-600">
-                        {new Date(assignment.assigned_at).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        class="text-red-600 hover:text-red-900"
-                        onClick$={() => handleRemoveBusinessRole(assignment.id)}
-                      >
+                    <td class="px-5 py-4 text-right">
+                      <Btn size="sm" variant="danger" onClick$={() => removeAssignment(assignment)}>
                         Remove
-                      </button>
+                      </Btn>
                     </td>
                   </tr>
                 ))}
+                {state.assignments.length === 0 && (
+                  <tr>
+                    <td colSpan={6} class="px-5 py-12 text-center text-neutral-500">
+                      No active role assignments
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
-          ) : (
-            <div class="p-12 text-center text-gray-500">
-              No business roles assigned yet.
-            </div>
-          )}
-        </div>
-
-        {/* Assign Business Role Modal */}
-        {state.showAssignModal && (
-          <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
-              <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4">
-                  Assign Business Role
-                </h3>
-
-                <div class="space-y-4">
-                  <FormField id="user-business-vertical" label="Business Vertical" required>
-                    <select
-                      id="user-business-vertical"
-                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      value={state.selectedVertical}
-                      onChange$={(e) => {
-                        state.selectedVertical = (
-                          e.target as HTMLSelectElement
-                        ).value;
-                        state.selectedBusinessRole = "";
-                      }}
-                    >
-                      <option value="">Select a vertical</option>
-                      {state.businessVerticals.map((vertical) => (
-                        <option key={vertical.id} value={vertical.id}>
-                          {vertical.name}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-
-                  {state.selectedVertical && (
-                    <FormField id="user-business-role" label="Business Role" required>
-                      <select
-                        id="user-business-role"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={state.selectedBusinessRole}
-                        onChange$={(e) => {
-                          state.selectedBusinessRole = (
-                            e.target as HTMLSelectElement
-                          ).value;
-                        }}
-                      >
-                        <option value="">Select a role</option>
-                        {state.businessRoles.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {`${role.name} (Level ${role.level})`}
-                          </option>
-                        ))}
-                      </select>
-                      {state.businessRoles.length === 0 && (
-                        <p class="text-xs text-gray-500 mt-2">
-                          No roles available for this vertical
-                        </p>
-                      )}
-                    </FormField>
-                  )}
-                </div>
-
-                <div class="flex justify-end gap-3 mt-6">
-                  <Btn
-                    variant="secondary"
-                    class="rounded"
-                    onClick$={() => {
-                      state.showAssignModal = false;
-                      state.selectedVertical = "";
-                      state.selectedBusinessRole = "";
-                    }}
-                  >
-                    Cancel
-                  </Btn>
-                  <Btn
-                    class="rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    disabled={
-                      !state.selectedVertical || !state.selectedBusinessRole
-                    }
-                    onClick$={handleAssignBusinessRole}
-                  >
-                    Assign Role
-                  </Btn>
-                </div>
-              </div>
-            </div>
           </div>
-        )}
+        </SectionCard>
       </div>
     </PermissionGuard>
   );
