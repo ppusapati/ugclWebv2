@@ -157,14 +157,20 @@ export default component$(() => {
         throw new Error('Business vertical is required for business roles');
       }
 
+      let savedRole: Role;
       if (state.editingRole) {
-        await apiClient.put(`/admin/rbac/roles/${state.editingRole.id}`, payload);
+        savedRole = await apiClient.put<Role>(`/admin/rbac/roles/${state.editingRole.id}`, payload);
+        state.roles = state.roles.map((role) => (role.id === savedRole.id ? savedRole : role));
       } else {
-        await apiClient.post('/admin/rbac/roles', payload);
+        savedRole = await apiClient.post<Role>('/admin/rbac/roles', payload);
+        state.roles = [savedRole, ...state.roles];
       }
 
-      await loadAllRoles();
       state.showModal = false;
+      state.editingRole = null;
+
+      // Refresh in background so the modal does not stay blocked on slow list queries.
+      void loadAllRoles();
     } catch (err: any) {
       state.error = err.message || 'Failed to save role';
     } finally {
