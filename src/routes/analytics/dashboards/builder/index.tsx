@@ -165,15 +165,18 @@ export default component$(() => {
     if (user?.business_vertical_id) {
       return user.business_vertical_id;
     }
-    if (Array.isArray(user?.business_roles) && user.business_roles.length > 0) {
+    const businessAssignments = Array.isArray(user?.role_assignments)
+      ? user.role_assignments.filter((a: any) => a.is_active && a.role?.scope_type === 'business_vertical')
+      : [];
+    if (businessAssignments.length > 0) {
       const currentBusinessId = localStorage.getItem('ugcl_current_business_vertical');
       if (currentBusinessId) {
-        const matchedRole = user.business_roles.find((br: any) => br.business_vertical_id === currentBusinessId);
-        if (matchedRole?.business_vertical_id) {
-          return matchedRole.business_vertical_id;
+        const matchedAssignment = businessAssignments.find((a: any) => a.role.business_vertical_id === currentBusinessId);
+        if (matchedAssignment?.role.business_vertical_id) {
+          return matchedAssignment.role.business_vertical_id;
         }
       }
-      return user.business_roles[0]?.business_vertical_id;
+      return businessAssignments[0]?.role.business_vertical_id;
     }
     return undefined;
   });

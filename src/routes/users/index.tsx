@@ -15,15 +15,6 @@ interface Role {
   business_vertical_name?: string;
 }
 
-interface BusinessRole {
-  id: string;
-  business_role_id?: string;
-  role_id?: string;
-  name: string;
-  business_vertical_id?: string;
-  business_vertical_name?: string;
-}
-
 interface BusinessVertical {
   id: string;
   name: string;
@@ -41,8 +32,7 @@ interface User {
   business_vertical_name?: string;
   is_active: boolean;
   created_at?: string;
-  business_roles?: BusinessRole[];
-  role_assignments?: Array<{ id: string; role_id: string; role: Role }>;
+  role_assignments?: Array<{ id: string; role_id: string; is_active?: boolean; role: Role }>;
 }
 
 const normalizeRole = (role: any): Role => {
@@ -66,46 +56,7 @@ const normalizeBusinessVertical = (vertical: any): BusinessVertical => ({
   code: vertical?.code || vertical?.Code || "",
 });
 
-const normalizeBusinessRole = (role: any): BusinessRole => {
-  const nestedBusinessRole = role?.business_role || role?.BusinessRole || {};
-  const nestedVertical = nestedBusinessRole?.business_vertical || nestedBusinessRole?.BusinessVertical || {};
-
-  return {
-    id: role?.id || role?.ID || nestedBusinessRole?.id || nestedBusinessRole?.ID || "",
-    business_role_id:
-      role?.business_role_id ||
-      role?.BusinessRoleID ||
-      nestedBusinessRole?.id ||
-      nestedBusinessRole?.ID,
-    role_id: role?.role_id || role?.RoleID,
-    name:
-      role?.name ||
-      role?.Name ||
-      role?.display_name ||
-      role?.DisplayName ||
-      nestedBusinessRole?.display_name ||
-      nestedBusinessRole?.DisplayName ||
-      nestedBusinessRole?.name ||
-      nestedBusinessRole?.Name ||
-      "",
-    business_vertical_id:
-      role?.business_vertical_id ||
-      role?.BusinessVerticalID ||
-      nestedBusinessRole?.business_vertical_id ||
-      nestedBusinessRole?.BusinessVerticalID,
-    business_vertical_name:
-      role?.business_vertical_name ||
-      role?.BusinessVerticalName ||
-      role?.business_name ||
-      role?.BusinessName ||
-      nestedVertical?.name ||
-      nestedVertical?.Name,
-  };
-};
-
 const normalizeUser = (user: any): User => {
-  const businessRolesRaw = user?.business_roles ?? user?.BusinessRoles;
-
   return {
     id: user?.id || user?.ID || "",
     name: user?.name || user?.Name || "",
@@ -117,9 +68,6 @@ const normalizeUser = (user: any): User => {
     business_vertical_name: user?.business_vertical_name || user?.BusinessVerticalName,
     is_active: user?.is_active ?? user?.IsActive ?? true,
     created_at: user?.created_at || user?.CreatedAt,
-    business_roles: Array.isArray(businessRolesRaw)
-      ? businessRolesRaw.map(normalizeBusinessRole)
-      : [],
     role_assignments: Array.isArray(user?.role_assignments) ? user.role_assignments : [],
   };
 };
@@ -208,7 +156,7 @@ export default component$(() => {
     resetCredentialsLoading: false,
   });
 
-  const getRoleNameById = (roleId?: string, businessRoles?: BusinessRole[], globalRole?: string) => {
+  const getRoleNameById = (roleId?: string, roleAssignments?: User["role_assignments"], globalRole?: string) => {
     const resolvedRoles: string[] = [];
 
     // Resolve global role by role_id when present.
@@ -219,20 +167,12 @@ export default component$(() => {
       }
     }
 
-    // Resolve business roles from assignment payload + role master list.
-    for (const assignment of businessRoles || []) {
-      const fromAssignment = assignment.name?.trim();
-      if (fromAssignment) {
-        resolvedRoles.push(fromAssignment);
-        continue;
-      }
-
-      const candidateRoleId = assignment.business_role_id || assignment.role_id;
-      if (candidateRoleId) {
-        const matchedRole = state.roles.find((r) => r.id === candidateRoleId);
-        if (matchedRole) {
-          resolvedRoles.push(matchedRole.display_name || matchedRole.name);
-        }
+    // Resolve roles from canonical role_assignments.
+    for (const assignment of roleAssignments || []) {
+      if (assignment.is_active === false) continue;
+      const name = assignment.role?.display_name || assignment.role?.name;
+      if (name) {
+        resolvedRoles.push(name);
       }
     }
 
@@ -520,7 +460,7 @@ export default component$(() => {
             name: user.name,
             email: user.email,
             phone: user.phone || "",
-            global_role: getRoleNameById(user.role_id, user.business_roles, user.global_role),
+            global_role: getRoleNameById(user.role_id, user.role_assignments, user.global_role),
             business_vertical_name: user.business_vertical_name || "-",
             status_text: user.is_active ? "Active" : "Inactive",
             actions: [

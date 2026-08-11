@@ -243,11 +243,15 @@ export default component$(() => {
       formData.value = nextFormData;
       originalFormData.value = nextFormData;
 
+      const businessAssignments = Array.isArray(profile.role_assignments)
+        ? profile.role_assignments.filter((a) => a.is_active && a.role.scope_type === 'business_vertical')
+        : [];
+
       profileInfo.value = {
         role: profile.global_role || profile.role || '',
         isSuperAdmin: profile.is_super_admin === true,
         permissions: Array.isArray(profile.permissions) ? profile.permissions : [],
-        businessRoles: Array.isArray(profile.business_roles) ? profile.business_roles : [],
+        businessRoles: businessAssignments,
         accessScope: profile.access_scope || 'global/basic',
         activeStatus: profile.is_active === true,
       };

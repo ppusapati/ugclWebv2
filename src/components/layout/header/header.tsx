@@ -61,7 +61,7 @@ export const Header = component$(() => {
       subItems: [
         { id: 'modules', label: 'Modules', href: '/masters/modules', icon: 'i-heroicons-squares-2x2-solid' },
         { id: 'users', label: 'Users', href: '/users', icon: 'i-heroicons-user-solid' },
-        { id: 'roles', label: 'Roles & Permissions', href: '/roles', icon: 'i-heroicons-key-solid' },
+        { id: 'roles', label: 'Roles & Permissions', href: '/rbac/roles', icon: 'i-heroicons-key-solid' },
         { id: 'settings', label: 'Settings', href: '/settings', icon: 'i-heroicons-cog-6-tooth-solid' },
         { id: 'audit', label: 'Audit Logs', href: '/audit', icon: 'i-heroicons-document-text-solid' },
         { id: 'backup', label: 'Backup', href: '/backup', icon: 'i-heroicons-circle-stack-solid' }

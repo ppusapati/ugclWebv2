@@ -199,77 +199,76 @@ export const AuthProvider = component$(() => {
       throw new Error('User must be authenticated to switch business vertical');
     }
 
-    const businessRole = authState.user.business_roles?.find(
-      (br: any) => br.business_vertical_id === businessVerticalId
+    const hasAssignment = authState.user.role_assignments?.some(
+      assignment =>
+        assignment.is_active &&
+        assignment.role.scope_type === 'business_vertical' &&
+        assignment.role.business_vertical_id === businessVerticalId
     );
 
-    if (!businessRole) {
+    if (!hasAssignment) {
       throw new Error(`You don't have access to business vertical '${businessVerticalId}'`);
     }
 
     // Store the selected business vertical in localStorage
     safeStorage.setItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID, businessVerticalId);
 
-	    await authService.setActiveBusinessContextById(businessVerticalId);
+    await authService.setActiveBusinessContextById(businessVerticalId);
 
     // Optionally reload the page or trigger re-render
     // window.location.reload(); // Uncomment if you want to reload
   });
 
   const getCurrentBusinessVertical = $(() => {
-    if (!authState.user || !authState.user.business_roles) return null;
+    if (!authState.user) return null;
+
+    const assignments = (authState.user.role_assignments || []).filter(
+      assignment => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+    if (assignments.length === 0) return null;
 
     const storedBusinessId = safeStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
-
     if (storedBusinessId) {
-      const businessRole = authState.user.business_roles.find(
-        (br: any) => br.business_vertical_id === storedBusinessId
-      );
-      if (businessRole) return businessRole;
+      const match = assignments.find(assignment => assignment.role.business_vertical_id === storedBusinessId);
+      if (match) return match;
     }
 
     // Return first business vertical if none is selected
-    return authState.user.business_roles[0] || null;
+    return assignments[0] || null;
   });
 
   const hasBusinessPermission = $((permission: string) => {
-    if (!authState.user || !authState.user.business_roles) return false;
+    if (!authState.user) return false;
+
+    const assignments = (authState.user.role_assignments || []).filter(
+      assignment => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+    if (assignments.length === 0) return false;
 
     const storedBusinessId = safeStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
-    let currentBusiness = null;
+    const currentAssignment =
+      (storedBusinessId && assignments.find(assignment => assignment.role.business_vertical_id === storedBusinessId)) ||
+      assignments[0];
 
-    if (storedBusinessId) {
-      currentBusiness = authState.user.business_roles.find(
-          (br: any) => (br.vertical_id || br.business_vertical_id) === storedBusinessId
-      );
-    }
+    if (!currentAssignment) return false;
 
-    if (!currentBusiness) {
-      currentBusiness = authState.user.business_roles[0];
-    }
-
-    if (!currentBusiness) return false;
-
-    return currentBusiness.permissions?.includes(permission) || false;
+    return currentAssignment.role.permissions?.some(granted => granted.name === permission) || false;
   });
 
   const isBusinessAdmin = $(() => {
-    if (!authState.user || !authState.user.business_roles) return false;
+    if (!authState.user) return false;
+
+    const assignments = (authState.user.role_assignments || []).filter(
+      assignment => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+    if (assignments.length === 0) return false;
 
     const storedBusinessId = safeStorage.getItem(STORAGE_KEYS.BUSINESS_VERTICAL_ID);
-    let currentBusiness = null;
+    const currentAssignment =
+      (storedBusinessId && assignments.find(assignment => assignment.role.business_vertical_id === storedBusinessId)) ||
+      assignments[0];
 
-    if (storedBusinessId) {
-      currentBusiness = authState.user.business_roles.find(
-          (br: any) => (br.vertical_id || br.business_vertical_id) === storedBusinessId
-      );
-    }
-
-    if (!currentBusiness) {
-      currentBusiness = authState.user.business_roles[0];
-    }
-
-    return currentBusiness?.is_admin || false;
+    return currentAssignment?.role.permissions?.some(granted => granted.name === 'business_admin') || false;
   });
 
   // Create the complete context value
@@ -324,7 +323,7 @@ export const AuthProvider = component$(() => {
             role: normalizedProfile.global_role || normalizedProfile.role || existingUser?.role || '',
             permissions: normalizedProfile.permissions || existingUser?.permissions || [],
             tenants: existingUser?.tenants || [],
-            business_roles: normalizedProfile.business_roles as any || existingUser?.business_roles,
+            role_assignments: normalizedProfile.role_assignments || existingUser?.role_assignments,
             is_super_admin: normalizedProfile.is_super_admin ?? existingUser?.is_super_admin,
             is_active: normalizedProfile.is_active ?? existingUser?.is_active,
           };

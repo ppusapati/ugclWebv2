@@ -27,23 +27,31 @@ interface SidebarReportItem {
   report_type?: string;
 }
 
+function businessAssignmentsOf(user: any): any[] {
+  return Array.isArray(user?.role_assignments)
+    ? user.role_assignments.filter(
+        (assignment: any) => assignment?.is_active && assignment?.role?.scope_type === 'business_vertical'
+      )
+    : [];
+}
+
 function resolveBusinessCodeForForm(
   form: SidebarFormItem,
   currentBusinessCode: string,
   user: any
 ): string {
   const tokens = (form.accessible_verticals || []).map((value) => String(value).trim()).filter(Boolean);
-  const businessRoles = Array.isArray(user?.business_roles) ? user.business_roles : [];
+  const businessAssignments = businessAssignmentsOf(user);
 
   for (const token of tokens) {
     const normalizedToken = token.toLowerCase();
-    const matchedRole = businessRoles.find((role: any) => {
-      const roleId = String(role?.vertical_id || role?.business_vertical_id || '').toLowerCase();
-      const roleCode = String(role?.vertical_code || role?.business_vertical?.code || role?.business_code || '').toLowerCase();
+    const matchedAssignment = businessAssignments.find((assignment: any) => {
+      const roleId = String(assignment?.role?.business_vertical_id || '').toLowerCase();
+      const roleCode = String(assignment?.role?.business_vertical?.code || '').toLowerCase();
       return normalizedToken === roleId || normalizedToken === roleCode;
     });
 
-    const matchedCode = matchedRole?.vertical_code || matchedRole?.business_vertical?.code || matchedRole?.business_code;
+    const matchedCode = matchedAssignment?.role?.business_vertical?.code;
     if (matchedCode) {
       return matchedCode;
     }
@@ -55,9 +63,7 @@ function resolveBusinessCodeForForm(
 
   return (
     currentBusinessCode ||
-    businessRoles[0]?.vertical_code ||
-    businessRoles[0]?.business_vertical?.code ||
-    businessRoles[0]?.business_code ||
+    businessAssignments[0]?.role?.business_vertical?.code ||
     ''
   );
 }
@@ -105,7 +111,7 @@ export const Sidebar = component$(() => {
     };
 
     track(() => activeMainMenu.value);
-    track(() => auth.user?.business_roles?.length || 0);
+    track(() => auth.user?.role_assignments?.length || 0);
     track(() => auth.user?.is_super_admin);
     track(() => auth.user?.role);
     track(() => (auth.user as any)?.global_role);
@@ -126,33 +132,27 @@ export const Sidebar = component$(() => {
     const storedBusinessCode =
       localStorage.getItem(STORAGE_KEYS.BUSINESS_CODE) ||
       '';
-    const firstBusinessRole = user?.business_roles?.[0];
+    const businessAssignments = businessAssignmentsOf(user);
+    const firstBusinessAssignment = businessAssignments[0];
     if (storedBusinessId) {
       currentBusinessId.value = storedBusinessId;
-      const businessRole = user?.business_roles?.find(
-        (role: any) => (role.vertical_id || role.business_vertical_id) === storedBusinessId
+      const matchedAssignment = businessAssignments.find(
+        (assignment: any) => assignment.role?.business_vertical_id === storedBusinessId
       );
       currentBusinessCode.value =
-        businessRole?.vertical_code ||
-        businessRole?.business_vertical?.code ||
-        businessRole?.business_code ||
+        matchedAssignment?.role?.business_vertical?.code ||
         storedBusinessCode ||
-        firstBusinessRole?.vertical_code ||
-        firstBusinessRole?.business_vertical?.code ||
-        firstBusinessRole?.business_code ||
+        firstBusinessAssignment?.role?.business_vertical?.code ||
         '';
     } else {
       currentBusinessId.value =
-        firstBusinessRole?.vertical_id ||
-        firstBusinessRole?.business_vertical_id ||
-        user?.business_vertical_id ||
+        firstBusinessAssignment?.role?.business_vertical_id ||
+        (user as any)?.business_vertical_id ||
         '';
       currentBusinessCode.value =
         storedBusinessCode ||
-        firstBusinessRole?.vertical_code ||
-        firstBusinessRole?.business_vertical?.code ||
-        firstBusinessRole?.business_code ||
-        user?.business_vertical_name ||
+        firstBusinessAssignment?.role?.business_vertical?.code ||
+        (user as any)?.business_vertical_name ||
         '';
     }
 

@@ -125,7 +125,7 @@ export default component$(() => {
 
   useTask$(({ track }) => {
     track(() => auth.user?.id);
-    track(() => auth.user?.business_roles?.length || 0);
+    track(() => auth.user?.role_assignments?.length || 0);
 
     if (isServer) {
       permissionState.canCreateReports = true;
@@ -134,12 +134,15 @@ export default component$(() => {
     }
 
     const activeBusinessId = window.localStorage.getItem('ugcl_current_business_vertical');
-    const businessRole = activeBusinessId
-      ? auth.user?.business_roles?.find((role) => role.business_vertical_id === activeBusinessId)
-      : auth.user?.business_roles?.[0];
+    const businessAssignments = (auth.user?.role_assignments || []).filter(
+      (assignment) => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+    const businessAssignment = activeBusinessId
+      ? businessAssignments.find((assignment) => assignment.role.business_vertical_id === activeBusinessId)
+      : businessAssignments[0];
 
     const globalPermissions = auth.user?.permissions || [];
-    const businessPermissions = businessRole?.permissions || [];
+    const businessPermissions = businessAssignment?.role.permissions?.map((permission) => permission.name) || [];
     const allPermissions = new Set([...globalPermissions, ...businessPermissions]);
 
     // Keep create actions visible in UI; backend remains the source of truth for authorization.
@@ -197,8 +200,12 @@ export default component$(() => {
   });
 
   const resolveActiveBusinessVerticalId = $((): string | null => {
+    const firstBusinessAssignment = (auth.user?.role_assignments || []).find(
+      (assignment) => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+
     if (isServer) {
-      return auth.user?.business_roles?.[0]?.business_vertical_id || null;
+      return firstBusinessAssignment?.role.business_vertical_id || null;
     }
 
     const current = window.localStorage.getItem('ugcl_current_business_vertical');
@@ -206,7 +213,7 @@ export default component$(() => {
       return current;
     }
 
-    return auth.user?.business_roles?.[0]?.business_vertical_id || null;
+    return firstBusinessAssignment?.role.business_vertical_id || null;
   });
 
   const createFromTemplate = $(async (template: ReportTemplate) => {

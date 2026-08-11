@@ -73,8 +73,6 @@ const ROUTE_REGISTRY: RouteRegistryEntry[] = [
   { pathPattern: '/users', label: 'Users', icon: 'i-heroicons-users-solid', parentPathPattern: '/', adminMenuId: 'users', adminMenuOrder: 80, helpTopicId: 'users-and-access', helpVariantId: 'users' },
   { pathPattern: '/rbac', label: 'RBAC', icon: 'i-heroicons-shield-check-solid', parentPathPattern: '/', helpTopicId: 'users-and-access', helpVariantId: 'roles-and-permissions' },
   { pathPattern: '/rbac/roles', label: 'Roles & Permissions', icon: 'i-heroicons-finger-print-solid', parentPathPattern: '/rbac', adminMenuId: 'roles', adminMenuOrder: 50, helpTopicId: 'users-and-access', helpVariantId: 'roles-and-permissions' },
-  { pathPattern: '/rbac/global-roles', label: 'Global Roles', icon: 'i-heroicons-shield-check-solid', parentPathPattern: '/rbac', helpTopicId: 'users-and-access', helpVariantId: 'roles-and-permissions' },
-  { pathPattern: '/rbac/business-roles', label: 'Business Roles', icon: 'i-heroicons-building-office-solid', parentPathPattern: '/rbac', helpTopicId: 'users-and-access', helpVariantId: 'roles-and-permissions' },
   { pathPattern: '/rbac/permissions', label: 'Permissions', icon: 'i-heroicons-key-solid', parentPathPattern: '/rbac', helpTopicId: 'users-and-access', helpVariantId: 'roles-and-permissions' },
   { pathPattern: '/policies', label: 'ABAC Policies', icon: 'i-heroicons-shield-check-solid', parentPathPattern: '/', adminMenuId: 'policies', adminMenuOrder: 70, helpTopicId: 'users-and-access', helpVariantId: 'policies' },
   { pathPattern: '/policies/create', label: 'Create Policy', icon: 'i-heroicons-plus-circle-solid', parentPathPattern: '/policies', helpTopicId: 'users-and-access', helpVariantId: 'policies' },

@@ -263,7 +263,7 @@ export default component$(() => {
 
   useTask$(({ track }) => {
     track(() => auth.user?.id);
-    track(() => auth.user?.business_roles?.length || 0);
+    track(() => auth.user?.role_assignments?.length || 0);
 
     if (isServer) {
       permissionState.canExport = false;
@@ -271,12 +271,15 @@ export default component$(() => {
     }
 
     const activeBusinessId = window.localStorage.getItem('ugcl_current_business_vertical');
-    const businessRole = activeBusinessId
-      ? auth.user?.business_roles?.find((role) => role.business_vertical_id === activeBusinessId)
-      : auth.user?.business_roles?.[0];
+    const businessAssignments = (auth.user?.role_assignments || []).filter(
+      (assignment) => assignment.is_active && assignment.role.scope_type === 'business_vertical'
+    );
+    const businessAssignment = activeBusinessId
+      ? businessAssignments.find((assignment) => assignment.role.business_vertical_id === activeBusinessId)
+      : businessAssignments[0];
 
     const globalPermissions = auth.user?.permissions || [];
-    const businessPermissions = businessRole?.permissions || [];
+    const businessPermissions = businessAssignment?.role.permissions?.map((permission) => permission.name) || [];
     const allPermissions = new Set([...globalPermissions, ...businessPermissions]);
 
     permissionState.canExport = allPermissions.has('report:export') || !!auth.user?.is_super_admin;

@@ -1,6 +1,6 @@
 import type { QRL } from '@builder.io/qwik';
 import type { Tenant, UserTenant } from '~/types/multitenant';
-import type { BusinessRole } from '~/services/types';
+import type { RoleAssignment } from '~/services/types';
 
 export interface User {
   id: string;
@@ -10,7 +10,7 @@ export interface User {
   role: string;
   permissions: string[];
   tenants: UserTenant[];
-  business_roles?: BusinessRole[];
+  role_assignments?: RoleAssignment[];
   is_super_admin?: boolean;
   is_active?: boolean;
   created_at?: string;
@@ -49,7 +49,7 @@ export interface AuthContextType extends AuthState, TenantAuthState {
   hasAnyRole: QRL<(roles: string[]) => boolean>;
   canAccessTenant: QRL<(tenantId: string) => boolean>;
   switchBusinessVertical: QRL<(businessVerticalId: string) => Promise<void>>;
-  getCurrentBusinessVertical: QRL<() => BusinessRole | null>;
+  getCurrentBusinessVertical: QRL<() => RoleAssignment | null>;
   hasBusinessPermission: QRL<(permission: string) => boolean>;
   isBusinessAdmin: QRL<() => boolean>;
 }

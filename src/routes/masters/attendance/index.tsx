@@ -48,13 +48,15 @@ async function resolveCurrentBusinessCode(): Promise<string> {
 
     if (userStr) {
       const user = JSON.parse(userStr);
-      const businessRoles = Array.isArray(user.business_roles) ? user.business_roles : [];
-      const currentBusiness =
-        businessRoles.find((role: any) => role.business_vertical_id === storedBusinessId) ||
-        businessRoles[0];
+      const businessAssignments = Array.isArray(user.role_assignments)
+        ? user.role_assignments.filter((a: any) => a.is_active && a.role?.scope_type === 'business_vertical')
+        : [];
+      const currentAssignment =
+        businessAssignments.find((a: any) => a.role.business_vertical_id === storedBusinessId) ||
+        businessAssignments[0];
 
-      if (currentBusiness?.business_vertical?.code) {
-        return currentBusiness.business_vertical.code;
+      if (currentAssignment?.role?.business_vertical?.code) {
+        return currentAssignment.role.business_vertical.code;
       }
     }
 

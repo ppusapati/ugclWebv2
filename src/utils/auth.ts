@@ -1,16 +1,7 @@
+import { authService } from '~/services/auth-enhanced.service';
+
 export function getUser() {
-  if (typeof window === "undefined") return null;
-
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return null;
-
-  try {
-    return JSON.parse(userStr);
-  } catch (error) {
-    console.error("Failed to parse stored user data:", error);
-    localStorage.removeItem("user");
-    return null;
-  }
+  return authService.getUser();
 }
 
 export function isSuperAdminUser(user: any): boolean {
@@ -45,52 +36,15 @@ export function isSuperAdminUser(user: any): boolean {
 }
 
 export function getToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  return authService.getToken();
 }
 
-export function hasRole(role: string, businessId?: string) {
-  const user = getUser();
-  
-  if (!user) return false;
-  
-  // Super admin has all roles
-  if (user.is_super_admin) return true;
-  
-  // Check global role
-  if (user.role?.includes(role)) return true;
-  
-  // Check business-specific role
-  if (businessId && user.business_roles) {
-    const businessAccess = user.business_roles.find(
-      (access: any) => access.business_vertical_id === businessId
-    );
-    return businessAccess?.roles?.includes(role) || false;
-  }
-  
-  return false;
+export function hasRole(role: string, businessId?: string): boolean {
+  return authService.hasRole(role, businessId);
 }
 
-export function hasPermission(permission: string, businessId?: string) {
-  const user = getUser();
-  
-  if (!user) return false;
-  
-  // Super admin has all permissions
-  if (user.is_super_admin || user.role == "super_admin") return true;
-  
-  // Check global permissions
-  if (user.permissions?.includes(permission)) return true;
-  
-  // Check business-specific permissions
-  if (businessId && user.business_roles) {
-    const businessAccess = user.business_roles.find(
-      (access: any) => access.business_vertical_id === businessId
-    );
-    return businessAccess?.permissions?.includes(permission) || false;
-  }
-  
-  return false;
+export function hasPermission(permission: string, businessId?: string): boolean {
+  return authService.hasPermission(permission, businessId);
 }
 
 export function hasAnyRole(roles: string[], businessId?: string): boolean {
@@ -102,51 +56,48 @@ export function hasAllRoles(roles: string[], businessId?: string): boolean {
 }
 
 export function hasAnyPermission(permissions: string[], businessId?: string): boolean {
-  return permissions.some(permission => hasPermission(permission, businessId));
+  return authService.hasAnyPermission(permissions, businessId);
 }
 
 export function hasAllPermissions(permissions: string[], businessId?: string): boolean {
-  return permissions.every(permission => hasPermission(permission, businessId));
+  return authService.hasAllPermissions(permissions, businessId);
 }
 
+/**
+ * Returns the user's roles/permissions for a business vertical in the legacy
+ * BusinessRole shape, derived from canonical role_assignments, for callers
+ * that still expect { roles, permissions, is_admin }.
+ */
 export function getUserBusinessAccess(businessId: string) {
   const user = getUser();
-  
+
   if (!user) return null;
-  
-  if (user.is_super_admin || user.role == "super_admin") {
+
+  if (user.is_super_admin) {
     return {
       business_vertical_id: businessId,
       roles: ['super_admin'],
-      permissions: ['*'], // All permissions
+      permissions: ['*'],
       is_admin: true,
     };
   }
-  
-  return user.business_roles?.find(
-    (access: any) => access.business_vertical_id === businessId
-  ) || null;
+
+  const roles = authService.getUserRoles(businessId);
+  const permissions = authService.getUserPermissions(businessId);
+  if (roles.length === 0 && permissions.length === 0) return null;
+
+  return {
+    business_vertical_id: businessId,
+    roles,
+    permissions,
+    is_admin: isBusinessAdmin(businessId),
+  };
 }
 
 export function isBusinessAdmin(businessId?: string): boolean {
-  const user = getUser();
-  
-  if (!user) return false;
-  
-  if (user.is_super_admin) return true;
-  
-  if (!businessId) return false;
-  
-  const businessAccess = getUserBusinessAccess(businessId);
-  return businessAccess?.is_admin || false;
+  return authService.isBusinessAdmin(businessId);
 }
 
 export function canAccessBusiness(businessId: string): boolean {
-  const user = getUser();
-  
-  if (!user) return false;
-  
-  if (user.is_super_admin) return true;
-  
-  return !!getUserBusinessAccess(businessId);
+  return authService.canAccessBusiness(businessId);
 }
