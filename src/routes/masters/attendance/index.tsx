@@ -6,6 +6,7 @@ import type {
   AttendanceSession,
 } from '~/services';
 import { Alert, Badge, Btn, PageHeader, SectionCard } from '~/components/ds';
+import AttendanceTrailMap from '~/components/attendance/AttendanceTrailMap';
 
 function formatDateTime(value?: string): string {
   if (!value) return 'N/A';
@@ -94,6 +95,7 @@ export default component$(() => {
   const timelineSessions = useSignal<AttendanceSession[]>([]);
   const timelineLoading = useSignal(false);
   const timelineError = useSignal('');
+  const expandedTrailSessionId = useSignal('');
 
   const loadDashboard = $(async () => {
     if (!businessCode.value) {
@@ -134,6 +136,7 @@ export default component$(() => {
     selectedUserName.value = userName;
     timelineError.value = '';
     timelineLoading.value = true;
+    expandedTrailSessionId.value = '';
 
     try {
       const response = await attendanceService.getEmployeeTimeline(businessCode.value, userId, {
@@ -373,6 +376,8 @@ export default component$(() => {
               <div class="space-y-3">
                 {timelineSessions.value.map((session) => {
                   const anomalyFlags = parseAnomalyFlags(session.anomalyFlags);
+                  const pingCount = session.pings?.length || 0;
+                  const isExpanded = expandedTrailSessionId.value === session.id;
                   return (
                     <div key={session.id} class="rounded-lg border border-neutral-200 p-4">
                       <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -382,13 +387,29 @@ export default component$(() => {
                             Check-in: {formatDateTime(session.checkInAt)} | Check-out: {formatDateTime(session.checkOutAt)}
                           </div>
                         </div>
-                        <Badge variant={session.validationStatus === 'flagged' ? 'warning' : 'success'}>
-                          {session.validationStatus}
-                        </Badge>
+                        <div class="flex items-center gap-2">
+                          <Badge variant={session.validationStatus === 'flagged' ? 'warning' : 'success'}>
+                            {session.validationStatus}
+                          </Badge>
+                          <Btn
+                            variant="ghost"
+                            onClick$={() => {
+                              expandedTrailSessionId.value = isExpanded ? '' : session.id;
+                            }}
+                          >
+                            {isExpanded ? 'Hide trail' : `View trail${pingCount > 0 ? ` (${pingCount})` : ''}`}
+                          </Btn>
+                        </div>
                       </div>
 
                       {anomalyFlags.length > 0 && (
                         <div class="text-xs text-warning-700 mt-2">Flags: {anomalyFlags.join(', ')}</div>
+                      )}
+
+                      {isExpanded && (
+                        <div class="mt-3">
+                          <AttendanceTrailMap session={session} />
+                        </div>
                       )}
                     </div>
                   );
