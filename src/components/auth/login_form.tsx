@@ -1,4 +1,4 @@
-import { $, component$, useStore } from "@builder.io/qwik";
+import { $, component$, useStore, useVisibleTask$ } from "@builder.io/qwik";
 import { Btn } from '~/components/ds/btn';
 import { isValidPhone } from "~/utils/validations";
 import ImgLogo from '~/media/logo.png?jsx';
@@ -6,6 +6,11 @@ import { buildApiUrl } from '~/config/api';
 import { authService } from '~/services';
 
 const API_KEY = '87339ea3-1add-4689-ae57-3128ebd03c4f';
+
+interface TenantOption {
+    name: string;
+    slug: string;
+}
 
 export const LoginForm = component$(() => {
     const state = useStore({
@@ -20,17 +25,34 @@ export const LoginForm = component$(() => {
         passwordError: null as string | null,
         apiError: '',
         apiSuccess: false,
+        tenants: [] as TenantOption[],
+        tenantsLoading: true,
+        tenantsError: '',
     });
 
-    const handleTenantSlugInput = $((e: Event) => {
-        const value = (e.target as HTMLInputElement).value;
+    useVisibleTask$(async () => {
+        try {
+            const resp = await fetch(buildApiUrl('/tenants'));
+            if (!resp.ok) throw new Error(`Request failed (${resp.status})`);
+            const data = await resp.json();
+            state.tenants = Array.isArray(data?.tenants) ? data.tenants : [];
+            if (state.tenants.length === 1) {
+                // Only one organization exists — preselect it so the common
+                // case (one tenant deployment) still takes a single click.
+                state.tenantSlug = state.tenants[0].slug;
+            }
+        } catch {
+            state.tenantsError = 'Could not load organizations. Please refresh the page.';
+        } finally {
+            state.tenantsLoading = false;
+        }
+    });
+
+    const handleTenantSlugChange = $((e: Event) => {
+        const value = (e.target as HTMLSelectElement).value;
         state.tenantSlug = value;
         state.touched = true;
-        if (!value.trim()) {
-            state.tenantSlugError = 'Organization ID is required';
-        } else {
-            state.tenantSlugError = '';
-        }
+        state.tenantSlugError = value ? '' : 'Organization is required';
     });
 
     const handlePhoneInput = $((e: Event) => {
@@ -65,8 +87,8 @@ export const LoginForm = component$(() => {
       }
 
         state.touched = true;
-        if (!state.tenantSlug.trim()) {
-            state.tenantSlugError = 'Organization ID is required';
+        if (!state.tenantSlug) {
+            state.tenantSlugError = 'Organization is required';
             return;
         }
         if (!isValidPhone(state.phone)) {
@@ -184,22 +206,32 @@ export const LoginForm = component$(() => {
       >
         <div class="form-group">
           <label class="form-label-muted mb-2" for="tenantSlug">
-            Organization ID
+            Organization
           </label>
-          <input
-            type="text"
+          <select
             id="tenantSlug"
             required
+            disabled={state.tenantsLoading || !!state.tenantsError}
             class={[
               "form-input w-full box-border transition-shadow",
               state.tenantSlugError && state.touched ? "form-input-error ring-2 ring-danger-400" : "focus:ring-2 focus:ring-primary-400",
             ].join(' ')}
-            placeholder="Enter your organization ID"
-            autoComplete="organization"
             value={state.tenantSlug}
-            onInput$={handleTenantSlugInput}
-          />
-          {state.tenantSlugError && state.touched && (
+            onChange$={handleTenantSlugChange}
+          >
+            <option value="" disabled selected={!state.tenantSlug}>
+              {state.tenantsLoading ? 'Loading organizations...' : 'Select your organization'}
+            </option>
+            {state.tenants.map((tenant) => (
+              <option key={tenant.slug} value={tenant.slug}>
+                {tenant.name}
+              </option>
+            ))}
+          </select>
+          {state.tenantsError && (
+            <span class="form-error">{state.tenantsError}</span>
+          )}
+          {!state.tenantsError && state.tenantSlugError && state.touched && (
             <span class="form-error">{state.tenantSlugError}</span>
           )}
         </div>
@@ -254,7 +286,7 @@ export const LoginForm = component$(() => {
         <Btn
           type="submit"
           class="w-full shadow-md hover:scale-105 active:scale-98 transition-transform font-semibold"
-          disabled={state.loading || !!state.tenantSlugError || !!state.phoneError || !!state.passwordError || !state.tenantSlug || !state.phone || !state.password}
+          disabled={state.loading || state.tenantsLoading || !!state.tenantsError || !!state.tenantSlugError || !!state.phoneError || !!state.passwordError || !state.tenantSlug || !state.phone || !state.password}
         >
           {state.loading ? 'Signing in...' : 'Sign In'}
         </Btn>
