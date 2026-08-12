@@ -13,4 +13,6 @@ export const STORAGE_KEYS = {
   TENANT_ID: 'ugcl_current_tenant_id',
   TOUR_STATE: 'ugcl_tour_state',
   TOUR_EVENTS: 'ugcl_tour_events',
+  PLATFORM_TOKEN: 'ugcl_platform_token',
+  PLATFORM_ADMIN: 'ugcl_platform_admin',
 } as const;

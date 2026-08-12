@@ -10,7 +10,10 @@ import { useMenuContext } from '~/contexts/menu-context';
 
 export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
   const path = url.pathname;
-  const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+  const isAuthRoute =
+    path.startsWith('/login') ||
+    path.startsWith('/register') ||
+    path.startsWith('/platform');
 
   if (isAuthRoute) {
     return {
@@ -41,7 +44,10 @@ export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
 
 export const useLayoutMenuData = routeLoader$(async (requestEvent) => {
   const path = requestEvent.url.pathname;
-  const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+  const isAuthRoute =
+    path.startsWith('/login') ||
+    path.startsWith('/register') ||
+    path.startsWith('/platform');
 
   if (isAuthRoute) {
     return { modules: [] as Module[] };
@@ -80,7 +86,8 @@ export default component$(() => {
   const loc = useLocation();
   const isAuthRoute =
     loc.url.pathname.startsWith('/login') ||
-    loc.url.pathname.startsWith('/register');
+    loc.url.pathname.startsWith('/register') ||
+    loc.url.pathname.startsWith('/platform');
 
   const hideBreadcrumb = loc.url.pathname === '/' || loc.url.pathname.startsWith('/analytics/dashboards/view/');
 
