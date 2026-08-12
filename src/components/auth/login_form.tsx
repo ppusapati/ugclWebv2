@@ -30,6 +30,12 @@ export const LoginForm = component$(() => {
         tenantsError: '',
     });
 
+    // Fetches the public, unauthenticated GET /tenants list to populate the
+    // dropdown below. Known, accepted tradeoff (see backend
+    // handlers.ListPublicTenants doc comment): this lets anyone enumerate
+    // active tenant names without logging in. Accepted deliberately for
+    // now — revisit there if the tenant list becomes sensitive enough to
+    // matter more than the login-failure problem this dropdown fixes.
     useVisibleTask$(async () => {
         try {
             const resp = await fetch(buildApiUrl('/tenants'));
