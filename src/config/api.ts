@@ -1,6 +1,6 @@
 const LOCAL_API_BASE_URL = 'http://localhost:8080/api/v1';
 const CLOUD_API_BASE_URL =
-  'https://ugclbackend2-429789556411.europe-west1.run.app/api/v1';
+  'https://ugclbackend2-429789556411.asia-south1.run.app/api/v1';
 
 function normalizeBaseUrl(url: string): string {
   return url.replace(/\/+$/, '');

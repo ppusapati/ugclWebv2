@@ -4,7 +4,10 @@
       "Bash(pnpm run *)",
       "Bash(npx eslint *)",
       "Bash(pnpm exec *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx --version)"
     ]
   }
 }
