@@ -9,15 +9,28 @@ const API_KEY = '87339ea3-1add-4689-ae57-3128ebd03c4f';
 
 export const LoginForm = component$(() => {
     const state = useStore({
+        tenantSlug: '',
         phone: '',
         password: '',
         loading: false,
         success: false,
         touched: false,
+        tenantSlugError: null as string | null,
         phoneError: null as string | null,
         passwordError: null as string | null,
         apiError: '',
         apiSuccess: false,
+    });
+
+    const handleTenantSlugInput = $((e: Event) => {
+        const value = (e.target as HTMLInputElement).value;
+        state.tenantSlug = value;
+        state.touched = true;
+        if (!value.trim()) {
+            state.tenantSlugError = 'Organization ID is required';
+        } else {
+            state.tenantSlugError = '';
+        }
     });
 
     const handlePhoneInput = $((e: Event) => {
@@ -52,6 +65,10 @@ export const LoginForm = component$(() => {
       }
 
         state.touched = true;
+        if (!state.tenantSlug.trim()) {
+            state.tenantSlugError = 'Organization ID is required';
+            return;
+        }
         if (!isValidPhone(state.phone)) {
             state.phoneError = 'Phone number must be exactly 10 digits';
             return;
@@ -78,6 +95,7 @@ export const LoginForm = component$(() => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              tenant_slug: state.tenantSlug.trim(),
               phone: state.phone,
               password: state.password,
             }),
@@ -165,6 +183,27 @@ export const LoginForm = component$(() => {
         onSubmit$={handleSubmit}
       >
         <div class="form-group">
+          <label class="form-label-muted mb-2" for="tenantSlug">
+            Organization ID
+          </label>
+          <input
+            type="text"
+            id="tenantSlug"
+            required
+            class={[
+              "form-input w-full box-border transition-shadow",
+              state.tenantSlugError && state.touched ? "form-input-error ring-2 ring-danger-400" : "focus:ring-2 focus:ring-primary-400",
+            ].join(' ')}
+            placeholder="Enter your organization ID"
+            autoComplete="organization"
+            value={state.tenantSlug}
+            onInput$={handleTenantSlugInput}
+          />
+          {state.tenantSlugError && state.touched && (
+            <span class="form-error">{state.tenantSlugError}</span>
+          )}
+        </div>
+        <div class="form-group">
           <label class="form-label-muted mb-2" for="phone">
             Phone Number
           </label>
@@ -215,7 +254,7 @@ export const LoginForm = component$(() => {
         <Btn
           type="submit"
           class="w-full shadow-md hover:scale-105 active:scale-98 transition-transform font-semibold"
-          disabled={state.loading || !!state.phoneError || !!state.passwordError || !state.phone || !state.password}
+          disabled={state.loading || !!state.tenantSlugError || !!state.phoneError || !!state.passwordError || !state.tenantSlug || !state.phone || !state.password}
         >
           {state.loading ? 'Signing in...' : 'Sign In'}
         </Btn>

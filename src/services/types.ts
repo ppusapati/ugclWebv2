@@ -28,6 +28,7 @@ export interface User {
 }
 
 export interface LoginRequest {
+  tenant_slug: string;
   phone: string;
   password: string;
 }
