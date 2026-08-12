@@ -65,12 +65,17 @@ function getStoredPlatformAdmin(): PlatformAdmin | null {
 }
 
 async function parseJsonSafe(resp: Response): Promise<any> {
-  const contentType = resp.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    return resp.json().catch(() => null);
-  }
+  // Try JSON first regardless of the Content-Type header: a handler that
+  // forgets to set it (Go's http.ResponseWriter defaults to sniffed
+  // text/plain for a body that happens to start with '{') would otherwise
+  // silently degrade every field to undefined instead of failing loudly.
   const text = await resp.text().catch(() => '');
-  return text ? { message: text } : null;
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
 }
 
 async function platformFetch<T>(
@@ -107,6 +112,9 @@ export const platformService = {
       '/platform/login',
       { method: 'POST', body: JSON.stringify({ email, password }) }
     );
+    if (!data?.token || !data?.admin) {
+      throw new PlatformApiError('Unexpected login response from server', 500);
+    }
     persistPlatformSession(data.token, data.admin);
     return data.admin;
   },
