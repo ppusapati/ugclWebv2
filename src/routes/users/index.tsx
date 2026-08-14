@@ -467,6 +467,11 @@ export default component$(() => {
               { type: "button", label: "View", onClick$: $(() => handleViewDetails(user.id)) } as ActionButton,
               {
                 type: "button",
+                label: "Manage Roles",
+                onClick$: $(() => nav(`/users/${user.id}/roles`)),
+              } as ActionButton,
+              {
+                type: "button",
                 label: "Manage Sites",
                 onClick$: $(() => nav(`/users/${user.id}/sites`)),
               } as ActionButton,
@@ -581,6 +586,23 @@ export default component$(() => {
                   </select>
                 </FormField>
               </div>
+
+              {state.editingUser && (
+                <div class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <h4 class="font-semibold text-blue-900">Roles</h4>
+                  <p class="mt-1 text-sm text-blue-800">
+                    Assign or remove global and business-vertical-scoped roles for this user.
+                  </p>
+                  <div class="mt-4 flex justify-end">
+                    <Btn
+                      variant="secondary"
+                      onClick$={() => nav(`/users/${state.editingUser!.id}/roles`)}
+                    >
+                      Manage Roles
+                    </Btn>
+                  </div>
+                </div>
+              )}
 
               {state.editingUser && (
                 <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
