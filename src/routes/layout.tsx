@@ -23,22 +23,33 @@ export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
   }
 
   const token = cookie.get('token')?.value || '';
-  const rawUser = cookie.get('user')?.value || '';
 
-  if (!token || !rawUser) {
+  if (!token) {
     throw redirect(302, '/login/');
   }
 
+  // The `user` cookie is best-effort only — it carries the full user
+  // payload (role_assignments, permissions, etc.), which for admin-type
+  // accounts can exceed the ~4KB per-cookie limit once URL-encoded.
+  // Browsers silently drop or truncate an oversized cookie with no error
+  // surfaced to JS, which previously made this a hard requirement for
+  // the auth check — locking out exactly the accounts with the most
+  // roles/permissions. The session is valid as long as `token` exists;
+  // every subsequent API call is independently authorized via its own
+  // Authorization header, not this cookie.
+  //
   // Qwik City's cookie.get() already URL-decodes the raw cookie value
-  // (parseCookieString calls decodeURIComponent internally) — decoding
-  // again here corrupts any JSON payload containing a literal '%'
-  // (e.g. in a name or email), throwing and silently bouncing back to
-  // /login/ with no visible error.
+  // (parseCookieString calls decodeURIComponent internally) — do not
+  // decode it again here, or a payload containing a literal '%' will
+  // fail to parse.
+  const rawUser = cookie.get('user')?.value || '';
   let user: any = null;
-  try {
-    user = JSON.parse(rawUser);
-  } catch {
-    throw redirect(302, '/login/');
+  if (rawUser) {
+    try {
+      user = JSON.parse(rawUser);
+    } catch {
+      user = null;
+    }
   }
 
   return {

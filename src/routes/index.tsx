@@ -9,10 +9,13 @@ import { P9ETable } from '~/components/table/table';
 import { Alert, Btn } from '~/components/ds';
 
 export const useRootAuthGuard = routeLoader$(({ cookie, redirect }) => {
+  // Only `token` gates the session — see layout.tsx's useLayoutAuth for
+  // why the `user` cookie must not be a hard requirement here (it can
+  // silently exceed the browser's per-cookie size limit for accounts
+  // with many roles/permissions).
   const token = cookie.get('token')?.value || '';
-  const rawUser = cookie.get('user')?.value || '';
 
-  if (!token || !rawUser) {
+  if (!token) {
     throw redirect(302, '/login/');
   }
 
