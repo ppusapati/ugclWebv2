@@ -29,9 +29,14 @@ export const useLayoutAuth = routeLoader$(({ cookie, redirect, url }) => {
     throw redirect(302, '/login/');
   }
 
+  // Qwik City's cookie.get() already URL-decodes the raw cookie value
+  // (parseCookieString calls decodeURIComponent internally) — decoding
+  // again here corrupts any JSON payload containing a literal '%'
+  // (e.g. in a name or email), throwing and silently bouncing back to
+  // /login/ with no visible error.
   let user: any = null;
   try {
-    user = JSON.parse(decodeURIComponent(rawUser));
+    user = JSON.parse(rawUser);
   } catch {
     throw redirect(302, '/login/');
   }
