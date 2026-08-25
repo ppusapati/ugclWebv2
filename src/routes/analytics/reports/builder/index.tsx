@@ -227,9 +227,20 @@ const resolveScopedTables = (
   moduleOption?: any
 ): any[] => {
   const systemTables = tables.filter((table: any) => !!table?.system);
-  const scopedSystemTables = systemTables.filter((table: any) =>
+  // System data sources (attendance, workflow, documents, projects/tasks) are
+  // app-wide base tables, not per-module dynamic forms — they carry no
+  // module_id and no accessible_verticals from the backend. Previously they
+  // were only shown when a module's name/code happened to fuzzy-match the
+  // source's system_scope, so a tenant with no module literally named e.g.
+  // "Attendance" could never select attendance data at all. Prefer the
+  // scope-matched ones so a matching module surfaces them first, but never
+  // hide the rest — otherwise these sources are unreachable.
+  const scopeMatchedSystemTables = systemTables.filter((table: any) =>
     moduleMatchesSystemScope(moduleOption, moduleId, String(table?.system_scope || ''))
   );
+  const scopedSystemTables = scopeMatchedSystemTables.length > 0
+    ? dedupeTablesByName([...scopeMatchedSystemTables, ...systemTables])
+    : systemTables;
 
   // For regular modules, exclude system data sources from the dropdown.
   const regularTables = tables.filter((table: any) => !table?.system);
@@ -447,7 +458,10 @@ export default component$(() => {
     const normalizedVerticalId = String(verticalId || '').trim();
     const normalizedModuleId = String(moduleId || '').trim();
 
-    if (!normalizedVerticalId || !normalizedModuleId) {
+    // A module is optional: system data sources (attendance, workflow,
+    // documents, projects) are app-wide and carry no module_id, so requiring
+    // one here made them unreachable for tenants with no matching module.
+    if (!normalizedVerticalId) {
       availableTables.value = [];
       await clearSelectedDataSource();
       return;
@@ -457,8 +471,10 @@ export default component$(() => {
       const scopedParams: any = {
         business_vertical_id: normalizedVerticalId,
         vertical_id: normalizedVerticalId,
-        module_id: normalizedModuleId,
       };
+      if (normalizedModuleId) {
+        scopedParams.module_id = normalizedModuleId;
+      }
 
       const response: any = await analyticsService.getFormTables(scopedParams);
 
@@ -1328,7 +1344,14 @@ export default component$(() => {
                       ? await getModulesServer(selectedVertical.value)
                       : [];
                     await clearSelectedDataSource();
-                    availableTables.value = [];
+                    // Load sources as soon as a vertical is picked so the
+                    // app-wide system sources are reachable without first
+                    // having to choose a module.
+                    if (selectedVertical.value) {
+                      await loadScopedTables(selectedVertical.value, '');
+                    } else {
+                      availableTables.value = [];
+                    }
                   }}
                   disabled={loadingModalData.value}
                 >
@@ -1343,7 +1366,7 @@ export default component$(() => {
             </div>
 
             <div class="col-span-3">
-              <FormField id="builder-module" label="Module" required>
+              <FormField id="builder-module" label="Module (optional)">
                 <select
                   id="builder-module"
                   class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
@@ -1374,12 +1397,14 @@ export default component$(() => {
                     await handleTableSelect(table.table_name, table.form_code, table.form_id);
                   }
                 }}
-                disabled={!selectedVertical.value || !selectedModule.value || availableTables.value.length === 0}
+                disabled={!selectedVertical.value || availableTables.value.length === 0}
               >
                 <option value="">
-                  {!selectedVertical.value || !selectedModule.value
-                    ? 'Select vertical & module...'
-                    : 'Select data source...'}
+                  {!selectedVertical.value
+                    ? 'Select a business vertical...'
+                    : availableTables.value.length === 0
+                      ? 'No data sources available'
+                      : 'Select data source...'}
                 </option>
                 {availableTables.value.map((table: any) => (
                   <option key={table.table_name} value={table.table_name}>
@@ -1413,9 +1438,10 @@ export default component$(() => {
             </div>
           </div>
 
-          {selectedVertical.value && selectedModule.value && availableTables.value.length === 0 && (
+          {selectedVertical.value && availableTables.value.length === 0 && (
             <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-              No data sources found for the selected business vertical and module.
+              No data sources found for the selected business vertical
+              {selectedModule.value ? ' and module' : ''}.
             </div>
           )}
           {((reportConfig.data_sources || []) as any[]).length > 0 && (
