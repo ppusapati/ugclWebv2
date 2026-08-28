@@ -9,7 +9,12 @@
       "Bash(git commit -m ' *)",
       "Bash(npx --version)",
       "Bash(gcloud logging *)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(gcloud run *)",
+      "Bash(npm run *)",
+      "Bash(cat)",
+      "Bash(python3 /tmp/fix_engine.py)",
+      "Bash(gofmt -l handlers/reports/engine.go)"
     ]
   }
 }

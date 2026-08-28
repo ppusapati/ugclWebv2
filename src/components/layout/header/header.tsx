@@ -92,7 +92,7 @@ export const Header = component$(() => {
             <div class="h-12 w-12 shrink-0 rounded-lg flex items-center justify-center">
               <ImgLogo class="h-12 w-12 object-contain" loading="eager" />
             </div>
-            <h1 class="text-xl font-bold text-gray-900">UGCL Portal</h1>
+            <h1 class="text-xl font-bold text-gray-900">NexGen app Portal</h1>
           </div>
 
           {/* Right Side - Tenant Switcher, Header Icons & User */}
