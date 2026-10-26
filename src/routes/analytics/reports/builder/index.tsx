@@ -2616,8 +2616,8 @@ export default component$(() => {
       {/* Save Modal */}
       {showSaveModal.value && (
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 animate-scale-in">
-            <div class="flex items-center justify-between mb-6">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col p-8 animate-scale-in">
+            <div class="flex items-center justify-between mb-6 shrink-0">
               <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <div class="bg-interactive-primary p-2 rounded-xl">
                   <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2637,7 +2637,7 @@ export default component$(() => {
               </Btn>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-4 flex-1 min-h-0 overflow-y-auto -mx-1 px-1 py-1">
               {error.value && (
                 <div class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {error.value}
@@ -2766,7 +2766,7 @@ export default component$(() => {
               </div>
             </div>
 
-            <div class="flex gap-3 mt-8">
+            <div class="flex gap-3 mt-6 pt-6 border-t border-gray-100 shrink-0">
               <Btn
                 onClick$={() => showSaveModal.value = false}
                 variant="secondary"
